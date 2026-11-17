@@ -29,29 +29,41 @@ graph TB
         COMMON_TYPE[common.type.bicep<br/>Common Types]
     end
 
+    TAGS["constants/tags.bicep<br/>createTags()"]
+
     subgraph "Consumer Modules"
         IDENTITY_MOD[Identity Module]
+        BINDINGS_MOD[Bindings Module<br/>api/dev]
+        AI_MOD[AI Module]
         COMPUTE_MOD[Compute Module]
-        SITES_MOD[Sites Module]
         CONFIG_MOD[Configuration Module]
+        NETWORK_MOD[Network Module]
+        OBS_MOD[Observability Module]
+        SITES_MOD[Sites Module]
         STORAGE_MOD[Storage Module]
     end
 
     IDENTITY_TYPE --> IDENTITY_MOD
-    IDENTITY_TYPE --> CONFIG_MOD
-    IDENTITY_TYPE --> SITES_MOD
 
-    COMMON_TYPE --> COMPUTE_MOD
     COMMON_TYPE --> IDENTITY_MOD
-    COMMON_TYPE --> SITES_MOD
-    COMMON_TYPE --> CONFIG_MOD
-    COMMON_TYPE --> STORAGE_MOD
+    COMMON_TYPE --> BINDINGS_MOD
+    COMMON_TYPE --> TAGS
+
+    TAGS --> AI_MOD
+    TAGS --> COMPUTE_MOD
+    TAGS --> CONFIG_MOD
+    TAGS --> NETWORK_MOD
+    TAGS --> OBS_MOD
+    TAGS --> SITES_MOD
+    TAGS --> STORAGE_MOD
 
     classDef typeFile fill:#e3f2fd,stroke:#0277bd,stroke-width:2px
+    classDef helper fill:#fff3e0,stroke:#ef6c00,stroke-width:2px
     classDef consumer fill:#f3e5f5,stroke:#7b1fa2,stroke-width:2px
 
     class IDENTITY_TYPE,COMMON_TYPE typeFile
-    class IDENTITY_MOD,COMPUTE_MOD,SITES_MOD,CONFIG_MOD,STORAGE_MOD consumer
+    class TAGS helper
+    class IDENTITY_MOD,BINDINGS_MOD,AI_MOD,COMPUTE_MOD,CONFIG_MOD,NETWORK_MOD,OBS_MOD,SITES_MOD,STORAGE_MOD consumer
 ```
 
 ## 🔧 **Type Definitions**
@@ -68,6 +80,7 @@ type identity = {
   displayName: string
   resourceId: string // Azure Resource ID
   principalId: string // Azure Principal ID (GUID)
+  clientId: string // Azure Client ID (GUID) — used for DefaultAzureCredential
 }
 ```
 
@@ -77,6 +90,7 @@ type identity = {
 - `displayName`: Human-readable display name
 - `resourceId`: Full Azure resource ID
 - `principalId`: Azure Principal ID (GUID) for RBAC assignments
+- `clientId`: Azure Client ID (GUID) used by applications for `DefaultAzureCredential`
 
 **Usage Example:**
 
@@ -89,44 +103,11 @@ output identityList identity[] = [
   {
     name: 'frontend-identity'
     displayName: 'Frontend Application Identity'
-    id: '/subscriptions/.../providers/Microsoft.ManagedIdentity/userAssignedIdentities/frontend-identity'
+    resourceId: '/subscriptions/.../providers/Microsoft.ManagedIdentity/userAssignedIdentities/frontend-identity'
+    principalId: '00000000-0000-0000-0000-000000000000'
+    clientId: '00000000-0000-0000-0000-000000000000'
   }
 ]
-```
-
-### **App Service Plan SKU Type (`common.type.bicep`)**
-
-Standardizes App Service Plan SKU configurations with allowed values.
-
-```bicep
-@export()
-@metadata({ description: 'App Service Plan SKU configuration' })
-type appServicePlanSku = {
-  @description('SKU name (e.g., B1, B2, S1, P1v2)')
-  name: 'B1' | 'B2' | 'S1' | 'S2' | 'S3' | 'P1v2' | 'P2v2' | 'P3v2'
-
-  @description('SKU tier')
-  tier: 'Basic' | 'Standard' | 'Premium' | 'PremiumV2'
-}
-```
-
-**Allowed SKUs:**
-
-| SKU       | Tier      | Use Case                     |
-| --------- | --------- | ---------------------------- |
-| B1, B2    | Basic     | Development, small workloads |
-| S1-S3     | Standard  | Production with auto-scaling |
-| P1v2-P3v2 | PremiumV2 | High-performance workloads   |
-
-**Usage Example:**
-
-```bicep
-import { appServicePlanSku } from '../types/common.type.bicep'
-
-param planSku appServicePlanSku = {
-  name: 'B2'
-  tier: 'Basic'
-}
 ```
 
 ### **Resource Tags Type (`common.type.bicep`)**
@@ -138,35 +119,46 @@ Enforces consistent tagging across all Azure resources.
 @metadata({ description: 'Resource tagging configuration' })
 type resourceTags = {
   @description('Environment tag')
-  environment: 'dev' | 'staging' | 'prod'
+  environment: 'DEVELOPMENT' | 'PRODUCTION'
 
   @description('Deployment method')
-  deployment: 'Bicep' | 'ARM' | 'Terraform'
+  deploymentType: 'Bicep' | 'ARM' | 'Terraform'
 
-  @description('Project or application name')
-  project: string
+  @description('Deployment date in YYYY-MM-DD format')
+  deploymentDate: string
+
+  @description('Deployment author')
+  deploymentAuthor: string
+
+  @description('Module or service name')
+  module: string
 
   @description('Cost center for billing')
   costCenter: string
 
-  @description('Owner or responsible team')
-  owner: string
+  @description('Project name or identifier')
+  project: string
+
+  @description('Version of the deployment')
+  version: string
 }
 ```
 
 **Usage Example:**
 
-```bicep
-import { resourceTags } from '../types/common.type.bicep'
+Modules should not build `resourceTags` by hand. Call `createTags(moduleName, deploymentDate)` from `constants/tags.bicep` instead. It
+returns a `resourceTags` value that takes `module` and `deploymentDate` from its arguments and fixes the other six fields (for example
+`environment: 'PRODUCTION'` and `version: '2.0.0'`).
 
-param tags resourceTags = {
-  environment: 'prod'
-  deployment: 'Bicep'
-  project: 'arolariu.ro'
-  costCenter: 'infrastructure'
-  owner: 'Alexandru-Razvan Olariu'
-}
+```bicep
+import { createTags } from '../constants/tags.bicep'
+
+var commonTags = createTags('storage', storageAccountDeploymentDate)
+// tags: union(commonTags, { displayName: '...' })
 ```
+
+The exceptions are `identity/userAssignedIdentity.bicep` and the api/dev bindings files, which still declare
+`var commonTags resourceTags = { ... }` directly.
 
 ## 💡 **Benefits**
 
@@ -201,12 +193,11 @@ param tags resourceTags = {
 ```bicep
 // Import specific types
 import { identity } from '../types/identity.type.bicep'
-import { appServicePlanSku, resourceTags } from '../types/common.type.bicep'
+import { resourceTags } from '../types/common.type.bicep'
 
 // Use imported types in parameters
 param identities identity[]
-param planConfiguration appServicePlanSku
-param resourceTags resourceTags
+param tags resourceTags
 ```
 
 ### **Type Validation**
@@ -223,12 +214,14 @@ The Bicep compiler automatically validates:
 ```bicep
 import { identity } from '../types/identity.type.bicep'
 
-// Strongly typed outputs
-output managedIdentitiesList identity[] = [
-  for i in range(0, 3): {
-    name: managedIdentities[i].name
-    displayName: managedIdentities[i].properties.displayName
-    id: managedIdentities[i].id
+// Strongly typed outputs (as in identity/userAssignedIdentity.bicep)
+output userAssignedManagedIdentities identity[] = [
+  for i in range(0, length(identities)): {
+    name: identities[i].name
+    displayName: identities[i].displayName
+    resourceId: userAssignedManagedIdentities[i].id
+    principalId: userAssignedManagedIdentities[i].properties.principalId
+    clientId: userAssignedManagedIdentities[i].properties.clientId
   }
 ]
 ```
@@ -286,15 +279,12 @@ type config = {
 
 ### **Type Consumption by Module**
 
-| Module        | identity | appServicePlanSku | resourceTags |
-| ------------- | -------- | ----------------- | ------------ |
-| Identity      | ✅       | ❌                | ✅           |
-| Compute       | ❌       | ✅                | ✅           |
-| Sites         | ✅       | ❌                | ✅           |
-| Configuration | ✅       | ❌                | ✅           |
-| Storage       | ❌       | ❌                | ✅           |
-| Network       | ❌       | ❌                | ✅           |
-| Observability | ❌       | ❌                | ✅           |
+| Module                                                             | identity | resourceTags            |
+| ------------------------------------------------------------------ | -------- | ----------------------- |
+| Identity                                                           | ✅       | ✅ (direct)             |
+| Bindings (api/dev)                                                 | ❌       | ✅ (direct)             |
+| AI, Compute, Configuration, Network, Observability, Sites, Storage | ❌       | ✅ (via `createTags()`) |
+| RBAC                                                               | ❌       | ❌                      |
 
 ## 🚨 **Troubleshooting**
 
@@ -329,12 +319,14 @@ grep -r "import.*types" ../
 param debugIdentity identity = {
   name: 'test-identity'        // string ✅
   displayName: 'Test Identity' // string ✅
-  id: 'resource-id'            // string ✅
+  resourceId: 'resource-id'    // string ✅
+  principalId: 'principal-id'  // string ✅
+  clientId: 'client-id'        // string ✅
   // extraProperty: 'value'    // ❌ Not defined in type
 }
 
 // Check output types
-output debugOutput identity[] = debugIdentity // Type validation
+output debugOutput identity = debugIdentity // Type validation
 ```
 
 ## 🔮 **Future Enhancements**
@@ -343,7 +335,6 @@ output debugOutput identity[] = debugIdentity // Type validation
 
 - **Storage Account Configuration**: Standardize storage account settings
 - **Network Security Group Rules**: Type-safe security rule definitions
-- **Key Vault Access Policies**: Structured access policy definitions
 - **Application Insights Configuration**: Monitoring and alerting types
 
 ### **Advanced Features**
@@ -363,5 +354,5 @@ output debugOutput identity[] = debugIdentity // Type validation
 ---
 
 **Module Version**: 2.0.0  
-**Last Updated**: June 2025  
+**Last Updated**: November 2026\
 **Maintainer**: Alexandru-Razvan Olariu

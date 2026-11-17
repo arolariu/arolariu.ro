@@ -47,7 +47,7 @@ The arolariu.ro monorepo implements three primary workflow patterns:
 #### **Pattern 1: Build-Release Workflows** (Staged Deployment)
 
 ```
-Build trigger (push/manual) → Build → Test → Validate
+Build trigger (push/manual) → Test → Build → Validate
   → Release trigger (workflow_run/manual)
   → [Environment protection, if configured] → Deploy
 ```
@@ -66,12 +66,14 @@ Build trigger (push/manual) → Build → Test → Validate
 #### **Pattern 2: Trigger Workflows** (Direct Deployment)
 
 ```
-Trigger (push/manual) → Build → Test → Deploy (all in one)
+Trigger (push/manual) → Test → Build → Deploy (all in one)
 ```
 
 **Characteristics:**
 
 - Single workflow handles build and deploy
+- The build (or combined `build-and-deploy`) job declares `needs: test`; `official-docs-trigger.yml` has no test job, only
+  `build-and-deploy`
 - Faster feedback loop
 - Suitable for lower-risk deployments (CV site, documentation)
 
@@ -96,7 +98,7 @@ Schedule/manual → End-to-end tests → Failure reporting
 
 **Examples:**
 
-- `official-hygiene-check-v2.yml` (stats, format, lint, summary)
+- `official-hygiene-check-v2.yml` (detect → format, lint, TypeScript/.NET/Python test, and stats providers → gate)
 - `official-e2e-action.yml` (end-to-end testing)
 
 ### 2.2 Representative Workflow Families
@@ -109,7 +111,7 @@ planning or reviewing a change.
 | `official-website-build.yml`      | Build-Release | Push to preview + Manual | Build and test the website      |
 | `official-website-release.yml`    | Build-Release | workflow run + Manual    | Deploy the website              |
 | `official-api-trigger.yml`        | Trigger       | Push to main + Manual    | Build, test, and deploy the API |
-| `official-cv-trigger.yml`         | Trigger       | Push to main             | Build and deploy the CV site    |
+| `official-cv-trigger.yml`         | Trigger       | Push to main + Manual    | Build and deploy the CV site    |
 | `official-hygiene-check-v2.yml`   | Validation    | PR + Manual              | Lint, format, test, and report  |
 | `official-e2e-action.yml`         | Validation    | Schedule + Manual        | Run end-to-end suites           |
 | `official-components-publish.yml` | Trigger       | Version tag + Manual     | Publish the component library   |
@@ -124,10 +126,10 @@ planning or reviewing a change.
 
 **Location:** `.github/actions/setup-tooling/`, `.github/actions/setup-workspace/`
 
-| Action            | Responsibility                                                                                                                                           |
-| ----------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `setup-tooling`   | Installs Node.js / .NET / Python. Repo-agnostic. Caching is delegated to each `setup-*` action's built-in mechanism                                      |
-| `setup-workspace` | Invokes `setup-tooling`, then bootstraps the repo: `npm ci`, `dotnet restore`, `pip install`, Playwright, `npm run generate`, `npm run build:components` |
+| Action            | Responsibility                                                                                                                                                                                                                                                                                         |
+| ----------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `setup-tooling`   | Installs Node.js / .NET / Python. Repo-agnostic. Caching is delegated to each `setup-*` action's built-in mechanism                                                                                                                                                                                    |
+| `setup-workspace` | Invokes `setup-tooling`, then bootstraps the repo: root `npm ci` (plus the SvelteKit sync for the CV and status sites), `npm ci` in `.github/scripts`, `dotnet restore`, `pip install`, Playwright, `npm run generate <generate-args>`, `npm run build:components`; each bootstrap step is input-gated |
 
 Use `setup-tooling` when a job needs only a binary. Use `setup-workspace` when repository dependencies, generation, builds, or tests are
 required. Narrow release, probe, or deployment jobs may need `setup-tooling` only or neither action.
@@ -136,7 +138,7 @@ required. Narrow release, probe, or deployment jobs may need `setup-tooling` onl
 | ---------------------------------- | -------------------------- | ------------------------------------------------------------ |
 | `~/.npm`, `~/.nuget/packages`, pip | `setup-tooling` (built-in) | lock-file hashes                                             |
 | `node_modules`                     | `setup-workspace`          | `<os>-node-modules-<node-version>-<hash(package-lock.json)>` |
-| `~/.cache/ms-playwright`           | `setup-workspace`          | `<os>-playwright-<hash(package-lock.json)>`                  |
+| `~/.cache/ms-playwright`           | `setup-workspace`          | `<os>-playwright-<browsers>-<hash(package-lock.json)>`       |
 
 ### 3.2 Caching Strategy
 
@@ -166,7 +168,7 @@ Workspace caches use explicit `actions/cache` steps pinned in the live composite
 key: ${{ runner.os }}-node-modules-${{ inputs.node-version }}-${{ hashFiles('package-lock.json') }}
 ```
 
-Example: `linux-node-modules-<node-major>-a3f9b2c1d4e5...`
+Example: `Linux-node-modules-<node-major>-a3f9b2c1d4e5...`
 
 The Node version is part of the key because `node_modules` can contain natively-compiled addons whose ABI is tied to the runtime. A cache
 hit skips `npm ci`, so nothing would rebuild them — bumping Node must invalidate the cache rather than restore binaries built for the
@@ -175,18 +177,21 @@ previous runtime.
 **Playwright browser bundle (`~/.cache/ms-playwright`):**
 
 ```yaml
-key: ${{ runner.os }}-playwright-${{ hashFiles('package-lock.json') }}
+key: ${{ runner.os }}-playwright-${{ inputs.playwright-browsers }}-${{ hashFiles('package-lock.json') }}
 ```
 
-Example: `linux-playwright-b7e4c9a2f1d8...`
+Example: `Linux-playwright-chromium-b7e4c9a2f1d8...`
 
 The Playwright key omits the Node version deliberately: the cached artifacts are browser binaries, not Node addons, and the Playwright
-version that governs them is already pinned by the lock file.
+version that governs them is already pinned by the lock file. The key does include the `playwright-browsers` input (default `chromium`), so
+a job that installs a different browser set never restores another set's binaries.
 
 **Behavior (both caches):**
 
-- **Cache hit**: When `package-lock.json` hasn't changed (and, for `node_modules`, the Node version is unchanged)
-- **Cache miss**: When `package-lock.json` changes, or — for `node_modules` — when the Node version is bumped
+- **Cache hit**: When `package-lock.json` hasn't changed (and, for `node_modules`, the Node version is unchanged; for Playwright, the
+  browser list is unchanged)
+- **Cache miss**: When `package-lock.json` changes, or — for `node_modules` — when the Node version is bumped, or — for Playwright — when
+  the `playwright-browsers` list changes
 - **No fallback**: Prevents a changed lock hash from restoring artifacts produced for an older lock state
 
 #### **Why No Fallback Keys?**
@@ -197,18 +202,18 @@ version that governs them is already pinned by the lock file.
 # DANGEROUS (what we deliberately do NOT do)
 key: ${{ runner.os }}-node-modules-${{ inputs.node-version }}-${{ hashFiles('package-lock.json') }}
 restore-keys: |
-  linux-node-modules-<node-major>-
-  linux-node-modules-
+  Linux-node-modules-<node-major>-
+  Linux-node-modules-
 ```
 
 Note the key itself is the current one — the hazard below comes entirely from the `restore-keys` stanza, not from the key format.
 
 **Scenario that fails:**
 
-1. Dev pushes feature → Cache created: `linux-node-modules-<node-major>-hash123`
+1. Dev pushes feature → Cache created: `Linux-node-modules-<node-major>-hash123`
 2. 3 days later, dev updates dependencies and regenerates `package-lock.json`
 3. Workflow runs → The new lock hash makes the primary key miss
-4. Fallback `linux-node-modules-<node-major>-` hits old cache! ❌
+4. Fallback `Linux-node-modules-<node-major>-` hits old cache! ❌
 5. Build fails with incompatible dependencies ❌
 
 **Solution (current approach):**
@@ -242,21 +247,26 @@ workflow change should hash the owning manifests too or run an explicit lock-con
 
 ### 3.3 Workflow Structure Pattern
 
-All workflows follow a consistent structure:
+Workflows share this illustrative shape. Triggers, `concurrency`, `env`, and setup inputs differ per workflow, so read the live file before
+editing:
 
 ```yaml
 name: Descriptive Name
 
 on:
   push:
-    branches: [main, preview]
+    branches: [main] # project trigger workflows use [main]; official-website-build.yml uses [preview]
     paths: ["relevant/paths/**"]
-  pull_request:
-    branches: [main]
+  workflow_dispatch: # every workflow keeps a manual trigger
 
+# Optional: only the hygiene, E2E, and status-probe workflows declare concurrency, each with its own group.
 concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
+  group: <workflow-specific-group>
   cancel-in-progress: true
+
+defaults:
+  run:
+    working-directory: ./sites/<project> # most project workflows run their steps inside the project
 
 jobs:
   job-name:
@@ -274,14 +284,15 @@ jobs:
       - name: 🚀 Setup workspace
         uses: ./.github/actions/setup-workspace
         with:
-          node-version: ${{ env.NODE_VERSION }}
+          run-generate: "true"
+          generate-args: "artifacts" # only the generators the job needs
           # ... other inputs
 
       - name: 🏗️ Build
-        run: npm run build
+        run: npm run build # the project's script, via the default working directory
 
       - name: 🧪 Test
-        run: npm run test
+        run: npm run test # the project's script, via the default working directory
 
       - name: 🚀 Deploy (if trigger pattern)
         run: # deployment commands
@@ -297,15 +308,17 @@ jobs:
 
 ```
 Trigger: Push to preview (+ manual dispatch)
-├─ Job: test
-│  ├─ Setup workspace (Node.js, Playwright, Generate)
-│  ├─ Run tests
-│  └─ Upload test results
-└─ Job: build
-   ├─ Setup workspace (Node.js, Playwright, Generate)
+├─ Job: test (skipped when dispatched with skip_tests)
+│  ├─ Setup workspace (Node.js, Playwright, generate artifacts/gql/i18n)
+│  ├─ TypeScript type-check (tsgo)
+│  ├─ Run unit tests (Vitest) and E2E tests (Playwright)
+│  └─ Upload test reports, publish the test-results comment, upload coverage to Codecov
+└─ Job: build (needs test; runs when test succeeded or was skipped)
+   ├─ Azure and ACR authentication
+   ├─ Setup workspace (Node.js, generate artifacts/gql/i18n)
    ├─ Build Docker image
-   ├─ Push to Azure Container Registry
-   └─ Tag with commit SHA
+   ├─ Smoke-test the image runtime configuration
+   └─ Push to Azure Container Registry (tag `latest`; commit SHA when dispatched for production)
 ```
 
 **Release Workflow** (`official-website-release.yml`):
@@ -329,14 +342,14 @@ Trigger: workflow_run from official-website-build on preview (+ manual dispatch)
 ```
 Trigger: Push to main (+ manual dispatch)
 ├─ Job: test
-│  ├─ Setup workspace (.NET)
-│  ├─ Run unit tests
-│  └─ Report coverage
+│  ├─ Setup workspace (Node.js, .NET restore, generate artifacts)
+│  ├─ Run dotnet test (Release, XPlat Code Coverage collection)
+│  └─ Upload the TestResults directory as an artifact
 ├─ Job: build (needs test)
-   ├─ Setup workspace (.NET)
-   ├─ Build .NET application
-   ├─ Publish artifacts
-   └─ Publish deployment artifact/image
+   ├─ Setup workspace (Node.js, generate artifacts)
+   ├─ Azure and ACR authentication
+   ├─ Build Docker image (sites/api.arolariu.ro/Dockerfile runs dotnet restore/build/publish)
+   └─ Push to Azure Container Registry
 └─ Job: deploy (needs build)
    ├─ Azure authentication
    └─ Deploy to Azure App Service
@@ -354,7 +367,7 @@ Trigger: Push to main (+ manual dispatch)
 **Hygiene Check** (`official-hygiene-check-v2.yml`):
 
 ```
-Trigger: PR
+Trigger: PR (+ manual dispatch with scope: affected | full)
 ├─ Job: detect
 │  └─ Classify the changed providers
 ├─ Job: providers (matrix, needs detect)
@@ -435,14 +448,14 @@ key: ${{ runner.os }}-node-modules-${{ inputs.node-version }}-${{ hashFiles('pac
 
 **Components:**
 
-- `${{ runner.os }}`: OS-specific (linux, windows, macos)
+- `${{ runner.os }}`: OS-specific (`Linux`, `Windows`, `macOS`)
 - `${{ inputs.node-version }}`: guards against restoring native addons built for a different Node ABI
 - `${{ hashFiles('package-lock.json') }}`: SHA-256 hash of the root `package-lock.json`
 
 **Example:**
 
 ```
-linux-node-modules-<node-major>-7f3e9a2c1b5d4...
+Linux-node-modules-<node-major>-7f3e9a2c1b5d4...
 ```
 
 ### 6.2 Progress Indicators
@@ -451,11 +464,15 @@ The composite action groups each enabled setup phase and writes a final duration
 `node_modules` and Playwright cache states; toolchain cache outputs remain available to callers but are not duplicated there. Read the live
 step names and final logging step in `.github/actions/setup-workspace/action.yml` before documenting additional output.
 
-### 6.3 GraphQL Artifact Generation
+### 6.3 Workspace Generation
 
-**Feature:** The `run-generate` input runs `npm run generate` during workspace setup.
+**Feature:** The `run-generate` input runs `npm run generate <generate-args>` during workspace setup. `generate-args` defaults to
+`env artifacts gql i18n`, so live callers pass an explicit subset: the website build uses `artifacts gql i18n`, and the API and hygiene
+workflows use `artifacts`. Omitting `generate-args` also runs the `env` generator, which outside `INFRA=azure` reads `.env` and prompts for
+missing required keys.
 
-**Use Case:** Websites with GraphQL schemas that need to be compiled before build.
+**Use Case:** Jobs that need generated workspace artifacts (taxonomy and license artifacts, synchronized locale files) before they build or
+test. The `gql` generator currently writes only a placeholder (`scripts/__generated__/gql/README.placeholder.txt`).
 
 **Example:**
 
@@ -463,10 +480,11 @@ step names and final logging step in `.github/actions/setup-workspace/action.yml
 - name: 🚀 Setup workspace
   uses: ./.github/actions/setup-workspace
   with:
-    run-generate: "true" # Generates GraphQL types, schemas, etc.
+    run-generate: "true"
+    generate-args: "artifacts gql i18n" # only the generators the job needs
 
 - name: 🏗️ Build website
-  run: npm run build # Can now use generated GraphQL types
+  run: npm run build # Can now use the generated artifacts
 ```
 
 **Benefits:**

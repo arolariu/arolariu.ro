@@ -6,6 +6,7 @@
 - **Related Components**:
   - `sites/api.arolariu.ro/src/Common/Telemetry/`
   - `sites/api.arolariu.ro/src/Core/Domain/General/Extensions/`
+  - `sites/api.arolariu.ro/src/Core/Domain/General/Middlewares/`
 
 ---
 
@@ -50,45 +51,36 @@ performance characteristics.
 
 ### 2.1 Architecture Overview
 
-The observability system consists of four pillars:
+The observability system consists of three OpenTelemetry signals that share one resource definition and export through per-signal exporters:
 
 ```text
 ┌─────────────────────────────────────────────────────────────────┐
 │                    Application Layer                            │
-│  (Controllers, Endpoints, Middleware)                           │
+│  (Minimal API endpoints, background workers, middleware)        │
 └───────────────────────────┬─────────────────────────────────────┘
                             │
-                ┌───────────┴───────────┐
-                │                       │
-                ▼                       ▼
-          ┌──────────────┐      ┌──────────────┐
-          │   Tracing    │      │   Logging    │
-          │  (Spans &    │      │ (Structured  │
-          │  Activities) │      │   Logs)      │
-          └──────┬───────┘      └──────┬───────┘
-                │                     │
-                │      ┌──────────────┴──────────┐
-                │      │                         │
-                │      ▼                         ▼
-                │  ┌──────────┐          ┌─────────────┐
-                │  │ Metering │          │ Application │
-                │  │ (Metrics │          │  Insights   │
-                │  │  & KPIs) │          │  Telemetry  │
-                │  └────┬─────┘          │  (Legacy)   │
-                │       │                └─────────────┘
-                │       │
-                └───────┴─────────────┐
-                                      ▼
-                              ┌─────────────────┐
-                              │ Azure Monitor   │
-                              │ (OTel Exporter) │
-                              └─────────────────┘
-                                      │
-                              ┌────────┴────────┐
-                              │  Console Export │
-                              │  (Debug Only)   │
-                              └─────────────────┘
+          ┌─────────────────┼─────────────────┐
+          │                 │                 │
+          ▼                 ▼                 ▼
+   ┌──────────────┐  ┌──────────────┐  ┌──────────────┐
+   │   Tracing    │  │   Logging    │  │   Metering   │
+   │  (Spans &    │  │ (Structured  │  │  (Metrics &  │
+   │  Activities) │  │    Logs)     │  │     KPIs)    │
+   └──────┬───────┘  └──────┬───────┘  └──────┬───────┘
+          │                 │                 │
+          └─────────────────┼─────────────────┘
+                            │  shared resource attributes
+                            ▼
+   ┌────────────────────────────────────────────────────┐
+   │ Per-signal exporters                               │
+   │  - Azure Monitor (when a connection string is set) │
+   │  - OTLP (when OTEL_EXPORTER_OTLP_ENDPOINT is set)  │
+   │  - Console (only while a debugger is attached)     │
+   └────────────────────────────────────────────────────┘
 ```
+
+Outside the application, Bicep also enables the App Service Application Insights agent (`ApplicationInsightsAgent_EXTENSION_VERSION=~3`) for
+the API web app. That agent is infrastructure-level and is not part of the application's OpenTelemetry pipeline.
 
 ### 2.2 Core Components
 
@@ -102,6 +94,11 @@ The observability system consists of four pillars:
 
 - `TracingExtensions`: Configures OpenTelemetry tracing with ASP.NET Core, HTTP Client, and EF Core instrumentation
 - `ActivityGenerators`: Centralized activity sources for domain-specific tracing
+- `ActivityExtensions`: Fluent tagging helpers for layer, operation, invoice, merchant, user, and Cosmos DB context, plus `RecordSuccess`,
+  `RecordException`, `AddCustomEvent`, and `StartActivityWithLink`
+- `ActivityEnrichingProcessor`: When a span starts, adds correlation, root-trace, parent-span, span-depth, environment, host, process,
+  thread, and start-timestamp tags and copies baggage into `baggage.*` tags; when it ends, adds `duration.ms` and `display.name` and sets an
+  unset status to `Ok` when no `error` tag is present
 
 **Activity Sources** (aligned with DDD domains):
 
@@ -126,42 +123,57 @@ public static class ActivityGenerators
 }
 ```
 
+`TracingExtensions` registers these four sources plus the Cosmos DB SDK source `Azure.Cosmos.Operation`. The Invoices module enables Cosmos
+DB SDK distributed tracing with `CosmosClientTelemetryOptions.DisableDistributedTracing = false`.
+
+**Resource Attributes** (`Common/Telemetry/ResourceBuilderFactory.cs`, shared by traces, metrics, and logs):
+
+- `service.name`: `arolariu-api`
+- `service.namespace`: `arolariu.ro`
+- `service.version`: the `COMMIT_SHA` environment variable, falling back to the assembly version and then `1.0.0`
+- `service.instance.id`: the machine name
+- `deployment.environment`: `ASPNETCORE_ENVIRONMENT`, defaulting to `Development`
+- `cloud.role`: `api`; `cloud.provider`: `azure`
+
 **Automatic Instrumentation**:
 
-- **ASP.NET Core**: HTTP request spans with route, status code, duration
-- **HTTP Client**: Outbound dependency tracking with correlation headers
-- **Entity Framework Core**: Database query spans with SQL execution time
+- **ASP.NET Core**: HTTP request spans with route, status code, and duration. Health probe requests are filtered out (see
+  [2.2.6](#226-health-probe-telemetry-suppression)). Spans are enriched with `http.request.id`, `http.client.ip`, `enduser.id` (when a `sub`
+  or `userId` claim is present), and `http.response.content_length`, and record exceptions.
+- **HTTP Client**: Outbound dependency tracking with correlation headers, enriched with `http.request.uri.host`. Outbound probe requests are
+  filtered out (see [2.2.6](#226-health-probe-telemetry-suppression)), and dependency exceptions are recorded.
+- **Entity Framework Core**: EF Core command spans, which in practice cover only the SQL Server Identity store (`AuthDbContext`). Invoice
+  and merchant Cosmos DB access uses the raw `CosmosClient` and is traced through broker activities and the `Azure.Cosmos.Operation` source.
 
 #### 2.2.2 Logging Infrastructure
 
-**Location**: `Common/Telemetry/Logging/`
+**Location**: `Common/Telemetry/Logging/LoggingExtensions.cs` (provider setup); source-generated `Log` classes per bounded context in
+`Common/Log.cs`, `Core/Log.cs`, `Core.Auth/Log.cs`, and `Invoices/Modules/Log.cs`. Event IDs are registered in the
+[event ID registry](../backend/event-id-registry.md).
 
 **Purpose**: High-performance structured logging with compile-time optimization
 
 **Key Classes**:
 
-- `LoggingExtensions`: Configures OpenTelemetry logging with Azure Monitor integration
-- `Log`: Source-generated logging methods (zero-allocation)
+- `LoggingExtensions`: Configures OpenTelemetry logging (formatted messages and scopes included) with Azure Monitor and OTLP export
+- `Log`: Source-generated logging methods (zero-allocation), one partial class per bounded context
 
-**Source-Generated Logging Pattern**:
+**Source-Generated Logging Pattern** (excerpt from `Common/Log.cs`):
 
 ```csharp
 public static partial class Log
 {
-  [LoggerMessage(0, LogLevel.Critical,
-    "The option {propertyName} is missing from configuration AND Key Vault: {keyVaultName}")]
-  public static partial void LogOptionValueIsCompletelyMissing(
-    this ILogger logger, string propertyName, string keyVaultName);
+  [LoggerMessage(
+    EventId = 410_103,
+    Level = LogLevel.Information,
+    Message = "Config and features refreshed from proxy.")]
+  public static partial void LogRefreshSucceeded(this ILogger logger);
 
-  [LoggerMessage(1, LogLevel.Information,
-    "The option {propertyName} was loaded from Key Vault: {keyVaultName}.")]
-  public static partial void LogOptionValueFromKeyVault(
-    this ILogger logger, string propertyName, string keyVaultName);
-
-  [LoggerMessage(2, LogLevel.Information,
-    "The option {propertyName} was loaded from configuration file.")]
-  public static partial void LogOptionValueFromConfiguration(
-    this ILogger logger, string propertyName);
+  [LoggerMessage(
+    EventId = 410_201,
+    Level = LogLevel.Warning,
+    Message = "exp returned HTTP {StatusCode} for config key '{Key}'.")]
+  public static partial void LogConfigKeyHttpError(this ILogger logger, int statusCode, string key);
 }
 ```
 
@@ -179,15 +191,32 @@ public static partial class Log
 
 **Key Classes**:
 
-- `MeteringExtensions`: Configures OpenTelemetry metrics with automatic instrumentation
+- `MeteringExtensions`: Configures OpenTelemetry metrics with automatic instrumentation and registers the domain meters
+- `MeterGenerators`: Domain meters `arolariu.Backend.Common`, `arolariu.Backend.Core`, `arolariu.Backend.Auth`, and
+  `arolariu.Backend.Domain.Invoices` (version `1.0.0`)
+- `HealthCheckMetrics`: Failed health-check counter (see [2.2.6](#226-health-probe-telemetry-suppression))
+- `CommonMetrics`, `AuthMetrics`, `InvoiceMetrics`: Per-context custom instruments
+
+**Custom Metrics** (the owning classes are the source of truth for the full instrument list):
+
+- `CommonMetrics` (`Common/CommonMetrics.cs`, meter `arolariu.Backend.Common`): `config.refresh.success`, `config.refresh.failure`,
+  `config.refresh.duration`
+- `HealthCheckMetrics` (`Common/Telemetry/Metering/HealthCheckMetrics.cs`, meter `arolariu.Backend.Core`): `arolariu.health.check.failures`
+- `AuthMetrics` (`Core.Auth/AuthMetrics.cs`, meter `arolariu.Backend.Auth`): `auth.logouts`, `auth.logout_failures`,
+  `auth.jwt.validation_failures`
+- `InvoiceMetrics` (`Invoices/Modules/InvoiceMetrics.cs`, meter `arolariu.Backend.Domain.Invoices`):
+  - `invoices.operations` and `invoices.operations.duration`
+  - `invoices.analysis` and `invoices.analysis.*`: analysis outcomes and duration, content-filter triggers, queue depth, enqueues and wait
+    time, message outcomes and duration, lease recovery and loss, replacements and discards, persistence failures, capability outcomes,
+    duration, retries, content-filter and invalid-structured-output counts, taxonomy validation failures, input and output tokens, and
+    estimated cost
+  - `invoices.cosmosdb.request_charge`: Cosmos DB request units
 
 **Automatic Metrics Collection**:
 
 - **ASP.NET Core Metrics**:
   - `http.server.request.duration`: Request latency histogram
   - `http.server.active_requests`: Concurrent request counter
-  - `http.server.request.body.size`: Request size distribution
-  - `http.server.response.body.size`: Response size distribution
 
 - **HTTP Client Metrics**:
   - `http.client.request.duration`: Dependency call latency
@@ -227,9 +256,33 @@ merchant names, prompts, provider responses, scan URLs, and credentials are excl
 
 **Features**:
 
-- Azure Monitor exporters configured per signal (logs/metrics/traces)
+- Azure Monitor exporters per signal (logs/metrics/traces), added only when the resolved Application Insights connection string is non-blank
 - `DefaultAzureCredential` + managed identity support via `AZURE_CLIENT_ID`
-- Debug-time console exporters for local diagnostics
+- OTLP exporter per signal when `OTEL_EXPORTER_OTLP_ENDPOINT` is set (the Aspire AppHost injects it for the Aspire dashboard)
+- Console exporters for local diagnostics, added only while a debugger is attached
+
+#### 2.2.6 Health Probe Telemetry Suppression
+
+**Location**: `Common/Telemetry/HealthTelemetryPolicy.cs`, `Core/Domain/General/Middlewares/HealthTelemetrySuppressionMiddleware.cs`, and
+`Common/Telemetry/Metering/HealthCheckMetrics.cs`
+
+**Purpose**: Keep high-frequency liveness and readiness probes out of traces, request metrics, and logs without hiding failed checks.
+
+`HealthTelemetryPolicy` suppresses telemetry for the `/health`, `/api/health`, and `/api/ready` paths. Matching is exact and
+case-insensitive after the query string and trailing slashes are removed. Suppression is enabled by default. Set
+`OTEL_SUPPRESS_HEALTH_TELEMETRY=false` to disable it; a missing, blank, or unparseable value keeps it enabled.
+
+When suppression is enabled, it is applied by:
+
+- the ASP.NET Core trace `Filter` and the HttpClient `FilterHttpRequestMessage` in `TracingExtensions`, which also drop outbound probes such
+  as the exp `/api/ready` ping;
+- a `Warning` minimum level for the `Microsoft.Extensions.Diagnostics.HealthChecks` category on the OpenTelemetry logger provider in
+  `LoggingExtensions`;
+- `HealthTelemetrySuppressionMiddleware`, which runs probe requests inside a `SuppressInstrumentationScope`; and
+- `DisableHttpMetrics()` on the `/health` endpoint.
+
+Failed checks are always counted by `arolariu.health.check.failures` (`HealthCheckMetrics`, `arolariu.Backend.Core` meter, unit `{failure}`,
+tag `check`), even while suppression is enabled. The website and the exp service honour the same environment variable.
 
 ### 2.3 Configuration & Integration
 
@@ -255,7 +308,7 @@ public static void AddGeneralDomainConfiguration(this WebApplicationBuilder buil
 
 **Local Swagger personas**:
 
-- Aspire runs a loopback-only `local-identities` tooling resource for Alice, Bob, and Charlie.
+- Aspire runs a loopback-only `local-identities` tooling resource for Alice, Bob, Charlie, and Dmitryi.
 - Tokens use the same issuer, audience, signature, lifetime validation, and `userIdentifier` claim contract as normal API Bearer tokens.
 - Development Swagger injects persona controls only when the environment is Development, `INFRA=local`, no Azure managed identity is
   present, and AppHost supplies the loopback identity endpoint.
@@ -264,16 +317,19 @@ public static void AddGeneralDomainConfiguration(this WebApplicationBuilder buil
 - The identity helper and seed bootstrap are excluded from deployment manifests; production authentication and observability remain
   unchanged.
 
-**Connection String Resolution**:
+**Connection String Resolution** (`Common/Telemetry/Tracing/TracingExtensions.cs`; the logging and metering extensions use the same
+pattern):
 
 ```csharp
-// Resolved via IOptionsManager from:
-// 1. appsettings.json (local development)
-// 2. Azure Key Vault (production)
-string instrumentationKey = optionsManager
+// Resolved at startup for every INFRA mode via the exp config proxy:
+// exp key "Endpoints:Observability:Telemetry" → AzureOptions:ApplicationInsightsEndpoint
+// (CloudOptionsManager; refreshed by ConfigRefreshHostedService). exp reads Azure App
+// Configuration (+ Key Vault references) when INFRA=azure, otherwise its local config.json.
+using var serviceProvider = builder.Services.BuildServiceProvider();
+var connectionString = serviceProvider
   .GetRequiredService<IOptionsManager>()
   .GetApplicationOptions()
-  .ApplicationInsightsEndpoint;
+  .ApplicationInsightsEndpoint ?? string.Empty;
 ```
 
 ---
@@ -283,22 +339,36 @@ string instrumentationKey = optionsManager
 ### 3.1 Manual Activity Creation (Processing Layer)
 
 ```csharp
-public partial class InvoiceProcessingService : IInvoiceProcessingService
+public sealed partial class InvoiceProcessingService : IInvoiceProcessingService
 {
-  public async Task CreateInvoice(Invoice invoice, Guid? userIdentifier = null) =>
+  public async Task CreateInvoice(Invoice invoice, Guid? userIdentifier, CancellationToken cancellationToken) =>
     await TryCatchAsync(async () =>
     {
       // Create activity for distributed tracing
       using var activity = InvoicePackageTracing.StartActivity(nameof(CreateInvoice));
+      var sw = Stopwatch.StartNew();
 
       // Activity automatically captures:
       // - Start/end timestamps
       // - Parent-child relationships
       // - Trace/span IDs for correlation
 
+      if (invoice.Classification is not null)
+      {
+        invoice.Classification = await analysisOrchestrationService
+          .ResolveManualClassificationAsync(
+            invoice.Classification.Code,
+            ClassificationSystem.EcoicopV2,
+            cancellationToken)
+          .ConfigureAwait(false);
+      }
+
       await invoiceOrchestrationService
-        .CreateInvoiceObject(invoice)
+        .CreateInvoiceObject(invoice, userIdentifier, cancellationToken)
         .ConfigureAwait(false);
+
+      sw.Stop();
+      InvoiceMetrics.RecordOperation("create", "invoice", "success", sw.Elapsed.TotalMilliseconds);
 
       // Activity disposed automatically; duration recorded
     }).ConfigureAwait(false);
@@ -361,34 +431,56 @@ the safe shared exception mapper.
 
 ### 3.3 High-Performance Logging
 
+Excerpt from `Common/Configuration/ConfigProxyClient.cs`; the `LogConfigKeyHttpError` definition is shown in
+[2.2.2](#222-logging-infrastructure).
+
 ```csharp
-public class ConfigurationManager
+public sealed class ConfigProxyClient(HttpClient httpClient, ILogger<ConfigProxyClient> logger) : IConfigProxyClient
 {
-  private readonly ILogger<ConfigurationManager> _logger;
-
-  public string LoadOptionValue(string propertyName, string keyVaultName)
+  public async Task<ConfigValueResponse?> GetConfigValueAsync(string name, string? label = null, CancellationToken ct = default)
   {
-    // 1. Try configuration file
-    var configValue = configuration[propertyName];
-    if (configValue != null)
-    {
-      // Zero-allocation logging
-      _logger.LogOptionValueFromConfiguration(propertyName);
-      return configValue;
-    }
+    using var activity = ActivityGenerators.CommonPackageTracing.StartActivity("exp.config.fetch");
+    activity?.SetTag("config.key", name);
+    activity?.SetTag("peer.service", "exp");
+    activity?
+      .SetLayerContext("Broker", nameof(ConfigProxyClient))
+      .SetOperationType("Config.Read");
+    // ... correlation identifier, remaining tags, and log scope elided
 
-    // 2. Try Key Vault
-    var secretValue = keyVaultClient.GetSecret(propertyName);
-    if (secretValue != null)
+    try
     {
-      // Structured log with trace correlation
-      _logger.LogOptionValueFromKeyVault(propertyName, keyVaultName);
-      return secretValue;
-    }
+      var uri = $"/api/v1/config?name={Uri.EscapeDataString(name)}";
+      // ... optional label query parameter elided
 
-    // 3. Critical failure
-    _logger.LogOptionValueIsCompletelyMissing(propertyName, keyVaultName);
-    throw new InvalidOperationException($"Missing configuration: {propertyName}");
+      var requestUri = new Uri(uri, UriKind.Relative);
+      using var request = new HttpRequestMessage(HttpMethod.Get, requestUri);
+      // ... X-Request-Id header elided
+
+      using var response = await httpClient.SendAsync(request, ct).ConfigureAwait(false);
+
+      activity?.SetTag("http.response.status_code", (int)response.StatusCode);
+
+      if (!response.IsSuccessStatusCode)
+      {
+        activity?.SetStatus(ActivityStatusCode.Error, $"HTTP {(int)response.StatusCode}");
+
+        // Zero-allocation structured log (EventId 410_201), correlated with the active trace
+        logger.LogConfigKeyHttpError((int)response.StatusCode, name);
+        return null;
+      }
+
+      var result = await response.Content.ReadFromJsonAsync<ConfigValueResponse>(cancellationToken: ct).ConfigureAwait(false);
+      activity?.SetTag("config.resolved", result is not null);
+      return result;
+    }
+    catch (HttpRequestException ex)
+    {
+      activity?.SetStatus(ActivityStatusCode.Error, ex.Message);
+      // ... exception span event elided
+      logger.LogConfigKeyNetworkError(ex, name);
+      return null;
+    }
+    // ... timeout and JSON error handlers elided
   }
 }
 ```
@@ -396,27 +488,24 @@ public class ConfigurationManager
 ### 3.4 Automatic Instrumentation (No Code Changes)
 
 ```csharp
-// HTTP request automatically traced:
-public class InvoiceController : ControllerBase
-{
-  [HttpGet("{id}")]
-  public async Task<IActionResult> GetInvoice(Guid id)
-  {
-    // ASP.NET Core instrumentation automatically creates:
-    // - Span with http.method, http.route, http.status_code
-    // - Parent-child relationship with upstream requests
-    // - Correlation headers (traceparent, tracestate)
+// Invoices/Endpoints/InvoiceEndpoints.Mappings.cs: the mapping itself contains no tracing code.
+router // Retrieve a specific invoice, given its identifier.
+  .MapGet("/invoices/{id}", RetrieveSpecificInvoiceAsync)
+  .Produces<InvoiceResponseDto>(StatusCodes.Status200OK)
+  // ... remaining response metadata elided
+  .RequireAuthorization()
+  .RequireRateLimiting(RateLimitPolicies.StandardReads)
+  .WithName(nameof(RetrieveSpecificInvoiceAsync))
+  .WithRequestTimeout(RequestTimeoutPolicies.Crud);
 
-    var invoice = await dbContext.Invoices.FindAsync(id);
-
-    // EF Core instrumentation automatically traces:
-    // - SQL query execution time
-    // - Database connection details
-    // - Query parameters (if configured)
-
-    return Ok(invoice);
-  }
-}
+// ASP.NET Core instrumentation automatically creates:
+// - Server span with http.request.method, http.route, http.response.status_code
+// - Parent-child relationship with upstream requests
+// - Correlation headers (traceparent, tracestate)
+//
+// Child spans come from the handler's own InvoicePackageTracing activity (see 3.2), the Cosmos DB
+// broker activities, and the Azure.Cosmos.Operation source. Invoice reads use the raw CosmosClient,
+// not EF Core; EF Core instrumentation applies only to the SQL Server Identity store (AuthDbContext).
 ```
 
 ---
@@ -449,8 +538,10 @@ public class InvoiceController : ControllerBase
 
 - ❌ **Learning Curve**: Developers must understand Activity/Span concepts
 - ❌ **Configuration Complexity**: Multiple extension methods for full setup
-- ❌ **Package Dependencies**: Requires 7 OpenTelemetry NuGet packages
-- ❌ **Dual Telemetry**: Running both OTel and Application Insights SDK (temporary)
+- ❌ **Package Dependencies**: Requires 9 telemetry NuGet packages (8 `OpenTelemetry.*` packages plus
+  `Azure.Monitor.OpenTelemetry.Exporter`; see [Appendix A](#appendix-a-nuget-dependencies))
+- ❌ **Dual Telemetry**: The App Service Application Insights agent (`~3`) runs alongside OpenTelemetry export; the
+  `Microsoft.ApplicationInsights*` SDK packages are still referenced but not initialized in code
 
 ---
 
@@ -468,8 +559,10 @@ not affect business behavior.
 
 ## 6. Security Considerations
 
-The request instrumentation records the remote IP and, when available, the claim-derived user identifier as a span tag and baggage value. No
-consent gate is implemented for that enrichment. Treat both as personal data when defining access, retention, export, or deletion policy.
+The ASP.NET Core request enrichment records the remote IP as the `http.client.ip` span tag and, when a `sub` or `userId` claim is present,
+that value as the `enduser.id` span tag and `enduser.id` baggage. `ActivityEnrichingProcessor` copies baggage into `baggage.*` tags on spans
+that carry it. No consent gate is implemented for that enrichment. Treat these values as personal data when defining access, retention,
+export, or deletion policy.
 
 Application code must not add OCR/scan content, names, prompts, request bodies, credentials, authorization headers, connection strings, or
 raw provider responses to telemetry. The current shared exception recorder still emits exception type, message, and stack trace, and several
@@ -492,6 +585,8 @@ public void AddOTelTracing_ShouldRegisterActivitySources()
 {
   // Arrange
   var builder = WebApplication.CreateBuilder();
+  builder.Services.AddSingleton<IOptionsManager>(
+    new FakeOptionsManager(new LocalOptions()));
 
   // Act
   builder.AddOTelTracing();
@@ -505,27 +600,23 @@ public void AddOTelTracing_ShouldRegisterActivitySources()
 
 ### 7.2 Integration Tests
 
-**Approach**: Verify telemetry end-to-end with in-memory exporter
+**Approach**: Verify spans with an `ActivityListener`. Invoice tests use the `InvoiceActivityRecorder` helper
+(`sites/api.arolariu.ro/tests/arolariu.Backend.Domain.Tests/Invoices/Helpers/InvoiceActivityRecorder.cs`), which listens to the
+`arolariu.Backend.Domain.Invoices` source. In-memory exporter tests (`OpenTelemetry.Exporter.InMemory`) cover the health-check metrics and
+middleware.
 
 ```csharp
 [TestMethod]
 public async Task CreateInvoice_ShouldCreateActivitySpan()
 {
   // Arrange
-  var activities = new List<Activity>();
-  using var listener = new ActivityListener
-  {
-    ShouldListenTo = source => source.Name.StartsWith("arolariu.Backend"),
-    Sample = (ref ActivityCreationOptions<ActivityContext> _) => ActivitySamplingResult.AllData,
-    ActivityStarted = activity => activities.Add(activity)
-  };
-  ActivitySource.AddActivityListener(listener);
+  using var activities = new InvoiceActivityRecorder();
 
   // Act
-  await invoiceProcessingService.CreateInvoice(testInvoice);
+  await invoiceProcessingService.CreateInvoice(testInvoice, testInvoice.UserIdentifier, CancellationToken.None);
 
   // Assert
-  Assert.Contains(a => a.DisplayName == nameof(CreateInvoice), activities);
+  Assert.IsNotNull(activities.FindActivity("CreateInvoice"));
 }
 ```
 
@@ -553,10 +644,10 @@ public async Task CreateInvoice_ShouldCreateActivitySpan()
 
    ```csharp
    // Before
-   logger.LogInformation($"Option {propName} loaded from config");
+   logger.LogWarning($"exp returned HTTP {(int)response.StatusCode} for config key '{name}'.");
 
    // After
-   logger.LogOptionValueFromConfiguration(propName);
+   logger.LogConfigKeyHttpError((int)response.StatusCode, name);
    ```
 
 2. **Add activity tracing**:
@@ -577,7 +668,9 @@ public async Task CreateInvoice_ShouldCreateActivitySpan()
 ## 9. Documentation Requirements
 
 - [x] XML documentation on all telemetry classes
-- [x] README in `Common/Telemetry/` explaining usage patterns
+- [x] Usage guides in [`docs/backend/opentelemetry-guide.md`](../backend/opentelemetry-guide.md),
+      [`docs/backend/distributed-tracing.md`](../backend/distributed-tracing.md), and
+      [`docs/backend/event-id-registry.md`](../backend/event-id-registry.md)
 - [x] Architecture diagram showing telemetry flow
 - [x] Azure Application Insights dashboard setup guide
 - [ ] Runbook for common troubleshooting scenarios using telemetry
@@ -588,17 +681,22 @@ public async Task CreateInvoice_ShouldCreateActivitySpan()
 
 ### 10.1 Planned Enhancements
 
-- **Custom Metrics**: Business KPIs (invoices processed/hour, average processing time)
-- **Span Events**: Fine-grained operation markers within long-running activities
-- **Baggage Propagation**: Cross-service context propagation for user preferences
+- **Business KPI Dashboards**: Throughput and latency views (for example invoices processed per hour) built on the existing
+  `invoices.operations` and `invoices.operations.duration` metrics
+- **Span Events**: Fine-grained operation markers within long-running activities, beyond the current `invoice.soft_deleted`,
+  `merchant.soft_deleted`, and `access.denied` events
+- **Baggage Propagation**: Cross-service propagation of additional context (for example user preferences); today only `enduser.id` is added
+  as baggage
 - **Auto-Instrumentation**: Eliminate manual activity creation via source generators
 - **OpenTelemetry Collector**: Deploy OTEL Collector for advanced filtering/routing
 - **Distributed Context**: Propagate business context (tenant ID, user roles) across boundaries
 
 ### 10.2 Deprecation Plan
 
-- **Phase Out Application Insights SDK**: Once OTel feature parity achieved, remove legacy SDK
-- **Timeline**: Q2 2026 (after validating OTel custom events and metrics)
+- **Phase Out Application Insights SDK**: Remove the unused `Microsoft.ApplicationInsights`, `Microsoft.ApplicationInsights.AspNetCore`, and
+  `Microsoft.ApplicationInsights.DependencyCollector` package references, and decide whether to keep the App Service Application Insights
+  agent
+- **Timeline**: TBD (the original Q2 2026 target has passed)
 
 ---
 
@@ -616,16 +714,23 @@ public async Task CreateInvoice_ShouldCreateActivitySpan()
 
 ### Appendix A: NuGet Dependencies
 
+The API uses Central Package Management. Versions are pinned in `sites/api.arolariu.ro/Directory.Packages.props`:
+
 ```xml
-<PackageReference Include="OpenTelemetry" Version="1.13.1" />
-<PackageReference Include="OpenTelemetry.Api" Version="1.13.1" />
-<PackageReference Include="OpenTelemetry.Exporter.Console" Version="1.13.1" />
-<PackageReference Include="OpenTelemetry.Extensions.Hosting" Version="1.13.1" />
-<PackageReference Include="OpenTelemetry.Instrumentation.AspNetCore" Version="1.12.0" />
-<PackageReference Include="OpenTelemetry.Instrumentation.EntityFrameworkCore" Version="1.0.0-beta.11" />
-<PackageReference Include="OpenTelemetry.Instrumentation.Http" Version="1.12.0" />
-<PackageReference Include="Azure.Monitor.OpenTelemetry.Exporter" Version="1.4.0" />
+<PackageVersion Include="Azure.Monitor.OpenTelemetry.Exporter" Version="1.10.0" />
+<PackageVersion Include="OpenTelemetry" Version="1.20.1" />
+<PackageVersion Include="OpenTelemetry.Api" Version="1.20.1" />
+<PackageVersion Include="OpenTelemetry.Exporter.Console" Version="1.20.1" />
+<PackageVersion Include="OpenTelemetry.Exporter.OpenTelemetryProtocol" Version="1.20.1" />
+<PackageVersion Include="OpenTelemetry.Extensions.Hosting" Version="1.20.1" />
+<PackageVersion Include="OpenTelemetry.Instrumentation.AspNetCore" Version="1.20.1" />
+<PackageVersion Include="OpenTelemetry.Instrumentation.EntityFrameworkCore" Version="1.20.1-beta.1" />
+<PackageVersion Include="OpenTelemetry.Exporter.InMemory" Version="1.20.1" />
+<PackageVersion Include="OpenTelemetry.Instrumentation.Http" Version="1.20.1" />
 ```
+
+`sites/api.arolariu.ro/src/Common/arolariu.Backend.Common.csproj` references the runtime packages without versions, for example
+`<PackageReference Include="OpenTelemetry" />`. `OpenTelemetry.Exporter.InMemory` is referenced only by the Core test project.
 
 ### Appendix B: Activity Naming Conventions
 
@@ -661,11 +766,11 @@ dependencies
 
 ```kusto
 union traces, requests, dependencies
-| where operation_Id == "00-4bf92f3577b34da6a3ce929d0e0e4736-00f067aa0ba902b7-01"
+| where operation_Id == "4bf92f3577b34da6a3ce929d0e0e4736"
 | project timestamp, itemType, name, message, duration
 | order by timestamp asc
 ```
 
 ---
 
-**Document Version**: 1.0.0 **Last Updated**: 2025-10-20 **Reviewed By**: Alexandru Olariu **Status**: Implemented
+**Document Version**: 1.1.0 **Last Updated**: 2026-11-17 **Reviewed By**: Alexandru Olariu **Status**: Implemented

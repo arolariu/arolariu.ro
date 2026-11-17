@@ -39,8 +39,9 @@ description:
 5. For metadata, use the shared metadata helper through the route's existing typed `metadata` selector. For emails, follow the email-local
    translator and full-path helper rather than importing the React selector runtime.
 6. Preserve current locale defaults and unsupported-locale behavior unless a separately approved public behavior change requires otherwise.
-7. Run the repository-owned i18n generation. Inspect mutations: the generator may add missing locale keys as empty strings. Fill them and
-   rerun to a clean zero-missing result.
+7. Run the repository-owned i18n generation. Inspect mutations: the generator may add missing locale keys as empty strings. Fill them,
+   rerun, and then confirm no empty-string leaf remains (for example `git --no-pager grep -n '": ""' -- sites/arolariu.ro/messages/`). The
+   generator counts `""` as present, so a zero-missing rerun is not completion evidence.
 8. Never hand-edit `messages/en.d.json.ts`; refresh it through the configured next-intl declaration mechanism and compile the affected
    selectors.
 9. Run focused message/metadata/email/component tests and the smallest website verification needed for generated types.

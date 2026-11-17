@@ -5,7 +5,7 @@
 | Mode       | Behavior                                                                                      | Live owners to reopen                                                                                             |
 | ---------- | --------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------- |
 | Aspire     | AppHost runs applications natively and asks the selected engine for infrastructure containers | `package.json`; `scripts/container-runtime/aspire.ts`; `tooling/src/AppHost/Program.cs`                           |
-| Selfhost   | Management, storage, API, and website run through ordered Compose projects                    | `scripts/container-runtime/selfhost.ts`; `infra/Local/**/docker-compose.yml`                                      |
+| Selfhost   | Management, storage (plus exp), API, and website run through ordered Compose projects         | `scripts/container-runtime/selfhost.ts`; `infra/Local/**/docker-compose.yml`                                      |
 | Standalone | One root/Nx development target runs without AppHost coordination                              | Root `package.json`, the service package/project manifest, and its nearest `AGENTS.md`                            |
 | Ad hoc     | One supported image target or Compose file is operated through the engine adapter             | Root `package.json`; `scripts/container-runtime/{image,compose}.ts`; `infra/containers/**`; selected Compose file |
 
@@ -29,10 +29,11 @@ Read the graph before acting:
   `Infrastructure`, `Applications`, and `LocalDevelopment` slices under `tooling/src/AppHost`; `LocalApplication.Compose` composes those
   slices and owns the cross-slice startup dependencies. Infrastructure gates config/identity/bootstrap resources; those gate the API; the
   API gates the website. Independent sites should not block a narrow request unless their live declarations say otherwise.
-- Selfhost ordering is the command plan in `scripts/container-runtime/selfhost.ts`: management before storage and its bootstrap, then
-  backend, then frontend. Its normal teardown is the reverse.
-- Compose `depends_on`, profiles, health checks, networks, ports, and volumes in each live file refine the wrapper order. Do not infer them
-  from docs.
+- Selfhost ordering is the command plan in `scripts/container-runtime/selfhost.ts`: management before storage (started with
+  `--profile selfhost`, which also starts the profile-gated exp service) and its bootstrap, then backend, then frontend. Its normal teardown
+  is the reverse.
+- Compose profiles, health checks, networks, ports, and volumes in each live file refine the wrapper order; do not infer them from docs. No
+  file currently declares `depends_on`, so cross-project order comes only from the wrapper plan.
 
 ## URL and Health Lookup
 

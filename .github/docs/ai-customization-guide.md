@@ -205,9 +205,9 @@ copying the list into documentation.
 An MCP entry executes a package with the user's credentials. Adding, replacing, or broadening a server requires explicit approval and
 CODEOWNERS review.
 
-The current Playwright workspace entry exposes all tools from its local package. Treat it as code-capable rather than a read-only browser,
-keep native permissions/sandboxing in force, and use an isolated environment for hostile content. Pinning or narrowing that entry remains an
-approved MCP/dependency decision.
+The current Playwright workspace entry exposes all tools from the floating package that `npx` downloads at launch. Treat it as code-capable
+rather than a read-only browser, keep native permissions/sandboxing in force, and use an isolated environment for hostile content. Pinning
+or narrowing that entry remains an approved MCP/dependency decision.
 
 ## Event-Driven Maintenance
 

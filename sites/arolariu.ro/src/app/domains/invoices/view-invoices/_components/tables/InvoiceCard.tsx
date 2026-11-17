@@ -67,6 +67,7 @@ export function InvoiceCard({invoice, isSelected, loading, onToggleSelection}: R
   const t = useTranslations();
   const getMerchantById = useMerchantsStore((state) => state.getEntityById);
   const merchantName = getMerchantById(invoice.merchantReference)?.name ?? t((m) => m.pages.invoices.viewInvoices.gridView.unknownMerchant);
+  const displayName = invoice.name.length > 0 ? invoice.name : invoice.id;
   const scans = invoice.scans.length > 0 ? invoice.scans : [undefined];
   const hasMultipleScans = invoice.scans.length > 1;
 
@@ -80,14 +81,14 @@ export function InvoiceCard({invoice, isSelected, loading, onToggleSelection}: R
         <Checkbox
           checked={isSelected}
           onCheckedChange={handleToggleSelection}
-          aria-label={t((m) => m.pages.invoices.viewInvoices.tableView.aria.selectInvoice, {name: invoice.name})}
+          aria-label={t((m) => m.pages.invoices.viewInvoices.tableView.aria.selectInvoice, {name: displayName})}
           className={styles["frostedCheckbox"]}
         />
       </div>
       <Card className={styles["card"]}>
         <div className={styles["mediaContainer"]}>
           <Carousel
-            aria-label={t((m) => m.pages.invoices.viewInvoices.gridView.scansCarousel, {name: invoice.name})}
+            aria-label={t((m) => m.pages.invoices.viewInvoices.gridView.scansCarousel, {name: displayName})}
             className={styles["carousel"]}
             opts={{align: "start"}}>
             <CarouselContent className={styles["carouselContent"]}>
@@ -98,7 +99,7 @@ export function InvoiceCard({invoice, isSelected, loading, onToggleSelection}: R
                   <ScanMediaPreview
                     src={scan?.location ?? ""}
                     mediaKind={resolveInvoiceScanMediaKind(scan)}
-                    alt={`${invoice.name} scan ${index + 1}`}
+                    alt={`${displayName} scan ${index + 1}`}
                     loading={loading}
                   />
                 </CarouselItem>
@@ -132,7 +133,7 @@ export function InvoiceCard({invoice, isSelected, loading, onToggleSelection}: R
           </div>
         </div>
         <CardHeader className={styles["cardHeader"]}>
-          <CardTitle className={styles["cardTitle"]}>{invoice.name}</CardTitle>
+          <CardTitle className={styles["cardTitle"]}>{displayName}</CardTitle>
           <CardDescription>{invoice.description}</CardDescription>
         </CardHeader>
         <CardContent className={styles["cardContent"]}>

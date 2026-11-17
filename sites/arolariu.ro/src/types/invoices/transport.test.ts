@@ -151,16 +151,46 @@ describe("parseInvoiceResponse", () => {
       expect(invoice.createdAt).toBeInstanceOf(Date);
     });
 
-    it("keeps regular invoice parsing strict for an empty name", () => {
-      expect(() => parseInvoiceResponse({...validInvoiceJson, name: ""})).toThrow(
-        new TransportValidationError("invoice.name", "expected non-empty string"),
-      );
-    });
-
     it("still rejects a missing name from a creation response", () => {
       const {name: _name, ...withoutName} = validInvoiceJson;
 
       expect(() => parseInvoiceCreationResponse(withoutName)).toThrow(new TransportValidationError("invoice.name", "expected string"));
+    });
+  });
+
+  describe("stored invoices awaiting enrichment", () => {
+    /** Mirrors a persisted invoice whose name was never assigned: scan-created or interrupted before analysis. */
+    const unnamedInvoiceJson = {
+      ...validInvoiceJson,
+      name: "",
+      description: "",
+      classification: null,
+      merchantReference: EMPTY_GUID_VALUE,
+    };
+
+    it("accepts an empty name in a detail response", () => {
+      const invoice = parseInvoiceResponse(unnamedInvoiceJson);
+
+      expect(invoice.name).toBe("");
+      expect(invoice.merchantReference).toBe(EMPTY_GUID_VALUE);
+    });
+
+    it("keeps named and unnamed invoices together in a list response", () => {
+      const invoices = parseInvoicesResponse([validInvoiceJson, {...unnamedInvoiceJson, id: "a47ac10b-58cc-4372-a567-0e02b2c3d479"}]);
+
+      expect(invoices.map((invoice) => invoice.name)).toEqual(["Groceries", ""]);
+    });
+
+    it("still rejects a missing name", () => {
+      const {name: _name, ...withoutName} = unnamedInvoiceJson;
+
+      expect(() => parseInvoicesResponse([withoutName])).toThrow(new TransportValidationError("invoice.name", "expected string"));
+    });
+
+    it("still rejects a non-string name", () => {
+      expect(() => parseInvoiceResponse({...unnamedInvoiceJson, name: null})).toThrow(
+        new TransportValidationError("invoice.name", "expected string"),
+      );
     });
   });
 

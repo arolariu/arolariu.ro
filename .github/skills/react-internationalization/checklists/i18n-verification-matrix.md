@@ -4,7 +4,7 @@ Select rows affected by the message change.
 
 | Category                 | Prove                                                                                                |
 | ------------------------ | ---------------------------------------------------------------------------------------------------- |
-| Key parity               | `en`, `ro`, and `fr` have identical object/leaf paths                                                |
+| Key parity               | `en`, `ro`, and `fr` have identical object/leaf paths (`npm run doctor` → `react.i18n`)              |
 | Translation completeness | New values are meaningful and no generated empty placeholder remains                                 |
 | ICU variables            | Argument names and types align in every locale                                                       |
 | ICU branches             | Relevant plural/select zero, one, other, and named branches render correctly                         |
@@ -14,8 +14,8 @@ Select rows affected by the message change.
 | Metadata                 | Localized title/description use the shared helper and live `metadata` shape                          |
 | Email                    | Subject, preview/body, locale default, and interpolation work without importing the selector runtime |
 | Locale request           | Missing cookie default and unsupported-locale failure remain correct                                 |
-| Generated declaration    | Source-derived declaration includes the new path and is not manually edited                          |
-| Rename/removal           | No old selector or dictionary path remains                                                           |
+| Generated declaration    | Source-derived declaration has the new path and is not hand-edited (`npm run doctor` → `react.i18n`) |
+| Rename/removal           | No old selector or dictionary path remains (dictionaries: `npm run doctor` → `react.i18n`)           |
 
 Run the repository-owned generation first, inspect its changes, then run the smallest focused test and website compile/check that proves
 typed consumers.

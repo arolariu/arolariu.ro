@@ -24,8 +24,9 @@ Inspect which code created each URL before transferring this ownership elsewhere
 - `sites/arolariu.ro/src/app/domains/invoices/upload-scans/_hooks/useUploadProgressEvents.ts`
 - `sites/arolariu.ro/src/app/domains/invoices/upload-scans/_hooks/useUploadProgressEvents.test.tsx`
 
-This hook keeps the latest progress per upload and flushes it on the next animation frame. Its test proves coalescing; a material change
-should also prove cancellation on unmount and the intended multi-upload ordering.
+This hook keeps the latest progress per upload and flushes it on the next animation frame. Its tests prove coalescing to the latest event
+per upload, two-upload dispatch order with optional `error`/`blobUrl` forwarding, and pending-frame cancellation on unmount (none when
+idle); keep those cases when changing it.
 
 ## Route-local delayed prompt
 

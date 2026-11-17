@@ -1,4 +1,6 @@
-{/* @meta title: Introduction/Design Principles */}
+import {Meta} from "@storybook/addon-docs/blocks";
+
+<Meta title='Introduction/Design Principles' />
 
 # Design Principles
 
@@ -40,8 +42,8 @@ Components follow the **compound component** pattern:
 
 ## 🔧 Progressive Enhancement
 
-- Server Components by default
-- `"use client"` only when hooks/interactivity needed
+- Server-compatible where possible
+- `"use client"` only where hooks, event handlers, browser APIs, client context or Base UI client primitives require it
 - CSS Modules for scoped, predictable styles
 - No runtime CSS-in-JS overhead
 

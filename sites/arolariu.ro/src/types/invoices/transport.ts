@@ -547,12 +547,16 @@ function parsePaymentDetails(value: unknown, path: string): PaymentDetail[] {
  * Timestamp fields (`createdAt`, `lastUpdatedAt`, `paymentInformation.transactionDate`)
  * are converted from ISO strings to `Date` instances.
  *
+ * `name` must be a string but may be empty: the backend persists invoices with an empty
+ * name until enrichment assigns one, and scan-created invoices stay unnamed until analysis
+ * succeeds. Rejecting them would fail every list containing such an invoice.
+ *
  * @param value - The raw response body from an invoice API endpoint.
  * @returns A validated {@link Invoice} with `Date` timestamps.
  *
  * @throws {TransportValidationError} On any structural or type mismatch in the payload.
  */
-function parseInvoiceResponseInternal(value: unknown, allowEmptyName: boolean): Invoice {
+function parseInvoiceResponseInternal(value: unknown): Invoice {
   const path = "invoice";
   if (!isRecord(value)) throw new TransportValidationError(path, "expected object");
 
@@ -561,7 +565,7 @@ function parseInvoiceResponseInternal(value: unknown, allowEmptyName: boolean): 
   return {
     id: parseGuidField(value, "id", path),
     userIdentifier: parseGuidField(value, "userIdentifier", path),
-    name: allowEmptyName ? parseStringField(value, "name", path) : parseNonEmptyStringField(value, "name", path),
+    name: parseStringField(value, "name", path),
     description: parseOptionalStringField(value, "description", path),
     classification: parseStandardClassification(value["classification"] ?? null, `${path}.classification`),
     scans: parseArray(value["scans"], `${path}.scans`, parseScan),
@@ -586,23 +590,31 @@ function parseInvoiceResponseInternal(value: unknown, allowEmptyName: boolean): 
 }
 
 /**
- * Parses a regular invoice API response and requires a non-empty display name.
+ * Parses a stored invoice API response (detail, update, or patch).
  *
  * @param value - The raw response body from an invoice API endpoint.
- * @returns A validated {@link Invoice}.
+ * @returns A validated {@link Invoice}; `name` may be an empty string before enrichment.
+ *
+ * @throws {TransportValidationError} On any structural or type mismatch in the payload.
  */
 export function parseInvoiceResponse(value: unknown): Invoice {
-  return parseInvoiceResponseInternal(value, false);
+  return parseInvoiceResponseInternal(value);
 }
 
 /**
  * Parses the response from invoice creation, where enrichment has not assigned a display name yet.
  *
+ * @remarks
+ * Applies the same contract as {@link parseInvoiceResponse}; it remains a separate entry point
+ * so creation call sites document that an empty `name` is the expected state.
+ *
  * @param value - The raw response body from `POST /rest/v1/invoices`.
  * @returns A validated {@link Invoice}; `name` may be an empty string.
+ *
+ * @throws {TransportValidationError} On any structural or type mismatch in the payload.
  */
 export function parseInvoiceCreationResponse(value: unknown): Invoice {
-  return parseInvoiceResponseInternal(value, true);
+  return parseInvoiceResponseInternal(value);
 }
 
 /**

@@ -3,10 +3,9 @@
  * @module github/scripts/src/hygiene/projections/stepSummary
  *
  * @remarks
- * Minimal scorecard redesign (2026-05-31). The comment is composed from
- * GitHub-safe markdown only: verdict header, one provider scorecard, collapsed
- * provider details for failures/errors, optional collapsed stats details, and a
- * compact footer.
+ * GitHub-native overview and scorecard shared by PR comments and step summaries.
+ * Execution states, source changes, and tracked-folder measurements are separate;
+ * detailed evidence is collapsed without hiding actionable verification errors.
  */
 
 import * as core from "../../../helpers/sdk/core.ts";
@@ -17,6 +16,7 @@ import {type Finding, type GateResult, type HygieneReport, type ProviderOutcome}
 import {PROVIDER_ERROR_MESSAGE_LIMIT} from "../../../lib/hygiene/contracts.ts";
 import {redactEvidenceText} from "../../../helpers/reports/redact.ts";
 import {summarizePlanSelection} from "../../../lib/planning/presentation.ts";
+import {statsPayloadSchema, type StatsPayload, type FolderSize} from "../../../lib/hygiene/payloads.ts";
 
 const TOP_RULES_LIMIT = 5;
 const MAX_FAILING_TESTS_PER_SUITE = 10;
@@ -87,26 +87,43 @@ function visibleFindings(findings: readonly Finding[]): readonly Finding[] {
   return findings.filter((f) => f.kind !== "metric");
 }
 
-function formatDurationMs(ms: number): string {
-  if (ms < 1000) return `${ms}ms`;
-  if (ms < 60_000) return `${(ms / 1000).toFixed(1)}s`;
-  const m = Math.floor(ms / 60_000);
-  const s = Math.round((ms % 60_000) / 1000);
-  return `${m}m${s.toString().padStart(2, "0")}s`;
+function formatDurationMs(ms: number, precision = 3): string {
+  const milliseconds = Number(ms.toFixed(precision));
+  if (milliseconds < 1000) return `${milliseconds}ms`;
+  const seconds = Number((ms / 1000).toFixed(precision));
+  if (seconds < 60) return `${seconds}s`;
+  const minutes = Math.floor(seconds / 60);
+  const remainder = Number((seconds % 60).toFixed(precision));
+  return `${minutes}m${remainder < 10 ? "0" : ""}${remainder}s`;
+}
+
+function isSkipped(outcome: ProviderOutcome<unknown>): boolean {
+  return outcome.gateResult === "passed" && "executionStatus" in outcome && outcome.executionStatus === "skipped";
+}
+
+function skipSignal(outcome: ProviderOutcome<unknown>, report: HygieneReport): string {
+  const reason =
+    "skipReason" in outcome && typeof outcome.skipReason === "string" && outcome.skipReason.trim()
+      ? outcome.skipReason
+      : report.plan?.providers.find((provider) => provider.id === outcome.providerId)?.reason;
+  if (!reason) return "Skipped — reason unavailable";
+  if (reason === "No affected inputs for this provider") return "Skipped — no changed files affect this check";
+  if (reason === "No changed files") return "Skipped — no changed files";
+  return `Skipped — ${escapeHtml(reason)}`;
 }
 
 /**
  * Formats a byte count for compact display in GitHub markdown tables.
  *
  * @param bytes - The signed byte count to format.
- * @returns A human-readable byte, kilobyte, or megabyte string preserving sign.
+ * @returns A human-readable byte, kibibyte, or mebibyte string preserving sign.
  */
 export function formatHumanBytes(bytes: number): string {
   const sign = bytes < 0 ? "-" : "";
   const abs = Math.abs(bytes);
   if (abs < 1024) return `${sign}${abs} B`;
-  if (abs < 1024 * 1024) return `${sign}${(abs / 1024).toFixed(1)} KB`;
-  return `${sign}${(abs / (1024 * 1024)).toFixed(1)} MB`;
+  if (abs < 1024 * 1024) return `${sign}${(abs / 1024).toFixed(1)} KiB`;
+  return `${sign}${(abs / (1024 * 1024)).toFixed(1)} MiB`;
 }
 
 function countBySeverity(findings: readonly Finding[]): {errors: number; warnings: number; infos: number} {
@@ -126,6 +143,8 @@ interface ReportTotals {
   readonly passed: number;
   readonly failed: number;
   readonly errored: number;
+  readonly advisory: number;
+  readonly skipped: number;
   readonly durationMs: number;
 }
 
@@ -134,17 +153,24 @@ function collectReportTotals(report: HygieneReport): ReportTotals {
   let passed = 0;
   let failed = 0;
   let errored = 0;
+  let advisory = 0;
+  let skipped = 0;
   let durationMs = 0;
 
   for (const outcome of report.outcomes) {
     visible = visible.concat(visibleFindings(outcome.findings));
+    if (isSkipped(outcome)) {
+      skipped++;
+      continue;
+    }
     durationMs += outcome.durationMs;
     if (outcome.gateResult === "passed") passed++;
     else if (outcome.gateResult === "failed") failed++;
     else if (outcome.gateResult === "errored") errored++;
+    else if (outcome.gateResult === "advisory") advisory++;
   }
 
-  return {visibleFindings: visible, passed, failed, errored, durationMs};
+  return {visibleFindings: visible, passed, failed, errored, advisory, skipped, durationMs};
 }
 
 function topRule(findings: readonly Finding[]): string | null {
@@ -218,52 +244,114 @@ export function classifyProvider(id: string): ProviderCategory {
 export function renderHeader(report: HygieneReport): string {
   const totals = collectReportTotals(report);
   const {errors, warnings, infos} = countBySeverity(totals.visibleFindings);
-  const total = report.outcomes.length;
-
-  const lines: string[] = [];
-  lines.push(`## 🩺 Hygiene Check — ${resultVerdict(report.overallResult)}`);
-  lines.push("");
-  lines.push(
-    `> **${totals.passed}/${total} providers passed** · **${totals.visibleFindings.length} findings** · `
-      + `${errors} errors · ${warnings} warnings · ${infos} info · ${formatDurationMs(totals.durationMs)}`,
-  );
-  lines.push(`> Commit \`${report.commitSha.substring(0, 7)}\` · [view run](${report.workflowRunUrl})`);
-  return lines.join("\n");
+  const measurements = totals.visibleFindings.filter((finding) => finding.kind === "comparison" && finding.severity === "info").length;
+  const infoFindings = infos - measurements;
+  const executed = [
+    `${totals.passed} passed`,
+    ...(totals.failed ? [`${totals.failed} failed`] : []),
+    ...(totals.errored ? [`${totals.errored} errored`] : []),
+    ...(totals.advisory ? [`${totals.advisory} advisory`] : []),
+  ].join(" · ");
+  const diagnostics = [
+    `**${errors} error${errors === 1 ? "" : "s"} · ${warnings} warning${warnings === 1 ? "" : "s"}**`,
+    ...(infoFindings ? [`${infoFindings} informational finding${infoFindings === 1 ? "" : "s"}`] : []),
+    ...(measurements ? [`${measurements} informational measurement${measurements === 1 ? "" : "s"}`] : []),
+  ].join("<br>");
+  return [
+    `## 🩺 Hygiene Check — ${resultVerdict(report.overallResult)}`,
+    "",
+    `Commit \`${report.commitSha.substring(0, 7)}\`${report.plan ? ` · Scope **${report.plan.mode}**` : ""} · [Workflow run ↗](${report.workflowRunUrl})`,
+    "",
+    "| ✅ Executed checks | ⏭️ Skipped checks | 🚦 Diagnostics | ⏱️ Provider time |",
+    "|:---:|:---:|:---:|:---:|",
+    `| **${executed}** | **${totals.skipped} skipped** | ${diagnostics} | **${formatDurationMs(totals.durationMs, 0)}**<br>sum of provider durations |`,
+  ].join("\n");
 }
 
-function comparisonDiffLabel(finding: Finding): string {
-  if (finding.kind !== "comparison") return "= 0";
-
-  const absDiff = finding.unit === "B" ? formatHumanBytes(Math.abs(finding.diff)) : `${Math.abs(finding.diff)}${finding.unit ?? ""}`;
-
-  if (finding.diff > 0) return `▲ +${absDiff}`;
-  if (finding.diff < 0) return `▼ -${absDiff}`;
-  return "= 0";
+function statsPayload(outcome: ProviderOutcome<unknown>): StatsPayload | null {
+  return outcome.payload === null ? null : statsPayloadSchema.parse(outcome.payload);
 }
 
-function statsSignal(outcome: ProviderOutcome<unknown>): string {
-  const comparisons = outcome.findings.filter(isComparisonFinding);
-  if (comparisons.length === 0) return "no bundle changes";
+function measuredFolders(outcome: ProviderOutcome<unknown>): readonly FolderSize[] {
+  const payload = statsPayload(outcome);
+  if (payload) return payload.bundleSizes;
+  return outcome.findings
+    .filter(isComparisonFinding)
+    .filter((finding) => finding.unit === "B")
+    .map((finding) => ({
+      folder: finding.name.replace(/^bundle\./, ""),
+      mainTotal: finding.baseValue,
+      headTotal: finding.headValue,
+    }));
+}
 
-  const largest = comparisons.slice().sort((a, b) => Math.abs(b.diff) - Math.abs(a.diff))[0];
-  const changed = `${comparisons.length} file${comparisons.length === 1 ? "" : "s"} changed`;
-  return largest ? `${changed} · ${comparisonDiffLabel(largest)}` : changed;
+interface ChangeCount {
+  readonly label: string;
+  readonly icon: string;
+  readonly count: number;
+}
+
+function changeCounts(report: HygieneReport): readonly ChangeCount[] | null {
+  const changes = report.plan?.changes;
+  if (changes?.scope !== "known") return null;
+  const statuses = [
+    ["added", "🆕"],
+    ["modified", "✏️"],
+    ["deleted", "🗑️"],
+    ["renamed", "🔀"],
+    ["copied", "📋"],
+    ["type-changed", "🔄"],
+    ["unmerged", "⚠️"],
+  ] as const;
+  return statuses
+    .map(([label, icon]) => ({label, icon, count: changes.entries.filter((entry) => entry.kind === label).length}))
+    .filter((entry, index) => index < 3 || entry.count > 0);
+}
+
+function fileChangeSignal(report: HygieneReport, payload: StatsPayload | null): string {
+  const counts = changeCounts(report);
+  if (counts) {
+    const total = counts.reduce((sum, entry) => sum + entry.count, 0);
+    return `**${total} file${total === 1 ? "" : "s"}** · ${counts.map((entry) => `${entry.count} ${entry.label}`).join(" · ")}`;
+  }
+  return payload
+    ? `**${payload.filesChanged} file${payload.filesChanged === 1 ? "" : "s"}** · status breakdown unavailable`
+    : "File changes unavailable";
+}
+
+function signedBytes(bytes: number): string {
+  if (bytes === 0) return "= 0 B";
+  return `${bytes > 0 ? "+" : "-"}${formatHumanBytes(Math.abs(bytes))}`;
+}
+
+function footprintSignal(folders: readonly FolderSize[]): string {
+  if (folders.length === 0) return "No tracked-folder measurements";
+  const changed = folders.filter((folder) => folder.mainTotal !== folder.headTotal).length;
+  const delta = folders.reduce((sum, folder) => sum + folder.headTotal - folder.mainTotal, 0);
+  return `Tracked size vs \`main\`: net ${signedBytes(delta)} · ${changed} folder${changed === 1 ? "" : "s"} changed`;
+}
+
+function statsSignal(outcome: ProviderOutcome<unknown>, report: HygieneReport): string {
+  return `${fileChangeSignal(report, statsPayload(outcome))}\n${footprintSignal(measuredFolders(outcome))}`;
 }
 
 function testSignal(outcome: ProviderOutcome<unknown>): string | null {
   const payload = outcome.payload as TestSuitesPayloadLike | null;
   if (!payload) return null;
 
-  if (payload.failed > 0) return `**${payload.failed} failed** of ${payload.totalTests}`;
-  return `${payload.passed} passed`;
+  const skipped = payload.skipped > 0 ? ` · ${payload.skipped.toLocaleString("en-US")} tests skipped` : "";
+  if (payload.failed > 0)
+    return `**${payload.failed.toLocaleString("en-US")} failed** of ${payload.totalTests.toLocaleString("en-US")}${skipped}`;
+  return `**${payload.passed.toLocaleString("en-US")} passed**${skipped}`;
 }
 
-function providerSignal(outcome: ProviderOutcome<unknown>): string {
-  if ("executionStatus" in outcome && outcome.executionStatus === "skipped") return "planned skip";
+function providerSignal(outcome: ProviderOutcome<unknown>, report: HygieneReport): string {
   if (outcome.gateResult === "errored") return "runner error";
+  if (isSkipped(outcome)) return skipSignal(outcome, report);
+  if ("executionStatus" in outcome && outcome.executionStatus === "cancelled") return "execution cancelled";
 
   const category = classifyProvider(outcome.providerId);
-  if (category === "stats") return statsSignal(outcome);
+  if (category === "stats") return statsSignal(outcome, report);
 
   if (category === "test") {
     const signal = testSignal(outcome);
@@ -299,7 +387,9 @@ export function renderScorecard(report: HygieneReport): string {
     .slice()
     .sort((a, b) => providerSortIndex(a.providerId) - providerSortIndex(b.providerId))
     .map((outcome) => {
-      return `| ${MarkdownUtils.tableCell(providerLabel(outcome))} | ${resultEmoji(outcome.gateResult)} ${resultPill(outcome.gateResult)} | ${MarkdownUtils.tableCell(providerSignal(outcome))} | ${formatDurationMs(outcome.durationMs)} |`;
+      const skipped = isSkipped(outcome);
+      const result = skipped ? "⏭️ SKIP" : `${resultEmoji(outcome.gateResult)} ${resultPill(outcome.gateResult)}`;
+      return `| ${MarkdownUtils.tableCell(providerLabel(outcome))} | ${result} | ${MarkdownUtils.tableCell(providerSignal(outcome, report))} | ${skipped ? "—" : formatDurationMs(outcome.durationMs)} |`;
     });
   return [header, ...rows].join("\n");
 }
@@ -396,30 +486,85 @@ export function renderSuiteFailures(suite: SuiteResultLike): string {
 }
 
 /**
- * Renders collapsed bundle comparison details for the stats provider.
+ * Renders committed-folder sizes against main, not production bundle measurements.
  *
  * @param o - The stats provider outcome.
- * @returns Collapsed GitHub markdown details, or null when there are no comparison findings.
+ * @returns Collapsed GitHub markdown details, or null when no folder measurements exist.
  */
 export function renderStatsDetails(o: ProviderOutcome<unknown>): string | null {
-  const comparisons = o.findings.filter(isComparisonFinding);
-  if (comparisons.length === 0) return null;
-
-  const rows = comparisons.map((f) => {
-    const before = f.unit === "B" ? formatHumanBytes(f.baseValue) : `${f.baseValue}${f.unit ?? ""}`;
-    const after = f.unit === "B" ? formatHumanBytes(f.headValue) : `${f.headValue}${f.unit ?? ""}`;
-    return `| \`${MarkdownUtils.tableCell(escapeHtml(f.name))}\` | ${before} | ${after} | ${comparisonDiffLabel(f)} |`;
+  const folders = measuredFolders(o);
+  if (folders.length === 0) return null;
+  const rows = folders.map((folder) => {
+    const diff = folder.headTotal - folder.mainTotal;
+    const percent =
+      folder.mainTotal === 0
+        ? diff === 0
+          ? "0%"
+          : "new"
+        : `${diff > 0 ? "+" : ""}${Number(((diff / folder.mainTotal) * 100).toFixed(1))}%`;
+    const delta = diff === 0 ? "↔️ 0 B" : `${diff > 0 ? "📈" : "📉"} ${signedBytes(diff)}`;
+    return `| \`${MarkdownUtils.tableCell(escapeHtml(folder.folder))}\` | ${formatHumanBytes(folder.mainTotal)} | ${formatHumanBytes(folder.headTotal)} | ${delta} | ${percent} |`;
   });
 
   return [
     `<details>`,
-    `<summary>📦 Bundle stats · ${comparisons.length} file${comparisons.length === 1 ? "" : "s"} changed</summary>`,
+    `<summary>📦 Git-tracked folder size · vs main</summary>`,
     ``,
-    `| File | Before | After | Diff |`,
-    `|---|---:|---:|---:|`,
+    "> All committed files are counted, including documentation and screenshots. This is not a production bundle, compressed download, or deployed artifact measurement.",
+    "",
+    `| 📁 Folder | 🏠 Main | 🚀 PR head | ⚖️ Change | 📊 Relative |`,
+    `|---|---:|---:|---:|---:|`,
     ...rows,
+    "",
+    "**🔢 Exact bytes:**",
+    ...folders.map((folder) => {
+      const diff = folder.headTotal - folder.mainTotal;
+      return `- \`${MarkdownUtils.tableCell(escapeHtml(folder.folder))}\`: ${folder.mainTotal.toLocaleString("en-US")} → ${folder.headTotal.toLocaleString("en-US")} (${diff > 0 ? "+" : ""}${diff.toLocaleString("en-US")} B)`;
+    }),
+    "",
+    "Size comparisons use `main`; file and line counts use the PR merge-base diff.",
     `</details>`,
   ].join("\n");
+}
+
+function renderChangeDetails(report: HygieneReport): string {
+  const outcome = report.outcomes.find((item) => item.providerId === "stats");
+  if (!outcome || isSkipped(outcome) || outcome.gateResult === "errored") return "";
+  const payload = statsPayload(outcome);
+  const counts = changeCounts(report);
+  if (!counts && !payload) return "";
+  const total = counts ? counts.reduce((sum, entry) => sum + entry.count, 0) : payload?.filesChanged;
+  const churn = payload ? ` · +${payload.linesAdded.toLocaleString("en-US")} / −${payload.linesDeleted.toLocaleString("en-US")} lines` : "";
+  const lines = [
+    "<details>",
+    `<summary>📂 Change breakdown · ${total} file${total === 1 ? "" : "s"}${churn}</summary>`,
+    "",
+    "PR merge-base diff for this run.",
+    "",
+  ];
+  if (counts) {
+    lines.push(
+      `| ${counts.map((entry) => `${entry.icon} ${entry.label[0]?.toUpperCase()}${entry.label.slice(1)}`).join(" | ")} | 🗂️ Total |`,
+      `| ${counts.map(() => "---:").join(" | ")} | ---: |`,
+      `| ${counts.map((entry) => entry.count).join(" | ")} | ${total} |`,
+    );
+  } else {
+    lines.push("File status breakdown unavailable.");
+  }
+  if (payload) {
+    lines.push(
+      "",
+      "**🧩 Top file types:**",
+      ...payload.topExtensions.map((entry) => `- \`${MarkdownUtils.tableCell(escapeHtml(entry.extension))}\`: ${entry.count}`),
+    );
+    lines.push(
+      "",
+      "**📁 Top directories:**",
+      ...payload.topDirectories.map((entry) => `- \`${MarkdownUtils.tableCell(escapeHtml(entry.directory))}\`: ${entry.count}`),
+    );
+  }
+  lines.push("", "</details>");
+  return lines.join("\n");
 }
 
 function providerDetailsSummary(o: ProviderOutcome<unknown>): string {
@@ -505,20 +650,17 @@ export function renderProviderCard(o: ProviderOutcome<unknown>): string {
  * @returns A compact markdown attribution line.
  */
 export function renderFooter(report: HygieneReport): string {
-  return `_🤖 Hygiene v3 · [workflow run](${report.workflowRunUrl})_`;
+  return `_🤖 Hygiene v3${report.plan ? ` · Plan \`${report.plan.id.slice(0, 12)}\`` : ""} · [Full evidence & artifacts](${report.workflowRunUrl}#artifacts)_`;
 }
 
 /** Renders additive plan/provenance details only when versioned evidence is available. */
 function renderPlanEvidence(report: HygieneReport): string {
   if (!report.plan && !report.evidenceIssues?.length) return "";
-  const lines = ["### Selection plan", ""];
+  const lines: string[] = [];
   if (report.plan) {
-    const skipped = report.plan.providers.filter((provider) => !provider.selected);
-    lines.push(
-      `Scope: **${report.plan.mode}** · ${report.plan.providers.length - skipped.length} selected · ${skipped.length} skipped · plan \`${report.plan.id.slice(0, 12)}\``,
-    );
-    for (const provider of skipped) lines.push(`- \`${provider.id}\`: skipped - ${escapeHtml(provider.reason)}`);
-    lines.push("", summarizePlanSelection(report.plan).message);
+    const selection = summarizePlanSelection(report.plan);
+    if (report.plan.diagnostics.length > 0 || report.plan.mode === "full")
+      lines.push(`> ${selection.level === "warning" ? "⚠️" : "ℹ️"} ${selection.message}`, "");
     if (report.plan.diagnostics.length > 0)
       lines.push(
         report.workflowRunUrl
@@ -548,39 +690,28 @@ function renderPlanEvidence(report: HygieneReport): string {
 /**
  * Builds the full hygiene PR comment/step summary with explicit plan/evidence details.
  * @param report - Aggregate report retaining all valid outcomes and diagnostics.
- * @returns Complete GitHub-safe Markdown with existing check identities/layout.
+ * @returns Complete GitHub-safe Markdown retaining check identities and evidence.
  */
 export function buildStepSummary(report: HygieneReport): string {
   const cb = new CommentBuilder();
-
-  cb.addRaw(renderHeader(report));
-  cb.addRaw("\n\n");
-  const planEvidence = renderPlanEvidence(report);
-  if (planEvidence) {
-    cb.addRaw(planEvidence);
-    cb.addRaw("\n\n");
-  }
-  cb.addRaw(renderScorecard(report));
-  cb.addRaw("\n\n");
-
-  for (const o of report.outcomes) {
-    const card = renderProviderCard(o);
-    if (card.length > 0) {
-      cb.addRaw(card);
-      cb.addRaw("\n\n");
-    }
-  }
-
   const stats = report.outcomes.find((o) => o.providerId === "stats");
-  if (stats) {
-    const details = renderStatsDetails(stats);
-    if (details !== null) {
-      cb.addRaw(details);
-      cb.addRaw("\n\n");
-    }
-  }
-
-  cb.addRaw(renderFooter(report));
+  const sections = [
+    renderHeader(report),
+    renderPlanEvidence(report),
+    "### Check results",
+    renderScorecard(report),
+    ...report.outcomes.map(renderProviderCard),
+    renderChangeDetails(report),
+    stats ? renderStatsDetails(stats) : null,
+    "---",
+    renderFooter(report),
+  ];
+  cb.addRaw(
+    sections
+      .filter((section) => section?.trim())
+      .map((section) => section?.trim())
+      .join("\n\n"),
+  );
   return cb.build();
 }
 

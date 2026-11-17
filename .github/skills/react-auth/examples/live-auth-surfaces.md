@@ -5,9 +5,14 @@ These pointers describe current behavior. Read source and tests before proposing
 ## Clerk matcher
 
 - `sites/arolariu.ro/src/proxy.ts`
+- `sites/arolariu.ro/src/proxy.test.ts`
 
-The current protected route matcher contains `/admin(.*)`. The broader Next matcher also runs middleware for dynamic pages and API routes,
-but that does not make all of them protected. Changing either matcher is auth behavior and requires explicit approval.
+Admin protection is the custom `isProtectedAdminPath()` check, not a Clerk route matcher. It decodes the path (malformed encoding throws
+`MalformedAdminPathError` with `statusCode` 400), collapses repeated slashes, and tests the case-insensitive prefix `/^\/admin.*$/iu` before
+calling `auth.protect()`. `proxy.test.ts` pins that behavior, including the malformed-path failure, to Clerk's
+`createRouteMatcher(["/admin(.*)"])` for guest and authenticated requests. No admin route currently exists. The broader Next matcher also
+runs middleware for dynamic pages and API routes, but that does not make all of them protected. Changing either the admin path test or the
+Next matcher is auth behavior and requires explicit approval.
 
 ## Server-page redirect
 

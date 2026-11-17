@@ -2,28 +2,30 @@
 
 When developing e-mail templates, use pixels (px) instead of rem/em units because most e-mail clients do not support rem/em consistently.
 
-## Email utility wrapper
+## Shared layout and components
 
-For email-only utility classes, use the `Tailwind` wrapper from `react-email` inside the JSX/TSX template.
+Compose templates from the `emails/_components` barrel: wrap the content in `EmailLayout` and build it from `EmailCard`, `BulletList`,
+`DonutChart`, `KeyValueTable`, and `MetricsGrid`. Style with inline `style` objects that use the `BRAND`, `EMAIL_COLORS`, and
+`EMAIL_TYPOGRAPHY` tokens from `emails/_components/brand.ts`, plus the shared `EmailParagraphStyles`, `EmailLinkStyles`, and `EmailHrStyles`
+exported by `EmailLayout.tsx`.
 
 ```tsx
-import {Tailwind, Text} from "react-email";
-
-<Tailwind>
-  <Text className='bg-red-500 text-white p-4'>This is an email utility class</Text>
-</Tailwind>;
+import {BRAND, BulletList, EmailCard, EmailLayout, EmailLinkStyles, EmailParagraphStyles} from "../_components";
 ```
 
-## Logo sizes
+## Logo
 
-The small logo should be 96x96 pixels, with transparency. The large logo should be 384x384 pixels, with transparency.
+Emails render the remote `BRAND.logoUrl` at 140px (`emails/_components/brand.ts`, `EmailLayout.tsx`).
 
 ## Defining new templates
 
 Use `defineEmailTemplate({namespace, render})` from `emails/_lib/defineEmailTemplate.ts`. The HOF resolves the locale, loads the message
 bundle, constructs a namespace-scoped translator, and calls your `render` callback with `{locale, t, props}`. Attach `PreviewProps` on the
-returned function for `npm run email:dev` preview. The HOF also attaches `.namespace` and `.getSubject(locale, vars)` as static helpers —
-the `_registry.ts` map and the `sendEmail` action use these directly; you do not need to maintain a separate namespace mapping.
+returned function for the `npm run email` preview (run from `sites/arolariu.ro`). The HOF also attaches `.namespace` and
+`.getSubject(locale, vars)` as static helpers: the `sendEmail` action resolves the subject with
+`entry.template.getSubject(locale, subjectVars)`, and `_registry.test.ts` asserts that every registry template has a `.namespace`. The
+`_registry.ts` map only stores template references (plus `variantProps` for variant entries), so you do not need to maintain a separate
+namespace mapping.
 
 ## Variant entries (sharing a base template)
 

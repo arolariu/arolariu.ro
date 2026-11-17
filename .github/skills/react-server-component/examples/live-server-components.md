@@ -78,7 +78,9 @@ loading, and interaction to the island.
 ### Inspect
 
 Check which data is actually fetched on the server versus hydrated/fetched by the hook, how the fallback matches the island, and whether all
-success/error/ empty states are complete. Do not repeat this dual data strategy without a specific stale-while-revalidate requirement.
+success/error/empty states are complete. The page's server read, `fetchAaaSUserFromAuthService` (also used by
+`sites/arolariu.ro/src/app/auth/page.tsx`), is a `"use server"` export in `sites/arolariu.ro/src/lib/actions/user/fetchUser.ts`, not a
+private `server-only` helper. Do not repeat this dual data strategy without a specific stale-while-revalidate requirement.
 
 ## Dynamic route, transport validation, access, and not-found
 
@@ -98,8 +100,9 @@ passes normalized domain data to a client island.
 
 ### Inspect
 
-Trace every failure branch and the exact serialization contract. The access rules are route-specific security behavior; inspect them for
-ownership only and never copy or change them as a generic pattern.
+Trace every failure branch and the exact serialization contract. The page's reads (`fetchInvoice`, `fetchMerchant`, and
+`fetchBFFUserFromAuthService`) call `"use server"` modules rather than private `server-only` helpers. The access rules are route-specific
+security behavior; inspect them for ownership only and never copy or change them as a generic pattern.
 
 ## Auth redirect and middleware boundary
 
@@ -129,14 +132,16 @@ stop for approval if the task changes route visibility or authentication.
 - `sites/arolariu.ro/src/app/loading.tsx`
 - `sites/arolariu.ro/src/app/error.tsx`
 - `sites/arolariu.ro/src/app/error.test.tsx`
+- `sites/arolariu.ro/src/app/_components/RouteErrorContent.tsx`
+- `sites/arolariu.ro/src/app/_components/RouteErrorContent.test.tsx`
 - `sites/arolariu.ro/src/app/domains/invoices/view-invoices/loading.tsx`
 
 ### Why representative
 
 The files demonstrate server-rendered skeletons without duplicate landmarks and a client error boundary with a retry callback, safe digest
-display, and localized accessible status.
+display, and a localized assertive `role='alert'` region rendered by the shared `RouteErrorContent`.
 
 ### Inspect
 
-Compare the fallback geometry to the final route, confirm recovery and focus/ announcement semantics, and use a route-local boundary only
+Compare the fallback geometry to the final route, confirm recovery and focus/announcement semantics, and use a route-local boundary only
 when its behavior differs from the ancestor.

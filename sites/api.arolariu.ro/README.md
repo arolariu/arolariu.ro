@@ -88,12 +88,13 @@ The current root command contract and local orchestration details are in:
 
 ## HTTP and OpenAPI
 
-In the standard local configuration:
+The local base URL depends on the development mode: Aspire (the default) serves `https://localhost:5000`; the standalone `npm run dev:api`
+launch profile and the selfhost container serve `http://localhost:5000`.
 
 | Surface                    | Location                   |
 | -------------------------- | -------------------------- |
-| API                        | `http://localhost:5000`    |
-| Swagger UI                 | `http://localhost:5000/`   |
+| API                        | `<base URL>`               |
+| Swagger UI                 | `<base URL>/`              |
 | Swagger document           | `/swagger/v1/swagger.json` |
 | Microsoft OpenAPI document | `/openapi/v1.json`         |
 | Health                     | `/health`                  |

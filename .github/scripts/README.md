@@ -17,16 +17,19 @@ The [native facade catalog](helpers/sdk/fixtures/public-entrypoints.json) is a t
 export maps. Facades preserve native values, types, overloads, defaults, errors, and sentinels; decorators add documented stricter behavior.
 See the [helper guide](helpers/README.md).
 
-| Area                                                          | Owner                                                   |
-| ------------------------------------------------------------- | ------------------------------------------------------- |
-| Native Actions APIs                                           | `helpers/sdk/`                                          |
-| Checked exec, Git, filesystem, HTTP, cache, artifacts, GitHub | Narrow helper modules                                   |
-| Serialized Newman/Playwright/Vitest/JUnit/TRX/ESLint decoding | `helpers/newman/`, `playwright/`, `vitest/`, `reports/` |
-| Context, clock, and Actions/local identity                    | `lib/context.ts`                                        |
-| Graph wire validation and affected selection                  | `lib/planning/`                                         |
-| Provider metadata, payloads, execution, outcomes, aggregation | `lib/hygiene/`                                          |
-| Independent required/optional publication                     | `lib/reporting/`                                        |
-| Live and unit report applications                             | `lib/live-tests/`, `lib/unit-tests/`                    |
+| Area                                                                                       | Owner                                                   |
+| ------------------------------------------------------------------------------------------ | ------------------------------------------------------- |
+| Native Actions APIs                                                                        | `helpers/sdk/`                                          |
+| Checked exec, Git, filesystem, HTTP, cache, artifacts, GitHub                              | Narrow helper modules                                   |
+| Serialized Newman/Playwright/Vitest/JUnit/TRX/ESLint decoding                              | `helpers/newman/`, `playwright/`, `vitest/`, `reports/` |
+| Context, clock, and Actions/local identity                                                 | `lib/context.ts`                                        |
+| Graph wire validation and affected selection                                               | `lib/planning/`                                         |
+| Provider metadata, payloads, execution, outcomes, aggregation                              | `lib/hygiene/`                                          |
+| Workflow suite normalization (JUnit/TRX/Vitest to suites and findings)                     | `lib/testing/`                                          |
+| Independent required/optional publication                                                  | `lib/reporting/`                                        |
+| Reporting policy constants (comment markers, report limits; other values are legacy hints) | `lib/workflow-constants.ts`                             |
+| Live and unit report applications                                                          | `lib/live-tests/`, `lib/unit-tests/`                    |
+| Compatible shared type re-exports                                                          | `types/`                                                |
 
 Importing either `runLiveTestAction.ts` or `runUnitTestAction.ts` does not run it. Their default functions retain the existing workflow
 invocation style:
@@ -45,6 +48,17 @@ await runLiveTestAction();
 The plan always contains `format`, `lint`, `test-typescript`, `test-dotnet`, `test-python`, and `stats`. It selects their work and expensive
 setup; an unselected job still gets minimal Node/scripts bootstrap and emits an explicit planned-skip outcome. The gate requires all six
 records, including skips.
+
+The PR comment and Actions step summary share a GitHub-native overview and provider scorecard. Skipped checks are labelled **SKIP**, with
+their reason in the Signal column rather than counted as executed passes. The overview rounds the sum of executed-provider durations to
+whole units; individual check durations retain at most three decimal places. This sum is not workflow wall-clock time.
+
+Statistics count added, modified, deleted, and other file statuses from the validated PR merge-base change plan. Rename records count once.
+Unavailable status evidence is labelled explicitly, not reported as zero. Collapsed details retain line churn and file-type/directory
+counts. **Git-tracked folder size** compares all committed file bytes against `main`, including source, documentation, and screenshots; it
+does **not** measure production bundles, compressed downloads, or deployed artifacts. Binary units are labelled KiB/MiB. The signal shows
+the net change across measured folders, while details retain per-folder deltas and exact bytes. This baseline is independent of the PR
+target.
 
 Affected mode checks changed supported existing files first. Tests select owners and reverse graph consumers: a component change includes
 website tests. Renames retain both owners; deleted paths still affect tests but are not passed to path-based tools. CI scripts and root

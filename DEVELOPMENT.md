@@ -7,18 +7,19 @@
 | Tool                 | Version                           | Required                           | Install                                                                                                                                                        |
 | -------------------- | --------------------------------- | ---------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | **Git**              | Any                               | ✅ Yes                             | [git-scm.com](https://git-scm.com/) — bootstrap prerequisite; must be on `PATH`. `npm run setup` only probes for its presence — no minimum version is enforced |
-| **Node.js**          | ≥ 24                              | ✅ Yes                             | [nodejs.org](https://nodejs.org/) — bootstrap prerequisite; `npm run setup` never installs or upgrades it                                                      |
+| **Node.js**          | 24.15.0+ (24.x) or ≥ 26           | ✅ Yes                             | [nodejs.org](https://nodejs.org/) — bootstrap prerequisite; `npm run setup` never installs or upgrades it                                                      |
 | **npm**              | ≥ 11                              | ✅ Yes                             | Bundled with Node.js — bootstrap prerequisite                                                                                                                  |
 | **.NET SDK**         | 10.0                              | ✅ Yes                             | Prepared by `npm run setup` (SDK install requires your consent)                                                                                                |
 | **Python**           | 3.12                              | ✅ Yes                             | Prepared by `npm run setup` for the `exp` service — a declined or unavailable install fails this required phase and `npm run setup` exits `1`                  |
 | **Container engine** | Rancher Desktop or Podman Desktop | ✅ Yes (for Aspire/selfhost infra) | Selected and, with consent, installed by `npm run setup`; Docker Desktop is not supported                                                                      |
 
-> **First time?** Clone the repository, then run `npm run setup` — it restores root and `.github/scripts` dependencies, generates checkout
-> artifacts, prepares the .NET SDK/AppHost secrets/HTTPS certificate, an isolated Python virtual environment, the website's local `.env`
-> defaults, ensures Playwright's locked Chromium browser is installed, and selects/persists a Rancher Desktop or Podman Desktop container
-> engine. It never installs or upgrades Node.js or npm, and it does not build, type-check, test, or start any service. `python` and
-> `infrastructure` are both required phases — a declined or unavailable Python install, or no supported container engine, fails the run with
-> exit code `1`. Add `npm run setup -- --verbose` for diagnostic detail, `npm run setup -- --dry-run` to preview every planned mutation,
+> **First time?** Clone the repository, run `npm ci` to install the root dependencies, then run `npm run setup` — it validates the root npm
+> tree (it never installs it), restores `.github/scripts` dependencies, generates checkout artifacts, prepares the .NET SDK/AppHost
+> secrets/HTTPS certificate, an isolated Python virtual environment, the website's local `.env` defaults, ensures Playwright's locked
+> Chromium browser is installed, and selects/persists a Rancher Desktop or Podman Desktop container engine. It never installs or upgrades
+> Node.js or npm, and it does not build, type-check, test, or start any service. `python` and `infrastructure` are both required phases — a
+> declined or unavailable Python install, or no supported container engine, fails the run with exit code `1`. Add
+> `npm run setup -- --verbose` for diagnostic detail, `npm run setup -- --dry-run` to preview every planned mutation,
 > `npm run setup -- --yes` to approve system-scoped installs without prompting, and `npm run setup -- --engine rancher|podman` to select the
 > container engine explicitly.
 
@@ -31,21 +32,22 @@ There are three ways to develop locally. Choose based on your needs:
 |                         | Aspire (default)                                                                   | Selfhost (Compose)                                                      | Service-focused DevContainers                                          |
 | ----------------------- | ---------------------------------------------------------------------------------- | ----------------------------------------------------------------------- | ---------------------------------------------------------------------- |
 | **Best for**            | Day-to-day coding with fast iteration                                              | CI parity, deploy-mock-of-prod, container auditing                      | Focused service work with isolated tooling                             |
-| **Hot reload**          | ✅ All services (apps run native)                                                  | ❌ Production builds, no reload                                         | Selected service's manually started development server                 |
+| **Hot reload**          | ✅ JS and Python apps; .NET needs a resource restart or IDE-debugger Hot Reload    | ❌ Production builds, no reload                                         | Selected service's manually started development server                 |
 | **Infrastructure**      | ✅ SQL Server, Cosmos vNext emulator, Azurite, Redis via Aspire-managed containers | ✅ Full containerized stack                                             | None: no engine socket or nested daemon                                |
 | **Setup time**          | ~2 min (`npm run setup`)                                                           | ~5 min (container build + init)                                         | First creation restores selected dependencies; warm reopening does not |
 | **Prerequisites**       | Git, Node, npm (`npm run setup` prepares .NET, Python, and the engine)             | Rancher Desktop or Podman Desktop (`npm run setup` prepares the engine) | Rancher or Podman plus VS Code Dev Containers                          |
-| **VS Code integration** | Open `.code-workspace`, press F5                                                   | Open folder (services run in containers)                                | Automatic — extensions + tools pre-installed                           |
+| **VS Code integration** | Open the repo folder (or `arolariu.code-workspace`), press F5                      | Open folder (services run in containers)                                | Automatic — extensions + tools pre-installed                           |
 | **OS support**          | Windows, macOS, Linux                                                              | Windows, macOS, Linux                                                   | A supported Rancher/Podman host running Linux containers               |
 | **When to use**         | Writing code, debugging, unit tests                                                | Container auditing, CI parity, E2E against prod-shape                   | Work limited to one selected flavor                                    |
 
 ### Recommended workflow
 
 Use **Aspire mode** (`npm run dev`). Aspire 13.x's AppHost (`tooling/src/AppHost/Program.cs`) runs each app natively (dotnet / Next.js /
-SvelteKit / Docusaurus / uvicorn) for full hot reload while spawning infrastructure (SQL Server, Cosmos vNext emulator, Azurite, Redis) as
-Aspire-managed containers. The Aspire dashboard at `https://localhost:17080` surfaces live OTel traces, metrics, and logs.
+SvelteKit / Docusaurus / uvicorn) while spawning infrastructure (SQL Server, Cosmos vNext emulator, Azurite, Redis) as Aspire-managed
+containers. JavaScript and Python apps hot-reload; .NET changes need a resource restart or IDE-debugger Hot Reload. The Aspire dashboard at
+`https://localhost:17080` surfaces live OTel traces, metrics, and logs.
 
-See **[AGENTS.md → Local Dev — Aspire vs Selfhost](AGENTS.md#local-dev--aspire-vs-selfhost)** for the canonical mode reference.
+See **[AGENTS.md → Local Development Modes](AGENTS.md#local-development-modes)** for the canonical mode reference.
 
 ---
 
@@ -53,16 +55,17 @@ See **[AGENTS.md → Local Dev — Aspire vs Selfhost](AGENTS.md#local-dev--aspi
 
 ### 🏆 Recommended: Aspire Mode (apps native + infra in Aspire-managed containers)
 
-This is the primary development workflow — Aspire orchestrates real infrastructure containers while your apps run native with full hot
-reload.
+This is the primary development workflow — Aspire orchestrates real infrastructure containers while your apps run natively (JavaScript and
+Python apps hot-reload; .NET changes need a resource restart or IDE-debugger Hot Reload).
 
 ```bash
 # 1. Clone
 git clone https://github.com/arolariu/arolariu.ro.git
 cd arolariu.ro
 
-# 2. One-command onboarding, then confirm workspace health
-npm run setup        # restores dependencies; prepares .NET, Python, generated artifacts, and the container engine
+# 2. Install root dependencies, run onboarding, then confirm workspace health
+npm ci               # installs the root npm tree (setup validates it but never installs it)
+npm run setup        # validates root deps; restores .github/scripts; prepares .NET, Python, generated artifacts, and the container engine
 npm run doctor       # diagnoses workspace health
 
 # 3. Start everything (Aspire AppHost orchestrates apps + infra)
@@ -74,12 +77,13 @@ npm run dev          # ← This is what you'll use every day (alias: npm run dev
 1. ✅ Runs `dotnet run --project tooling/src/AppHost` — the Aspire AppHost
 2. 🐳 Spawns Aspire-managed containers: SQL Server, Cosmos vNext emulator, Redis, Azurite
 3. ⏳ Waits for infra health, initializes schemas
-4. 🚀 Starts each app natively with hot reload — dotnet, npm dev scripts, uvicorn
+4. 🚀 Starts each app natively — npm dev scripts and uvicorn hot-reload; .NET projects run without `dotnet watch`, so .NET changes need a
+   resource restart or IDE-debugger Hot Reload
 5. 📊 Exposes the Aspire dashboard at `https://localhost:17080` with live OTel traces / metrics / logs
 
-Local data persists across restarts. First use initializes the three-persona scenario; the dashboard's confirmed **Reset local data** action
-is the destructive path. Review the [owned-store scope and recovery behavior](infra/Local/readme.md#persistent-data-and-explicit-reset)
-before using it.
+Local data persists across restarts. First use initializes the four-persona scenario (Alice, Bob, Charlie, Dmitryi); the dashboard's
+confirmed **Reset local data** action is the destructive path. Review the
+[owned-store scope and recovery behavior](infra/Local/readme.md#persistent-data-and-explicit-reset) before using it.
 
 > **Pressing F5 in VS Code / Visual Studio 2026** runs the same AppHost — the only difference is the IDE attaches a debugger.
 
@@ -98,24 +102,24 @@ Use these when narrowly iterating on a single service and you don't need cross-s
 
 **After startup, your services are at:**
 
-| Service | URL                    | Mode                              |
-| ------- | ---------------------- | --------------------------------- |
-| Website | https://localhost:3000 | ✅ Native, Turbopack hot reload   |
-| API     | https://localhost:5000 | ✅ Native, .NET Hot Reload        |
-| exp     | http://localhost:5002  | ✅ Native, uvicorn --reload       |
-| CV      | http://localhost:4173  | ✅ Native, Vite HMR               |
-| docs    | http://localhost:3100  | ✅ Native, Docusaurus dev         |
-| status  | http://localhost:3002  | ✅ Native, SvelteKit (AddViteApp) |
+| Service | URL                    | Mode                                                   |
+| ------- | ---------------------- | ------------------------------------------------------ |
+| Website | https://localhost:3000 | ✅ Native, Turbopack hot reload                        |
+| API     | https://localhost:5000 | ✅ Native; resource restart or IDE-debugger Hot Reload |
+| exp     | http://localhost:5002  | ✅ Native, uvicorn --reload                            |
+| CV      | http://localhost:4173  | ✅ Native, Vite HMR                                    |
+| docs    | http://localhost:3100  | ✅ Native, Docusaurus dev                              |
+| status  | http://localhost:3002  | ✅ Native, SvelteKit (AddViteApp)                      |
 
 **Infrastructure dashboards:**
 
-| Service           | URL                                                        |
-| ----------------- | ---------------------------------------------------------- |
-| Aspire Dashboard  | https://localhost:17080                                    |
-| CosmosDB Explorer | http://localhost:1234                                      |
-| SQL Server        | localhost:8082 (credentials surfaced via Aspire dashboard) |
-| Redis             | localhost:6379                                             |
-| Azurite Blobs     | http://localhost:10000                                     |
+| Service           | URL                                                                           |
+| ----------------- | ----------------------------------------------------------------------------- |
+| Aspire Dashboard  | https://localhost:17080                                                       |
+| CosmosDB Explorer | Aspire dashboard → `cosmos` resource → Data Explorer link (dynamic host port) |
+| SQL Server        | localhost:8082 (credentials surfaced via Aspire dashboard)                    |
+| Redis             | localhost:6379                                                                |
+| Azurite Blobs     | http://localhost:10000                                                        |
 
 **Stopping:**
 
@@ -173,10 +177,10 @@ npm run dev:website       # Just the website with hot reload — no AppHost, no 
 | Service    | Technology         | What reloads instantly                    | What requires restart                          |
 | ---------- | ------------------ | ----------------------------------------- | ---------------------------------------------- |
 | Website    | Next.js Turbopack  | Components, pages, styles, server actions | `next.config.ts`, middleware, env vars         |
-| API        | `dotnet watch`     | Controllers, services, DTOs               | Startup config, DI registration, NuGet changes |
+| API        | `dotnet watch`     | Endpoints, services, DTOs                 | Startup config, DI registration, NuGet changes |
 | exp        | `uvicorn --reload` | All Python files                          | `requirements.txt` changes                     |
 | Components | `rslib --watch`    | Component source files                    | `rslib.config.ts` changes                      |
-| CV         | Vite HMR           | Svelte components, styles                 | `svelte.config.js`, `vite.config.js`           |
+| CV         | Vite HMR           | Svelte components, styles                 | `svelte.config.js`, `vite.config.ts`           |
 
 > **Note:** Without a running container engine, the API will build and start but crash because it can't reach CosmosDB/SQL. This is fine for
 > frontend-only work.
@@ -272,29 +276,25 @@ simultaneous host and container builds.
 
 ---
 
-## Developer Roles & Workspaces
+## VS Code Workspace
 
-Open the workspace file that matches your role for a tailored VS Code experience with pre-configured extensions, debug profiles, and tasks:
-
-| Role          | Workspace File                     | What You'll Work On                          |
-| ------------- | ---------------------------------- | -------------------------------------------- |
-| **Frontend**  | `.vscode/frontend.code-workspace`  | Next.js website, component library, CV site  |
-| **Backend**   | `.vscode/backend.code-workspace`   | .NET API, Python exp service                 |
-| **Fullstack** | `.vscode/fullstack.code-workspace` | Everything — includes compound debug configs |
-
-**To open:** File → Open Workspace from File → select the `.code-workspace` file.
+Open the repository folder in VS Code — or the root [`arolariu.code-workspace`](arolariu.code-workspace), a single-root workspace that pins
+`arolariu.slnx` as the default .NET solution. There are no role-specific workspace files: every launch configuration, task, and recommended
+extension lives in `.vscode/` and is described in [.vscode/README.md](.vscode/README.md).
 
 ---
 
 ## Service Map
 
-| Service                  | Port | Dev Command              | Hot Reload          | Health Check                     |
-| ------------------------ | ---- | ------------------------ | ------------------- | -------------------------------- |
-| **Website** (Next.js)    | 3000 | `npm run dev:website`    | ✅ Turbopack HMR    | http://localhost:3000            |
-| **API** (.NET)           | 5000 | `npm run dev:api`        | ✅ dotnet watch     | http://localhost:5000/health     |
-| **exp** (Python FastAPI) | 5002 | `npm run dev:exp`        | ✅ uvicorn --reload | http://localhost:5002/api/health |
-| **Components** (rslib)   | —    | `npm run dev:components` | ✅ rslib watch      | _watch mode, no server_          |
-| **CV Site** (SvelteKit)  | 5173 | `npm run dev:cv`         | ✅ Vite HMR         | http://localhost:5173            |
+| Service                  | Port | Dev Command              | Hot Reload          | Health Check                      |
+| ------------------------ | ---- | ------------------------ | ------------------- | --------------------------------- |
+| **Website** (Next.js)    | 3000 | `npm run dev:website`    | ✅ Turbopack HMR    | https://localhost:3000/api/health |
+| **API** (.NET)           | 5000 | `npm run dev:api`        | ✅ dotnet watch     | http://localhost:5000/health      |
+| **exp** (Python FastAPI) | 5002 | `npm run dev:exp`        | ✅ uvicorn --reload | http://localhost:5002/api/health  |
+| **Components** (rslib)   | —    | `npm run dev:components` | ✅ rslib watch      | _watch mode, no server_           |
+| **CV Site** (SvelteKit)  | 5173 | `npm run dev:cv`         | ✅ Vite HMR         | http://localhost:5173             |
+| **Docs** (Docusaurus)    | 3100 | `npm run dev:docs`       | ✅ Docusaurus dev   | http://localhost:3100             |
+| **Status** (SvelteKit)   | 5174 | `npm run dev:status`     | ✅ Vite HMR         | http://localhost:5174             |
 
 > **Storybook** for interactive component development is available via the website workspace: `cd sites/arolariu.ro && npm run storybook`
 > (port 6006).
@@ -326,24 +326,26 @@ npm run dev:api          # .NET API standalone (no AppHost; needs infra separate
 npm run dev:exp          # Python exp service standalone
 npm run dev:components   # Component library watch mode
 npm run dev:cv           # SvelteKit CV site standalone
+npm run dev:docs         # Docusaurus documentation site standalone (port 3100)
+npm run dev:status       # SvelteKit status site standalone (port 5174)
 ```
 
 ### Testing
 
 ```bash
 npm run test             # All tests
-npm run test:website     # Website unit tests (Vitest)
-npm run test:api         # API tests (MSTest)
+npm run test:website     # Website Vitest + Playwright E2E + Storybook tests
+npm run test:api         # MSTest suites in arolariu.slnx (API + tooling)
 npm run test:exp         # exp tests (pytest)
 npm run test:unit        # All unit tests
-npm run test:e2e         # All E2E tests (Playwright + Newman)
+npm run test:e2e         # Newman/Postman E2E collections (frontend, backend, cv; production unless E2E_TEST_ENVIRONMENT=local)
 ```
 
 ### Code Quality
 
 ```bash
-npm run lint             # ESLint (20+ plugins)
-npm run format           # Prettier formatting
+npm run lint             # ESLint + svelte-check + dotnet format/build verification + Ruff
+npm run format           # Prettier + dotnet format + Ruff (writes changes)
 npm run doctor           # Workspace health diagnostics
 npm run status           # Monorepo status dashboard
 ```
@@ -486,8 +488,11 @@ only after reading that evidence.
 
 ### How Config Works
 
-In production and selfhost mode, all runtime config flows through the **exp** service — the website and API fetch config values from
-`http://exp/api/v1/config` at runtime.
+Runtime config flows through the **exp** service in every mode. The API and website use `EXP_PROXY_URL` when it is set — Aspire injects the
+exp endpoint, selfhost Compose sets `http://exp:8080`, and the standalone API (`npm run dev:api`) uses `http://localhost:5002` — otherwise
+`https://exp.arolariu.ro` in Azure, or `http://exp` by default. The API fetches each key from `/api/v1/config?name=<key>`; the website loads
+`/api/v1/run-time?for=website` at startup and fetches any other key from `/api/v1/config?name=<key>`. Local website runs fall back to `.env`
+values when exp is unreachable within its 2-second deadline; cloud runs fail startup instead.
 
 For bare-metal local development, environment variables are set via `sites/arolariu.ro/.env`, which `npm run setup` additively populates
 with core local defaults (`SITE_ENV`, `SITE_NAME`, `SITE_URL`) without overwriting existing entries. `npm run generate:env` can also
@@ -514,83 +519,62 @@ manual, destructive regeneration command, not a step to run after `npm run setup
 
 ## Debugging
 
-All services support **debugging with breakpoints** AND **hot reload simultaneously** from VS Code.
+VS Code debug configurations live in [.vscode/launch.json](.vscode/launch.json) and tasks in [.vscode/tasks.json](.vscode/tasks.json);
+[.vscode/README.md](.vscode/README.md) summarizes them.
 
 ### Quick Start: Debug Any Service
 
-1. Open a `.code-workspace` file for your role (or the repo root)
+1. Open the repository folder (or `arolariu.code-workspace`) in VS Code
 2. Go to **Run & Debug** panel (`Ctrl+Shift+D`)
-3. Select a debug profile from the dropdown
+3. Select a debug configuration from the dropdown
 4. Press `F5` to start debugging
 5. Set breakpoints by clicking the gutter (left of line numbers)
 
-### Debug Profiles
+### Debug Configurations
 
-| Profile                             | Service           | Breakpoints           | Hot Reload            | Workspace                 |
-| ----------------------------------- | ----------------- | --------------------- | --------------------- | ------------------------- |
-| **Next.js: Debug Full Stack**       | Website           | ✅ Server + client    | ✅ Turbopack HMR      | Root, Frontend, Fullstack |
-| **Next.js: Debug Client-Side**      | Website (browser) | ✅ Client components  | ✅ Turbopack HMR      | Root                      |
-| **.NET API: Debug**                 | API               | ✅ C# breakpoints     | ✅ Hot Reload on save | Root, Backend, Fullstack  |
-| **Python: exp FastAPI**             | exp               | ✅ Python breakpoints | ✅ uvicorn --reload   | Root, Backend, Fullstack  |
-| **SvelteKit: CV Debug**             | CV site           | ✅ Server-side        | ✅ Vite HMR           | Frontend, Fullstack       |
-| **Full Stack: Website + API + exp** | All three         | ✅ All                | ✅ All                | Root, Fullstack           |
+| Configuration                                       | What it starts                                                                             |
+| --------------------------------------------------- | ------------------------------------------------------------------------------------------ |
+| **🚀 Full stack (Aspire)**                          | Aspire extension runs `tooling/src/AppHost` with AppHost, .NET, Node, and Python debuggers |
+| **🚀 [Podman]/[Rancher] Full stack (Aspire)**       | Same, with `ASPIRE_CONTAINER_RUNTIME` set to `podman` or `docker` (Rancher Desktop)        |
+| **🚀 Full stack (no debug)** (+ [Podman]/[Rancher]) | The AppHost without debuggers                                                              |
+| **🪡 Attach to Next.js (Aspire)**                   | Attaches to a Node.js inspector on port 9229, mapped to `sites/arolariu.ro`                |
+| **🌐 Website only (standalone)**                    | `npm run dev` in `sites/arolariu.ro` in a debug terminal                                   |
+| **🔧 API only (standalone)**                        | `sites/api.arolariu.ro/src/Core/arolariu.Backend.Core.csproj` under the C# debugger        |
+| **🔗 Attach to running .NET process**               | Attaches the C# debugger to a running .NET process you select                              |
+| **🧭 Next.js: Debug Client-Side (Edge)**            | Microsoft Edge at `https://localhost:3000` with source maps for `sites/arolariu.ro`        |
+| **🐍 Python: exp FastAPI Debug**                    | `uvicorn main:app --reload` on `127.0.0.1:5002` under debugpy, with `INFRA=local`          |
 
-### How Each Service Achieves Debug + Hot Reload
+### How Debugging and Reload Interact
+
+**Full stack (Aspire):**
+
+- The AppHost starts its own infrastructure containers and every app resource (.NET projects, the JavaScript apps' npm scripts, and uvicorn
+  for exp); no `preLaunchTask` is involved
+- The Aspire extension applies the configuration's `debuggers` settings to the AppHost and to .NET, Node.js, and Python resources
+- .NET projects run without `dotnet watch`, so C# changes need a resource restart or IDE-debugger Hot Reload
 
 **Website (Next.js):**
 
-- Debugger: Node.js `--inspect` flag attaches VS Code's debugger
+- Debugger: the website's `dev` script starts `next dev --inspect`; attach with **🪡 Attach to Next.js (Aspire)** or debug the browser with
+  **🧭 Next.js: Debug Client-Side (Edge)**
 - Hot reload: Turbopack Fast Refresh runs independently of the debugger
-- Both work simultaneously — edit a component, see it refresh, hit breakpoints in server actions
-
-**API (.NET):**
-
-- Debugger: C# DevKit launches and attaches automatically
-- Hot reload: C# DevKit's built-in Hot Reload applies changes on save (no `dotnet watch` needed)
-- Setting `dotnet.hotReload.applyOnSave: true` is pre-configured in backend/fullstack workspaces
-- Edit a controller → save → changes apply without restart → breakpoints continue working
 
 **exp (Python FastAPI):**
 
-- Debugger: debugpy attaches to the uvicorn process
-- Hot reload: `--reload` flag makes uvicorn watch for file changes
-- Both work simultaneously — edit a route, uvicorn restarts, debugpy re-attaches
-
-**CV (SvelteKit):**
-
-- Debugger: Node.js `--inspect` attaches to Vite dev server
-- Hot reload: Vite HMR runs independently
-- Set breakpoints in `+page.server.ts` load functions and API routes
-
-### One-Click Full Stack Debug
-
-The **"Full Stack: Website + API + exp"** compound is a true one-click experience:
-
-1. **Press F5** (or select from the debug dropdown)
-2. The `preLaunchTask` automatically starts local container infrastructure (CosmosDB, SQL, Redis, Azurite)
-3. All three services launch with debuggers attached
-4. Set breakpoints across the entire stack — Next.js → .NET API → Python exp
-
-No manual container startup is required. If the infrastructure is already running, the preLaunchTask completes in ~3 seconds.
-
-**What you can do:**
-
-- Set a breakpoint in a Next.js server action
-- Set a breakpoint in the .NET controller it calls
-- Set a breakpoint in the exp config endpoint
-- Step through the entire request chain across all three services
-- Edit code → hot reload applies → breakpoints continue working
+- Debugger: **🐍 Python: exp FastAPI Debug** runs uvicorn under debugpy
+- Hot reload: `--reload` restarts uvicorn when Python files change
 
 ### VS Code Tasks
 
 Run tasks from the Command Palette (`Ctrl+Shift+P` → "Tasks: Run Task"):
 
-- **Infra: Setup Docker** — starts local container infrastructure (used automatically by debug compound)
-- **Dev: Website** / **Dev: API** / **Dev: exp Service** — start individual services (no debugger)
-- **Dev: All Services** — start everything in parallel (no debugger)
-- **Docker: Start/Stop Local Stack** — manage the selfhost Compose environment
-- **Tests:** / **Checks:** — run tests and code quality tools
-- **Health: Doctor Check** — diagnose workspace issues
+- **Aspire: run [Podman]** / **Aspire: run [Rancher]** — `npm run dev:aspire:podman` / `npm run dev:aspire:rancher` (no debugger)
+- **Selfhost: up** / **Selfhost: down** — `infra/Local/selfhost-start.sh` / `infra/Local/selfhost-stop.sh` (the selfhost Compose stack)
+- **Lint** / **Format** / **Test (unit)** — `npm run lint` / `npm run format` / `npm run test:unit`
+- **Generate** — runs `npm run generate` without task arguments, which generates nothing; run `npm run generate -- artifacts gql i18n`
+  instead
+- **build** / **publish** — `dotnet build` / `dotnet publish` on `arolariu.slnx`
+- **watch** — `dotnet watch run --project tooling/src/AppHost/AppHost.csproj`
 
 ---
 
@@ -605,14 +589,16 @@ arolariu.ro/
 │   ├── api.arolariu.ro/     # .NET 10 API (DDD + The Standard)
 │   ├── exp.arolariu.ro/     # Python FastAPI (config & feature flags)
 │   ├── cv.arolariu.ro/      # SvelteKit CV site (standalone)
-│   └── docs.arolariu.ro/    # DocFX documentation
+│   ├── status.arolariu.ro/  # SvelteKit service-status site (standalone)
+│   └── docs.arolariu.ro/    # Docusaurus documentation site
 ├── infra/
 │   ├── Azure/Bicep/         # Infrastructure as Code
 │   ├── Local/               # Selfhost Compose stack
 │   └── containers/          # Dockerfiles
+├── tooling/                 # .NET Aspire AppHost + local-development projects and tests
 ├── scripts/                 # Build & utility scripts
 ├── docs/rfc/                # Architecture Decision Records
-└── .vscode/                 # Editor config + workspace profiles
+└── .vscode/                 # Editor settings, launch configs, tasks
 ```
 
 ### Dependency Flow
@@ -633,7 +619,7 @@ sites/arolariu.ro ←── API calls ──→ sites/api.arolariu.ro
 
 | Issue                                                | Solution                                                                                                                                                                                                                                                                                                               |
 | ---------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `npm run setup` fails                                | Confirm Git, Node 24+, and npm 11+ are installed, then rerun `npm run setup -- --verbose` for per-phase evidence                                                                                                                                                                                                       |
+| `npm run setup` fails                                | Confirm Git, Node 24.15.0+ (24.x) or 26+, and npm 11+ are installed, then rerun `npm run setup -- --verbose` for per-phase evidence                                                                                                                                                                                    |
 | Port 3000 in use                                     | Stop other dev servers or change port: `PORT=3001 npm run dev:website`                                                                                                                                                                                                                                                 |
 | .NET API won't start                                 | Under Aspire, check the dashboard's Health/Console-log tabs — the API waits on SQL, Cosmos, Azurite, and exp before going live (allow ~30s on first boot). Running `npm run dev:api` standalone needs a running container engine and `npm run dev:exp` started separately, since exp supplies the API's runtime config |
 | Python not found                                     | Rerun `npm run setup -- --yes` to install Python 3.12 with consent (required by setup's `python` phase), or install it yourself                                                                                                                                                                                        |
@@ -648,9 +634,9 @@ sites/arolariu.ro ←── API calls ──→ sites/api.arolariu.ro
 ## Further Reading
 
 - **[CONTRIBUTING.md](CONTRIBUTING.md)** — PR workflow, branch naming, commit conventions
-- **[scripts/README.md](scripts/README.md)** — Root tooling command-runtime authoring contract
-- **[docs/rfc/](docs/rfc/)** — Architecture decisions (RFCs 1xxx=frontend, 2xxx=backend)
+- **[scripts/README.md](scripts/README.md)** — Root tooling command-runtime authoring contract, plus setup/doctor/status implementation
+  ownership and output policy
+- **[docs/rfc/](docs/rfc/)** — Architecture decisions (RFCs 0xxx=repository/tooling, 1xxx=frontend, 2xxx=backend)
 - **[infra/Local/readme.md](infra/Local/readme.md)** — Full selfhost Compose setup guide
-- **[scripts/README.md](scripts/README.md)** — Setup/doctor/status implementation ownership and output policy
 - **[AGENTS.md](AGENTS.md)** — AI agent guidance for the monorepo
 - **[README.md](README.md)** — Project overview and live service links

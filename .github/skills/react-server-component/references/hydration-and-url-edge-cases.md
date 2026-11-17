@@ -18,6 +18,8 @@ Open only for hydration or URL/search-parameter behavior.
   `sites/arolariu.ro/src/app/domains/invoices/view-invoices/_hooks/useInvoiceFilters.test.tsx`.
 - Treat every parameter as untrusted. Validate enum members, finite numbers, dates, repeats, empty values, and incompatible ranges before
   use.
+- The live hook is not a validation model: it casts `sortBy`, `sortOrder`, and `view`, passes non-finite `min`/`max` and unchecked dates
+  through, and its test has no invalid-value cases.
 - Preserve unrelated parameters when applying a partial update, remove defaults intentionally, and decide whether `push` or `replace`
   matches history semantics.
 - Test back/forward or URL replacement behavior when it is user-observable.

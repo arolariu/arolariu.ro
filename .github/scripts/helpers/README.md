@@ -37,7 +37,7 @@ compatible async construction methods, not a lazy-loading boundary.
 
 ### Environment and execution context
 
-`createEnvironmentHelper(record?)` can read an explicit immutable source or the current ambient environment. Supplied-invalid
+`createEnvironmentHelper(variables?)` can read an explicit immutable source or the current ambient environment. Supplied-invalid
 booleans/integers are errors; missing values alone use defaults. Required/validated reads throw without calling `core.setFailed`. Snapshots
 may contain secrets and must not be logged or serialized. Native action inputs/state/masking remain in `sdk/core.ts`.
 
@@ -67,8 +67,8 @@ Checked fetch/diff/tree/count failures do not become empty successful data. Scop
 propagate.
 
 `writeJsonAtomic` and `writeStreamAtomic` exclusively own a temporary sibling, await closure, then rename. Failed writes preserve the
-destination and clean only owned state. `withTemporaryDirectory(prefix, callback)` retains its owned directory through awaited work and
-cleans up on success/rejection. Cleanup failure is surfaced, including the original failure when both occur.
+destination and clean only owned state. `withTemporaryDirectory(prefix, run)` retains its owned directory through awaited work and cleans up
+on success/rejection. Cleanup failure is surfaced, including the original failure when both occur.
 
 Traversal honors zero/finite/unlimited depth, preserves list/find defaults, does not follow directory symlinks, and does not mutate caller
 regex state. Native glob/IO APIs remain available through their facades.

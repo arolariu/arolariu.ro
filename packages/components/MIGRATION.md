@@ -5,9 +5,11 @@
 This section covers the breaking changes from 2.4 to **3.0.0**. Install a published release from npm; do not point an application at this
 workspace's source or `dist`.
 
-The historical v0.x → v1.0 guide follows this section unchanged. Its old dependency ranges and examples are historical, not instructions for
-adopting v3. In particular, its `<Button render={<a … />}>` link examples are superseded: in v3, links are native `<a>` elements styled with
-`buttonVariants()` (see [Button](#button)).
+The historical v0.x → v1.0 guide follows this section unchanged. Everything in it describes 1.0 and is superseded by this section:
+dependency ranges, imports, examples, compatibility notes and troubleshooting. In particular, `asChild` is removed rather than shimmed. The
+`/sonner` subpath, the callable `toast.success`/`toast.error` helpers, `convertHexToOklchString` and `DropDrawerTitle` do not exist in v3.
+Its `<Button render={<a … />}>` link examples are superseded: in v3, links are native `<a>` elements styled with `buttonVariants()` (see
+[Button](#button)).
 
 ### How to use this guide
 
@@ -20,8 +22,8 @@ The guide is organized for both people and automated agents:
    uses the same four labels: **What changed**, **Before → after**, **Why** and **Find usages**.
 5. [Changed defaults at a glance](#changed-defaults-at-a-glance) summarizes the defaults that change runtime behavior without a type error.
 
-Search patterns are regular expressions for `rg` (ripgrep); `git grep -nE` accepts the same patterns. Run them from the application's source
-root.
+Search patterns are regular expressions for `rg` (ripgrep); `git grep -nE` accepts the same patterns. Patterns containing `[^>]*` span
+multi-line JSX only with `rg -nU`; `git grep` has no multiline mode. Run them from the application's source root.
 
 ### Quick start
 
@@ -45,14 +47,14 @@ root.
 | `AlertDialogAction`                                                                                                                | The removed automatic close                            | [AlertDialog](#alertdialog)                                       |
 | `extends (ButtonProps\|InputGroupButtonProps\|AlertDialogActionProps\|SidebarTriggerProps\|CarouselProps)`                         | Interfaces over naming unions (TS2312)                 | [Button](#button), [Carousel](#carousel)                          |
 | `render=\{<a\b`                                                                                                                    | Links rendered through Button                          | [Button](#button)                                                 |
-| `size=["{]['"]?icon`                                                                                                               | Icon buttons that now need a name                      | [Button](#button)                                                 |
+| `size=["'{]['"]?icon`                                                                                                              | Icon buttons that now need a name                      | [Button](#button)                                                 |
 | `buttonVariants\|badgeVariants\|markerVariants\|tabsListVariants\|toggleVariants\|navigationMenuTriggerStyle\|buttonGroupVariants` | Class helpers called from Server Components            | [Global changes](#client-and-server-boundaries)                   |
 | `<Accordion\b[^>]*\btype=`                                                                                                         | Scalar/`type` Accordion values                         | [Accordion](#accordion)                                           |
 | `indeterminate`                                                                                                                    | Checkbox `checked="indeterminate"`                     | [Checkbox](#checkbox)                                             |
 | `delayDuration\|TooltipProvider`                                                                                                   | Removed delay alias, real provider timing              | [Tooltip and HoverCard](#tooltip-and-hovercard)                   |
 | `PopoverAnchor\|NavigationMenuViewport\|NavigationMenuIndicator\|positionMethod`                                                   | Removed compatibility parts                            | [Removed APIs](#removed-apis)                                     |
 | `hexToHsl\|hslToHex\|isValidHexColor\|getComplementaryColor\|adjustLightness\|parseHslString\|convertHslToHexString`               | Color utilities                                        | [Color utilities](#color-utilities)                               |
-| `"righ"`                                                                                                                           | Flip's misspelled direction                            | [Visual effects and motion](#visual-effects-and-motion)           |
+| `["']righ["']`                                                                                                                     | FlipButton's misspelled `from` value                   | [Visual effects and motion](#visual-effects-and-motion)           |
 | `\bCell\b`                                                                                                                         | The removed Recharts `Cell` re-export                  | [Chart](#chart)                                                   |
 | `<Carousel\b`                                                                                                                      | Carousels that need a region name                      | [Carousel](#carousel)                                             |
 | `Skeleton`                                                                                                                         | Count validation and the two-pulse default             | [Skeleton and Spinner](#skeleton-and-spinner)                     |
@@ -166,6 +168,7 @@ Message display families. These display families do not introduce AI/chat SDK, u
 | CommandDialog's automatic `Command` root                                                                                                | `CommandDialog` containing one explicit `Command`                            | [Command](#command)                                             |
 | `AlertDialogAction`'s automatic close                                                                                                   | `AlertDialogAction` with caller-owned successful close                       | [AlertDialog](#alertdialog)                                     |
 | Accordion scalar values and `type` adapters                                                                                             | Array values in both single- and multiple-panel modes; native `multiple`     | [Accordion](#accordion)                                         |
+| Accordion root `orientation` and `loopFocus` pass-throughs                                                                              | None: Base UI deprecated both; delete them                                   | [Accordion](#accordion)                                         |
 | Checkbox `checked="indeterminate"`                                                                                                      | Boolean `checked` plus explicit `indeterminate`                              | [Checkbox](#checkbox)                                           |
 | Tooltip root/provider `delayDuration` (v2.4 ignored it on both: the provider was a pass-through, and Base UI 1.x's Root has no `delay`) | Native provider or trigger `delay`                                           | [Tooltip and HoverCard](#tooltip-and-hovercard)                 |
 | NavigationMenuViewport/Indicator compatibility parts                                                                                    | NavigationMenuPositioner and its explicit viewport props                     | [NavigationMenu](#navigationmenu)                               |
@@ -173,7 +176,7 @@ Message display families. These display families do not introduce AI/chat SDK, u
 | ContextMenu's deprecated `positionMethod`                                                                                               | Native context-menu positioning options                                      | [Menus](#menus)                                                 |
 | Breadcrumb `separator`, Separator `decorative` and other legacy no-op props                                                             | Explicit parts/native semantics                                              | [Breadcrumb and Item](#breadcrumb-and-item)                     |
 | Branch-ambiguous DropDrawer handles                                                                                                     | Branch-specific menu/drawer configuration                                    | [DropDrawer](#dropdrawer)                                       |
-| Flip direction `"righ"`                                                                                                                 | `"right"`                                                                    | [Visual effects and motion](#visual-effects-and-motion)         |
+| FlipButton `from="righ"`                                                                                                                | `"right"`                                                                    | [Visual effects and motion](#visual-effects-and-motion)         |
 | `hexToHsl`, `hslToHex`, `isValidHexColor`, `getComplementaryColor`, `adjustLightness`, `parseHslString`                                 | Canonically named color utilities                                            | [Color utilities](#color-utilities)                             |
 | Recharts `Cell` reexport                                                                                                                | A series `shape`                                                             | [Chart](#chart)                                                 |
 
@@ -187,16 +190,16 @@ a compatibility option.
 **What changed:** Values and callbacks are string arrays in both single- and multiple-panel modes. An empty array selects nothing; an array
 containing the empty string selects that item. `collapsible={false}` cancels empty proposals using the original event details. Each trigger
 renders inside Base UI's Header, an `<h3>` by default that now carries `data-slot="accordion-header"`. Trigger hover text uses
-`--ac-primary-emphasis`.
+`--ac-primary-emphasis`. The root no longer accepts `orientation` or `loopFocus`, which v2.4 forwarded to Base UI.
 
 **Before → after:** `<Accordion type='single' value='a'>` becomes `<Accordion value={["a"]}>`; `type='multiple'` becomes the native
-`multiple` prop. Pass `headerProps={{render: <h2 />}}` (typed `AccordionHeaderProps` or `AccordionTrigger.HeaderProps`) when `<h3>` does not
-continue the page outline.
+`multiple` prop; delete `orientation` and `loopFocus`. Pass `headerProps={{render: <h2 />}}` (typed `AccordionHeaderProps` or
+`AccordionTrigger.HeaderProps`) when `<h3>` does not continue the page outline.
 
-**Why:** Base UI's Accordion owns a single array-valued state; the scalar/`type` adapter converted values and lost event details.
-Applications own the heading level.
+**Why:** Base UI's Accordion owns a single array-valued state; the scalar/`type` adapter converted values and lost event details. Base UI
+deprecated `orientation` and `loopFocus`, which no longer affect keyboard focus behavior. Applications own the heading level.
 
-**Find usages:** `rg -n "<Accordion\b[^>]*\b(type|value|defaultValue)="`
+**Find usages:** `rg -nU "<Accordion\b[^>]*\b(type|value|defaultValue|orientation|loopFocus)="`
 
 #### Alert, Empty and other native display parts
 
@@ -284,14 +287,15 @@ subpath is a client module, so call `badgeVariants` from the package root in Ser
 #### Breadcrumb and Item
 
 **What changed:** composed refs target `HTMLElement`; native parts retain their exact tags. Item's default `div` is noninteractive. The
-Breadcrumb root `separator` prop is removed. The `breadcrumb` and `item` modules are client modules.
+Breadcrumb root `separator` prop is removed. Separator's no-op `decorative` prop is also removed; delete it. The `breadcrumb` and `item`
+modules are client modules.
 
 **Before → after:** `<Breadcrumb separator={<Slash />}>` becomes an explicit `<BreadcrumbSeparator><Slash /></BreadcrumbSeparator>` between
 items.
 
 **Why:** the root prop was a no-op compatibility flag; explicit parts keep the separators in the accessible list structure.
 
-**Find usages:** `rg -n "<Breadcrumb\b[^>]*separator=|<Item\b"`
+**Find usages:** `rg -nU "<Breadcrumb\b[^>]*separator=|<Item\b|<Separator\b[^>]*decorative"`
 
 #### Button
 
@@ -348,7 +352,7 @@ the other variants never underline. Import `buttonVariants` from the package roo
 **Why:** icon-only buttons without a name fail WCAG 4.1.2, and buttons that navigate break link semantics; the type system now catches both.
 
 **Find usages:**
-`rg -n "extends (ButtonProps|InputGroupButtonProps|AlertDialogActionProps|SidebarTriggerProps)|render=\{<a\b|size=[\"{]['\"]?icon"`
+`rg -n "extends (ButtonProps|InputGroupButtonProps|AlertDialogActionProps|SidebarTriggerProps)|render=\{<a\b|size=[\"'{]['\"]?icon"`
 
 #### Calendar
 
@@ -456,14 +460,15 @@ retained.
 
 **Why:** callbacks report what the primitive observed instead of fabricated fields.
 
-**Find usages:** `rg -n "<Collapsible\b[^>]*onOpenChange"`
+**Find usages:** `rg -nU "<Collapsible\b[^>]*onOpenChange"`
 
 #### Color utilities
 
 **What changed:** the deprecated aliases `hexToHsl`, `hslToHex`, `isValidHexColor`, `getComplementaryColor`, `adjustLightness` and
 `parseHslString` are removed. `convertHslToHexString` now wraps the hue into `[0, 360)`, clamps saturation and lightness to `0`–`100` and
 throws `RangeError` for a non-finite component; v2.4 produced malformed hex for out-of-range input and silently accepted `NaN`.
-`convertHexToHslString` and the helpers built on it accept only 6-digit `#rrggbb` input (check with `validateHexColorFormat`).
+`convertHexToHslString` and the helpers built on it accept only 6-digit hex input, with or without a leading `#` (`#rrggbb` or `rrggbb`);
+check with `validateHexColorFormat`.
 
 **Before → after:**
 
@@ -598,7 +603,7 @@ is required; style exported Close parts yourself; compose only through `render`.
 **Why:** every dialog gets a keyboard- and pointer-reachable dismissal by default, and the backdrop now matches the modality the primitive
 enforces.
 
-**Find usages:** `rg -n "<(Dialog|Sheet)\b[^>]*modal=|(Dialog|Sheet)Content|(Dialog|Sheet)Close"`
+**Find usages:** `rg -nU "<(Dialog|Sheet)\b[^>]*modal=|(Dialog|Sheet)Content|(Dialog|Sheet)Close"`
 
 #### Drawer
 
@@ -1022,7 +1027,7 @@ visibility and Escape dismissal (WCAG 1.4.13).
 #### Visual effects and motion
 
 BackgroundBeams, BubbleBackground, DotBackground, FireworksBackground, GradientBackground, GradientText, HighlightText, HoleBackground,
-TypewriterText, TypewriterTextSmooth, CountingNumber, Scratcher, Flip, Ripple and the other retained extensions.
+TypewriterText, TypewriterTextSmooth, CountingNumber, Scratcher, FlipButton, RippleButton and the other retained extensions.
 
 **What changed:** automatic motion settles to a static frame five seconds after the instance is first scrolled into view (wall clock;
 scrolling away and back does not restart it); v2.4 had no time limit. Reduced motion, a hidden document and off-screen instances also pause.
@@ -1032,11 +1037,11 @@ FireworksBackground's canvas is decorative (background clicks do nothing; v2.4 l
 it is `aria-disabled` (still focusable, activation ignored) under reduced motion, `motionPaused` or a hidden document. Scratcher adds a
 native reveal button (`revealLabel`, default `"Reveal content"`) and a visually hidden completion status (`completedLabel`, default
 `"Content revealed"`); after the reveal the button keeps focus and its tab stop as `aria-disabled` (activation ignored) until a `width`,
-`height` or `gradientColors` change resets the card. Flip accepts `"right"`, not `"righ"`. RippleButton and FlipButton follow
-`prefers-reduced-motion`. Canvas refs and error policies retain their owning contracts.
+`height` or `gradientColors` change resets the card. FlipButton's `from` prop accepts `"right"`, not `"righ"`. RippleButton and FlipButton
+follow `prefers-reduced-motion`. Canvas refs and error policies retain their owning contracts.
 
 **Before → after:** pass `loop` to keep automatic motion running, together with a caller-supplied, localized native pause/stop control that
-sets `motionPaused` (which stops motion at any time); localize the generated labels; replace `direction='righ'` with `direction='right'`.
+sets `motionPaused` (which stops motion at any time); localize the generated labels; replace `from='righ'` with `from='right'`.
 
 **Why:** automatic motion that lasts more than five seconds needs a pause mechanism (WCAG 2.2.2), and pointer-only interactions need
 keyboard alternatives (WCAG 2.1.1).
@@ -1078,41 +1083,9 @@ These rows compile unchanged but behave differently. Each links to its component
 | Progress `className`                       | Styled the Track                                         | Styles the Root                                                             | [Progress and Slider](#progress-and-slider)                       |
 | `convertHslToHexString` out-of-range input | Malformed output                                         | Hue wraps, saturation/lightness clamp, non-finite input throws `RangeError` | [Color utilities](#color-utilities)                               |
 
-### Repository website adoption checklist
+### Repository website adoption
 
-The repository website (`sites/arolariu.ro`) pins the published 2.4 tarball. When it adopts a published v3 release:
-
-1. Update the website's official tarball/integrity through its separately authorized dependency adoption, never a local workspace alias.
-2. Migrate facade-dependent status/promise/custom calls to canonical manager/compound APIs.
-3. Commander must compose the canonical shell with exactly one explicit Command; keep localized title/description, stable action values,
-   separate selected/search state and app-owned shortcuts.
-4. Async AlertDialog callers must own success-close/rejection/pending policies.
-5. Recheck native refs, form/value/callback contracts and affected application tests against the published package.
-6. Decide each row of [Changed defaults at a glance](#changed-defaults-at-a-glance) explicitly. The site's `providers.tsx` renders
-   `<Toaster />` without props, which in v3 makes every notification persistent: pass `timeout` where v2.4's 5000 ms auto-dismissal is still
-   intended (with enough reading time and a way to dismiss) and a localized `closeLabel`. Choose between settled motion and `loop` plus a
-   localized pause control for the decorative effects the site renders (BackgroundBeams, DotBackground, GradientText, TypewriterTextSmooth),
-   and expect two-pulse skeletons in route `loading.tsx` files. CountingNumber (the platform statistics use `inView`) has no `loop` opt-in:
-   it counts up once when first scrolled into view and shows its final value from five seconds after that, so re-entering view does not
-   replay it.
-7. Localize every generated name this guide lists for the components the site renders, such as Toaster `closeLabel` and the Toaster viewport
-   name (`viewportProps={{"aria-label": …}}`, default `"Notifications"`). Commander's CommandInput is named by its translated placeholder,
-   so its English `fallbackLabel` does not apply there.
-8. Render links styled as buttons as native anchors with `buttonVariants()` (in Server Components, import it from `@arolariu/components`;
-   the `/button` subpath works only in Client Components), give every icon-size Button an `aria-label` or `aria-labelledby`, and replace
-   `interface … extends ButtonProps` with intersection type aliases. Name both carousels, which render none today (the scans preview in
-   `CreateInvoiceDialog.tsx` and the scan media in `InvoiceCard.tsx`), with localized `aria-label` or `aria-labelledby` values from new
-   `en`/`ro`/`fr` messages; `CarouselProps` is a naming union too.
-9. The site's `TooltipProvider` wrappers (across the invoice routes and in the footer) become real Base UI providers in v3, so their
-   grouping (a tooltip opens instantly when another closed less than `timeout`, default 400 ms, earlier) and any `delay`/`closeDelay` now
-   apply. `SpendingCalendarHeatmap.tsx` passes `delayDuration={100}`, which v2.4 ignored (its tooltips used the 600 ms default) and v3
-   rejects at the type level: move the timing to the provider's `delay` or to `TooltipTrigger delay`, or drop it to keep the 600 ms default.
-
-Follow-up candidates include Commander; InvoicePreferences; DeleteScanDialog/ShareInvoiceDialog; edit-invoice SharingCard,
-ItemsTable/EditInvoiceContext and AddRecipe/AddScan/Allergen/DeleteRecipe/Feedback/RemoveScan/UpdateRecipe dialogs; CreateInvoiceContext;
-ScanUploadContext and its test/types/uploadSession; ShareCollaborateCard; invoice/bulk Export dialogs and BulkActionsToolbar;
-ScanSelectionToolbar/CreateInvoiceDialog/useScans; useInvoiceDelete/useInvoiceShare/useScanAdd/useScanDelete/useScanRename/useScanRotation;
-detachScanFromInvoice/createScan. This inventory does not authorize route, auth, Next configuration or domain-logic changes.
+The repository website (`sites/arolariu.ro`) pins the published 3.0.0 tarball and has migrated to it.
 
 ### Retained extensions and unselected families
 

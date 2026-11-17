@@ -1,236 +1,103 @@
-# GitHub Actions Scripts & Workflows
+# `.github` Directory Guide
 
-This directory contains all GitHub Actions workflows and their supporting TypeScript scripts for the arolariu.ro monorepo CI/CD pipeline.
+This directory holds the repository's GitHub configuration: CI/CD workflows, composite actions, the TypeScript scripts those workflows run,
+issue and pull request templates, and Copilot customization assets. The files themselves are authoritative. This guide maps them and links
+to the documentation that owns their details.
 
-## 📁 Directory Structure
+## Folder Map
 
-```
-.github/
-├── actions/                          # Reusable composite actions
-│   └── setup-workspace/              # Common setup: checkout + Node.js + .NET + deps + caching
-│       └── action.yml
-├── scripts/                          # TypeScript workflow helper scripts
-│   ├── src/                          # Main workflow scripts
-│   │   ├── check-code-hygiene.ts     # Code hygiene checks (format, lint, stats)
-│   │   ├── check-code-hygiene-wrapper.js
-│   │   ├── create-e2e-failure-issue.ts
-│   │   ├── create-pr-comment.ts      # Core PR comment creation logic
-│   │   ├── create-unit-test-summary-comment.ts  # Unit test summary PR comments
-│   │   ├── create-unit-test-summary-comment-wrapper.js
-│   │   └── post-hygiene-comment.ts
-│   ├── lib/                          # Utility modules
-│   │   ├── bundle-size-helper.ts
-│   │   ├── constants.ts
-│   │   ├── env-helper.ts
-│   │   ├── file-system-helper.ts
-│   │   ├── git-helper.ts
-│   │   ├── issue-creator.ts
-│   │   ├── vitest-helper.ts
-│   │   ├── markdown-builder.ts
-│   │   ├── newman-parser.ts
-│   │   ├── playwright-helper.ts
-│   │   ├── pr-comment-builder.ts
-│   │   ├── pr-helper.ts
-│   │   └── status-helper.ts
-│   ├── types/                        # TypeScript type definitions
-│   │   ├── index.ts
-│   │   ├── newman-types.ts
-│   │   └── workflow-types.ts
-│   ├── package.json
-│   ├── tsconfig.json
-│   └── README.md                     # This file
-└── workflows/                        # GitHub Actions workflow definitions
-    ├── official-hygiene-check.yml    # Code hygiene (format/lint/stats)
-    ├── official-hygiene-check-v2.yml # Optimized version with caching
-    ├── official-website-build.yml    # Website build & test
-    ├── official-website-release.yml  # Website deployment
-    ├── official-api-trigger.yml      # Backend API deployment
-    ├── official-cv-trigger.yml       # CV site deployment
-    ├── official-docs-trigger.yml     # Documentation deployment
-    ├── official-e2e-action.yml       # E2E testing
-    └── official-components-publish.yml # NPM package publishing with OIDC
-```
+| Path                                                   | Contents                                                                                              |
+| ------------------------------------------------------ | ----------------------------------------------------------------------------------------------------- |
+| [`workflows/`](workflows/)                             | GitHub Actions workflow definitions; see [Workflows](#workflows)                                      |
+| [`actions/`](actions/)                                 | Composite actions `setup-tooling` and `setup-workspace`; see [Composite Actions](#composite-actions)  |
+| [`scripts/`](scripts/)                                 | Isolated npm package of TypeScript workflow scripts; see [Workflow Scripts](#workflow-scripts)        |
+| [`templates/`](templates/)                             | `e2e-test-template.md`, the body template for E2E live-test failure issues                            |
+| [`ISSUE_TEMPLATE/`](ISSUE_TEMPLATE/)                   | Issue forms and the template chooser configuration (`config.yml`)                                     |
+| [`PULL_REQUEST_TEMPLATE.md`](PULL_REQUEST_TEMPLATE.md) | Pull request description template                                                                     |
+| [`CODEOWNERS`](CODEOWNERS)                             | Automatic review assignment                                                                           |
+| [`dependabot.yml`](dependabot.yml)                     | Version updates for GitHub Actions, npm, NuGet, pip, and Docker manifests, all targeting `preview`    |
+| [`codeql/`](codeql/)                                   | CodeQL configuration file; its [README](codeql/README.md) explains how code scanning currently runs   |
+| [`docs/`](docs/)                                       | [Workflow guide](docs/WORKFLOW_GUIDE.md) and [AI customization guide](docs/ai-customization-guide.md) |
 
-## 🚀 Quick Start
+The Copilot customization assets are [`copilot-instructions.md`](copilot-instructions.md), [`mcp.json`](mcp.json), [`agents/`](agents/),
+[`instructions/`](instructions/), [`skills/`](skills/), [`prompts/`](prompts/), [`extensions/`](extensions/), [`memory/`](memory/), and
+[`agent-governance/`](agent-governance/). The [AI customization guide](docs/ai-customization-guide.md) and the
+[AI Customization](../AGENTS.md#ai-customization) section of the root `AGENTS.md` own their structure and rules.
 
-### Running Workflows Locally
+## Workflows
 
-Install dependencies in the scripts directory:
+| Workflow                                                                       | Triggers                                                                              | Purpose                                                                                      |
+| ------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------- |
+| [`official-website-build.yml`](workflows/official-website-build.yml)           | Push to `preview` touching `sites/arolariu.ro/**`; manual dispatch                    | Test the website, then build and push its container image                                    |
+| [`official-website-release.yml`](workflows/official-website-release.yml)       | Completed `official-website-build` run on `preview`; manual dispatch                  | Deploy the website container to Azure App Service                                            |
+| [`official-api-trigger.yml`](workflows/official-api-trigger.yml)               | Push to `main` touching `sites/api.arolariu.ro/**`; manual dispatch                   | Test, containerize, and deploy the .NET API to Azure App Service                             |
+| [`official-exp-trigger.yml`](workflows/official-exp-trigger.yml)               | Push to `main` touching `sites/exp.arolariu.ro/**`; manual dispatch                   | Test (pytest), containerize, and deploy the FastAPI service to Azure App Service             |
+| [`official-cv-trigger.yml`](workflows/official-cv-trigger.yml)                 | Push to `main` touching `sites/cv.arolariu.ro/**`; manual dispatch                    | Test, build, and deploy the CV site to Azure Static Web Apps                                 |
+| [`official-status-trigger.yml`](workflows/official-status-trigger.yml)         | Push to `main` touching `sites/status.arolariu.ro/**`; manual dispatch                | Test, build, and deploy the status site to Azure Static Web Apps                             |
+| [`official-docs-trigger.yml`](workflows/official-docs-trigger.yml)             | Push to `main` unless every changed file matches `.github/*`; manual dispatch         | Generate and deploy the documentation site to Azure Static Web Apps                          |
+| [`official-components-publish.yml`](workflows/official-components-publish.yml) | Push of a `components-v*` tag; manual dispatch (dry run, npm dist-tag)                | Validate and publish `@arolariu/components` to npm with Trusted Publishing and provenance    |
+| [`official-hygiene-check-v2.yml`](workflows/official-hygiene-check-v2.yml)     | Pull request opened, synchronized, or reopened; manual dispatch (`affected` / `full`) | "Code Hygiene Check (v3)": planned format, lint, TypeScript/.NET/Python test, and stats jobs |
+| [`official-e2e-action.yml`](workflows/official-e2e-action.yml)                 | Daily schedule (`17 6 * * *`, UTC); manual dispatch                                   | Newman live tests for the frontend, backend, and CV; opens an issue when they fail           |
+| [`official-status-probe.yml`](workflows/official-status-probe.yml)             | Schedule every 30 minutes (`9,39 * * * *`); manual dispatch                           | Probe service health endpoints and commit aggregates to the `status-data` branch             |
+| [`copilot-setup-steps.yml`](workflows/copilot-setup-steps.yml)                 | Manual dispatch; push changing this workflow file                                     | Prepare the Copilot coding agent environment                                                 |
+
+The [workflow guide](docs/WORKFLOW_GUIDE.md) covers choosing, triggering, and debugging these workflows. The workflow files own the exact
+inputs, conditions, and job graphs.
+
+## Composite Actions
+
+| Action                                                 | Role                                                                                                                                                                              |
+| ------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| [`setup-tooling`](actions/setup-tooling/readme.md)     | Installs the Node.js, .NET, and Python toolchains with built-in dependency caching. It installs binaries only.                                                                    |
+| [`setup-workspace`](actions/setup-workspace/readme.md) | Runs `setup-tooling`, then bootstraps the monorepo: root, `.github/scripts`, .NET, and Python dependencies, Playwright browsers, code generation, and the shared component build. |
+
+Both are local actions (`uses: ./.github/actions/<name>`) and neither checks out the repository, so a job runs `actions/checkout` first.
+Each action's readme owns its inputs, outputs, and usage examples.
+
+## Workflow Scripts
+
+[`scripts/`](scripts/) is an isolated ES-module npm package. Node.js runs its TypeScript directly through type stripping, without a build
+step. Workflows enter it at these points:
+
+| Entry point                                                                                | Caller                                                  | Invocation                                                                                          |
+| ------------------------------------------------------------------------------------------ | ------------------------------------------------------- | --------------------------------------------------------------------------------------------------- |
+| [`src/runUnitTestAction.ts`](scripts/src/runUnitTestAction.ts)                             | `official-website-build.yml`, `test` job                | `actions/github-script@v8` imports the module and awaits its parameterless default export           |
+| [`src/runLiveTestAction.ts`](scripts/src/runLiveTestAction.ts)                             | `official-e2e-action.yml`, `raise-issue-on-failure` job | `actions/github-script@v8` imports the module and awaits its parameterless default export           |
+| [`src/hygiene/pipeline/preparePlan.ts`](scripts/src/hygiene/pipeline/preparePlan.ts)       | `official-hygiene-check-v2.yml`, `detect` job           | `node --experimental-strip-types src/hygiene/pipeline/preparePlan.ts --scope <scope>`               |
+| [`src/hygiene/pipeline/runProvider.ts`](scripts/src/hygiene/pipeline/runProvider.ts)       | `official-hygiene-check-v2.yml`, `providers` matrix job | `node --experimental-strip-types src/hygiene/pipeline/runProvider.ts <provider> --plan <plan.json>` |
+| [`src/hygiene/pipeline/runProjections.ts`](scripts/src/hygiene/pipeline/runProjections.ts) | `official-hygiene-check-v2.yml`, `gate` job             | `node --experimental-strip-types src/hygiene/pipeline/runProjections.ts --plan <plan.json>`         |
+
+The hygiene commands run from `.github/scripts`. The [scripts README](scripts/README.md) owns the rest:
+
+- [Boundaries](scripts/README.md#boundaries): the `src` → `lib` → `helpers` → `helpers/sdk` → `@actions/*` layering and module ownership.
+- [Hygiene: one plan, six named jobs](scripts/README.md#hygiene-one-plan-six-named-jobs): the `format`, `lint`, `test-typescript`,
+  `test-dotnet`, `test-python`, and `stats` providers, planned skips, and the gate.
+- [Verification](scripts/README.md#verification): the local test, type-check, and coverage commands.
+
+The [helper guide](scripts/helpers/README.md) documents the native SDK facades and the narrow helper modules.
+
+Root `npm run setup` restores the `.github/scripts` dependencies. In CI, the hygiene jobs restore them through the `install-scripts-deps`
+input of `setup-workspace`, and each `actions/github-script` step runs `npm ci` in `.github/scripts` before it imports its entry point. From
+the repository root:
 
 ```powershell
-cd .github/scripts
-npm install
+npm --prefix .github/scripts test
+npm --prefix .github/scripts run typecheck
+npm --prefix .github/scripts run test:coverage
 ```
 
-### Creating a New Workflow Script
+## Security
 
-1. Create a new TypeScript file in `scripts/src/`:
+- Every workflow declares explicit `permissions:`, at the top level or (in `copilot-setup-steps.yml`) on its only job. Jobs that need more,
+  such as the E2E failure-issue job, raise permissions at job level.
+- `azure/login` steps authenticate with OIDC federated credentials (`id-token: write`). Static Web Apps deployments use per-site deployment
+  tokens, and npm publishing uses Trusted Publishing with provenance.
+- Credentials come from the `secrets` context.
+- Actions are referenced by major-version tag (for example `actions/checkout@v7`), and the `github-actions` entry in
+  [`dependabot.yml`](dependabot.yml) proposes updates.
+- Code scanning is described in the [CodeQL README](codeql/README.md).
 
-   ```typescript
-   /**
-    * @fileoverview Brief description of what this script does
-    * @module src/my-new-script
-    */
+## Maintaining This Guide
 
-   import type {ScriptParams} from "../types/index.ts";
-
-   export default async function myNewScript(params: ScriptParams): Promise<void> {
-     const {github, context, core, exec} = params;
-
-     // Your script logic here
-     core.info("✨ Starting my new script...");
-   }
-   ```
-
-2. Import it in your workflow:
-   ```yaml
-   - name: Run my script
-     uses: actions/github-script@v8
-     with:
-       script: |
-         const {default: myNewScript} = await import('${{ github.workspace }}/.github/scripts/src/my-new-script.ts');
-         await myNewScript({github, context, core, exec});
-   ```
-
-## 🔧 Composite Actions
-
-### `setup-workspace`
-
-Reusable action that handles:
-
-- Repository checkout with configurable depth
-- Node.js setup with version caching
-- .NET SDK setup with caching (optional)
-- npm dependency installation with aggressive caching
-- NuGet package and .NET tools caching
-- Cache hit detection and reporting
-
-**Usage:**
-
-```yaml
-- name: Setup workspace
-  uses: ./.github/actions/setup-workspace
-  with:
-    node-version: "24" # Default: '24'
-    dotnet-version: "10.0.x" # Default: '10.0.x'
-    fetch-depth: "1" # Default: '1' (shallow)
-    install-node-deps: "true" # Default: 'true'
-    setup-dotnet: "false" # Default: 'false'
-    working-directory: "." # Default: '.'
-```
-
-**When to use shallow vs full checkout:**
-
-- `fetch-depth: 1` (shallow): For format checks, lint checks, builds, deployments
-- `fetch-depth: 0` (full): For git diff stats, changelog generation, version tagging
-
-## 📝 TypeScript Scripts
-
-### Core Scripts (src/)
-
-- **check-code-hygiene.ts**: Main hygiene check logic
-  - `CHECK_MODE=stats`: Compute code statistics
-  - `CHECK_MODE=format`: Check code formatting
-  - `CHECK_MODE=lint`: Run linting checks
-
-- **post-hygiene-comment.ts**: Post PR comments for hygiene results
-  - `COMMENT_TYPE=stats`: Statistics comment
-  - `COMMENT_TYPE=formatting`: Formatting issues
-  - `COMMENT_TYPE=linting`: Linting errors
-  - `COMMENT_TYPE=summary`: Final summary
-
-- **create-e2e-failure-issue.ts**: Create GitHub issue for E2E test failures
-- **create-pr-comment.ts**: Core PR comment posting logic (generic utility)
-- **create-unit-test-summary-comment.ts**: Generate and post comprehensive test result comments (Vitest + Playwright + bundle analysis)
-
-### Utility Modules (lib/)
-
-- **git-helper.ts**: Git operations (diff stats, branch fetching)
-- **bundle-size-helper.ts**: Bundle size comparison and analysis
-- **pr-helper.ts**: Pull request operations
-- **pr-comment-builder.ts**: Build formatted PR comments
-- **markdown-builder.ts**: Markdown formatting utilities
-- **env-helper.ts**: Environment variable access
-- **file-system-helper.ts**: File system operations
-- **issue-creator.ts**: GitHub issue creation
-- **vitest-helper.ts**: Vitest test result parsing and coverage reporting
-- **playwright-helper.ts**: Playwright E2E result parsing
-- **newman-parser.ts**: Newman API test result parsing
-- **status-helper.ts**: GitHub check status management
-- **constants.ts**: Shared constants
-
-### Type Definitions (types/)
-
-- **index.ts**: Core types (`ScriptParams`, etc.)
-- **workflow-types.ts**: Workflow-specific types
-- **newman-types.ts**: Newman test result types
-
-## 🎨 Best Practices
-
-### When Creating Workflows
-
-1. **Use composite actions** for repeated setup steps
-2. **Leverage caching** aggressively for dependencies and build outputs
-3. **Parallelize** independent jobs with matrix strategies where applicable
-4. **Set timeouts** on all jobs to prevent hung workflows
-5. **Use shallow checkouts** (`fetch-depth: 1`) unless full history is needed
-6. **Set explicit permissions** following principle of least privilege
-7. **Use concurrency** to prevent redundant runs
-8. **Add conditional execution** with `if` statements to skip unnecessary work
-
-### When Creating Scripts
-
-1. **Use TypeScript** with Node.js 24's native TS support
-2. **Export default function** for easy import in workflows
-3. **Accept `ScriptParams`** as the function parameter
-4. **Use `core.info/warning/error`** for logging
-5. **Set outputs** with `core.setOutput()` for inter-job communication
-6. **Handle errors gracefully** and provide clear error messages
-7. **Document with JSDoc** for maintainability
-
-### Caching Strategy
-
-```yaml
-# Good: Specific cache key with fallbacks
-key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
-restore-keys: |
-  ${{ runner.os }}-node-
-
-# Bad: Generic cache key (too many misses)
-key: node-modules
-```
-
-## 🔐 Security
-
-- All workflows follow **least-privilege permissions**
-- Secrets accessed only via `secrets` context
-- No hardcoded credentials in code or workflows
-- Third-party actions pinned to specific versions (`@v5`, not `@latest`)
-- Dependabot enabled for action version updates
-
-## 📚 Additional Resources
-
-- [GitHub Actions Documentation](https://docs.github.com/en/actions)
-- [actions/github-script](https://github.com/actions/github-script)
-- [actions/cache](https://github.com/actions/cache)
-- [Node.js TypeScript Support](https://nodejs.org/docs/latest/api/typescript.html)
-
-## 🤝 Contributing
-
-When adding new workflows or scripts:
-
-1. Follow the established directory structure
-2. Use the composite action for common setup
-3. Document all scripts with JSDoc comments
-4. Add appropriate error handling
-5. Test workflows on a feature branch first
-6. Update this README with any new patterns
-
-## 📞 Support
-
-For questions or issues with workflows/scripts:
-
-- Check workflow run logs in GitHub Actions tab
-- Review this README for patterns and best practices
-- Examine existing scripts for similar functionality
-- Create an issue if you discover a bug or need a new feature
+When you add, rename, or remove a workflow, composite action, or script entry point, update the matching table in this guide and the README
+that owns the detail.

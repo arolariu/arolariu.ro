@@ -44,7 +44,9 @@ below; it only adds repository-specific examples, anti-patterns, and live pointe
 
 ## Validation
 
-Inspect the full YAML graph and use the repository's existing workflow validation only after the user approves a workflow edit.
+Inspect the full YAML graph and validate only after the user approves a workflow edit. No dedicated workflow linter is configured: on a pull
+request, the hygiene workflow's `format` provider Prettier-checks changed `.yml`/`.yaml` files; otherwise, a workflow is validated by
+running the affected workflow (every workflow also exposes `workflow_dispatch`).
 
 ## Escalation
 

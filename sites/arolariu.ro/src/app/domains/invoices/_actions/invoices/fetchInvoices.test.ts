@@ -114,6 +114,27 @@ describe("fetchInvoices", () => {
     }
   });
 
+  it("returns invoices that have not been named by analysis yet", async () => {
+    mockFetchWithTimeout.mockResolvedValue(
+      TestDataBuilder.jsonResponse([
+        TestDataBuilder.build("invoice", {
+          id: "33333333-3333-4333-8333-333333333333",
+          userIdentifier: "44444444-4444-4444-8444-444444444444",
+          merchantReference: "00000000-0000-0000-0000-000000000000",
+          name: "",
+          description: "",
+        }),
+      ]) as Awaited<ReturnType<typeof fetchWithTimeout>>,
+    );
+
+    const result = await fetchInvoices();
+
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data.map((invoice) => [invoice.id, invoice.name])).toEqual([["33333333-3333-4333-8333-333333333333", ""]]);
+    }
+  });
+
   it("returns a server failure when the API returns a malformed payload", async () => {
     mockFetchWithTimeout.mockResolvedValue(TestDataBuilder.jsonResponse({}) as Awaited<ReturnType<typeof fetchWithTimeout>>);
 

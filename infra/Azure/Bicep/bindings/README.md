@@ -7,7 +7,8 @@ ensures correct sequencing and secure configuration for domain and certificate p
 
 ## 📋 Overview
 
-- Deploys domain bindings and managed certificates for all web apps
+- Deploys subdomain bindings for api, dev (App Service + managed certificate) and cv, docs (Static Web App, free SSL); apex/www are bound
+  via Front Door in the network module
 - Supports both App Services (api, dev) and Static Web Apps (cv, docs)
 - Ensures dependencies: App Service/Static Web App and DNS must exist before bindings
 - Modular structure for each site type
@@ -16,42 +17,46 @@ ensures correct sequencing and secure configuration for domain and certificate p
 
 ## 🏗️ Resources Created
 
-| Resource Type                     | Purpose                                 |
-| --------------------------------- | --------------------------------------- |
-| App Service Custom Domain Binding | Binds custom domains to App Services    |
-| Managed Certificate               | Issues and attaches certificates        |
-| Static Web App Custom Domain      | Binds custom domains to Static Web Apps |
+| Resource Type                                                               | Purpose                                             |
+| --------------------------------------------------------------------------- | --------------------------------------------------- |
+| App Service hostname binding (created SSL-disabled, then re-bound with SNI) | Binds custom domains to App Services                |
+| App Service managed certificate (api, dev only)                             | Issues and attaches certificates                    |
+| Static Web App Custom Domain                                                | Binds custom domains to Static Web Apps             |
+| DNS CNAME record (`api`, `dev`, `cv`, `docs`)                               | Points the subdomain at the site's default hostname |
+| DNS TXT record (`asuid.api`, `asuid.dev`)                                   | App Service domain-ownership verification           |
 
 ---
 
 ## 📁 Module Files
 
-| File                                         | Purpose                              |
-| -------------------------------------------- | ------------------------------------ |
-| `deploymentFile.bicep`                       | Orchestrates all binding deployments |
-| `api-arolariu-ro-bindings.bicep`             | API domain binding                   |
-| `api-arolariu-ro-certificate-bindings.bicep` | API managed certificate              |
-| `dev-arolariu-ro-bindings.bicep`             | Dev domain binding                   |
-| `dev-arolariu-ro-certificate-bindings.bicep` | Dev managed certificate              |
-| `cv-arolariu-ro-bindings.bicep`              | CV Static Web App domain binding     |
-| `docs-arolariu-ro-bindings.bicep`            | Docs Static Web App domain binding   |
+| File                                         | Purpose                                                                                         |
+| -------------------------------------------- | ----------------------------------------------------------------------------------------------- |
+| `deploymentFile.bicep`                       | Orchestrates all binding deployments                                                            |
+| `api-arolariu-ro-bindings.bicep`             | API CNAME + `asuid` TXT records, hostname binding, App Service managed certificate              |
+| `api-arolariu-ro-certificate-bindings.bicep` | Re-binds the API hostname with SNI SSL using the managed certificate thumbprint (nested module) |
+| `dev-arolariu-ro-bindings.bicep`             | Dev CNAME + `asuid` TXT records, hostname binding, App Service managed certificate              |
+| `dev-arolariu-ro-certificate-bindings.bicep` | Re-binds the Dev hostname with SNI SSL using the managed certificate thumbprint (nested module) |
+| `cv-arolariu-ro-bindings.bicep`              | CV Static Web App domain binding                                                                |
+| `docs-arolariu-ro-bindings.bicep`            | Docs Static Web App domain binding                                                              |
+| `status-arolariu-ro-bindings.bicep`          | Status Static Web App domain binding; present but not wired (not deployed)                      |
 
 ---
 
 ## 🔧 Parameters
 
-| Name                        | Type   | Required | Description                              | Allowed Values                                     |
-| --------------------------- | ------ | -------- | ---------------------------------------- | -------------------------------------------------- |
-| resourceDeploymentDate      | string | ✅       | The date when the deployment is executed | -                                                  |
-| resourceLocation            | string | ✅       | Azure region for resources               | swedencentral, norwayeast, westeurope, northeurope |
-| resourceConventionPrefix    | string | ✅       | Prefix for resource names                | -                                                  |
-| dnsZoneName                 | string | ✅       | The name of the Azure DNS Zone resource  | -                                                  |
-| devWebsiteAppServicePlanId  | string | ✅       | Dev App Service Plan resource ID         | -                                                  |
-| prodWebsiteAppServicePlanId | string | ✅       | Prod App Service Plan resource ID        | -                                                  |
-| apiWebsiteHostname          | string | ✅       | Hostname for API website                 | -                                                  |
-| devWebsiteHostname          | string | ✅       | Hostname for Dev website                 | -                                                  |
-| docsWebsiteHostname         | string | ✅       | Hostname for Docs website                | -                                                  |
-| cvWebsiteHostname           | string | ✅       | Hostname for CV website                  | -                                                  |
+| Name                        | Type   | Required | Description                                                      | Allowed Values                                        |
+| --------------------------- | ------ | -------- | ---------------------------------------------------------------- | ----------------------------------------------------- |
+| resourceDeploymentDate      | string | ✅       | The date when the deployment is executed                         | -                                                     |
+| resourceLocation            | string | ✅       | Azure region for resources                                       | francecentral, northeurope, westeurope, swedencentral |
+| resourceConventionPrefix    | string | ✅       | Prefix for resource names (currently unused)                     | -                                                     |
+| dnsZoneName                 | string | ✅       | The name of the Azure DNS Zone resource                          | -                                                     |
+| devWebsiteAppServicePlanId  | string | ✅       | Dev App Service Plan resource ID                                 | -                                                     |
+| prodWebsiteAppServicePlanId | string | ✅       | Prod App Service Plan resource ID (currently unused)             | -                                                     |
+| apiWebsiteHostname          | string | ✅       | Resource name of the API site (used as an `existing` reference)  | -                                                     |
+| devWebsiteHostname          | string | ✅       | Resource name of the Dev site (used as an `existing` reference)  | -                                                     |
+| docsWebsiteHostname         | string | ✅       | Resource name of the Docs site (used as an `existing` reference) | -                                                     |
+| cvWebsiteHostname           | string | ✅       | Resource name of the CV site (used as an `existing` reference)   | -                                                     |
+| prodWebsiteHostname         | string | ✅       | Resource name of the production website (currently unused)       | -                                                     |
 
 ---
 
@@ -64,18 +69,20 @@ _None (module is orchestration layer for submodules)_
 ## 🛠️ Usage Example
 
 ```bicep
-module bindings 'bindings/deploymentFile.bicep' = {
-  name: 'bindingsDeployment'
+module bindingsDeployment 'bindings/deploymentFile.bicep' = {
+  name: 'bindingsDeployment-${resourceDeploymentDate}'
   params: {
-    resourceDeploymentDate: utcNow()
-    resourceLocation: 'swedencentral'
-    resourceConventionPrefix: 'arolariu'
-    devWebsiteAppServicePlanId: '<dev-app-service-plan-id>'
-    prodWebsiteAppServicePlanId: '<prod-app-service-plan-id>'
-    apiWebsiteHostname: 'api.arolariu.ro'
-    devWebsiteHostname: 'dev.arolariu.ro'
-    docsWebsiteHostname: 'docs.arolariu.ro'
-    cvWebsiteHostname: 'cv.arolariu.ro'
+    resourceLocation: resourceLocation
+    resourceDeploymentDate: resourceDeploymentDate
+    resourceConventionPrefix: resourceConventionPrefix
+    dnsZoneName: networkDeployment.outputs.dnsZoneName
+    devWebsiteAppServicePlanId: computeDeployment.outputs.developmentAppPlanId
+    prodWebsiteAppServicePlanId: computeDeployment.outputs.productionAppPlanId
+    cvWebsiteHostname: websiteDeployment.outputs.cvWebsiteName
+    apiWebsiteHostname: websiteDeployment.outputs.apiWebsiteName
+    devWebsiteHostname: websiteDeployment.outputs.devWebsiteName
+    docsWebsiteHostname: websiteDeployment.outputs.docsWebsiteName
+    prodWebsiteHostname: websiteDeployment.outputs.mainWebsiteName
   }
 }
 ```
@@ -119,8 +126,9 @@ flowchart TD
 ## 🔄 Deployment Flow
 
 1. **Deploy App Services** (api, dev) and **Static Web Apps** (cv, docs)
-2. **Deploy DNS zones and records**
+2. **Deploy DNS zone** (network module: zone, apex and `www` records)
 3. **Deploy Bindings Module** (this module)
+   - Creates subdomain CNAME/TXT records
    - Binds domains to App Services
    - Issues managed certificates
 
@@ -129,7 +137,7 @@ flowchart TD
 ## 🔗 Dependencies
 
 - **Requires:** App Services and DNS zones to exist before binding.
-- **Used by:** Sites module for domain/cert integration.
+- **Used by:** `facade.bicep` (deployed after the Sites, Compute and Network modules)
 
 ---
 
@@ -143,12 +151,12 @@ flowchart TD
 
 ## 🚨 Troubleshooting
 
-| Issue                     | Solution                                               |
-| ------------------------- | ------------------------------------------------------ |
-| Binding fails             | Ensure App Service and DNS are deployed and propagated |
-| Certificate not issued    | Check DNS CNAME records and domain ownership           |
-| Resource naming conflicts | Use unique `resourceConventionPrefix`                  |
-| Permission errors         | Verify deployment identity has sufficient permissions  |
+| Issue                     | Solution                                                            |
+| ------------------------- | ------------------------------------------------------------------- |
+| Binding fails             | Ensure App Service and DNS are deployed and propagated              |
+| Certificate not issued    | Check DNS CNAME records and domain ownership                        |
+| Resource naming conflicts | Check for existing DNS records or custom domains with the same name |
+| Permission errors         | Verify deployment identity has sufficient permissions               |
 
 ---
 
@@ -160,6 +168,6 @@ flowchart TD
 
 ---
 
-**Module Version**: 2.1.0  
-**Last Updated**: December 2025  
+**Module Version**: 2.0.0\
+**Last Updated**: November 2026\
 **Maintainer**: Alexandru-Razvan Olariu

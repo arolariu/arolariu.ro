@@ -14,8 +14,10 @@
 npm install @arolariu/components
 
 # Peer dependencies (install if not already in your project)
-npm install react@^19 react-dom@^19 @base-ui/react@^1.9 motion react-hook-form recharts
+npm install react@^19 react-dom@^19 @base-ui/react@^1.9 "motion@^13 || ^14" react-hook-form@^7 recharts@^3.8
 ```
+
+Some examples also import `zod`, `@hookform/resolvers`, `@tanstack/react-table`, `date-fns`, and `lucide-react`; install the ones you use.
 
 ```tsx
 // Import design tokens only once in your app entry point
@@ -550,6 +552,7 @@ export function ProfileForm() {
             <FormItem>
               <FormLabel>Role</FormLabel>
               <Select
+                items={{developer: "Developer", designer: "Designer", manager: "Manager"}}
                 defaultValue={field.value}
                 onValueChange={field.onChange}>
                 <FormControl>
@@ -972,7 +975,9 @@ export function SettingsDialog() {
             </div>
             <div className={styles.field}>
               <Label htmlFor='timezone'>Timezone</Label>
-              <Select defaultValue='utc'>
+              <Select
+                items={{utc: "UTC", est: "Eastern Time", pst: "Pacific Time"}}
+                defaultValue='utc'>
                 <SelectTrigger id='timezone'>
                   <SelectValue />
                 </SelectTrigger>
@@ -1500,6 +1505,7 @@ import {
   createColumnHelper,
   flexRender,
   getCoreRowModel,
+  getFilteredRowModel,
   getPaginationRowModel,
   getSortedRowModel,
   useReactTable,
@@ -1512,6 +1518,7 @@ import {Button} from "@arolariu/components/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
+  DropdownMenuGroup,
   DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuSeparator,
@@ -1631,8 +1638,10 @@ export function DataTableWithSorting() {
             <MoreHorizontal />
           </DropdownMenuTrigger>
           <DropdownMenuContent align='end'>
-            <DropdownMenuLabel>Actions</DropdownMenuLabel>
-            <DropdownMenuItem onClick={() => void copyUserId(row.original.id)}>Copy ID</DropdownMenuItem>
+            <DropdownMenuGroup>
+              <DropdownMenuLabel>Actions</DropdownMenuLabel>
+              <DropdownMenuItem onClick={() => void copyUserId(row.original.id)}>Copy ID</DropdownMenuItem>
+            </DropdownMenuGroup>
             <DropdownMenuSeparator />
             <DropdownMenuItem
               onClick={() =>
@@ -1667,6 +1676,7 @@ export function DataTableWithSorting() {
     onSortingChange: setSorting,
     onGlobalFilterChange: setGlobalFilter,
     getCoreRowModel: getCoreRowModel(),
+    getFilteredRowModel: getFilteredRowModel(),
     getSortedRowModel: getSortedRowModel(),
     getPaginationRowModel: getPaginationRowModel(),
     initialState: {
@@ -1862,7 +1872,7 @@ const projectSchema = z.object({
   name: z.string().min(3, "Project name must be at least 3 characters"),
   description: z.string().max(500, "Description must be less than 500 characters").optional(),
   category: z.enum(["web", "mobile", "desktop", "other"], {
-    required_error: "Please select a category",
+    message: "Please select a category",
   }),
   budget: z.string().regex(/^\d+$/, "Budget must be a valid number"),
 });
@@ -1941,6 +1951,7 @@ export function CreateProjectModal() {
                 <FormItem>
                   <FormLabel>Category</FormLabel>
                   <Select
+                    items={{web: "Web Application", mobile: "Mobile App", desktop: "Desktop Application", other: "Other"}}
                     onValueChange={field.onChange}
                     defaultValue={field.value}>
                     <FormControl>
@@ -2266,7 +2277,7 @@ export function ToastDemo() {
   background-color: var(--ac-card);
   border: 1px solid var(--ac-border);
   border-radius: var(--ac-radius-md);
-  box-shadow: var(--ac-shadow-lg);
+  box-shadow: 0 10px 24px -12px rgb(15 23 42 / 0.3);
 }
 
 .customIcon {
@@ -2369,10 +2380,8 @@ export function AppSidebar() {
 
                     if (item.submenu) {
                       return (
-                        <Collapsible
-                          key={item.title}
-                          defaultOpen={isActive}>
-                          <SidebarMenuItem>
+                        <SidebarMenuItem key={item.title}>
+                          <Collapsible defaultOpen={isActive}>
                             {/* A section trigger is not a destination: keep its active styling without aria-current="page". */}
                             <CollapsibleTrigger
                               render={
@@ -2406,8 +2415,8 @@ export function AppSidebar() {
                                 ))}
                               </SidebarMenuSub>
                             </CollapsibleContent>
-                          </SidebarMenuItem>
-                        </Collapsible>
+                          </Collapsible>
+                        </SidebarMenuItem>
                       );
                     }
 
@@ -2494,7 +2503,8 @@ export function AppSidebar() {
 
 ### Recipe 6: Accessible Dropdown Menu (with Keyboard Nav)
 
-**Fully accessible dropdown menu with keyboard shortcuts.**
+**Accessible dropdown menu with keyboard navigation and shortcut hints.** `DropdownMenuShortcut` only displays a hint: register each key
+binding yourself and expose it with `aria-keyshortcuts` on its `DropdownMenuItem`.
 
 ```tsx
 import {Copy, Download, Edit, LogOut, MoreVertical, Share2, Trash2, User} from "lucide-react";
@@ -2529,11 +2539,9 @@ export function AccessibleDropdownMenu() {
         <DropdownMenuContent
           align='end'
           className={styles.content}>
-          <DropdownMenuLabel>My Account</DropdownMenuLabel>
-
-          <DropdownMenuSeparator />
-
           <DropdownMenuGroup>
+            <DropdownMenuLabel>My Account</DropdownMenuLabel>
+
             <DropdownMenuItem onClick={() => handleAction("Profile")}>
               <User />
               <span>Profile</span>
@@ -2651,7 +2659,7 @@ export function AccessibleDropdownMenu() {
   background-color: var(--ac-background);
   border: 1px solid var(--ac-border);
   border-radius: var(--ac-radius-sm);
-  font-family: var(--ac-font-mono);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
   font-size: 0.75rem;
 }
 ```
@@ -2670,7 +2678,6 @@ import {useId, useState} from "react";
 import {Button} from "@arolariu/components/button";
 import {Calendar} from "@arolariu/components/calendar";
 import {Popover, PopoverContent, PopoverTrigger} from "@arolariu/components/popover";
-import {cn} from "@arolariu/components/utilities";
 import styles from "./date-picker.module.css";
 
 export function DatePicker() {
@@ -3353,6 +3360,7 @@ export function SettingsPage() {
                       <FormItem>
                         <FormLabel>Theme</FormLabel>
                         <Select
+                          items={{light: "Light", dark: "Dark", system: "System"}}
                           onValueChange={field.onChange}
                           defaultValue={field.value}>
                           <FormControl>
@@ -3379,6 +3387,7 @@ export function SettingsPage() {
                       <FormItem>
                         <FormLabel>Language</FormLabel>
                         <Select
+                          items={{en: "English", es: "Español", fr: "Français", de: "Deutsch"}}
                           onValueChange={field.onChange}
                           defaultValue={field.value}>
                           <FormControl>
@@ -3519,11 +3528,20 @@ function ProfileSkeleton(): JSX.Element {
   return (
     <Card>
       <CardHeader>
-        <Skeleton className={styles.skeletonTitle} />
+        <Skeleton
+          aria-hidden='true'
+          className={styles.skeletonTitle}
+        />
       </CardHeader>
       <CardContent className={styles.skeletonContent}>
-        <Skeleton className={styles.skeletonField} />
-        <Skeleton className={styles.skeletonField} />
+        <Skeleton
+          aria-hidden='true'
+          className={styles.skeletonField}
+        />
+        <Skeleton
+          aria-hidden='true'
+          className={styles.skeletonField}
+        />
       </CardContent>
     </Card>
   );
@@ -3758,7 +3776,7 @@ export function ErrorHandlingDemo({
 3. **Loading States**: Use `Skeleton` components and `AsyncBoundary` for async data. AsyncBoundary's default fallback announces loading
    through a persistent status region; a custom fallback, such as Recipe 10's skeleton, needs its own region mounted before loading starts
 4. **Accessibility**: Keyboard navigation, ARIA attributes, and semantic HTML
-5. **Responsive Design**: CSS Modules with container queries and media queries
+5. **Responsive Design**: CSS Modules with media queries
 6. **Type Safety**: Leverage namespace types (`Component.Props`, `Component.State`)
 7. **Composition**: Use `render` prop for element composition (Base UI pattern)
 8. **Toast Notifications**: Use `toast.promise()` for async operations
