@@ -1,6 +1,6 @@
 # RFC 0002: Lean Monorepo Tooling Architecture
 
-- **Status**: Accepted
+- **Status**: Implemented
 - **Date**: 2026-09-01
 - **Revision**: 3 - Effect Command Platform
 - **Revision Date**: 2026-10-05
@@ -57,17 +57,17 @@ and deletes the homegrown kernel.
 
 Every user-facing command is a subcommand of `scripts/cli.ts`:
 
-| Family            | Command path                                               | Family module                                                        |
-| ----------------- | ---------------------------------------------------------- | -------------------------------------------------------------------- |
-| Setup             | `setup`                                                    | `scripts/commands/setup/`                                            |
-| Health            | `doctor`, `status`                                         | `scripts/commands/doctor/`, `scripts/commands/status/`               |
-| Generation        | `generate [env] [i18n] [gql] [artifacts]`                  | `scripts/commands/generate/`                                         |
-| Documentation     | `docs assemble`                                            | `scripts/commands/docs/`                                             |
-| Data maintenance  | `rates update`                                             | `scripts/commands/rates/`                                            |
-| Local development | `dev aspire`, `dev selfhost`                               | `scripts/commands/dev/`, `scripts/container-runtime/`                |
-| Containers        | `containers build`, `containers run`, `containers compose` | `scripts/commands/containers/`, `scripts/container-runtime/`         |
-| Testing           | `test e2e`                                                 | `scripts/commands/e2e/`                                              |
-| Quality           | `format`, `lint`                                           | `scripts/commands/quality/` (spawns the frozen closure, section 3.2) |
+| Family            | Command path                                                                  | Family module                                                        |
+| ----------------- | ----------------------------------------------------------------------------- | -------------------------------------------------------------------- |
+| Setup             | `setup`                                                                       | `scripts/commands/setup/`                                            |
+| Health            | `doctor`, `status`                                                            | `scripts/commands/doctor/`, `scripts/commands/status/`               |
+| Generation        | `generate [env] [i18n] [gql] [artifacts]`, `generate --website-licenses-only` | `scripts/commands/generate/`                                         |
+| Documentation     | `docs assemble`, `docs prepare-site`                                          | `scripts/commands/docs/`                                             |
+| Data maintenance  | `rates update`                                                                | `scripts/commands/rates/`                                            |
+| Local development | `dev aspire`, `dev selfhost`                                                  | `scripts/commands/dev/`, `scripts/container-runtime/`                |
+| Containers        | `containers build`, `containers run`, `containers compose`                    | `scripts/commands/containers/`, `scripts/container-runtime/`         |
+| Testing           | `test e2e`                                                                    | `scripts/commands/e2e/`                                              |
+| Quality           | `format`, `lint`                                                              | `scripts/commands/quality/` (spawns the frozen closure, section 3.2) |
 
 The service boundary also applies to supporting production modules under `scripts/**`, including the inspection providers and the two
 inspection worker entrypoints. The exclusions are defined in section 3.
@@ -82,7 +82,7 @@ inspection worker entrypoints. The exclusions are defined in section 3.
 6. Preserve repository-specific behavior, read-only, security, and cross-platform contracts, recording every intentional change.
 7. Keep every invocation re-entrant and testable on an in-memory layer without mocking repository modules.
 8. Enforce the architecture with focused TypeScript AST tests.
-9. Keep every npm script name working as an alias of one command path.
+9. Keep every repository-tooling npm script working as an alias of one command path (section 4.2).
 10. Add no dependency beyond the two approved Effect packages.
 
 ### 1.5 Non-goals
@@ -95,7 +95,7 @@ This RFC does not:
   report sanitization;
 - make every pure helper a service;
 - impose a line-count quota;
-- add a CI job for the scripts suite (section 19).
+- add a `scripts/` type-check or a scripts coverage gate to CI (section 19).
 
 ---
 
@@ -153,7 +153,7 @@ them to memory.
 | Kept                 | The Piscina format/lint closure and its private modules (section 3.2), including `execa`. Also kept: Nx Devkit, envinfo, systeminformation, `@azure/storage-blob`.                                                                                                   |
 | Topology             | One root CLI `scripts/cli.ts` with subcommands; npm script names remain as thin aliases (section 4).                                                                                                                                                                 |
 | CLI compatibility    | Free redesign; all callers were updated in the same change. Slash aliases are removed.                                                                                                                                                                               |
-| Dependencies         | `effect@4.0.0` and `@effect/platform-node@4.0.0`, pinned exactly and kept in lockstep. `@effect/vitest` is **not** used: 4.0.0 requires `vitest >=5`, while the repository stays on vitest 4 for `@storybook/addon-vitest`.                                          |
+| Dependencies         | `effect` and `@effect/platform-node` (currently `4.0.6`), pinned exactly and kept in lockstep. `@effect/vitest` is **not** used; the local `effectTest` helper covers the need (section 16.7).                                                                       |
 | Removed dependencies | `commander`.                                                                                                                                                                                                                                                         |
 | Secrets              | Typed `Redacted<string>` from the point they are read; no output masking (section 12.3, accepted risk).                                                                                                                                                              |
 
@@ -254,7 +254,9 @@ arolariu setup [--dry-run] [--yes] [--engine <rancher|podman>]
 arolariu doctor [--quick]
 arolariu status
 arolariu generate [env] [i18n] [gql] [artifacts]
+arolariu generate --website-licenses-only
 arolariu docs assemble
+arolariu docs prepare-site
 arolariu rates update [--year <y>] [--from <y>] [--to <y>]
 arolariu dev aspire [--engine <rancher|podman>]
 arolariu dev selfhost [start|stop|logs] [--engine <rancher|podman>]
@@ -269,7 +271,9 @@ arolariu lint <all|packages|cv|website|api|status|exp> [patterns...]
 
 ### 4.2 npm Aliases
 
-Every npm script name is an alias of one command path, for example `"doctor": "node scripts/cli.ts doctor"` and
+Every repository-tooling npm script is an alias of one command path: the whole script-based section of the root `package.json` except
+`lint:inspect:eslint` (which runs `eslint --inspect-config` directly), plus `dev`, `dev:aspire*`, `dev:selfhost*`, and `docs:assemble` in
+the runner-based section, whose other scripts call Nx or TypeDoc directly. For example `"doctor": "node scripts/cli.ts doctor"` and
 `"rates:update": "node scripts/cli.ts rates update"`. Arguments pass through npm after `--`: `npm run doctor -- --quick --json`. Slash
 aliases (`/h`, `/v`, `/q`, `/?`, and the rest) and `normalizeSlashArguments` no longer exist.
 
@@ -425,6 +429,7 @@ interface ProcessOptions {
   readonly timeout?: Duration.Input;
   readonly echo?: boolean;
   readonly failureOutput?: "tail" | "full";
+  readonly interruptGracePeriod?: Duration.Input;
 }
 ```
 
@@ -459,12 +464,12 @@ parses the output of a non-zero exit (for example `npm ls --json`). `processErro
 Interruption closes the spawn scope, which terminates the child. A captured child never talks to the terminal: it runs in its own process
 group off Windows, and its whole tree is killed at once (`SIGTERM`, then `SIGKILL` after 1 s; `taskkill /T /F` on Windows). A
 terminal-attached child (`tee` or `inherit` output) stays in the terminal's foreground process group, so `sudo` can prompt and the
-terminal's Ctrl+C and hang-up reach it; on Windows it shares the console. After a Ctrl+C it gets `INTERRUPT_GRACE_PERIOD` (15 s) to finish
-its own shutdown, which keeps the Aspire AppHost, DCP, and `docker compose up` shutdown graceful; a second Ctrl+C ends the wait. A child
-still running is then terminated: the direct child on POSIX (its descendants received the terminal's Ctrl+C themselves), the tree on
-Windows. A `SIGTERM` sent to the CLI alone is forwarded to the direct child, followed by `SIGKILL` after the grace period. A programmatic
-interruption (no signal) terminates the child at once. `platform/windows.ts` resolves `.cmd`/`.bat` shims and escapes their arguments, and
-keeps an unresolved command distinguishable from a resolved shim.
+terminal's Ctrl+C and hang-up reach it; on Windows it shares the console. After a Ctrl+C it gets `INTERRUPT_GRACE_PERIOD` (15 s, overridable
+per call with `interruptGracePeriod`) to finish its own shutdown, which keeps the Aspire AppHost, DCP, and `docker compose up` shutdown
+graceful; a second Ctrl+C ends the wait. A child still running is then terminated: the direct child on POSIX (its descendants received the
+terminal's Ctrl+C themselves), the tree on Windows. A `SIGTERM` sent to the CLI alone is forwarded to the direct child, followed by
+`SIGKILL` after the grace period. A programmatic interruption (no signal) terminates the child at once. `platform/windows.ts` resolves
+`.cmd`/`.bat` shims and escapes their arguments, and keeps an unresolved command distinguishable from a resolved shim.
 
 ### 6.5 The Closure's Runner
 
@@ -692,13 +697,13 @@ Architecture tests do not replace command behavior tests.
 
 | Package                 | Version   | Ownership                                                                                                                  |
 | ----------------------- | --------- | -------------------------------------------------------------------------------------------------------------------------- |
-| `effect`                | `4.0.2`   | Services, layers, fibers, scopes, `effect/cli`, `FileSystem`, `HttpClient`, `ChildProcessSpawner`, `Terminal`, test clock  |
-| `@effect/platform-node` | `4.0.2`   | Node adapters (`NodeServices`, `NodeHttpClient`, `NodeRuntime`); imported only by `scripts/platform/` and `scripts/cli.ts` |
-| `@nx/devkit`            | `23.3.0`  | Project discovery and dependency graph (workspace worker)                                                                  |
+| `effect`                | `4.0.6`   | Services, layers, fibers, scopes, `effect/cli`, `FileSystem`, `HttpClient`, `ChildProcessSpawner`, `Terminal`, test clock  |
+| `@effect/platform-node` | `4.0.6`   | Node adapters (`NodeServices`, `NodeHttpClient`, `NodeRuntime`); imported only by `scripts/platform/` and `scripts/cli.ts` |
+| `@nx/devkit`            | `24.0.1`  | Project discovery and dependency graph (workspace worker)                                                                  |
 | `envinfo`               | `7.21.0`  | Generic tooling inventory (aggregate worker)                                                                               |
-| `systeminformation`     | `5.33.15` | Generic host inventory (aggregate worker)                                                                                  |
+| `systeminformation`     | `5.33.16` | Generic host inventory (aggregate worker)                                                                                  |
 | `@azure/storage-blob`   | `12.34.0` | Azurite provisioning (`LocalBlobStorageLive`)                                                                              |
-| `execa`                 | `10.1.0`  | Frozen closure only (`common/runner.execa.ts`)                                                                             |
+| `execa`                 | `10.2.1`  | Frozen closure only (`common/runner.execa.ts`)                                                                             |
 | `piscina`               | `5.3.2`   | Frozen closure only (format/lint pools)                                                                                    |
 
 `effect` and `@effect/platform-node` stay pinned exactly and move in lockstep. The exact pins are owned by the
@@ -858,9 +863,9 @@ indefinitely.
 ### 16.4 One Root CLI
 
 **Accepted.** `scripts/cli.ts` registers every family as a subcommand of the `arolariu` root command (section 4). Revision 2 deferred a root
-CLI because independent npm scripts were clear and used by automation. Revision 3 keeps every npm script name as an alias of one command
-path, so automation is unchanged, and gains one parser, one help and completion surface, one place to record signals, and one exit-code
-mapping.
+CLI because independent npm scripts were clear and used by automation. Revision 3 keeps every repository-tooling npm script as an alias of
+one command path (section 4.2), so automation is unchanged, and gains one parser, one help and completion surface, one place to record
+signals, and one exit-code mapping.
 
 ### 16.5 New TUI Framework
 
@@ -874,8 +879,9 @@ processes. The format/lint migration needs its own design (section 20).
 
 ### 16.7 `@effect/vitest`
 
-Rejected because `@effect/vitest@4.0.0` requires `vitest >=5`, and the repository stays on vitest 4 for `@storybook/addon-vitest`. The local
-`effectTest` helper covers the need.
+Rejected; the local `effectTest` helper covers the need. The original blocker, that `@effect/vitest@4.0.0` requires `vitest >=5` while the
+repository stayed on Vitest 4 for `@storybook/addon-vitest`, no longer applies: the repository now uses Vitest 5, which
+`@storybook/addon-vitest` accepts.
 
 ---
 
@@ -896,7 +902,7 @@ The RFC index keeps RFC 0002 as the canonical process and tooling architecture r
 
 Revision 3 is complete when:
 
-1. every command is a subcommand of `scripts/cli.ts` and every npm script name is an alias of one command path;
+1. every command is a subcommand of `scripts/cli.ts` and every repository-tooling npm script is an alias of one command path (section 4.2);
 2. `exitCodeFor` is the only exit-code mapping, and no command reads `process.argv`, assigns `process.exitCode`, or calls `process.exit()`;
 3. commands compose plain effects, never sibling processes;
 4. all production filesystem, HTTP, process, timer, environment, and concurrency access outside the frozen closure flows through Effect and
@@ -919,7 +925,7 @@ Revision 3 is complete when:
 | Risk                                                                                                                                                                                                                                                     | Decision                                                                                                                                                                                       |
 | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | No output masking. Secrets can appear in child-process output or a command echo (selfhost SQL password, `generate env` values, setup user secrets, the E2E token in CI logs).                                                                            | Accepted. Mitigations only: `Redacted<string>` keeps our own logs clean, secrets travel through `env` where the tool allows, and selfhost and E2E apply the targeted measures of section 12.3. |
-| No CI job runs the scripts Vitest suite, so CI does not validate this architecture.                                                                                                                                                                      | Accepted. Every change to `scripts/` records the local suite, type-check, and lint results. Adding a job is a separate workflow change.                                                        |
+| CI runs the scripts Vitest suite (hygiene `test-typescript` provider, suite `tooling`) with coverage disabled, and no CI job type-checks `scripts/`, so CI enforces neither the coverage thresholds nor the scripts types.                               | Accepted. Every change to `scripts/` records the local suite, type-check, and lint results. Adding a type-check or coverage gate is a separate workflow change.                                |
 | The POSIX signal and process-tree legs of the cancellation test are not exercised on the Windows development host.                                                                                                                                       | Accepted. The test runs them on POSIX (verified in a `node:24` Linux container); Windows uses the self-interrupt path.                                                                         |
 | On POSIX, a `SIGTERM` sent to the CLI alone, or a programmatic interruption, reaches only the direct child of a terminal-attached (`tee`/`inherit`) child, because that child must stay in the terminal's process group to prompt and to receive Ctrl+C. | Accepted. A terminal Ctrl+C or hang-up reaches the whole foreground group; signal the process group to stop every descendant. Captured children keep the process-group tree kill.              |
 | Newman has no live progress, because its output is captured and re-emitted after redaction.                                                                                                                                                              | Accepted in exchange for keeping the E2E token out of the output.                                                                                                                              |
@@ -932,7 +938,7 @@ Revision 3 is complete when:
 ## 20. Future Work
 
 - Migrate the Piscina format/lint stack and remove `execa` and `logger.ts`.
-- Add a CI job that runs the scripts suite, type-check, and lint.
+- Add a `scripts/` type-check and enforce the scripts coverage threshold in CI; the hygiene workflow already runs the suite and ESLint.
 - Restore the scripts branch coverage to the configured threshold.
 - Import command families lazily per subcommand to recover `--help` startup time.
 - Live Windows, Linux, and macOS tooling validation in CI.
@@ -953,4 +959,4 @@ Revision 3 is complete when:
 
 ---
 
-**Document Version**: 3.0.0 **Last Updated**: 2026-10-05 **Status**: Accepted
+**Document Version**: 3.1.0 **Last Updated**: 2026-11-17 **Status**: Implemented
