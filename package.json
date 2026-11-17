@@ -263,6 +263,9 @@
     },
     "eslint-plugin-jsx-a11y": {
       "eslint": "$eslint"
+    },
+    "@docusaurus/bundler": {
+      "css-loader": "7.1.5"
     }
   },
   "allowScripts": {
