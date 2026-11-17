@@ -9,9 +9,10 @@ presentation.
 
 ## Tech stack
 
-- Svelte 5 + (SvelteKit conventions)
-- Node.js + Yarn (Corepack-enabled)
+- SvelteKit 2 + Svelte 5 (svelte-adapter-azure-swa)
+- Node.js + npm workspaces (installed from the repository root)
 - Prettier + prettier-plugin-svelte
+- Vitest (unit tests) + Playwright (accessibility tests)
 
 ## Features
 
@@ -23,44 +24,46 @@ presentation.
 
 Prerequisites:
 
-- Node.js ≥ 18
-- Corepack (ships with modern Node.js)
+- The Node.js and npm versions listed in the [root `AGENTS.md` Versions table](../../AGENTS.md#versions)
 
-Install and run:
+Install and run from the repository root:
 
 ```bash
-corepack enable
-yarn install --immutable
-yarn dev
+npm install
+npm run dev:cv
 ```
+
+After `npm install`, `npm run setup` prepares the rest of a fresh checkout (generated artifacts and the other toolchains).
 
 Build and preview:
 
 ```bash
-yarn build
-yarn preview
+npm run build:cv
+cd sites/cv.arolariu.ro
+npm run preview
 ```
 
 ## Project structure
 
 - src/… — application code (routes, components, styles)
 - static/ — static assets (favicons, images, etc.)
+- tests/ — Playwright accessibility suite
 - build/ — production artifacts (generated on build)
-- .prettierrc — formatting rules (Svelte-aware)
-- .yarnrc.yml — Yarn configuration
+- svelte.config.js, vite.config.ts, vitest.config.ts, playwright.config.ts, swa-cli.config.json — tooling configuration
+- Formatting uses the repository-root .prettierrc (Svelte-aware via prettier-plugin-svelte)
 
 Note: Structure follows common Svelte/SvelteKit conventions.
 
 ## Deployment
 
-Automated via GitHub Actions: .github/workflows/cv-official-trigger.yml
+Automated via GitHub Actions: .github/workflows/official-cv-trigger.yml
 
-- Triggers on pushes to main
-- Builds with Yarn
+- Triggers on pushes to main that change `sites/cv.arolariu.ro/**`
+- Runs unit tests (npm run test:unit), then builds with npm (npm run prepare, npm run build)
 - Deploys to Azure Static Web Apps using:
-  - app_location: ./
-  - api_location: ./build/server
-  - output_location: ./build/static
+  - app_location: ./sites/cv.arolariu.ro/
+  - api_location: ./sites/cv.arolariu.ro/build/server
+  - output_location: build/static
 
 Required secret:
 
@@ -70,10 +73,17 @@ Manual trigger: available via workflow_dispatch in GitHub Actions.
 
 ## Scripts (common)
 
-- yarn dev — start local dev server
-- yarn build — production build
-- yarn preview — preview production build locally
-- yarn format — format with Prettier (if configured in package.json)
+From the repository root:
+
+- npm run dev:cv — start local dev server
+- npm run build:cv — production build
+- npm run test:cv — Vitest unit tests
+- npm run format:cv — format with Prettier
+
+Inside sites/cv.arolariu.ro:
+
+- npm run preview — preview production build locally
+- npm run test:e2e:a11y — Playwright accessibility suite against npm run preview on http://localhost:4173 (build first)
 
 ## E2E Testing (Newman)
 

@@ -28,5 +28,6 @@ After explicit approval, update only the intended `uses:` refs and the source-pr
 Preserve local action paths, expressions, conditions, permissions, concurrency, environments, and artifact names unless the release contract
 requires an approved change.
 
-Validate the complete affected YAML graph, including composite and reusable callers, with the repository's existing workflow checks. Inspect
-the diff for unrelated version normalization and retain the prior refs plus any coupled input/output changes as the rollback unit.
+No workflow linter is configured in this repository; the pull-request hygiene check only verifies Prettier formatting of changed YAML.
+Validate the complete affected YAML graph, including composite and reusable callers, by running the affected workflows in a PR. Inspect the
+diff for unrelated version normalization and retain the prior refs plus any coupled input/output changes as the rollback unit.

@@ -26,5 +26,5 @@ Use the component-library build command owned by root `AGENTS.md`.
 
 ## Architecture References
 
-- RFC 1006 - component-library architecture
-- RFC 1008 - styling architecture
+- RFC 1006 - component-library architecture, including CSS Module styling
+- RFC 1008 - website SCSS architecture and how it styles alongside this library

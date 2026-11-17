@@ -43,14 +43,16 @@ server/client/ email tests.
 
 ## Generation behavior
 
-The repository i18n generator treats English as the source key set and can write missing Romanian/French paths with empty-string leaves.
-Therefore:
+The repository i18n generator treats English as the source key set and can write missing Romanian/French paths with empty-string leaves. It
+never removes keys: a Romanian/French key absent from English (for example after a rename or removal) makes the current or a later run fail
+with `TranslationSyncFailed` ("extra keys"), so delete renamed or removed keys manually in every locale. Therefore:
 
 1. update all locales before generation when possible;
 2. run the canonical command from root guidance;
 3. inspect all locale mutations;
 4. replace every empty placeholder with a real translation;
-5. rerun until no missing keys remain;
+5. rerun until no missing keys remain, then verify that no `""` leaf remains in `ro.json`/`fr.json` (neither the generator nor
+   `npm run doctor` flags empty values);
 6. refresh/compile the generated declaration through the configured next-intl mechanism.
 
 Do not copy command spellings from an RFC; root guidance owns current commands.

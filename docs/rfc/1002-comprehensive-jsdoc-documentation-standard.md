@@ -237,9 +237,9 @@ Use `@fileoverview` for comprehensive module documentation:
 
 ```typescript
 /**
- * Formats a number as a currency string based on the specified currency code.
+ * Formats a numeric amount as a localized currency string.
  */
-export function formatCurrency(amount: number, currency?: string | Currency): string {}
+export function formatCurrency(possibleAmount: number, options: FormatCurrencyOptions): string {}
 
 /**
  * Extracts a Base64-encoded string from a Blob object.
@@ -247,9 +247,9 @@ export function formatCurrency(amount: number, currency?: string | Currency): st
 export async function extractBase64FromBlob(blob: Blob): Promise<string> {}
 
 /**
- * The footer component displaying site navigation, metadata, and legal links.
+ * Renders the site-wide footer with navigation, metadata, and social links.
  */
-export default function Footer(): React.JSX.Element {}
+function Footer(): React.JSX.Element {}
 ```
 
 ### 2. Parameter Tag (`@param`)
@@ -279,11 +279,12 @@ export default function Footer(): React.JSX.Element {}
 export async function fetchInvoice(input: Readonly<{invoiceId: string}>): ServerActionResult<Readonly<Invoice>> {}
 
 /**
- * Formats a date string into a human-readable format.
- * @param dateString - The date string or Date object to format. Optional; returns empty string if not provided.
- * @returns A formatted date string in the format "MMM DD, YYYY" (e.g., "Mar 15, 2023").
+ * Formats a date string or object into a human-readable string.
+ * @param possibleDate - Date, ISO string, null, or undefined; returns "" when missing or invalid.
+ * @param options - Intl.DateTimeFormat options; `locale` is required and `dateStyle` defaults to "short" unless date fields are set.
+ * @returns The localized date string (e.g., "3/15/23" for en-US).
  */
-export function formatDate(dateString?: string | Date): string {}
+export function formatDate(possibleDate: DateLike, options: FormatDateOptions): string {}
 
 /**
  * Executes a function within an OpenTelemetry span for distributed tracing.
@@ -295,7 +296,7 @@ export function formatDate(dateString?: string | Date): string {}
 export async function withSpan<T>(
   spanName: SpanOperationType,
   fn: (span: Span) => Promise<T>,
-  attributes?: Record<string, string | number | boolean>,
+  attributes?: TelemetryAttributes,
 ): Promise<T> {}
 ```
 
@@ -323,17 +324,15 @@ export async function withSpan<T>(
 export function dumpBrowserInformation(): Readonly<string> {}
 
 /**
- * Function that generates a GUID via random number generation.
- * @returns A UUIDv4 compliant GUID, converted to a string.
- * @example
- * GUID: b23090df-9e68-4c12-ae2a-5368db13b6c1
- * GUID: 8b3f7b7e-6b1b-4b7b-8b1b-4b7b8b1b4b7b
+ * Generates a UUID v4 (random) or v5 (namespaced) string.
+ * @param seed - Optional seed string or byte array for deterministic UUID generation.
+ * @returns A standard UUID string (e.g., "b23090df-9e68-4c12-ae2a-5368db13b6c1").
  */
-export function generateGuid(arraybuffer?: ArrayBuffer): Readonly<string> {}
+export function generateGuid(seed?: string | Uint8Array): Readonly<string> {}
 
 /**
- * This hook fetches the invoice information.
- * @returns The invoice information and loading state.
+ * Fetches a single invoice by identifier from the backend API.
+ * @returns Hook state containing the cached invoice, hydration loading state, and fetch error flag.
  */
 export function useInvoice({invoiceIdentifier}: HookInputType): HookOutputType {}
 ```
@@ -355,25 +354,25 @@ export function useInvoice({invoiceIdentifier}: HookInputType): HookOutputType {
 
 ```typescript
 /**
- * Formats a currency amount with the appropriate symbol and locale.
+ * Formats a numeric amount as a localized currency string.
  *
- * @param amount - The numeric amount to format
- * @param currency - Currency code (e.g., "USD") or Currency object
+ * @param possibleAmount - The numeric value to format
+ * @param options - Formatting configuration (currencyCode, locale, and optional Intl.NumberFormat overrides)
  * @returns Formatted currency string (e.g., "$123.45")
  *
  * @example
  * // Returns "$123.45"
- * formatCurrency(123.45, "USD");
+ * formatCurrency(123.45, {currencyCode: "USD", locale: "en-US"});
  *
  * @example
- * // Returns "€100.00"
- * formatCurrency(100, "EUR");
+ * // Returns "100 €"
+ * formatCurrency(100, {currencyCode: "EUR", locale: "de-DE"});
  *
  * @example
- * // Returns "£50.00"
- * formatCurrency(50, "GBP");
+ * // Returns "£50"
+ * formatCurrency(50, {currencyCode: "GBP", locale: "en-GB"});
  */
-export function formatCurrency(amount: number, currency?: string | Currency): string {}
+export function formatCurrency(possibleAmount: number, options: FormatCurrencyOptions): string {}
 ```
 
 ### 5. See/Link Tags (`@see`, `@link`)
@@ -571,24 +570,38 @@ export type SpanOperationType = `http.server.${string}` | `http.client.${string}
 export function MyComponent(props: MyComponentProps): React.JSX.Element {}
 ````
 
-**Real Examples**:
+**Real Examples** (excerpts from `src/components/Footer.tsx` and `src/components/Header.tsx`):
 
 ```typescript
 /**
- * The footer component displaying site navigation, metadata, and legal links.
- * This component is used to display the footer of the website.
- * @returns The footer component.
- */
-export default function Footer(): React.JSX.Element {}
-
-/**
- * The header component.
- * @returns The header component.
+ * Renders the site-wide footer with navigation, metadata, and social links.
  *
  * @remarks
- * This component is memoized to prevent unnecessary re-renders when parent state changes.
- * It adapts to mobile/desktop viewports using the {@link useWindowSize} hook.
+ * **Rendering Context**: Client Component (`"use client"` directive required).
+ * …
+ * @returns Footer JSX element with navigation, branding, and metadata sections
  */
+function Footer(): React.JSX.Element {}
+
+// This component is memoized to prevent unnecessary re-renders
+export default memo(Footer);
+
+/**
+ * Renders the site-wide header with responsive navigation, branding, and controls.
+ *
+ * @remarks
+ * …
+ * **Dependencies:**
+ * - `@arolariu/components`: `useWindowSize` hook for responsive viewport detection
+ * …
+ * **Performance Considerations:**
+ * - Component is memoized via `React.memo` to prevent unnecessary re-renders
+ * …
+ * @returns Header JSX element with responsive navigation, branding, and control buttons
+ */
+function Header(): React.JSX.Element {}
+
+// This component is memoized to prevent unnecessary re-renders
 export default memo(Header);
 ```
 
@@ -618,22 +631,36 @@ export default memo(Header);
 export function useMyHook(input: InputType): OutputType {}
 ````
 
-**Real Example**:
+**Real Example** (excerpt from `src/app/domains/invoices/_hooks/invoice/useInvoice.tsx`):
 
 ```typescript
 /**
- * This hook fetches the invoice information.
- * @returns The invoice information and loading state.
+ * Fetches a single invoice by identifier from the backend API.
  *
  * @remarks
- * **Dependencies**: Requires {@link useUserInformation} for authentication context.
+ * **Rendering Context**: Client Component hook (requires "use client" directive).
  *
- * **Side Effects**: Fetches invoice from API on mount and when `invoiceIdentifier` changes.
+ * **Data Fetching:**
+ * - Calls server action {@link fetchInvoice} via authenticated API
+ * - Automatically refetches when `invoiceIdentifier` changes
+ * - Cached data shown immediately after hydration while fresh data loads
  *
- * **Error Handling**: Sets `isError` flag on fetch failure. Check this before rendering invoice data.
+ * **Hydration Behavior:**
+ * - `isLoading` remains true only until IndexedDB hydration completes
+ * …
+ * **Error Handling:**
+ * - Logs errors to console
+ * - Sets `isError` flag but does not throw
+ * …
+ * @param params - Hook configuration.
+ * @param params.invoiceIdentifier - UUID of the invoice to fetch and cache.
+ * @returns Hook state containing the cached invoice, hydration loading state, and fetch error flag.
  */
 export function useInvoice({invoiceIdentifier}: HookInputType): HookOutputType {}
 ```
+
+The hook reads and upserts the cached invoice through the `useInvoicesStore` Zustand store; identity is derived server-side by the
+`fetchInvoice` server action.
 
 ### Server Actions
 
@@ -784,25 +811,32 @@ export function myUtility(param: Type): Result {}
 
 **Real Examples**:
 
-```typescript
+````typescript
 /**
- * Function that generates a GUID via random number generation.
+ * Generates a UUID v4 (random) or v5 (namespaced) string.
  *
  * @remarks
- * **Algorithm**: Uses `crypto.getRandomValues()` for cryptographically strong randomness
- * when available, with Math.random() fallback.
+ * **Behavior:**
+ * - If a `seed` is provided, generates a deterministic UUID v5 using the DNS namespace.
+ * - If no `seed` is provided, generates a random UUID v4.
  *
- * **Format**: UUIDv4 compliant (version 4, variant 10).
+ * **Usage Context:**
+ * - Use without seed for unique identifiers (primary keys).
+ * - Use with seed for deterministic identifiers based on input data (e.g., hashing).
  *
- * @param arraybuffer - Optional ArrayBuffer to use as entropy source
- * @returns A UUIDv4 compliant GUID, converted to a string.
+ * @param seed - Optional seed string or byte array for deterministic UUID generation.
+ * @returns A standard UUID string (e.g., "b23090df-9e68-4c12-ae2a-5368db13b6c1").
  *
  * @example
- * GUID: b23090df-9e68-4c12-ae2a-5368db13b6c1
- * GUID: 8b3f7b7e-6b1b-4b7b-8b1b-4b7b8b1b4b7b
- * GUID: b1624a43-1f96-4d22-b94f-d030cc5df437
+ * ```typescript
+ * // Random UUID v4
+ * const id = generateGuid();
+ *
+ * // Deterministic UUID v5
+ * const hash = generateGuid("my-seed-string");
+ * ```
  */
-export function generateGuid(arraybuffer?: ArrayBuffer): Readonly<string> {}
+export function generateGuid(seed?: string | Uint8Array): Readonly<string> {}
 
 /**
  * This function checks if the browser storage is available.
@@ -821,7 +855,7 @@ export function generateGuid(arraybuffer?: ArrayBuffer): Readonly<string> {}
  * @see {@link https://developer.mozilla.org/en-US/docs/Web/API/Storage}
  */
 export function isBrowserStorageAvailable(type: "localStorage" | "sessionStorage"): boolean {}
-```
+````
 
 ---
 
@@ -831,7 +865,7 @@ export function isBrowserStorageAvailable(type: "localStorage" | "sessionStorage
 
 **Document Rendering Context**:
 
-````typescript
+```typescript
 /**
  * Root layout component wrapping the entire application.
  *
@@ -847,7 +881,14 @@ export function isBrowserStorageAvailable(type: "localStorage" | "sessionStorage
  * @param props - Layout props including children
  * @returns The root layout JSX
  */
-export default async function RootLayout(props: LayoutProps<"/">): Promise<React.JSX.Element> {}
+export default async function RootLayout(props: Readonly<LayoutProps<"/">>): Promise<React.JSX.Element> {}
+```
+
+Client Components declare `"use client"` once, as the first statement of the module (as in `src/contexts/FontContext.tsx`), not inside the
+component body:
+
+````typescript
+"use client";
 
 /**
  * FontContextProvider component provides a context for managing font selection.
@@ -869,7 +910,6 @@ export default async function RootLayout(props: LayoutProps<"/">): Promise<React
  * ```
  */
 export function FontContextProvider({children}: Readonly<{children: React.ReactNode}>): React.JSX.Element {
-  "use client";
   // Implementation
 }
 ````
@@ -878,7 +918,7 @@ export function FontContextProvider({children}: Readonly<{children: React.ReactN
 
 ```typescript
 /**
- * The header component.
+ * Renders the site-wide header with responsive navigation, branding, and controls.
  *
  * @remarks
  * **Performance Optimization**: This component is memoized with `React.memo()` to prevent
@@ -893,32 +933,36 @@ export function FontContextProvider({children}: Readonly<{children: React.ReactN
  * - If header needs to react to every route change (dynamic breadcrumbs)
  * - If props change frequently (defeats memoization benefit)
  *
- * @returns The header component.
+ * @returns Header JSX element with responsive navigation, branding, and control buttons
  */
+function Header(): React.JSX.Element {}
+
+// This component is memoized to prevent unnecessary re-renders
 export default memo(Header);
 ```
 
 ### Dynamic Imports
 
 ```typescript
+const WebVitals = dynamic(() => import("./web-vitals"));
+
 /**
  * Context providers wrapping the entire application.
  *
  * @remarks
- * **Performance**: `WebVitals` is dynamically imported to reduce initial bundle size.
- * It's only loaded client-side after hydration, preventing blocking of critical rendering path.
+ * **Performance**: `WebVitals` is lazily imported with `next/dynamic` at module scope and is rendered only when the
+ * `webVitalsEnabled` feature flag is enabled.
  *
  * **Provider Nesting Order**:
- * 1. AuthProvider (Clerk) - Outermost for authentication context
- * 2. FontProvider - Custom font selection state
- * 3. ThemeProvider (next-themes) - Light/dark mode
- * 4. TranslationProvider (next-intl) - Internationalization
+ * 1. TranslationProvider (next-intl) - Outermost; supplies messages, locale, and time zone
+ * 2. AuthProvider (Clerk) - Localized authentication context
+ * 3. FontProvider - Custom font selection state
+ * 4. ThemeProvider (next-themes) - Light/dark mode
  *
- * @param props - Provider props including locale and children
+ * @param props - Provider props including locale, messages, feature flags, and children
  * @returns Context providers wrapping children
  */
-export default function ContextProviders({locale, children}: Readonly<Props>): React.JSX.Element {
-  const WebVitals = dynamic(() => import("./web-vitals"));
+export default function ContextProviders({locale, messages, featureFlags, children}: Readonly<Props>): React.JSX.Element {
   // Implementation
 }
 ```
@@ -984,90 +1028,77 @@ export function filterItems<T extends BaseEntity>(items: T[], predicate: (item: 
 
 ### Example 1: Comprehensive Utility Function
 
-**File**: `src/lib/utils.generic.ts`
+**File**: `src/lib/utils.generic.ts` (signature and body match the source; the JSDoc describes the implemented behavior)
 
 ```typescript
 /**
- * Formats a number as a currency string based on the specified currency code.
+ * Formats a numeric amount as a localized currency string.
  *
  * @remarks
- * Uses `Intl.NumberFormat` for locale-aware formatting. Defaults to USD if no currency provided.
+ * Uses `Intl.NumberFormat` with the caller-supplied `locale` and `currencyCode`.
  *
- * **Supported Formats**:
- * - ISO 4217 currency codes (string): "USD", "EUR", "GBP", etc.
- * - Currency objects: `{code: "USD", symbol: "$"}`
+ * **Formatting Rules**:
+ * - Style: `"currency"`
+ * - Fraction digits: 0–2 (whole amounts print without decimals)
+ * - Additional `Intl.NumberFormatOptions` passed through `options` override these defaults
  *
- * **Locale**: Fixed to "en-US" for consistency across the application.
- * Future enhancement could accept locale parameter for internationalization.
- *
- * @param amount - The numeric value to be formatted as currency.
- * @param currency - The ISO 4217 currency code (e.g., 'USD', 'EUR', 'GBP') or Currency object. Defaults to USD.
+ * @param possibleAmount - The numeric value to format.
+ * @param options - Formatting configuration (currencyCode, locale, and optional Intl.NumberFormat overrides).
  * @returns A formatted currency string with the appropriate symbol and formatting.
  *
  * @example
  * // Returns "$123.45"
- * formatCurrency(123.45, "USD");
+ * formatCurrency(123.45, {currencyCode: "USD", locale: "en-US"});
  *
  * @example
- * // Returns "€100.00"
- * formatCurrency(100, "EUR");
+ * // Returns "100 €"
+ * formatCurrency(100, {currencyCode: "EUR", locale: "de-DE"});
  *
  * @example
- * // Returns "£50.00"
- * formatCurrency(50, "GBP");
+ * // Returns "£50"
+ * formatCurrency(50, {currencyCode: "GBP", locale: "en-GB"});
  */
-export function formatCurrency(amount: number, currency?: string | Currency): string {
-  return currency
-    ? new Intl.NumberFormat("en-US", {
-        style: "currency",
-        currency: typeof currency === "string" ? currency : currency.code,
-      }).format(amount)
-    : new Intl.NumberFormat("en-US", {
-        style: "currency",
-        currency: "USD",
-      }).format(amount);
+export function formatCurrency(possibleAmount: number, options: FormatCurrencyOptions): string {
+  const formatOptions: Intl.NumberFormatOptions = {
+    style: "currency",
+    currency: options.currencyCode,
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 2,
+    ...options,
+  };
+
+  const value = new Intl.NumberFormat(options.locale, formatOptions).format(possibleAmount);
+  return value;
 }
 ```
 
 ### Example 2: OpenTelemetry Type Definitions
 
-**File**: `src/telemetry.ts`
+**File**: `src/instrumentation.server.ts`
 
 ```typescript
 /**
  * Log levels for structured logging.
- *
  * @remarks
  * - `info`: Informational messages about normal application operation
  * - `warn`: Warning messages for potentially harmful situations
  * - `error`: Error messages for serious problems and failures
  * - `debug`: Detailed debug information (development only)
- *
- * @see {@link https://opentelemetry.io/docs/specs/otel/logs/}
  */
 export type LogLevel = "debug" | "info" | "warn" | "error";
 
 /**
  * Rendering context for Next.js operations.
- *
  * @remarks
  * - `server`: Server-side rendering (SSR) or server components
  * - `client`: Client-side rendering (CSR) after hydration
  * - `edge`: Edge runtime (middleware, edge functions)
  * - `api`: Backend-for-Frontend API routes
- *
- * **OpenTelemetry Integration**: Used as span attribute to differentiate execution contexts.
- * This helps identify performance bottlenecks specific to SSR, CSR, or edge runtime.
  */
 export type RenderContext = "server" | "client" | "edge" | "api";
 
 /**
  * Standard semantic attribute keys for HTTP operations.
- *
- * @remarks
- * Follows OpenTelemetry semantic conventions for HTTP instrumentation.
- * Use these exact attribute names for consistency with auto-instrumentation.
- *
  * @see {@link https://opentelemetry.io/docs/specs/semconv/http/}
  */
 export interface HttpAttributes {
@@ -1090,14 +1121,37 @@ export interface HttpAttributes {
    * Full HTTP request URL
    */
   "http.url"?: string;
+
+  /**
+   * HTTP request target (path + query string)
+   */
+  "http.target"?: string;
+
+  /**
+   * Server address (host)
+   */
+  "server.address"?: string;
+
+  /**
+   * Client IP address
+   */
+  "client.address"?: string;
+
+  /**
+   * User agent string
+   */
+  "http.user_agent"?: string;
 }
 ```
 
 ### Example 3: Context Provider with Lifecycle Docs
 
-**File**: `src/contexts/FontContext.tsx`
+**File**: `src/contexts/FontContext.tsx` (excerpt; the code matches the source, while the source JSDoc is more detailed than the comments
+shown here)
 
 ````typescript
+"use client";
+
 /**
  * Default font for the application.
  * This font is used when no other font is selected.
@@ -1145,7 +1199,7 @@ interface FontContextValueType {
  *
  * **Hydration Safety**:
  * - Server-side: Returns default "normal" font to avoid hydration mismatch
- * - Client-side: Reads localStorage preference after mount
+ * - Client-side: Reads the stored preference in the lazy `useState` initializer on the first client render
  *
  * **Multi-Tab Sync**: Listens to `storage` events to sync font changes across browser tabs.
  *
@@ -1167,8 +1221,6 @@ interface FontContextValueType {
  * ```
  */
 export function FontContextProvider({children}: Readonly<{children: React.ReactNode}>): React.JSX.Element {
-  "use client";
-
   const [fontType, setFontType] = useState<FontType>((): FontType => {
     if (isBrowserStorageAvailable("localStorage")) {
       const storedPreference = localStorage.getItem(STORAGE_KEY);
@@ -1221,25 +1273,36 @@ export function FontContextProvider({children}: Readonly<{children: React.ReactN
 **How it Works**:
 
 - TypeDoc parses TypeScript files and extracts JSDoc comments
-- Generates static HTML documentation sites
+- Generates a Markdown API reference (via `typedoc-plugin-markdown`) into the git-ignored `sites/docs.arolariu.ro/_generated/ts-reference/`
+  folder, which the docs site renders under `/reference/typescript`
 - Supports Markdown in JSDoc comments
 - Cross-references resolve automatically
 
-**Configuration** (`typedoc.website.json`, `typedoc.components.json`):
+**Configuration** (`typedoc.website.json`, abridged):
 
 ```json
 {
   "$schema": "https://typedoc.org/schema.json",
-  "entryPoints": ["sites/arolariu.ro/src/types/index.ts", "sites/arolariu.ro/src/lib"],
+  "entryPoints": ["sites/arolariu.ro/src"],
   "entryPointStrategy": "expand",
-  "out": "sites/docs.arolariu.ro/articles/ts-api/latest/website/reference",
-  "plugin": ["typedoc-plugin-markdown"]
+  "tsconfig": "sites/arolariu.ro/tsconfig.typedoc.json",
+  "out": "sites/docs.arolariu.ro/_generated/ts-reference/website",
+  "plugin": ["typedoc-plugin-markdown"],
+  "readme": "none",
+  "excludeExternals": true,
+  "sort": ["source-order"]
 }
 ```
+
+`typedoc.components.json` uses the same options with `packages/components/src`, `packages/components/tsconfig.typedoc.json`, and the output
+folder `sites/docs.arolariu.ro/_generated/ts-reference/components`. Both configurations exclude declaration, test, and story files.
+`sites/arolariu.ro/tsconfig.typedoc.json` also excludes `src/app/**` and several client components (including `src/components/Footer.tsx`
+and `src/components/Header.tsx`) from the TypeDoc program.
 
 **Generation Command**:
 
 ```bash
+npm run docs:typedoc # runs both commands below
 npm run docs:typedoc:website
 npm run docs:typedoc:components
 ```
@@ -1259,15 +1322,15 @@ npm run docs:typedoc:components
 - Explain edge cases and error handling
 - Document type constraints beyond TypeScript types
 
-### 4. ESLint JSDoc Validation
+### 4. ESLint JSDoc Validation (not implemented)
 
-**How it Works**:
+**Current State**:
 
-- `eslint-plugin-jsdoc` enforces JSDoc standards
-- Validates JSDoc syntax and completeness
-- Checks for mismatches between code and documentation
+- JSDoc is not lint-enforced: `eslint-plugin-jsdoc` is not installed or configured in `eslint.config.ts`, and no `jsdoc/*` rules are enabled
+- The only documentation-comment rule in `eslint.config.ts` turns off `unicorn/no-asterisk-prefix-in-documentation-comments`, so standard
+  `*`-prefixed JSDoc blocks are allowed
 
-**Configuration** (`eslint.config.ts`):
+**Not configured** (rules originally described by this RFC; using them would require adding the `eslint-plugin-jsdoc` dependency):
 
 ```typescript
 import jsdoc from "eslint-plugin-jsdoc";
@@ -1484,8 +1547,8 @@ export default async function Layout(props: LayoutProps) {}
 
 ```typescript
 /**
- * Uses Intl.NumberFormat to format a number as currency using the en-US locale
- * and the currency parameter or defaults to USD if not provided.
+ * Uses Intl.NumberFormat to format a number as currency using the caller-supplied
+ * locale and currency code, with zero to two fraction digits.
  */
 ```
 
@@ -1493,11 +1556,10 @@ export default async function Layout(props: LayoutProps) {}
 
 ```typescript
 /**
- * Formats a number as a currency string based on the specified currency code.
+ * Formats a numeric amount as a localized currency string.
  *
  * @remarks
- * **Implementation**: Uses `Intl.NumberFormat` with "en-US" locale for consistency.
- * Defaults to USD when no currency provided.
+ * **Implementation**: Uses `Intl.NumberFormat` with the caller-supplied locale and currency code.
  */
 ```
 
@@ -1623,4 +1685,4 @@ valuable**—transforming the frontend codebase into a **living technical manual
 
 ---
 
-**Document Version**: 1.0.0 **Last Updated**: 2025-01-26 **Maintainer**: Alexandru Olariu ([@arolariu](https://github.com/arolariu))
+**Document Version**: 1.1.0 **Last Updated**: 2026-11-17 **Maintainer**: Alexandru Olariu ([@arolariu](https://github.com/arolariu))

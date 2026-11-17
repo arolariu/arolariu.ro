@@ -53,13 +53,14 @@ Anti-pattern: catching an error in a transport action whose consumers narrow `re
 
 ## Zustand / Context / URL / local hierarchy
 
-Inspect the live store inventory in `sites/arolariu.ro/src/stores/` and compare it with RFC 1005 §2.3 before changing state:
+Inspect the live store inventory in `sites/arolariu.ro/src/stores/` and compare it with
+[RFC 1005 — Current store inventory](../../../docs/rfc/1005-state-management-zustand.md#current-store-inventory) before changing state:
 
 | Store                 | Entity      | Notes                                                                                 |
 | --------------------- | ----------- | ------------------------------------------------------------------------------------- |
 | `useInvoicesStore`    | Invoice     | Factory-backed `entities[]` persisted; `selectedEntities[]` + `hasHydrated` in-memory |
 | `useMerchantsStore`   | Merchant    | Factory-backed `entities[]` persisted; `selectedEntities[]` + `hasHydrated` in-memory |
-| `useScansStore`       | Scan        | `scans[]` persisted, `selectedScans[]` + `hasHydrated` in-memory                      |
+| `useScansStore`       | Scan        | `scans[]` persisted; `selectedScans[]`, sync state, `hasHydrated` in-memory           |
 | `usePreferencesStore` | Preferences | locale/theme/font/gradient preset fields, cookie-synced                               |
 
 Every persisted store exposes a `hasHydrated` flag; a component reading persisted state should gate its render on it
@@ -74,8 +75,8 @@ stable actions, rerender, and latest-payload behavior is owned by `react-client.
 inventory.
 
 Escalation boundary: promoting route-scoped Context state to a new Zustand store, or extending an existing store's persisted shape, requires
-proving the state is read across unrelated, unmounted route branches — see the Frontend Expert agent's state-placement matrix before
-creating one.
+proving the state is shared across unrelated client branches or must persist globally (RFC 1005 state placement) — see the Frontend Expert
+agent's state-placement matrix before creating one.
 
 ## i18n, metadata, loading/error, and observability
 
@@ -104,9 +105,15 @@ return createMetadata({
 });
 ```
 
-`sites/arolariu.ro/messages/en.d.json.ts` is auto-generated from `en.json` and is what makes `m.pages.invoices.landing.metadata.title` a
-compile-time key, not a runtime string lookup. After adding a key, add the identical key path to `ro.json` and `fr.json`, then run the
-canonical i18n generation command from root `AGENTS.md`. Live route metadata uses nested `metadata` objects.
+`sites/arolariu.ro/messages/en.d.json.ts` is git-ignored output that next-intl emits from `en.json` (`createMessagesDeclaration` in
+`next.config.ts`) when `next dev` or `next build` runs; it is what makes `m.pages.invoices.landing.metadata.title` a compile-time key, not a
+runtime string lookup. After adding a key, add the identical key path to `ro.json` and `fr.json`, then run the canonical i18n generation
+command from root `AGENTS.md`; that command validates and synchronizes locale key shape but does not regenerate the declaration. Live route
+metadata uses nested `metadata` objects.
+
+Known namespace drift: the About hub (`src/app/about/page.tsx`) reads its metadata from `shared.legacy.about.metadata` because
+`pages.about.hub` has no `metadata` object, and `src/presentation/ForbiddenScreen.tsx` reads `shared.legacy.common.states.forbidden`. Treat
+these `shared.legacy` reads as current drift, not as the location for new route copy.
 
 `sites/arolariu.ro/src/metadata.ts`'s `createMetadata()` merges page-specific overrides into the base `Metadata` object and derives the
 OpenGraph `alternateLocale` from the passed `locale` (`en` → `en_US`, `ro` → `ro_RO`; unmapped locales default to `en_US` — `fr` is not yet

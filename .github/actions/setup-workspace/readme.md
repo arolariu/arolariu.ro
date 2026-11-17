@@ -19,12 +19,12 @@ Use [`setup-tooling`](../setup-tooling/readme.md) directly when a job needs only
     dotnet: "true"
     install-dotnet-deps: "true"
 
-# Website build: generation, component library, Playwright
+# Website test job (official-website-build): Playwright and generation without secret-dependent env
 - uses: ./.github/actions/setup-workspace
   with:
     install-playwright: "true"
     run-generate: "true"
-    run-build-components: "true"
+    generate-args: "artifacts gql i18n"
 
 # Python checks
 - uses: ./.github/actions/setup-workspace
@@ -51,16 +51,16 @@ Use [`setup-tooling`](../setup-tooling/readme.md) directly when a job needs only
 
 ### Dependency installation
 
-| Input                  | Default                                      | Runs                                                                 |
-| ---------------------- | -------------------------------------------- | -------------------------------------------------------------------- |
-| `install-node-deps`    | `true`                                       | `npm ci` at the repository root                                      |
-| `install-scripts-deps` | `false`                                      | `npm ci` inside `.github/scripts`                                    |
-| `install-dotnet-deps`  | `false`                                      | `dotnet restore <dotnet-deps-path>`                                  |
-| `dotnet-deps-path`     | `arolariu.slnx`                              | —                                                                    |
-| `install-python-deps`  | `false`                                      | `pip install --upgrade pip` then `pip install -r <python-deps-path>` |
-| `python-deps-path`     | `sites/exp.arolariu.ro/requirements-dev.txt` | —                                                                    |
-| `install-playwright`   | `false`                                      | `npx playwright install <browsers> --with-deps`                      |
-| `playwright-browsers`  | `chromium`                                   | —                                                                    |
+| Input                  | Default                                      | Runs                                                                                                                                                                                         |
+| ---------------------- | -------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `install-node-deps`    | `true`                                       | `npm ci` at the repository root (skipped on a `node_modules` cache hit), then `svelte-kit sync` through `npm run prepare` for `sites/cv.arolariu.ro` and `sites/status.arolariu.ro` (always) |
+| `install-scripts-deps` | `false`                                      | `npm ci` inside `.github/scripts`                                                                                                                                                            |
+| `install-dotnet-deps`  | `false`                                      | `dotnet restore <dotnet-deps-path>`                                                                                                                                                          |
+| `dotnet-deps-path`     | `arolariu.slnx`                              | —                                                                                                                                                                                            |
+| `install-python-deps`  | `false`                                      | `pip install --upgrade pip` then `pip install -r <python-deps-path>`                                                                                                                         |
+| `python-deps-path`     | `sites/exp.arolariu.ro/requirements-dev.txt` | —                                                                                                                                                                                            |
+| `install-playwright`   | `false`                                      | `npx playwright install <browsers> --with-deps`                                                                                                                                              |
+| `playwright-browsers`  | `chromium`                                   | —                                                                                                                                                                                            |
 
 ### Workspace tasks
 
@@ -91,6 +91,10 @@ this action pins — and you would only notice via a confusing downstream error.
 `npm run generate` and `npm run build:components` would fail outright, and `npx playwright` would silently fetch a floating version rather
 than the one the lock file pins. `install-scripts-deps` is deliberately _not_ in that group: it installs `.github/scripts` independently and
 does not need the root tree.
+
+`install-node-deps` also regenerates `.svelte-kit/` for the CV and status sites on every run, because `.svelte-kit/` is not cached and a
+cache hit skips the `npm ci` that would otherwise run their `prepare` scripts. The step fails fast if either `.svelte-kit/tsconfig.json` is
+missing, which would otherwise surface as an ESLint or svelte-check crash.
 
 ## Outputs
 

@@ -4,6 +4,8 @@
 - **Date**: YYYY-MM-DD
 - **Authors**: [Author Name(s)]
 - **Related Components**: [Component paths or names]
+- **Related RFCs** (optional): [RFC NNNN (Short title), ...]
+- **Supersedes** (optional): [RFC NNNN or earlier revision being replaced]
 
 ---
 

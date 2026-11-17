@@ -6,18 +6,23 @@ Action procedure, state placement, or `next.config.ts` mutation approval.
 
 ## App Router artifact contracts
 
-| Artifact        | Framework responsibility                                                                    | Keep elsewhere                                       |
-| --------------- | ------------------------------------------------------------------------------------------- | ---------------------------------------------------- |
-| `layout.tsx`    | Segment shell, inherited providers, metadata defaults, and child composition                | Route-specific interaction and mutable browser state |
-| `page.tsx`      | Route entry, promised route inputs, server-owned reads, access decisions, and server output | Browser event/state logic                            |
-| `template.tsx`  | A remounting segment wrapper when that lifecycle is intentionally required                  | A substitute for ordinary layout composition         |
-| `loading.tsx`   | Segment fallback while uncached/streamed work suspends                                      | A generic empty state after data has settled         |
-| `error.tsx`     | Recoverable segment error UI; Next.js requires this artifact to be a Client Component       | General client-component ownership for the route     |
-| `not-found.tsx` | Segment-specific missing-resource UI reached through `notFound()`                           | Authorization or generic server failure              |
-| `route.ts`      | HTTP Route Handler request/response, caching, and protocol behavior                         | React component rendering                            |
+| Artifact               | Framework responsibility                                                                    | Keep elsewhere                                       |
+| ---------------------- | ------------------------------------------------------------------------------------------- | ---------------------------------------------------- |
+| `layout.tsx`           | Segment shell, inherited providers, metadata defaults, and child composition                | Route-specific interaction and mutable browser state |
+| `page.tsx`             | Route entry, promised route inputs, server-owned reads, access decisions, and server output | Browser event/state logic                            |
+| `template.tsx`         | A remounting segment wrapper when that lifecycle is intentionally required                  | A substitute for ordinary layout composition         |
+| `loading.tsx`          | Segment fallback while uncached/streamed work suspends                                      | A generic empty state after data has settled         |
+| `error.tsx`            | Recoverable segment error UI; Next.js requires this artifact to be a Client Component       | General client-component ownership for the route     |
+| `global-error.tsx`     | Root-level error UI that replaces the root layout; must be a Client Component               | Segment-recoverable errors (`error.tsx`)             |
+| `not-found.tsx`        | Segment-specific missing-resource UI reached through `notFound()`                           | Authorization or generic server failure              |
+| `global-not-found.tsx` | Unmatched-URL 404 enabled by `experimental.globalNotFound`; bypasses the root layout        | Segment `notFound()` UI (`not-found.tsx`)            |
+| `route.ts`             | HTTP Route Handler request/response, caching, and protocol behavior                         | React component rendering                            |
 
 Framework-required client route artifacts such as `error.tsx` remain owned by the `react-server-component` workflow because they are part of
 the route contract. Use `react-client.md` only for their internal effect/event semantics.
+
+`global-error.tsx` and `global-not-found.tsx` render without the root layout, so each renders its own `<html>`/`<body>` document shell and
+`ContextProviders` tree; `global-not-found.tsx` also re-exports the shared `viewport` from `@/metadata`.
 
 ## Promised route inputs and control flow
 
@@ -83,6 +88,8 @@ to change it.
 - current dynamic invoice route pages under `src/app/domains/invoices/`
 - `sites/arolariu.ro/src/app/error.tsx`
 - `sites/arolariu.ro/src/app/about/error.tsx`
+- `sites/arolariu.ro/src/app/global-error.tsx`
+- `sites/arolariu.ro/src/app/global-not-found.tsx`
 - current nested `not-found.tsx` files
 - `sites/arolariu.ro/src/app/api/health/route.ts`
 - `sites/arolariu.ro/src/proxy.ts`

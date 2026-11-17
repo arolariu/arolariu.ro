@@ -8,9 +8,10 @@ it literally.
 - Localized metadata: `sites/arolariu.ro/src/app/about/page.tsx`, `sites/arolariu.ro/src/app/domains/invoices/view-invoices/page.tsx`,
   `sites/arolariu.ro/src/metadata.ts`
 - Server page/island handoff: `sites/arolariu.ro/src/app/page.tsx`, `sites/arolariu.ro/src/app/domains/invoices/view-invoice/[id]/page.tsx`
-- Boundaries: `sites/arolariu.ro/src/app/loading.tsx`, `sites/arolariu.ro/src/app/error.tsx`
-- Tests: `sites/arolariu.ro/src/app/error.test.tsx`, `sites/arolariu.ro/src/app/domains/invoices/view-invoice/[id]/not-found.test.tsx`,
-  `sites/arolariu.ro/vitest.setup.ts`
+- Boundaries: `sites/arolariu.ro/src/app/loading.tsx`, `sites/arolariu.ro/src/app/error.tsx`, `sites/arolariu.ro/src/app/domains/error.tsx`,
+  `sites/arolariu.ro/src/app/_components/RouteErrorContent.tsx`
+- Tests: `sites/arolariu.ro/src/app/error.test.tsx`, `sites/arolariu.ro/src/app/_components/RouteErrorContent.test.tsx`,
+  `sites/arolariu.ro/src/app/domains/invoices/view-invoice/[id]/not-found.test.tsx`, `sites/arolariu.ro/vitest.setup.ts`
 
 ## Invariants
 
@@ -131,35 +132,40 @@ export default function Loading(): React.JSX.Element {
 // error.tsx
 "use client";
 
-import {useTranslations} from "next-intl-selector";
+import {RouteErrorContent} from "@/app/_components/RouteErrorContent";
 import {useEffect} from "react";
 
-type Props = Readonly<{
+type <Segment>ErrorProps = Readonly<{
   error: Error & {digest?: string};
   reset: () => void;
 }>;
 
-export default function RouteError({error, reset}: Props): React.JSX.Element {
-  const t = useTranslations();
-
+export default function <Segment>Error({error, reset}: <Segment>ErrorProps): React.JSX.Element {
   useEffect(() => {
-    <safe-error-reporter>(error);
+    console.error("[app/<segment>/error.tsx]", error);
   }, [error]);
 
   return (
-    <section role='alert' aria-live='assertive'>
-      <h1>{t((messages) => messages.<error-selector>.title)}</h1>
-      <button type='button' onClick={reset}>
-        {t((messages) => messages.<error-selector>.retry)}
-      </button>
-    </section>
+    <RouteErrorContent
+      error={error}
+      reset={reset}
+      scope='<segment>'
+    />
   );
 }
 ```
 
 Current loading siblings use non-landmark wrappers and raw `Skeleton` placeholders; the shared Skeleton does not itself establish a named
-live region. If the requested behavior needs an announcement, treat that as a new accessibility decision and test it rather than attributing
-it to this stable shape. For the error template, use the current safe reporter; do not create one from the placeholder.
+live region. Its JSDoc (`packages/components/src/components/ui/skeleton.tsx`) documents it as decorative: mark it `aria-hidden="true"`, give
+it no role or label, and announce loading through a status region mounted before loading starts. No current loading sibling marks its
+`Skeleton` placeholders `aria-hidden` (only `sites/arolariu.ro/src/app/domains/invoices/upload-scans/loading.tsx` hides its workflow nav),
+and `sites/arolariu.ro/src/app/loading.tsx` renders an unlocalized `Loading...` heading. If the requested behavior needs an announcement,
+treat that as a new accessibility decision and test it rather than attributing it to this stable shape.
+
+Every live `error.tsx` boundary only logs with its own file-path prefix (for example `[app/domains/error.tsx]`) and renders the shared
+`sites/arolariu.ro/src/app/_components/RouteErrorContent.tsx`, which owns the assertive alert region, localized copy, digest, and retry/home
+actions; the root `sites/arolariu.ro/src/app/error.tsx` logs `[app/error.tsx]` and omits `scope`. Reuse it rather than duplicating its
+markup.
 
 ## Colocated client-boundary test harness
 

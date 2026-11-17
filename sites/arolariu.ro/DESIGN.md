@@ -24,6 +24,7 @@ colors:
   destructive: "hsl(0 84.2% 60.2%)"
   destructive-foreground: "hsl(210 40% 98%)"
   library-primary: "oklch(0.488 0.243 264.376)"
+  library-primary-foreground: "oklch(0.97 0.014 254.604)"
 typography:
   display:
     fontFamily: "Caudex, Georgia, 'Times New Roman', serif"
@@ -78,12 +79,12 @@ components:
   button-cta:
     backgroundColor: "#000000"
     textColor: "#ffffff"
-    typography: "{typography.label}"
+    typography: "{typography.body}"
     rounded: "{rounded.full}"
     padding: 12px 32px
   button-library:
     backgroundColor: "{colors.library-primary}"
-    textColor: "{colors.primary-foreground}"
+    textColor: "{colors.library-primary-foreground}"
     typography: "{typography.label}"
     rounded: 11.2px
   card-feature:
@@ -151,7 +152,7 @@ shadows.
 hierarchy; build it with size, color and spacing.
 
 **The Token Reach Rule.** Colors reach the screen through the token layers. A literal hex in a component breaks presets and dark mode. The
-hero call to action (`black` on `white`) is the one documented literal; treat it as debt, not precedent.
+hero call to action (`white` on `black`) is the one documented literal; treat it as debt, not precedent.
 
 ## Colors
 
@@ -302,9 +303,10 @@ patterns and animated beams that read as light behind the glass.
 - **Cards:** hairline border plus the `2xl` shadow at rest on the marketing cards (measured live). Dense operating surfaces should stay on
   the smaller steps; the `hover-lift` helper raises a card by 2px and moves it to the `lg` shadow.
 - **Orbs:** circular blurs (about 10rem wide, 48px blur) filled with the primary or tertiary color at 20% opacity, placed behind content.
-- **Frosted surfaces:** a 2 to 12px backdrop blur (the auth panels use a raw 12px) on a translucent card surface (the home code block uses
-  2px at 30% card opacity; the About pillar cards use 8px at 50%; invoice overlays and toolbars use 8px). Use the `backdrop-blur` helper;
-  the `glass` helper exists but has no consumer today.
+- **Frosted surfaces:** a 2 to 12px backdrop blur (the sign-in and sign-up cards use a raw 12px; the `/auth` chooser and marketing panel use
+  4px) on a translucent card surface (the home code block uses 2px at 30% card opacity; the About pillar cards use 8px at 50%; invoice
+  overlays and toolbars use 8px, and the frosted controls on invoice cards use 4px). Use the `backdrop-blur` helper; the `glass` helper
+  exists but has no consumer today.
 - **Blur scale:** 2, 4, 8, 12 and 16px. Opacity scale: 0.05, 0.1, 0.2, 0.5, 0.8, 0.9 and 1.
 
 ### Named Rules
@@ -353,20 +355,21 @@ hand-tune a library control to match a site card; wrap or compose instead.
 ### Navigation
 
 - **Header:** 64px with an opaque page-background fill (`hsl(var(--background))`). The brand mark and name sit on the left; **Domains** and
-  **About** sit in the center; Sign in and the theme toggle sit on the right.
+  **About** (plus **My Profile** when signed in) sit in the center; Sign in (Clerk's user button once signed in) and the theme toggle sit on
+  the right.
 - **Mobile:** a menu button opens a navigation panel with expandable groups; below `md`, every invoice route adds a four-item bottom bar
   from the shared invoices layout.
 - **Theme toggle:** a 40px circular outline button that switches light and dark directly. There is no menu.
-- **Command palette:** **Ctrl or Cmd plus K** opens a palette for navigation, theme, language, accessibility font and a few playful effects.
-  It is feature-flagged and may be absent in an environment.
-- **Footer:** a Royal Blue slab with a wavy top edge, two link columns (subdomains and about), social icons, the build date, the commit SHA
-  and an uppercase wordmark.
+- **Command palette:** **Ctrl or Cmd plus K** opens a palette for navigation, theme, language, accessibility font, a few playful effects and
+  an external GitHub link. It is feature-flagged and may be absent in an environment.
+- **Footer:** a primary-colored slab (`--footer-bg`) with a wavy top edge, two link columns (subdomains and about), social icons, the build
+  date, the commit SHA and an uppercase wordmark.
 
 ### Inputs, Tabs and Dialogs
 
 - **Tabs** switch peer views without a page load (for example invoices, statistics and live analysis).
-- **Dialogs** hold focused tasks (import, export, share, delete, rename) and must carry a labelled close control. The library dialog takes a
-  `closeLabel` for this purpose.
+- **Dialogs** hold focused tasks (import, export, share, delete; a scan is renamed inline on its card) and must carry a labelled close
+  control. The library dialog takes a `closeLabel` for this purpose.
 - **Fields** use Hairline borders, the ring color on focus and visible labels; errors pair color with text.
 
 ### Feedback
@@ -379,8 +382,9 @@ hand-tune a library control to match a site card; wrap or compose instead.
 
 ### Icons
 
-Icons come from the Tabler set through `react-icons/tb` (`Tb*` components). Use one icon per action or card header, and give every icon-only
-control a localized accessible name.
+Site icons come from the Tabler set through `react-icons/tb` (`Tb*` components); the company logos on The Author page use `react-icons/si`
+and `react-icons/cg`, and library components draw their own `lucide-react` icons. Use one icon per action or card header, and give every
+icon-only control a localized accessible name.
 
 ### Signature: The Gem and the Glow
 

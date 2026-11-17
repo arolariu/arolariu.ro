@@ -30,7 +30,9 @@ that one job needs to open an issue.
 
 **Live least-privilege drift, not templates:**
 
-- API and website workflows grant `id-token: write` at workflow scope even though only Azure-login jobs need it.
+- API and experimental-service workflows grant `id-token: write` at workflow scope even though their `test` jobs never call `azure/login`.
+- The website build grants `issues: write`/`pull-requests: write` at workflow scope although only the `test` job's PR-comment step uses
+  them.
 - Components publishing grants OIDC/attestation capabilities to its validation job even though publishing owns those capabilities.
 - The hygiene workflow grants PR/check writes to every job even though only reporting/gating needs them.
 - CV and documentation grant `id-token: write` despite using Static Web Apps token secrets and never calling `azure/login`.
@@ -137,11 +139,10 @@ action with **no `restore-keys` fallback**, per RFC 0001 §3.2 ("Why No Fallback
 ```yaml
 # .github/actions/setup-workspace/action.yml
 key: ${{ runner.os }}-node-modules-${{ inputs.node-version }}-${{ hashFiles('package-lock.json') }}
-# NO restore-keys
 ```
 
 ```yaml
-key: ${{ runner.os }}-playwright-${{ hashFiles('package-lock.json') }}
+key: ${{ runner.os }}-playwright-${{ inputs.playwright-browsers }}-${{ hashFiles('package-lock.json') }}
 ```
 
 The `node_modules` key includes the Node major version and the Playwright key does not — this is deliberate, not an inconsistency to
@@ -176,10 +177,12 @@ on:
     paths: ["sites/arolariu.ro/**"]
 ```
 
-**Live drift, not a dependency-aligned example:** the website workflow also sets `run-build-components: true`, but its current automatic
-filter excludes `packages/components/**` and root manifests/configuration that can change the website build. Do not copy that filter as
-canonical. Derive a proposed filter from the Nx/project dependency graph and every called setup/build input; at a minimum, account for the
-shared component package and build-owning root files. Changing the live trigger remains approval-gated.
+**Live drift, not a dependency-aligned example:** the website workflow's automatic filter (`sites/arolariu.ro/**`) excludes build inputs
+outside the site directory: the root manifests and lockfile, root configuration such as `tsconfig.json`, the `packages/components` workspace
+manifest, and the `infra/containers/Dockerfile.frontend` recipe its build job uses. Component-library source is not a website build input
+today: the website installs the published `@arolariu/components` tarball pinned in `sites/arolariu.ro/package.json`, and its Nx `build`
+target sets `dependsOn: []`. Do not copy that filter as canonical. Derive a proposed filter from the Nx/project dependency graph and every
+called setup/build input; at a minimum, account for build-owning root files. Changing the live trigger remains approval-gated.
 
 Not every workflow uses a path filter, and several exceptions are deliberate: `official-hygiene-check-v2.yml` runs on every `pull_request`
 regardless of path and computes its own `git diff` in a dedicated `detect` job instead, because it needs one shared "did anything change"
@@ -223,12 +226,14 @@ non-idempotent push to shared data should serialize (queue), not cancel.
 ## Artifacts and secrets
 
 Artifacts follow a produce → upload → download → aggregate shape for fan-out/fan-in work. `official-hygiene-check-v2.yml`'s matrix
-`providers` job uploads one `outcome-<provider>` artifact per parallel check, and the `gate` job downloads all of them with a pattern and
-merges them into one directory:
+`providers` job uploads one `outcome-<provider>` artifact per parallel check, and the `gate` job downloads them by pattern into per-artifact
+subdirectories. The download is best-effort, so the verifier still runs and publishes an errored report for missing evidence, never a false
+pass:
 
 ```yaml
 # .github/workflows/official-hygiene-check-v2.yml (providers job)
 - uses: actions/upload-artifact@<current-approved-major>
+  if: always()
   with:
     name: outcome-${{ matrix.provider.id }}
     path: artifacts/hygiene/outcome-${{ matrix.provider.id }}.json
@@ -237,10 +242,12 @@ merges them into one directory:
 
 # (gate job)
 - uses: actions/download-artifact@<current-approved-major>
+  # The verifier still runs on download failure so it can publish an errored report.
+  continue-on-error: true
   with:
     pattern: outcome-*
-    path: artifacts/hygiene
-    merge-multiple: true
+    path: artifacts/hygiene/outcomes
+    merge-multiple: false
 ```
 
 `if-no-files-found` is chosen per situation, not defaulted: `warn` for a best-effort outcome file, `error` for
@@ -361,12 +368,12 @@ strategy shows the same "provision only what's needed" discipline at the workflo
 
 ## RFC 0001 patterns at a glance
 
-| Pattern                  | Shape                                                                                           | Live example                                                                       |
-| ------------------------ | ----------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------- |
-| Build-Release            | `push/manual build → validate → workflow_run/manual release → [configured protection] → deploy` | `official-website-build.yml` + `official-website-release.yml`                      |
-| Trigger                  | `push/manual → build → test → deploy`                                                           | `official-api-trigger.yml`, `official-cv-trigger.yml`, `official-docs-trigger.yml` |
-| PR validation            | `PR/manual → detect → provider matrix → gate/report`                                            | `official-hygiene-check-v2.yml`                                                    |
-| Scheduled E2E validation | `schedule/manual → E2E → failure reporting`                                                     | `official-e2e-action.yml`                                                          |
+| Pattern                  | Shape                                                                                                  | Live example                                                                       |
+| ------------------------ | ------------------------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------- |
+| Build-Release            | `push/manual build → validate → workflow_run/manual release → [configured protection] → deploy`        | `official-website-build.yml` + `official-website-release.yml`                      |
+| Trigger                  | `push/manual → test → build → deploy` (CV: test → build-and-deploy; docs: single build-and-deploy job) | `official-api-trigger.yml`, `official-cv-trigger.yml`, `official-docs-trigger.yml` |
+| PR validation            | `PR/manual → detect → provider matrix → gate/report`                                                   | `official-hygiene-check-v2.yml`                                                    |
+| Scheduled E2E validation | `schedule/manual → E2E → failure reporting`                                                            | `official-e2e-action.yml`                                                          |
 
 Use this table to classify which pattern a proposed workflow change belongs to before comparing it against the wrong example — a
 trigger-pattern workflow gaining a manual-approval gate is effectively becoming a build-release workflow, which is a deployment-behavior

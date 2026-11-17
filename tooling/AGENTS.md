@@ -26,11 +26,11 @@ Composition only registers resources/callbacks. Keep overlay generation before c
 
 ## Build and test boundaries
 
-- The root `Directory.Build.props` and `Directory.Packages.props` own effective build policy and NuGet versions; do not import API ownership
-  into tooling.
+- The tooling-root [`Directory.Build.props`](Directory.Build.props) and [`Directory.Packages.props`](Directory.Packages.props) own effective
+  build policy and NuGet versions; do not import API ownership into tooling.
 - The Aspire SDK declaration remains in the AppHost csproj.
-- Every tooling test project ends in `.Tests`; the one root props file uses that intrinsic project-name convention for early test-policy
-  selection.
+- Every tooling test project ends in `.Tests`; the single tooling `Directory.Build.props` uses that intrinsic project-name convention for
+  early test-policy selection.
 - Each test project directly references only its owning production project.
 - Bootstrap owns the four persona source seed fixtures. Identity's consistency test links those JSON files as data; do not create a
   model/project dependency just to parse it or duplicate the fixture. Data.Tests links the same seed files and owns scenario coverage.

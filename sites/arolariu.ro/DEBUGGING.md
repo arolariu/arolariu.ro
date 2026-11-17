@@ -6,23 +6,29 @@ This guide explains how to debug the arolariu.ro Next.js application with full s
 
 ### Running Development Server
 
+Run the `npm run` commands in this guide from `sites/arolariu.ro`; from the repository root, `npm run dev:website` starts the website alone.
+The root `npm run dev -- --engine <rancher|podman>` starts the full Aspire stack, which runs the website's `dev` script; attach to it with
+**"🪡 Attach to Next.js (Aspire)"** (see [Method 1](#method-1-vs-code-integrated-debugging-recommended)).
+
 ```bash
-# Standard development mode with full debugging support
+# Development server with full debugging support: runs `npm run clean`, then `next dev --inspect --experimental-https`
 npm run dev
 
-# Classic webpack mode (without Turbopack)
-npm run dev:classic
+# Build with the debug settings below (NODE_ENV=development) plus `next build --debug --debug-prerender --profile --no-mangling`
+npm run build:debug
 
-# Explicit debug mode (same as dev but more explicit)
-npm run dev:debug
+# Copy public/ and .next/static/ into the standalone output, then serve it with the Node.js inspector and source maps
+node scripts/prepareStandalone.ts
+npm run start:debug
 ```
 
-All dev commands automatically:
+`npm run dev` automatically:
 
+- ✅ Clear the `.next` cache first (`npm run clean`)
+- ✅ Serve HTTPS at `https://localhost:3000` (`--experimental-https`)
 - ✅ Enable Node.js inspector on port 9229
 - ✅ Generate full source maps (client & server)
 - ✅ Disable minification and optimization
-- ✅ Enable Turbopack tracing (for `dev` command)
 - ✅ Preserve all code for debugging
 
 ## 🔧 Configuration Overview
@@ -44,16 +50,18 @@ When running `npm run dev`, the following are **automatically enabled**:
 - `serverSourceMaps: true` - Server-side source maps
 - `turbopackSourceMaps: true` - Turbopack source maps
 - `enablePrerenderSourceMaps: true` - Prerendered page source maps
+- `productionBrowserSourceMaps: true` - Browser source maps in builds (`npm run build:debug`)
 
-#### ✅ No Minification
+#### ✅ No Minification or Optimization
 
 - `turbopackMinify: false` - Turbopack keeps code readable
 - `serverMinification: false` - Server code stays unminified
 - `optimizeServerReact: false` - React code stays unoptimized
+- `disableOptimizedLoading: true` - Optimized script loading stays off
 
-#### ✅ No Tree Shaking
+#### ✅ React Profiling
 
-- `turbopackTreeShaking: false` - All imports preserved for debugging
+- `reactProductionProfiling: true` - React profiling in builds (`npm run build:debug`), so the React DevTools Profiler works
 
 #### ✅ Full Console Logs
 
@@ -62,33 +70,44 @@ When running `npm run dev`, the following are **automatically enabled**:
 #### ✅ Debug Logging
 
 - `logging.fetches.fullUrl: true` - Full URL logging for fetch requests
+- `logging.serverFunctions: true` - Server Function (Server Action) call logging
+- `logging.incomingRequests: true` - Incoming request logging
+
+#### ⚠️ Report-Only Content Security Policy
+
+- The CSP header is sent as `Content-Security-Policy-Report-Only`, so violations are reported in the browser console instead of blocked.
+  Other builds enforce it with `Content-Security-Policy`.
 
 ## 🐛 Debugging Methods
 
 ### Method 1: VS Code Integrated Debugging (Recommended)
 
+The launch configurations live in the root `.vscode/launch.json`; [`.vscode/README.md`](../../.vscode/README.md) summarizes them.
+
 #### Server-Side Debugging
 
 1. Press `Ctrl+Shift+D` (Windows/Linux) or `⇧+⌘+D` (macOS)
-2. Select **"Next.js: Debug Server-Side"** from dropdown
+2. Select **"🌐 Website only (standalone)"** from dropdown; it runs `npm run dev` in `sites/arolariu.ro`. If the website already runs under
+   Aspire, select **"🪡 Attach to Next.js (Aspire)"** instead; it attaches to the inspector on port 9229
 3. Press `F5` to start
 4. Set breakpoints in your server components or API routes
 5. Debugger will pause at breakpoints automatically
 
 #### Client-Side Debugging
 
-1. Press `Ctrl+Shift+D`
-2. Select **"Next.js: Debug Client-Side"**
-3. Press `F5`
-4. Browser (Edge) opens with debugger attached
-5. Set breakpoints in client components
+1. Start the dev server first; this configuration does not start it
+2. Press `Ctrl+Shift+D`
+3. Select **"🧭 Next.js: Debug Client-Side (Edge)"**
+4. Press `F5`
+5. Edge opens `https://localhost:3000` with debugger attached
+6. Set breakpoints in client components
 
 #### Full-Stack Debugging
 
-1. Select **"Next.js: Debug Full Stack"**
+1. Select **"🚀 Full stack (Aspire)"**, the `F5` default
 2. Press `F5`
-3. Debug both server AND client simultaneously
-4. Automatic browser launch when server is ready
+3. Aspire starts the AppHost, its containers, the API, and the website with the debugger attached
+4. For client-side breakpoints, also start **"🧭 Next.js: Debug Client-Side (Edge)"**; no compound configuration launches both
 
 ### Method 2: Chrome DevTools
 
@@ -182,7 +201,7 @@ export default async function Page() {
 }
 ```
 
-- Use VS Code "Debug Server-Side" or Chrome DevTools (server inspector)
+- Use VS Code "🌐 Website only (standalone)" (or "🪡 Attach to Next.js (Aspire)") or Chrome DevTools (server inspector)
 - Breakpoint will hit during SSR/RSC rendering
 
 ### Client Components
@@ -198,7 +217,7 @@ export function MyComponent() {
 }
 ```
 
-- Use VS Code "Debug Client-Side" or browser DevTools
+- Use VS Code "🧭 Next.js: Debug Client-Side (Edge)" or browser DevTools
 - Breakpoint hits on user interaction
 
 ### Server Actions
@@ -218,10 +237,14 @@ export async function myAction(formData: FormData) {
 ### API Routes
 
 ```typescript
-// src/app/api/hello/route.ts
-export async function GET(request: Request) {
-  const data = await processRequest(); // ← Set breakpoint here
-  return Response.json(data);
+// src/app/api/health/route.ts (abridged)
+export async function GET(): Promise<NextResponse<HealthResponse>> {
+  const dependencies = await Promise.all([
+    checkDependency("exp (config proxy)", `${EXP_URL}/api/health`), // ← Set breakpoint here
+    checkDependency("api (backend)", `${API_URL}/health`),
+  ]);
+  // ...build the health report
+  return NextResponse.json(response, {status: httpStatus, headers: {"Cache-Control": "no-store"}});
 }
 ```
 
@@ -244,8 +267,8 @@ export async function GET(request: Request) {
 2. Check `NODE_ENV`:
 
    ```bash
-   # Should be "development"
-   echo $env:NODE_ENV  # PowerShell
+   # Should be "development" or empty (`next dev` then defaults to "development")
+   echo "$NODE_ENV"  # PowerShell: $env:NODE_ENV
    ```
 
 3. Restart VS Code debugger
@@ -263,22 +286,11 @@ export async function GET(request: Request) {
 
 **Solution:**
 
-1. Clear Next.js cache:
+Restart the dev server. `npm run dev` runs `npm run clean` first, which deletes the `.next` cache, so no separate cleanup step is needed:
 
-   ```bash
-   npm run clean
-   ```
-
-2. Delete `.next` folder:
-
-   ```bash
-   Remove-Item -Recurse -Force .next
-   ```
-
-3. Restart dev server:
-   ```bash
-   npm run dev
-   ```
+```bash
+npm run dev
+```
 
 ### Issue: "Source Map Not Found" Warnings
 
@@ -305,7 +317,6 @@ Development mode optimizations are **intentionally disabled** for debugging:
 | Feature             | Production | Development | Reason               |
 | ------------------- | ---------- | ----------- | -------------------- |
 | Minification        | ✅ On      | ❌ Off      | Readable code        |
-| Tree Shaking        | ✅ On      | ❌ Off      | Preserve imports     |
 | Source Maps         | ❌ Off     | ✅ On       | Map to source        |
 | React Optimization  | ✅ On      | ❌ Off      | Preserve hooks       |
 | Server Minification | ✅ On      | ❌ Off      | Readable server logs |
@@ -362,10 +373,10 @@ const result = processData(data); // Set breakpoint here, inspect variables
 Debugging-related environment variables:
 
 ```bash
-# Enable Node.js inspector (auto-set by npm run dev)
+# Enable Node.js inspector (`npm run start:debug` sets this; `npm run dev` passes `next dev --inspect` instead)
 NODE_OPTIONS='--inspect'
 
-# Enable Turbopack tracing (performance analysis)
+# Enable Turbopack tracing (opt-in performance analysis; no script sets it)
 NEXT_TURBOPACK_TRACING=1
 
 # Force development mode

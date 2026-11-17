@@ -11,6 +11,10 @@ Complete before requesting mutation approval. Mark an item “not affected” on
       because another domain exists.
 - [ ] Every affected lockfile is listed, or the absence of a lock and the available resolution evidence are explicit.
 - [ ] Runtime, SDK, engine, language, and package-manager configuration is listed.
+- [ ] The matching `.github/dependabot.yml` entry (ecosystem, directory, target branch, versioning strategy, and ignore rules) is recorded.
+- [ ] Docker base images (`FROM` lines in the tracked Dockerfiles, which Dependabot tracks as `docker` entries) are listed when a runtime or
+      image changes.
+- [ ] Existing npm `overrides` (direct, nested, or `$`-referenced) that touch the target are listed.
 - [ ] Direct versus transitive ownership is explicit.
 
 ## Resolution and Compatibility

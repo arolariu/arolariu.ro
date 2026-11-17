@@ -66,14 +66,14 @@
 ### 🛠️ Built With
 
 <p align="center">
-  <a href="https://nextjs.org"><img src="https://img.shields.io/badge/Next.js-16.1-000000?style=for-the-badge&logo=nextdotjs&logoColor=white" alt="Next.js"/></a>
-  <a href="https://react.dev"><img src="https://img.shields.io/badge/React-19.2-61DAFB?style=for-the-badge&logo=react&logoColor=black" alt="React"/></a>
-  <a href="https://www.typescriptlang.org"><img src="https://img.shields.io/badge/TypeScript-5.9-3178C6?style=for-the-badge&logo=typescript&logoColor=white" alt="TypeScript"/></a>
+  <a href="https://nextjs.org"><img src="https://img.shields.io/badge/Next.js-16.4-000000?style=for-the-badge&logo=nextdotjs&logoColor=white" alt="Next.js"/></a>
+  <a href="https://react.dev"><img src="https://img.shields.io/badge/React-19.3-61DAFB?style=for-the-badge&logo=react&logoColor=black" alt="React"/></a>
+  <a href="https://www.typescriptlang.org"><img src="https://img.shields.io/badge/TypeScript-6.0-3178C6?style=for-the-badge&logo=typescript&logoColor=white" alt="TypeScript"/></a>
   <a href="https://dotnet.microsoft.com"><img src="https://img.shields.io/badge/.NET-10.0-512BD4?style=for-the-badge&logo=dotnet&logoColor=white" alt=".NET"/></a>
 </p>
 
 <p align="center">
-  <a href="https://sass-lang.com"><img src="https://img.shields.io/badge/Sass-1.99-CC6699?style=for-the-badge&logo=sass&logoColor=white" alt="Sass"/></a>
+  <a href="https://sass-lang.com"><img src="https://img.shields.io/badge/Sass-1.106-CC6699?style=for-the-badge&logo=sass&logoColor=white" alt="Sass"/></a>
   <a href="https://azure.microsoft.com"><img src="https://img.shields.io/badge/Azure-Cloud-0078D4?style=for-the-badge&logo=microsoftazure&logoColor=white" alt="Azure"/></a>
   <a href="https://nx.dev"><img src="https://img.shields.io/badge/Nx-Monorepo-143055?style=for-the-badge&logo=nx&logoColor=white" alt="Nx"/></a>
   <a href="https://storybook.js.org"><img src="https://img.shields.io/badge/Storybook-10-FF4785?style=for-the-badge&logo=storybook&logoColor=white" alt="Storybook"/></a>
@@ -130,7 +130,7 @@ _🎨 Production-ready platform featuring modern UI/UX with dark mode support_
   - [🏗️ Architecture](#️-architecture)
     - [High-Level Overview](#high-level-overview)
     - [Monorepo Dependency Flow](#monorepo-dependency-flow)
-    - [Backend — The Standard (5 Layers)](#backend--the-standard-5-layers)
+    - [Backend — The Standard Flow](#backend--the-standard-flow)
     - [Azure Infrastructure](#azure-infrastructure)
   - [🔄 CI/CD Pipeline](#-cicd-pipeline)
     - [🌐 Website Pipelines](#-website-pipelines)
@@ -190,17 +190,17 @@ practices. It demonstrates modern software architecture patterns including:
 
 <div align="center">
 
-|       Category       | Features                                                                  |
-| :------------------: | :------------------------------------------------------------------------ |
-| 🏛️ **Architecture**  | Domain-Driven Design • Modular Monolith • SOLID Principles • The Standard |
-|  ⚡ **Performance**  | React Server Components • Edge Caching • Lazy Loading                     |
-|   🔒 **Security**    | SSL/TLS A+ • CSP Headers • RBAC • Managed Identities • OIDC               |
-| 📊 **Observability** | OpenTelemetry • Distributed Tracing • Application Insights • Grafana      |
-|    🧪 **Quality**    | 85%+ Test Coverage • ESLint (20+ plugins) • TypeScript Strict • Prettier  |
-|     🔄 **CI/CD**     | GitHub Actions • Container builds • Environment-scoped deployments        |
-|     🌍 **i18n**      | Multi-language Support (EN/RO/FR) • Type-safe Translations • next-intl    |
-|     📧 **Email**     | React Email Templates • Resend Integration • Transactional Emails         |
-|   📦 **Monorepo**    | Nx Workspace • Shared Components • Incremental Builds • Affected Commands |
+|       Category       | Features                                                                                        |
+| :------------------: | :---------------------------------------------------------------------------------------------- |
+| 🏛️ **Architecture**  | Domain-Driven Design • Modular Monolith • SOLID Principles • The Standard                       |
+|  ⚡ **Performance**  | React Server Components • Edge Caching • Lazy Loading                                           |
+|   🔒 **Security**    | SSL/TLS A+ • CSP Headers • RBAC • Managed Identities • OIDC                                     |
+| 📊 **Observability** | OpenTelemetry • Distributed Tracing • Application Insights • Grafana dashboards (Azure Monitor) |
+|    🧪 **Quality**    | 85%+ Test Coverage Target • ESLint (15 plugins) • TypeScript Strict • Prettier                  |
+|     🔄 **CI/CD**     | GitHub Actions • Container builds • Environment-scoped deployments                              |
+|     🌍 **i18n**      | Multi-language Support (EN/RO/FR) • Type-safe Translations • next-intl                          |
+|     📧 **Email**     | React Email Templates • Resend Integration • Transactional Emails                               |
+|   📦 **Monorepo**    | Nx Workspace • Shared Components • Incremental Builds • Affected Commands                       |
 
 </div>
 
@@ -246,7 +246,7 @@ npm install
 # 3️⃣ One-command onboarding — validates root dependencies and prepares every toolchain
 npm run setup
 
-# 3️⃣ Start the full stack via Aspire with the engine setup selected/persisted
+# 4️⃣ Start the full stack via Aspire with the engine setup selected/persisted
 npm run dev
 # → Aspire dashboard auto-opens at https://localhost:17080
 # → Website https://localhost:3000 · API https://localhost:5000 · CV http://localhost:4173
@@ -318,12 +318,13 @@ npm run dev:selfhost:stop -- --engine rancher  # 🛑 Stop that containerized st
 
 # Standalone (single service, no AppHost coordination — fallback only):
 npm run dev:website        # 🌐 Website → https://localhost:3000
-npm run dev:components     # 🧩 Storybook → http://localhost:6006
+npm run dev:components     # 🧩 Component library watch build (rslib --watch)
+npm run storybook --workspace packages/components  # 🧩 Storybook → http://localhost:6006
 npm run dev:api            # ⚙️ API → http://localhost:5000
-npm run dev:cv             # 📄 CV → http://localhost:4173
+npm run dev:cv             # 📄 CV → http://localhost:5173
 npm run dev:docs           # 📚 Docs → http://localhost:3100
 npm run dev:exp            # 🐍 exp config service → http://localhost:5002
-npm run dev:status         # 📟 Status page → http://localhost:3002
+npm run dev:status         # 📟 Status page → http://localhost:5174
 ```
 
 </details>
@@ -338,8 +339,8 @@ npm run test:e2e           # End-to-end tests
 npm run test:e2e:frontend  # Frontend Newman live tests
 npm run test:e2e:backend   # Backend Newman live tests
 npm run test:e2e:cv        # CV Newman live tests
-npm run lint               # ESLint (20+ plugins)
-npm run format             # Prettier formatting
+npm run lint               # Lint all targets (ESLint, svelte-check, dotnet format/build, Ruff)
+npm run format             # Format all targets (Prettier, dotnet format, Ruff)
 ```
 
 </details>
@@ -375,16 +376,16 @@ npx nx show project website      # 🔍 Show project details
 `npm run dev -- --engine rancher` or `npm run dev -- --engine podman` starts the **.NET Aspire AppHost** at `tooling/src/AppHost/`. The
 AppHost orchestrates the entire dev stack:
 
-- **Persistent local scenarios** — Alice, Bob, and Charlie are initialized once. Restarts preserve custom data and seed edits/deletions; the
-  dashboard exposes a confirmed [Reset local data](infra/Local/readme.md#persistent-data-and-explicit-reset) action for an intentional fresh
-  scenario.
+- **Persistent local scenarios** — Alice, Bob, Charlie, and Dmitryi are initialized once. Restarts preserve custom data and seed
+  edits/deletions; the dashboard exposes a confirmed [Reset local data](infra/Local/readme.md#persistent-data-and-explicit-reset) action for
+  an intentional fresh scenario.
 - **Pinned Aspire CLI** — `dotnet run` delegates to the `Aspire.Cli` version paired with the AppHost SDK. The first launch, or the first
   after an SDK change, can download the CLI bundle (Dashboard and DCP) through the configured NuGet sources; see the
   [tooling guide](tooling/README.md#development-and-debugging).
 - **Native website certificate preflight** — the website uses `next dev --experimental-https`; a certificate-free first run can download/run
   certificate tooling and install a local CA. Confirm that trust-store change before starting.
-- **Apps run native** — .NET via `dotnet run`, Next.js / SvelteKit / Docusaurus / status via their `dev` scripts, Python `exp` via
-  `uvicorn`. Hot reload is preserved on every runtime.
+- **Apps run native** — .NET via `dotnet run`, Next.js / SvelteKit / status via their `dev` scripts, Docusaurus via its `start` script,
+  Python `exp` via `uvicorn`. Hot reload is preserved on every runtime.
 - **Infrastructure runs in containers** — SQL Server, Cosmos DB vNext emulator, Azurite (Blob/Queue/Table), and Redis are spawned as native
   Aspire integrations through the selected Rancher Desktop or Podman Desktop engine (no Docker Compose required).
 - **Aspire dashboard** auto-opens at `https://localhost:17080` with live OpenTelemetry traces, metrics, logs, clickable URLs, and
@@ -408,19 +409,19 @@ persona capability remains a separate executable. Owner-specific coverage lives 
 [local tooling extension guide](infra/Local/readme.md#tooling-structure-and-extension-points) for ownership, native resource contracts, and
 verification commands.
 
-| Resource             | URL                            | Notes                                                 |
-| -------------------- | ------------------------------ | ----------------------------------------------------- |
-| Aspire dashboard     | `https://localhost:17080`      | OTel traces · metrics · logs · resource graph         |
-| Website (Next.js)    | `https://localhost:3000`       | HTTPS via `--experimental-https` (mkcert root CA)     |
-| API (.NET)           | `https://localhost:5000`       | Swagger UI at `/`                                     |
-| CV (SvelteKit)       | `http://localhost:4173`        | Preview server                                        |
-| Docs (Docusaurus)    | `http://localhost:3100`        |                                                       |
-| Status               | `http://localhost:3002`        |                                                       |
-| exp (Python FastAPI) | `https://localhost:5002`       | Aspire-managed HTTPS; use the dashboard's current URL |
-| SQL Server           | `localhost:8082`               | `Encrypt=False` required (vpnkit TLS)                 |
-| Cosmos emulator      | `https://localhost:8081`       | vNext preview emulator                                |
-| Azurite              | `http://localhost:10000-10002` | Blob · Queue · Table                                  |
-| Redis                | `localhost:6379`               |                                                       |
+| Resource             | URL                                                                | Notes                                                                             |
+| -------------------- | ------------------------------------------------------------------ | --------------------------------------------------------------------------------- |
+| Aspire dashboard     | `https://localhost:17080`                                          | OTel traces · metrics · logs · resource graph                                     |
+| Website (Next.js)    | `https://localhost:3000`                                           | HTTPS via `--experimental-https` (mkcert root CA)                                 |
+| API (.NET)           | `https://localhost:5000`                                           | Swagger UI at `/`                                                                 |
+| CV (SvelteKit)       | `http://localhost:4173`                                            | Vite dev server (Aspire-proxied)                                                  |
+| Docs (Docusaurus)    | `http://localhost:3100`                                            |                                                                                   |
+| Status               | `http://localhost:3002`                                            |                                                                                   |
+| exp (Python FastAPI) | `http://localhost:5002`                                            | Fixed port (not proxied)                                                          |
+| SQL Server           | `localhost:8082`                                                   | AppHost connection strings use `Encrypt=Optional` + `TrustServerCertificate=True` |
+| Cosmos emulator      | `http://localhost:8081`                                            | vNext preview emulator                                                            |
+| Azurite              | `http://localhost:10000` (Blob) · `http://localhost:10001` (Queue) | Table endpoint uses a dynamic port (see dashboard)                                |
+| Redis                | `localhost:6379`                                                   |                                                                                   |
 
 ### Selfhost Mode (Containerized)
 
@@ -475,12 +476,12 @@ The Aspire AppHost spawns `next dev --inspect` which exposes the V8 inspector on
 
 Each resource has a health check; check the dashboard's **Health** column for the failing endpoint:
 
-| Resource   | Health endpoint                     | What it checks                                            |
-| ---------- | ----------------------------------- | --------------------------------------------------------- |
-| API        | `https://localhost:5000/health`     | DB + Cosmos + Azurite + Redis + exp connectivity          |
-| Website    | `https://localhost:3000/api/health` | Website readiness plus configured exp/API upstream checks |
-| exp        | `https://localhost:5002/api/ready`  | FastAPI ready + runtime configuration available           |
-| SQL Server | TDS handshake                       | Aspire's built-in `WaitFor` gate (`sql-ready`)            |
+| Resource   | Health endpoint                      | What it checks                                                              |
+| ---------- | ------------------------------------ | --------------------------------------------------------------------------- |
+| API        | `https://localhost:5000/health`      | SQL + Cosmos + Blob (Azurite) + exp connectivity                            |
+| Website    | `https://localhost:3000/api/health/` | Website readiness plus configured exp/API upstream checks                   |
+| exp        | `http://localhost:5002/api/ready`    | FastAPI ready + runtime configuration available                             |
+| SQL Server | Connection + `SELECT 1`              | AppHost `sql-ready` check (`SqlReadinessHealthCheck`) consumed by `WaitFor` |
 
 The API waits for the local scenario bootstrap to complete successfully and for exp and the local identity service to become healthy. Those
 resources have their own SQL, Cosmos, and Azurite dependency gates. If exp remains Starting, inspect its dependency health and the **exp
@@ -518,7 +519,9 @@ The dashboard exposes two OTLP endpoints — **gRPC on `:21030`** and **HTTP on 
 website uses the HTTP exporter. If you see no traces:
 
 1. Check the resource's **Console logs** tab in the dashboard for `OTLP exporter` errors.
-2. Confirm `OTEL_EXPORTER_OTLP_ENDPOINT` is set to the right protocol's port — the AppHost sets these per-resource.
+2. Confirm the resource's `OTEL_EXPORTER_OTLP_ENDPOINT` uses the port for its exporter's protocol. The AppHost points exp at the HTTP port
+   explicitly (`tooling/src/AppHost/Applications/Exp/ExpResources.cs`). The website gets Aspire's `AddNextJsApp` default, which selects the
+   gRPC port and sets `OTEL_EXPORTER_OTLP_PROTOCOL=grpc`, even though its exporters speak OTLP/HTTP.
 3. For Aspire dashboard TLS, inspect the Kestrel endpoint in `tooling/src/AppHost/Properties/launchSettings.json` and the current ASP.NET
    Core development certificate. `mkcert` owns selfhost Traefik certificates, not the Aspire dashboard.
 
@@ -581,14 +584,14 @@ start Docker Desktop as a fallback.
 arolariu.ro/
 ├── 📦 packages/                    # Shared libraries
 │   └── components/                 # 🧩 @arolariu/components (Base UI primitives)
-│       ├── src/                    #    Component source
-│       └── stories/                #    Storybook stories
+│       ├── src/                    #    Component source (stories colocated as *.stories.tsx)
+│       └── .storybook/             #    Storybook configuration
 │
 ├── 🌐 sites/                       # Applications
 │   ├── arolariu.ro/                # 🎨 Main Next.js website
 │   │   ├── src/
 │   │   │   ├── app/                #    App Router pages (RSC by default)
-│   │   │   ├── hooks/              #    Custom React hooks (useInvoice, etc.)
+│   │   │   ├── hooks/              #    Shared React hooks (usePagination, useUserInformation, etc.)
 │   │   │   ├── stores/             #    Zustand stores with IndexedDB persistence
 │   │   │   ├── lib/actions/        #    Server-only helpers, Server Actions, transport
 │   │   │   └── types/              #    TypeScript type definitions
@@ -615,13 +618,15 @@ arolariu.ro/
 │
 ├── 📜 scripts/                     # Build & utility scripts
 ├── 🛠️  tooling/                    # Dev tooling
-│   ├── src/                        #    AppHost, Bootstrap, and Identity projects
+│   ├── src/                        #    AppHost and LocalDevelopment.{Bootstrap,Common,Data,Identity} projects
 │   └── tests/                      #    Owner-specific MSTest projects
 ├── 📖 docs/                        # Architecture documentation & RFCs
 │   └── rfc/                        #    Architecture Decision Records
 │
 ├── 🤖 .github/                     # GitHub configuration
 │   ├── workflows/                  #    CI/CD workflows
+│   ├── actions/                    #    Composite setup actions (setup-tooling, setup-workspace)
+│   ├── scripts/                    #    CI TypeScript scripts (hygiene, unit/live test reporting)
 │   ├── instructions/               #    Path instructions and reference catalogs
 │   ├── agents/                     #    Specialist agent definitions
 │   ├── prompts/                    #    Thin VS Code prompt shortcuts
@@ -691,30 +696,38 @@ graph LR
         WEB["🎨 arolariu.ro<br/><i>Next.js 16 + React 19</i>"]
         API["⚙️ api.arolariu.ro<br/><i>.NET 10 + DDD</i>"]
         CV["📄 cv.arolariu.ro<br/><i>SvelteKit 2</i>"]
+        STATUS["📟 status.arolariu.ro<br/><i>SvelteKit 2</i>"]
+        EXP["🐍 exp.arolariu.ro<br/><i>FastAPI config proxy</i>"]
         DOCS["📚 docs.arolariu.ro<br/><i>Docusaurus</i>"]
     end
 
     subgraph "☁️ Azure Cloud"
         AFD["🌐 Azure Front Door<br/><i>Edge routing + WAF</i>"]
+        DNS["🌍 Azure DNS<br/><i>CNAME records</i>"]
         DATA["📦 Data Layer<br/><i>SQL + Cosmos DB + Blob</i>"]
-        AI["🤖 Azure OpenAI<br/><i>Model deployments</i>"]
+        AI["🤖 Azure AI Foundry<br/><i>AIServices account + project</i>"]
     end
 
     COMP -->|imports| WEB
     WEB -->|API calls| API
+    WEB -->|config| EXP
+    API -->|config| EXP
     API --> DATA
     API --> AI
     AFD --> WEB
-    AFD --> API
-    AFD --> CV
-    AFD --> DOCS
+    DNS -.->|CNAME| API
+    DNS -.->|CNAME| CV
+    DNS -.->|CNAME| DOCS
 
     style COMP fill:#7c3aed,stroke:#5b21b6,color:#fff
     style WEB fill:#0070f3,stroke:#0051a8,color:#fff
     style API fill:#512bd4,stroke:#3b1f9e,color:#fff
     style CV fill:#ff3e00,stroke:#cc3200,color:#fff
+    style STATUS fill:#ff3e00,stroke:#cc3200,color:#fff
+    style EXP fill:#3776ab,stroke:#2b5b84,color:#fff
     style DOCS fill:#6b7280,stroke:#4b5563,color:#fff
     style AFD fill:#0078d4,stroke:#005a9e,color:#fff
+    style DNS fill:#0078d4,stroke:#005a9e,color:#fff
     style DATA fill:#059669,stroke:#047857,color:#fff
     style AI fill:#f59e0b,stroke:#d97706,color:#fff
 ```
@@ -761,16 +774,16 @@ Core.Auth is a deliberate exception: framework Identity routes and the custom lo
 
 <br/>
 
-|        Layer         | Components                               | Purpose                            |
-| :------------------: | :--------------------------------------- | :--------------------------------- |
-|  🌐 **Networking**   | Azure Front Door, DNS Zone               | Global edge routing, WAF, DNS      |
-|    🖥️ **Compute**    | App Service Plans                        | Production and development hosting |
-|     🌍 **Sites**     | App Services and Static Web Apps         | Web applications                   |
-|   🔐 **Identity**    | User-Assigned Managed Identities         | Workload identity                  |
-| ⚙️ **Configuration** | Key Vault, App Configuration             | Secrets & feature flags            |
-|    📦 **Storage**    | Blob Storage, SQL Server, Cosmos DB, ACR | Data persistence                   |
-| 📊 **Observability** | Log Analytics, App Insights, Grafana     | Monitoring & alerting              |
-|      🤖 **AI**       | Azure OpenAI, AI Foundry                 | GPT models & ML capabilities       |
+|        Layer         | Components                                                                        | Purpose                                                        |
+| :------------------: | :-------------------------------------------------------------------------------- | :------------------------------------------------------------- |
+|  🌐 **Networking**   | Azure Front Door, DNS Zone                                                        | Global edge routing, WAF, DNS                                  |
+|    🖥️ **Compute**    | App Service Plans                                                                 | Production and development hosting                             |
+|     🌍 **Sites**     | App Services and Static Web Apps                                                  | Web applications                                               |
+|   🔐 **Identity**    | User-Assigned Managed Identities                                                  | Workload identity                                              |
+| ⚙️ **Configuration** | Key Vault, App Configuration                                                      | Secrets & feature flags                                        |
+|    📦 **Storage**    | Blob Storage, SQL Server, Cosmos DB, ACR                                          | Data persistence                                               |
+| 📊 **Observability** | Log Analytics, App Insights (Grafana dashboards in Azure Monitor, portal-managed) | Monitoring & alerting                                          |
+|      🤖 **AI**       | Azure AI Foundry (AIServices account + project)                                   | Generative invoice analysis for the API (`AzureFoundryBroker`) |
 
 </details>
 
@@ -779,7 +792,7 @@ Core.Auth is a deliberate exception: framework Identity routes and the custom lo
 
 ```mermaid
 graph TB
-    subgraph SUB["☁️ Azure Subscription (swedencentral)"]
+    subgraph SUB["☁️ Azure Subscription (francecentral; AI Foundry in swedencentral)"]
         direction TB
 
         subgraph NET["🌐 Networking"]
@@ -789,16 +802,19 @@ graph TB
 
         subgraph WEB["🌍 Websites Layer"]
             S1["arolariu.ro<br/><i>Next.js</i>"]
+            S5["dev.arolariu.ro<br/><i>Next.js</i>"]
             S2["api.arolariu.ro<br/><i>.NET</i>"]
             S3["docs.arolariu.ro<br/><i>Docusaurus</i>"]
             S4["cv.arolariu.ro<br/><i>SvelteKit</i>"]
+            S6["exp.arolariu.ro<br/><i>FastAPI</i>"]
+            S7["status.arolariu.ro<br/><i>SvelteKit (Static Web App)</i>"]
         end
 
         subgraph DAT["📦 Data Layer"]
             SQL["Azure SQL"]
             CDB["Cosmos DB"]
             BLB["Blob Storage"]
-            OAI["Azure OpenAI"]
+            OAI["Azure AI Foundry<br/><i>AIServices account + project</i>"]
         end
 
         subgraph SEC["🔐 Security & Config"]
@@ -810,21 +826,24 @@ graph TB
         subgraph MON["📊 Observability"]
             LA["Log Analytics"]
             AI["App Insights"]
-            GR["Grafana"]
+            GR["Azure Monitor Grafana dashboards<br/><i>portal-managed</i>"]
         end
     end
 
     AFD --> DNS
     AFD --> S1
-    AFD --> S2
-    AFD --> S3
-    AFD --> S4
+    DNS -.->|CNAME| S2
+    DNS -.->|CNAME| S3
+    DNS -.->|CNAME| S4
+    DNS -.->|CNAME| S5
     S2 --> SQL
     S2 --> CDB
     S2 --> BLB
     S2 --> OAI
     S2 --> KV
     S1 --> AC
+    S6 --> AC
+    S6 --> KV
     S1 --> AI
     S2 --> AI
     MI -.->|authenticates| S1
@@ -854,10 +873,10 @@ Automated pipelines enforce repository quality gates and environment-scoped buil
 
 ### 🌐 Website Pipelines
 
-|    Environment    |  Branch   |                                                                                                      Build                                                                                                      |                                                                                                        Release                                                                                                        |                 Deployment                 |
-| :---------------: | :-------: | :-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------: | :-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------: | :----------------------------------------: |
-| 🟢 **Production** |  `main`   |  [![Build](https://github.com/arolariu/arolariu.ro/actions/workflows/official-website-build.yml/badge.svg?branch=main)](https://github.com/arolariu/arolariu.ro/actions/workflows/official-website-build.yml)   |  [![Release](https://github.com/arolariu/arolariu.ro/actions/workflows/official-website-release.yml/badge.svg?branch=main)](https://github.com/arolariu/arolariu.ro/actions/workflows/official-website-release.yml)   |     [arolariu.ro](https://arolariu.ro)     |
-|  🟡 **Preview**   | `preview` | [![Build](https://github.com/arolariu/arolariu.ro/actions/workflows/official-website-build.yml/badge.svg?branch=preview)](https://github.com/arolariu/arolariu.ro/actions/workflows/official-website-build.yml) | [![Release](https://github.com/arolariu/arolariu.ro/actions/workflows/official-website-release.yml/badge.svg?branch=preview)](https://github.com/arolariu/arolariu.ro/actions/workflows/official-website-release.yml) | [dev.arolariu.ro](https://dev.arolariu.ro) |
+|    Environment    |                        Branch                         |                                                                                                      Build                                                                                                      |                                                                                                        Release                                                                                                        |                 Deployment                 |
+| :---------------: | :---------------------------------------------------: | :-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------: | :-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------: | :----------------------------------------: |
+| 🟢 **Production** | manual `workflow_dispatch` (`environment=production`) |        [![Build](https://github.com/arolariu/arolariu.ro/actions/workflows/official-website-build.yml/badge.svg)](https://github.com/arolariu/arolariu.ro/actions/workflows/official-website-build.yml)         |        [![Release](https://github.com/arolariu/arolariu.ro/actions/workflows/official-website-release.yml/badge.svg)](https://github.com/arolariu/arolariu.ro/actions/workflows/official-website-release.yml)         |     [arolariu.ro](https://arolariu.ro)     |
+|  🟡 **Preview**   |          `preview` (push → build → release)           | [![Build](https://github.com/arolariu/arolariu.ro/actions/workflows/official-website-build.yml/badge.svg?branch=preview)](https://github.com/arolariu/arolariu.ro/actions/workflows/official-website-build.yml) | [![Release](https://github.com/arolariu/arolariu.ro/actions/workflows/official-website-release.yml/badge.svg?branch=preview)](https://github.com/arolariu/arolariu.ro/actions/workflows/official-website-release.yml) | [dev.arolariu.ro](https://dev.arolariu.ro) |
 
 ### ⚙️ API Pipeline
 
@@ -867,30 +886,32 @@ Automated pipelines enforce repository quality gates and environment-scoped buil
 
 ### 📦 Additional Pipelines
 
-|         Pipeline         |                                                                                                     Status                                                                                                      | Purpose                                                   |
-| :----------------------: | :-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------: | :-------------------------------------------------------- |
-|      **Components**      | [![Components](https://github.com/arolariu/arolariu.ro/actions/workflows/official-components-publish.yml/badge.svg)](https://github.com/arolariu/arolariu.ro/actions/workflows/official-components-publish.yml) | Publish @arolariu/components                              |
-|       **CV Site**        |             [![CV](https://github.com/arolariu/arolariu.ro/actions/workflows/official-cv-trigger.yml/badge.svg)](https://github.com/arolariu/arolariu.ro/actions/workflows/official-cv-trigger.yml)             | Deploy SvelteKit CV                                       |
-|     **Status Site**      |       [![Status](https://github.com/arolariu/arolariu.ro/actions/workflows/official-status-trigger.yml/badge.svg)](https://github.com/arolariu/arolariu.ro/actions/workflows/official-status-trigger.yml)       | Deploy the SvelteKit status site                          |
-| **Experimental Service** |   [![Experimental Service](https://github.com/arolariu/arolariu.ro/actions/workflows/official-exp-trigger.yml/badge.svg)](https://github.com/arolariu/arolariu.ro/actions/workflows/official-exp-trigger.yml)   | Build, test, and deploy the FastAPI configuration service |
-|         **Docs**         |          [![Docs](https://github.com/arolariu/arolariu.ro/actions/workflows/official-docs-trigger.yml/badge.svg)](https://github.com/arolariu/arolariu.ro/actions/workflows/official-docs-trigger.yml)          | Deploy Docusaurus site                                    |
-|      **E2E Tests**       |            [![E2E](https://github.com/arolariu/arolariu.ro/actions/workflows/official-e2e-action.yml/badge.svg)](https://github.com/arolariu/arolariu.ro/actions/workflows/official-e2e-action.yml)             | Playwright + Newman                                       |
-|       **Hygiene**        |    [![Hygiene](https://github.com/arolariu/arolariu.ro/actions/workflows/official-hygiene-check-v2.yml/badge.svg)](https://github.com/arolariu/arolariu.ro/actions/workflows/official-hygiene-check-v2.yml)     | Lint, format, type-check                                  |
+|         Pipeline         |                                                                                                     Status                                                                                                      | Purpose                                                                      |
+| :----------------------: | :-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------: | :--------------------------------------------------------------------------- |
+|      **Components**      | [![Components](https://github.com/arolariu/arolariu.ro/actions/workflows/official-components-publish.yml/badge.svg)](https://github.com/arolariu/arolariu.ro/actions/workflows/official-components-publish.yml) | Publish @arolariu/components                                                 |
+|       **CV Site**        |             [![CV](https://github.com/arolariu/arolariu.ro/actions/workflows/official-cv-trigger.yml/badge.svg)](https://github.com/arolariu/arolariu.ro/actions/workflows/official-cv-trigger.yml)             | Deploy SvelteKit CV                                                          |
+|     **Status Site**      |       [![Status](https://github.com/arolariu/arolariu.ro/actions/workflows/official-status-trigger.yml/badge.svg)](https://github.com/arolariu/arolariu.ro/actions/workflows/official-status-trigger.yml)       | Deploy the SvelteKit status site                                             |
+| **Experimental Service** |   [![Experimental Service](https://github.com/arolariu/arolariu.ro/actions/workflows/official-exp-trigger.yml/badge.svg)](https://github.com/arolariu/arolariu.ro/actions/workflows/official-exp-trigger.yml)   | Build, test, and deploy the FastAPI configuration service                    |
+|         **Docs**         |          [![Docs](https://github.com/arolariu/arolariu.ro/actions/workflows/official-docs-trigger.yml/badge.svg)](https://github.com/arolariu/arolariu.ro/actions/workflows/official-docs-trigger.yml)          | Deploy Docusaurus site                                                       |
+|      **E2E Tests**       |            [![E2E](https://github.com/arolariu/arolariu.ro/actions/workflows/official-e2e-action.yml/badge.svg)](https://github.com/arolariu/arolariu.ro/actions/workflows/official-e2e-action.yml)             | Daily Newman live tests (frontend, backend, CV)                              |
+|       **Hygiene**        |    [![Hygiene](https://github.com/arolariu/arolariu.ro/actions/workflows/official-hygiene-check-v2.yml/badge.svg)](https://github.com/arolariu/arolariu.ro/actions/workflows/official-hygiene-check-v2.yml)     | Format check, ESLint, unit tests (Vitest/.NET/pytest), and repo stats on PRs |
+|     **Status Probe**     |      [![Status Probe](https://github.com/arolariu/arolariu.ro/actions/workflows/official-status-probe.yml/badge.svg)](https://github.com/arolariu/arolariu.ro/actions/workflows/official-status-probe.yml)      | Probe service health endpoints every 30 minutes and publish status data      |
+| **Copilot Setup Steps**  |    [![Copilot Setup Steps](https://github.com/arolariu/arolariu.ro/actions/workflows/copilot-setup-steps.yml/badge.svg)](https://github.com/arolariu/arolariu.ro/actions/workflows/copilot-setup-steps.yml)     | Prepare the Copilot coding agent environment                                 |
 
 </div>
 
 <details>
 <summary><b>🎯 Pipeline Features</b></summary>
 
-|           Feature           | Description                                             |
-| :-------------------------: | :------------------------------------------------------ |
-|  ✅ **Automated Testing**   | Unit, integration & E2E tests on every commit           |
-|  ✅ **Code Quality Gates**  | ESLint, Prettier, TypeScript strict checks              |
-|  ✅ **Security Scanning**   | Dependency vulnerability analysis                       |
-|  ✅ **Docker Multi-stage**  | Optimized container builds with layer caching           |
-| ✅ **Environment Controls** | GitHub Environment scoping for deployment jobs          |
-| ✅ **Container Promotion**  | Pre-built images deployed from Azure Container Registry |
-| ✅ **OIDC Authentication**  | Secure Azure authentication without secrets             |
+|           Feature           | Description                                                          |
+| :-------------------------: | :------------------------------------------------------------------- |
+|  ✅ **Automated Testing**   | Unit tests on pull requests and preview builds; daily E2E live tests |
+|  ✅ **Code Quality Gates**  | ESLint, Prettier, TypeScript strict checks                           |
+|  ✅ **Security Scanning**   | Dependency vulnerability analysis                                    |
+|  ✅ **Docker Multi-stage**  | Optimized container builds with layer caching                        |
+| ✅ **Environment Controls** | GitHub Environment scoping for deployment jobs                       |
+| ✅ **Container Promotion**  | Pre-built images deployed from Azure Container Registry              |
+| ✅ **OIDC Authentication**  | Secure Azure authentication without secrets                          |
 
 </details>
 
@@ -965,44 +986,49 @@ for new proposals.
 <details>
 <summary><b>📐 Static Code Statistics (scc)</b></summary>
 
-> Last updated: 2026-02-10
+> Last updated: 2026-11-17 (`scc` 3.7.0, commit `d6cb41e`)
 
-> Repository size (excluding `node_modules`, build artifacts, and test results): **9.824 MB**
+> Repository size (excluding `node_modules`, build artifacts, and test results): **62.512 MB**
 
 ```text
 ───────────────────────────────────────────────────────────────────────────────
 Language            Files       Lines    Blanks  Comments       Code Complexity
 ───────────────────────────────────────────────────────────────────────────────
-TypeScript            591     109,452    12,437    24,927     72,088      3,375
-Sass                  196      25,805     3,826     3,464     18,515          6
-C#                    182      39,427     4,995    13,016     21,416        298
-Markdown              105      42,513     9,526         0     32,987          0
-JSON                   58      29,011        30         0     28,981          0
-Bicep                  45       5,120       473     1,530      3,117         21
-YAML                   32       5,417       411       555      4,451          0
-Svelte                 28       4,187       263       328      3,596         90
-SVG                    12         621         0         0        621          0
-MSBuild                10         563        60        28        475          5
-JavaScript              5         165        10        11        144         10
-Plain Text              5         343        27         0        316          0
-XML                     4       3,077         0        20      3,057          0
-SQL                     3          81        12        48         21          0
-CSS                     2         473        71        64        338          0
-Batch                   2          60        18         0         42          4
-Docker ignore           2         154        18        20        116          0
-Dockerfile              2         211        38        51        122          9
-Shell                   2          54        16        12         26          2
-HTML                    1         193        11         9        173          0
+TypeScript          1,971     417,748    40,790    70,713    306,245     19,781
+C#                    517      79,027     9,454    18,927     50,646      1,890
+Sass                  300      43,656     6,704     3,943     33,009         11
+Markdown              258      50,658    11,478         0     39,180          0
+JSON                  110     737,528        33         0    737,495          0
+CSS                   102      11,970     1,601       307     10,062          0
+Svelte                 57       7,894       462       844      6,588        173
+Bicep                  53       5,548       604     1,743      3,201         22
+YAML                   32       5,574       482       721      4,371          0
+Python                 28       6,149     1,230       472      4,447        435
+MSBuild                21         684        62        41        581          4
+JavaScript             18       2,410       223        37      2,150        114
+SVG                    15         955         0         0        955          1
+Plain Text              7         364        27         0        337          0
+Shell                   7         242        31         7        204         63
+TypeScript Typ…         5         109        19        23         67          0
+XML                     5       3,085         0        20      3,065          0
+Batch                   3          15         0         0         15          0
+Docker ignore           3         265        23        42        200          0
+Dockerfile              3         302        56        77        169         19
+MDX                     3         204        56         0        148          0
+SQL                     3          84        12        48         24          0
+HTML                    2         253        11        14        228          0
+CSV                     1       1,452         0         0      1,452          0
+Expect                  1          68        16        22         30          7
 License                 1          21         4         0         17          0
-TypeScript Typ…         1          12         3         5          4          0
+TOML                    1          29         5         4         20          1
 ───────────────────────────────────────────────────────────────────────────────
-Total               1,289     266,960    32,249    44,088    190,623      3,820
+Total               3,527   1,376,294    73,383    98,005  1,204,906     22,521
 ───────────────────────────────────────────────────────────────────────────────
-Estimated Cost to Develop (organic) $6,695,444
-Estimated Schedule Effort (organic) 28.33 months
-Estimated People Required (organic) 21.00
+Estimated Cost to Develop (organic) $46,408,352
+Estimated Schedule Effort (organic) 59.12 months
+Estimated People Required (organic) 69.74
 ───────────────────────────────────────────────────────────────────────────────
-Processed 9823755 bytes, 9.824 megabytes (SI)
+Processed 62511995 bytes, 62.512 megabytes (SI)
 ───────────────────────────────────────────────────────────────────────────────
 ```
 
@@ -1015,7 +1041,8 @@ scc . --exclude-dir node_modules,.next,bin,obj,artifacts,coverage,TestResults,di
 ```
 
 > Notes: `scc` counts source-like files and can differ from other tools based on exclusions, generated assets, and large/binary-like
-> bundles.
+> bundles. JSON totals are dominated by the local-development seed scenarios in `tooling/src/LocalDevelopment.Bootstrap/SeedData/` (673,245
+> lines).
 
 </details>
 
@@ -1075,16 +1102,16 @@ scc . --exclude-dir node_modules,.next,bin,obj,artifacts,coverage,TestResults,di
 <div align="center">
 
 ```mermaid
-pie title Codebase by Language (Lines of Code)
-    "TypeScript" : 72088
-    "C#" : 21416
-    "Sass/SCSS" : 18515
-    "Markdown" : 32987
-    "JSON" : 28981
-    "Svelte" : 3596
-    "YAML" : 4451
-    "Bicep" : 3117
-    "Other" : 5472
+pie title Codebase by Language (Code Lines, scc 2026-11-17)
+    "TypeScript" : 306245
+    "C#" : 50646
+    "Sass/SCSS" : 33009
+    "Markdown" : 39180
+    "JSON" : 737495
+    "Svelte" : 6588
+    "YAML" : 4371
+    "Bicep" : 3201
+    "Other" : 24171
 ```
 
 </div>

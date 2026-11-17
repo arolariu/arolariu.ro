@@ -19,11 +19,14 @@ tooling\
     LocalDevelopment.Data\
     LocalDevelopment.Identity\
   tests\
+    Fixtures\
+      local-data.compose.yml          isolated Compose fixture for the opt-in local data tests
     AppHost.Tests\
     LocalDevelopment.Bootstrap.Tests\
     LocalDevelopment.Common.Tests\
     LocalDevelopment.Data.Tests\
     LocalDevelopment.Identity.Tests\
+    LocalDataTestFixture.cs           fixture guard linked into AppHost.Tests and LocalDevelopment.Data.Tests
 ```
 
 AppHost is the native Aspire composition root. `Program.cs` generates the exp overlay before calling `LocalApplication.Compose`. Composition
@@ -184,5 +187,4 @@ initialization/reset or repeat a successful registration.
 
 The website's `/api/health/` probe uses the `API_URL` and `EXP_PROXY_URL` endpoints injected by Aspire. Without explicit overrides, its
 existing Azure/Docker defaults remain in effect. Follow the website's trailing-slash redirect and inspect the final status and dependency
-entries: an HTTP 308 alone does not prove health. Native exp may use HTTPS; retain certificate validation rather than forcing its URL to
-HTTP.
+entries: an HTTP 308 alone does not prove health. Aspire serves native exp over plain HTTP, so the injected `EXP_PROXY_URL` is an HTTP URL.

@@ -138,9 +138,10 @@ flowchart LR
   Hub --> View["View invoices"]
 ```
 
-- **Home** is a server page that composes a hero, a technologies section (with the architecture card) and a features section over decorative
-  background beams. The hero animates on load and the Technologies section reveals once on entering the viewport; About and The Platform
-  sections reveal once when 100px inside the viewport. See [Known gaps](#known-gaps) for stale technology-card copy.
+- **Home** is a thin server page whose client island (`src/app/island.tsx`) composes a hero, a technologies section (with the architecture
+  card) and a features section over decorative background beams. The hero animates on load and the Technologies section reveals once on
+  entering the viewport; About and The Platform sections reveal once when 100px inside the viewport. See [Known gaps](#known-gaps) for stale
+  technology-card copy.
 - **About** composes, in order, Hero, Mission, Values, Stats, Navigation, FAQ and CTA. The Author and The Platform are deeper dives; some
   Author sections re-trigger their reveal each time they scroll into view.
 - **Domains** lists the product areas as service cards. Today there is one: the Invoice Management System.
@@ -204,7 +205,8 @@ invoices) and **Profile** (`/my-profile`). The active item follows the pathname.
 | Limits         | 10 MB per file; up to 3 upload attempts per file.                                                                                                                                |
 | Rejections     | `unsupported-extension`, `unsupported-type`, `file-too-large`, each with a localized message.                                                                                    |
 | Progress       | A workflow progress bar, per-file preview, and a loading skeleton route segment.                                                                                                 |
-| After success  | A prompt offers **Create invoice** or **View scans**; a "next steps" card and a formats card sit in the sidebar.                                                                 |
+| After success  | A prompt offers **Create invoice** or **View scans**, and a next-steps card linking to View scans joins the sidebar.                                                             |
+| Sidebar        | Always visible next to the workspace: Formats, Tips and Security cards (plus the next-steps card after success).                                                                 |
 | First run      | An onboarding overlay (Upload, Analyze, Track). Completion and permanent dismissal are stored in `localStorage` (`invoice-onboarding-complete`, `invoice-onboarding-dismissed`). |
 
 ### View scans
@@ -253,15 +255,15 @@ on the same browser profile (see [Persistence](#persistence)).
 Guests are redirected to sign-in. Signed-in users get a profile header and a two-column settings layout: a sidebar of seven sections on
 desktop, replaced by a select menu on mobile. One panel shows at a time and swaps with a short fade.
 
-| Section       | Panel                                                                                                       |
-| ------------- | ----------------------------------------------------------------------------------------------------------- |
-| Profile       | Quick stats                                                                                                 |
-| Appearance    | Theme, font, the seven named theme presets plus Custom, custom colors (only for "custom"), locale, advanced |
-| AI            | AI settings                                                                                                 |
-| Analytics     | Analytics settings                                                                                          |
-| Notifications | Notification settings                                                                                       |
-| Security      | Security settings                                                                                           |
-| Data          | Export, and a **Delete account** danger zone                                                                |
+| Section       | Panel                                                                                                                     |
+| ------------- | ------------------------------------------------------------------------------------------------------------------------- |
+| Profile       | Quick stats                                                                                                               |
+| Appearance    | Theme, font, the six named theme presets plus the default and Custom, custom colors (only for "custom"), locale, advanced |
+| AI            | AI settings                                                                                                               |
+| Analytics     | Analytics settings                                                                                                        |
+| Notifications | Notification settings                                                                                                     |
+| Security      | Security settings                                                                                                         |
+| Data          | Export, and a **Delete account** danger zone                                                                              |
 
 - **Appearance** also holds the **compact mode** and **animations** toggles. See [`DESIGN_SYSTEM.md`](DESIGN_SYSTEM.md#4-theming) for the
   preset runtime.
@@ -372,7 +374,7 @@ Recorded, not fixed: this documentation pass is docs-only, so none of these were
 | Theme presets       | `THEME_PRESETS.default.preview` shows cyan, purple and pink, but the real default is blue, violet and magenta. Preset names and descriptions are English-only strings. The custom preset writes `--gradient-from`, `--gradient-via` and `--gradient-to`, but no stylesheet reads them, so custom gradient colors only reach the first stop through `--primary`.                                                                                       |
 | i18n                | An unsupported `locale` cookie throws instead of falling back. Hard-coded English strings remain on several surfaces; [Internationalization](#internationalization) lists the known ones, not exhaustively.                                                                                                                                                                                                                                           |
 | Test coverage       | Playwright specs cover Home, About, Auth, Domains landmarks, the legal pages, routing, header, footer, and the global error and not-found pages. No Playwright spec exercises an invoice journey; invoice flows are covered by colocated Vitest suites only.                                                                                                                                                                                          |
-| Documentation drift | Comments in `main.scss`, `_presets.scss`, `_index.scss` and `theme-presets.ts` still mention a `useThemePreset` hook that does not exist. See [`DESIGN_SYSTEM.md`](DESIGN_SYSTEM.md#4-theming).                                                                                                                                                                                                                                                       |
+| Documentation drift | Comments in `main.scss`, `_presets.scss`, `themes/_index.scss` and `theme-presets.ts` still mention a `useThemePreset` hook that does not exist. See [`DESIGN_SYSTEM.md`](DESIGN_SYSTEM.md#4-theming).                                                                                                                                                                                                                                                |
 | Unused styles       | Global `.btn-*`, `.card--featured`, `.card-grid`, `.badge--*` and the `glass` mixin have no consumers.                                                                                                                                                                                                                                                                                                                                                |
 
 ## Tests and related documentation
@@ -385,6 +387,7 @@ Recorded, not fixed: this documentation pass is docs-only, so none of these were
 | `src/app/routing.spec.tsx`, `src/app/about/page.spec.tsx`, `src/app/auth/page.spec.tsx` | Routing and page-level journeys                                                       |
 | `src/components/Header.spec.tsx`, `Footer.spec.tsx`                                     | Global chrome                                                                         |
 | `src/app/global-error.spec.tsx`, `global-not-found.spec.tsx`                            | Error and not-found surfaces                                                          |
+| `src/app/(privacy-and-terms)/legal.spec.tsx`                                            | Legal pages: load, structure, accessibility, navigation, responsive                   |
 | Colocated Vitest suites under `src/app/domains/invoices/**`                             | Upload, create, scans, list, detail, edit, dialogs and hooks                          |
 | [`tests/README.md`](tests/README.md), [`DEBUGGING.md`](DEBUGGING.md)                    | Playwright setup, fixtures and debugging                                              |
 | [RFC 1003](../../docs/rfc/1003-internationalization-system.md)                          | Internationalization system                                                           |

@@ -21,7 +21,7 @@ format and [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   `min-inline-size` and `min-block-size`, which inflated the default track to 32×24 and turned `sm` into a 24×24 circle. The 24px pointer
   target (WCAG 2.5.8) now comes from an invisible `::before` overlay, so the hit area is unchanged and no call-site change is needed.
 
-### [3.0.0] - Unreleased
+### [3.0.0](https://www.npmjs.com/package/@arolariu/components/v/3.0.0) - 2026-11-09
 
 **💥 Breaking Changes**
 
@@ -98,9 +98,10 @@ The full list:
   (`viewportProps["aria-label"]`), `toastOptions` (no default-options merge), `cancel` (compose Toast parts), `onDismiss`/`onAutoClose`
   (per-toast `onClose`/`onRemove`, which report no cause), `toast.custom` (compound composition with typed `data`) and `toast.getHistory`
   (no replacement). MIGRATION maps every v2.4 Toaster and per-toast option.
-- Automatic motion in the visual effects settles five seconds after mount unless `loop`, which requires a caller-supplied, localized pause
-  control that sets `motionPaused`. While paused, FireworksBackground draws a deterministic static starburst: the fixed color or the first
-  palette entry at the `particleSize` midpoint. Skeleton pulses twice (four seconds) instead of indefinitely.
+- Automatic motion in the visual effects settles five seconds after it first scrolls into view unless `loop`, which requires a
+  caller-supplied, localized pause control that sets `motionPaused`. While paused, FireworksBackground draws a deterministic static
+  starburst: the fixed color or the first palette entry at the `particleSize` midpoint. Skeleton pulses twice (four seconds) instead of
+  indefinitely.
 - New generated, localizable controls: ResizableHandle renders native −/+ step buttons after each separator (two extra tab stops;
   `decreaseLabel`, `increaseLabel`, `resizeStep`); FireworksBackground renders a native launch button (`launchLabel`) that stays available
   after automatic launches settle and in `population={0}` click-only mode, and is `aria-disabled` (still focusable) under reduced motion,

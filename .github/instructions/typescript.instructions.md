@@ -35,7 +35,7 @@ instructions.
 Open `references/typescript.md` only when the task needs one of:
 
 - designing or changing a public function/type/module API surface;
-- a discriminated union, generic, `satisfies`, or branded-identifier decision;
+- a discriminated union, generic, `satisfies`, or identifier-normalization decision;
 - adding or changing runtime validation at a transport/trust boundary;
 - a `noUncheckedIndexedAccess`/`exactOptionalPropertyTypes`/module-syntax edge case that is not resolved by the rules above.
 

@@ -15,7 +15,7 @@ Open only for composite keyboard behavior, live regions/errors, or dynamic list/
 - Use `role="alert"`/assertive announcements for urgent errors that need immediate attention; use `role="status"`/polite for non-urgent
   progress.
 - Keep the live-region node stable when possible and update concise text.
-- Current examples include `sites/arolariu.ro/src/app/error.tsx`,
+- Current examples include `sites/arolariu.ro/src/app/_components/RouteErrorContent.tsx` (rendered by every `error.tsx` boundary),
   `sites/arolariu.ro/src/app/domains/invoices/edit-invoice/[id]/_dialogs/ItemsDialog.tsx`, and
   `packages/components/src/components/ui/spinner.tsx`.
 - Do not put interactive content inside a status announcement just to make it discoverable.

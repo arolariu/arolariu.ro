@@ -25,8 +25,9 @@ Perform checks in this order unless the live protocol requires a deliberately no
 7. validate downstream response data;
 8. map to the established typed result.
 
-Do not accept an owner identifier merely because it equals a typed string. For resource IDs, normalize with the existing identifier helper,
-then verify that the principal or explicitly validated anonymous/public policy permits the operation.
+Do not accept an owner identifier merely because it equals a typed string. For resource IDs, validate with `validateStringIsGuidType` (it
+asserts GUID format and also accepts the `EMPTY_GUID`/`LAST_GUID` sentinels), then verify that the principal or explicitly validated
+anonymous/public policy permits the operation.
 
 ## Authorization and disclosure
 
@@ -41,15 +42,15 @@ Any change to these rules routes to `react-auth` and requires explicit approval.
 ## Transport and result
 
 - Parse browser input and downstream JSON as `unknown`.
-- Reuse `fetchWithTimeout`, transport parsers, identifier normalization, and the current `ServerActionResult<T>` mapping where the caller
-  already uses them.
+- Reuse `fetchWithTimeout`, transport parsers, identifier validation, and the `ServerActionResult<T>` result shape where the caller already
+  uses them.
 - Preserve status and error-code meaning. A malformed backend payload is a server/contract failure, not user validation.
 - Do not return stack traces, raw backend bodies, tokens, provider errors, or secret-bearing objects.
 
 ## Timeouts, cancellation, and side effects
 
-The browser canceling navigation does not prove server work stopped. Bound downstream calls with the established timeout and propagate a
-signal only where the API supports it.
+The browser canceling navigation does not prove server work stopped. Bound downstream calls with `fetchWithTimeout`; it replaces any caller
+`signal` (and forces `cache: "no-store"`), so propagating cancellation requires an approved wrapper change.
 
 For each mutation answer:
 

@@ -7,11 +7,8 @@ First off, thank you for considering contributing to `arolariu.ro`! It's people 
 **New to the project?** Start with the [Development Guide](DEVELOPMENT.md) — it covers setup, tooling, and getting your dev environment
 running in minutes.
 
-**Choose your workspace profile** for a tailored VS Code experience:
-
-- 🌐 **Frontend** — `.vscode/frontend.code-workspace` (Next.js, components, CV site)
-- 🔧 **Backend** — `.vscode/backend.code-workspace` (.NET API, Python exp service)
-- 🚀 **Fullstack** — `.vscode/fullstack.code-workspace` (everything + compound debug)
+Open the repository folder (or the root `arolariu.code-workspace`) in VS Code; launch configurations, tasks, and recommended extensions are
+described in [.vscode/README.md](.vscode/README.md).
 
 ## Where do I go from here?
 
@@ -27,7 +24,7 @@ If this is something you think you can fix, then fork `arolariu.ro` and create a
 A good branch name would be (where issue #325 is the ticket you're working on):
 
 ```bash
-git checkout -b 325-add-japanese-translations
+git checkout -b feat/325-add-japanese-translations
 ```
 
 **Branch naming conventions:**
@@ -36,6 +33,8 @@ git checkout -b 325-add-japanese-translations
 - `fix/description` — bug fixes
 - `refactor/description` — code refactoring
 - `docs/description` — documentation changes
+- `test/description` — tests
+- `chore/description` — tooling and maintenance
 
 ## Get the test suite running
 
@@ -43,9 +42,9 @@ Make sure you're familiar with the project structure and how to run tests:
 
 ```bash
 npm run test             # all tests
-npm run test:website     # frontend unit tests (Vitest)
+npm run test:website     # website Vitest + Playwright + Storybook tests
 npm run test:api         # backend tests (MSTest)
-npm run test:e2e         # end-to-end tests (Playwright + Newman)
+npm run test:e2e         # Newman/Postman E2E collections (production unless E2E_TEST_ENVIRONMENT=local)
 ```
 
 Details for each sub-project can be found in their respective `README.md` files (if available) or by inspecting their `package.json` or
@@ -57,11 +56,12 @@ At this point, you're ready to make your changes! Feel free to ask for help; eve
 
 ## Before Submitting a PR
 
-Run these checks locally — they're the same ones CI will run:
+Run these checks locally before opening a PR (CI's Code Hygiene workflow re-checks Prettier, ESLint, and the Vitest, .NET, and pytest
+suites):
 
 ```bash
-npm run format           # auto-fix formatting (Prettier)
-npm run lint             # check for lint errors (ESLint)
+npm run format           # Prettier + dotnet format + Ruff (writes)
+npm run lint             # ESLint, svelte-check, dotnet format verify, Ruff
 npm run test:unit        # run unit tests
 npm run doctor           # read-only environment diagnosis
 ```
@@ -84,7 +84,7 @@ afterward and never builds, type-checks, or runs tests itself, so it is not a su
 
 **Backend changes:**
 
-- [ ] Follow The Standard layer hierarchy (Brokers → Foundation → Orchestration → Processing → Endpoints)
+- [ ] Follow The Standard layer hierarchy (Brokers → Foundation → Orchestration → Processing → Management → Endpoints)
 - [ ] Max 2-3 dependencies per service (Florance Pattern)
 - [ ] XML documentation on all public APIs
 - [ ] `.ConfigureAwait(false)` in library code
@@ -99,7 +99,7 @@ afterward and never builds, type-checks, or runs tests itself, so it is not a su
 
 ## Make a Pull Request
 
-At this point, you should switch back to your master branch and make sure it's up to date with `arolariu.ro`'s master branch:
+At this point, you should switch back to your main branch and make sure it's up to date with `arolariu.ro`'s main branch:
 
 ```bash
 git remote add upstream git@github.com:arolariu/arolariu.ro.git
@@ -107,12 +107,12 @@ git checkout main
 git pull upstream main
 ```
 
-Then update your feature branch from your local copy of master, and push it!
+Then update your feature branch from your local copy of main, and push it!
 
 ```bash
-git checkout 325-add-japanese-translations
+git checkout feat/325-add-japanese-translations
 git rebase main
-git push --force-with-lease origin 325-add-japanese-translations
+git push --force-with-lease origin feat/325-add-japanese-translations
 ```
 
 Finally, go to GitHub and make a Pull Request.
@@ -125,9 +125,9 @@ easier to merge.
 To learn more about rebasing in Git, there are a lot of good resources but here's the suggested workflow:
 
 ```bash
-git checkout 325-add-japanese-translations
+git checkout feat/325-add-japanese-translations
 git pull --rebase upstream main
-git push --force-with-lease origin 325-add-japanese-translations
+git push --force-with-lease origin feat/325-add-japanese-translations
 ```
 
 ## Code Style
@@ -136,8 +136,8 @@ This project enforces strict code quality standards:
 
 - **TypeScript**: Strictest mode with zero `any` tolerance
 - **C#**: XML docs required, `TreatWarningsAsErrors` enabled
-- **Formatting**: Prettier (TS/JS), `.editorconfig` (C#)
-- **Linting**: ESLint with 20+ plugins
+- **Formatting**: Prettier (TS/JS/Svelte), `dotnet format` + `.editorconfig` (C#), Ruff (Python)
+- **Linting**: ESLint (15 plugin namespaces), svelte-check, .NET analyzers, Ruff
 
 Run `npm run format && npm run lint` before committing. CI will reject PRs that don't pass.
 

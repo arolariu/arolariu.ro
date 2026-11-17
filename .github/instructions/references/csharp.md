@@ -137,8 +137,9 @@ the signature:
 | `<summary>` describing the Cosmos SDK call instead of the domain operation                                                                            | Keep `<summary>` at the domain level; move SDK/provider detail into `<remarks><para><b>Implementation:</b> ...`                 |
 | A doc comment left describing old behavior after a signature/behavior change (for example "Returns all invoices" after the method became user-scoped) | Update the doc in the same change; the RFC's accuracy note makes source, not the comment, authoritative                         |
 
-`GenerateDocumentationFile` is `true` for every project (`Directory.Build.props`), so a missing `<summary>` on a public member is a `CS1591`
-build failure, not a style nit — the smallest relevant build (see the C# instruction's Validation section) catches it immediately.
+`GenerateDocumentationFile` is `true` for every API project (`sites/api.arolariu.ro/Directory.Build.props`) and every non-test tooling
+project (`tooling/Directory.Build.props`, which sets it to `false` for `*.Tests` projects), so a missing `<summary>` on a public member is a
+`CS1591` build failure, not a style nit — the smallest relevant build (see the C# instruction's Validation section) catches it immediately.
 
 ## Async, cancellation, and `ConfigureAwait(false)`
 
@@ -235,8 +236,10 @@ the C# mechanics of the `switch` classifier and the catch-order rule above.
 <NoWarn>S1135, NU1903, NU1902</NoWarn>
 ```
 
-The only repository-wide suppressions are the three listed above, each with an inline justification comment. A live, narrowly scoped
-exception exists at the member level:
+The only API-wide `NoWarn` codes are the three listed above, each with an inline justification comment. Test projects additionally suppress
+CA2007, CA1707, CA1515, CA1062, and CA1303 (`sites/api.arolariu.ro/tests/Directory.Build.props`), root `.editorconfig` lowers IDE0051 and
+IDE0064 to `suggestion`, and source carries existing `#pragma`/`[SuppressMessage]` debt (SYSLIB0051 on exception serialization constructors,
+CA2000/CA1812/CA1823 pragmas, and CA1031/CA1040/CA1711 attributes, among others). One live, narrowly scoped member-level example:
 
 ```csharp
 // sites/api.arolariu.ro/src/Common/Configuration/ConfigRefreshHostedService.cs

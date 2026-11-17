@@ -19,8 +19,10 @@ Key features:
 - **Design Token Integration**: SCSS functions that reference CSS variables for theming
 - **Mobile-First Responsive**: Comprehensive mixin library for responsive design
 - **Consistent Spacing Scale**: Standardized design tokens for spacing and breakpoints
-- **SassDoc Documentation**: All public APIs documented with `///` annotations (`@group`, `@param`, `@return`, `@example`)
-- **Feature Flags**: Configurable system via `_config.scss` (fluid type, logical properties, container queries, etc.)
+- **SassDoc Documentation**: Public APIs documented with `///` annotations (`@group`, `@param`, `@return`, `@example`); the `_colors.scss`
+  members currently have only a file-level block
+- **Feature Flags**: Configurable system via `_config.scss` (fluid type, logical properties, reduced motion, high contrast, print styles,
+  CSS layers)
 
 ---
 
@@ -59,13 +61,14 @@ sites/arolariu.ro/src/styles/
 ├── abstracts/                    # No CSS output - configuration only
 │   ├── _index.scss              # Barrel export (@forward)
 │   ├── _config.scss             # Feature flags, namespace prefix, defaults
-│   ├── _variables.scss          # Spacing, breakpoints, z-index, radius, shadows, motion
+│   ├── _variables.scss          # Spacing, breakpoints, z-index, radius, shadows, motion, blur, opacity
 │   ├── _colors.scss             # CSS variable references, color functions
 │   ├── _typography.scss         # Font families, sizes, weights, line-heights
 │   ├── _mixins.scss             # Responsive, flexbox, grid, effects, decorative
 │   └── _functions.scss          # Unit converters, map utilities, string helpers
-├── base/                         # Reset and element defaults
+├── base/                         # Design tokens, reset, and element defaults
 │   ├── _index.scss
+│   ├── _globals.scss            # :root / .dark design-token custom properties
 │   ├── _reset.scss
 │   └── _elements.scss
 ├── themes/                       # Theme documentation and presets
@@ -81,34 +84,58 @@ sites/arolariu.ro/src/styles/
 │   ├── _navigation.scss
 │   ├── _footer.scss
 │   ├── _buttons.scss
-│   └── _cards.scss
+│   ├── _cards.scss
+│   └── _badges.scss
 ├── utilities/                    # Optional utility classes
 │   ├── _index.scss
-│   └── ...
-└── main.scss                     # Entry point - imports all partials
+│   ├── _layout.scss
+│   ├── _display.scss
+│   ├── _colors.scss
+│   ├── _sizing.scss
+│   └── _effects.scss
+└── main.scss                     # Entry point - loads all partials into cascade layers
 ```
 
 ### 2.2 Import Order (main.scss)
 
 ```scss
+@use "sass:meta";
+
 // 1. Abstracts - Variables, mixins, functions (no CSS output)
 @use "abstracts" as *;
 
-// 2. Base - Reset, element defaults
-@use "base";
+// Cascade-layer order (later layers win)
+@if $enable-css-layers {
+  @layer base, themes, animations, utilities, components;
+}
 
-// 3. Themes - Theme variable documentation
-@use "themes";
+@mixin load-system-layer($layer-name, $module-path) {
+  @if $enable-css-layers {
+    @layer #{$layer-name} {
+      @include meta.load-css($module-path);
+    }
+  } @else {
+    @include meta.load-css($module-path);
+  }
+}
+
+// 2. Base - Design tokens, reset, element defaults
+@include load-system-layer("base", "base");
+
+// 3. Themes - Theme preset overrides
+@include load-system-layer("themes", "themes");
 
 // 4. Animations - Keyframes, transitions
-@use "animations";
+@include load-system-layer("animations", "animations");
 
-// 5. Components - Shared component styles
-@use "components";
+// 5. Utilities - Utility classes
+@include load-system-layer("utilities", "utilities");
 
-// 6. Utilities - Utility classes
-@use "utilities";
+// 6. Components - Shared component styles
+@include load-system-layer("components", "components");
 ```
+
+Each system partial is loaded into its own cascade layer. CSS Module rules are unlayered, so they override every global layer.
 
 ### 2.3 CSS Module Files
 
@@ -121,7 +148,7 @@ src/app/
 │   └── Hero.module.scss         # Scoped to Hero component
 ├── auth/
 │   ├── island.tsx
-│   └── Auth.module.scss         # Shared across auth pages
+│   └── island.module.scss       # Auth island styles
 └── about/
     ├── page.module.scss         # Page-level styles
     └── _components/
@@ -179,7 +206,7 @@ $spacing: (
   // 80px
   24: 6rem,
   // 96px
-   // ... up to 96
+   // ... plus 1.5, 2.5, 3.5, 7, 9, 11, 14 and 28-96 (34 keys total)
 );
 
 // Helper function with error handling
@@ -230,7 +257,12 @@ Organized layering system:
 ```scss
 // Usage: z('modal') returns 1050
 $z-index: (
+  "behind": -1,
   "base": 0,
+  "raised": 1,
+  "content": 10,
+  "content-high": 20,
+  "overlay-subtle": 50,
   "dropdown": 1000,
   "sticky": 1020,
   "fixed": 1030,
@@ -274,26 +306,62 @@ $border-radius: (
 ### 3.5 Typography (from _typography.scss)
 
 ```scss
-// Font sizes - Usage: font-size('xl') returns 1.25rem
-@function font-size($key) // Font weights - Usage: font-weight('bold') returns 700
-  @function font-weight($key) // Line heights - Usage: line-height('relaxed') returns 1.625
-  @function line-height($key) // Letter spacing - Usage: letter-spacing('tight') returns -0.025em
-  @function letter-spacing($key);
+// Font sizes - Usage: font-size('xl') returns clamp(1.125rem, 1.08rem + 0.21vw, 1.25rem)
+// (fluid by default; returns 1.25rem when $enable-fluid-type is false)
+@function font-size($key);
+
+// Font weights - Usage: font-weight('bold') returns 700
+@function font-weight($key);
+
+// Line heights - Usage: line-height('relaxed') returns 1.625
+@function line-height($key);
+
+// Letter spacing - Usage: letter-spacing('tight') returns -0.025em
+@function letter-spacing($key);
 ```
 
 ### 3.6 Colors (from _colors.scss)
 
 ```scss
-// CSS variable reference - Usage: color('primary')
+// Only names listed in $color-vars are accepted; unknown names fail compilation.
+// Each value reads the --aro-* alias ($css-prefix) with the unprefixed variable as fallback.
+// Usage: color('primary') returns hsl(var(--aro-primary, var(--primary)))
 @function color($name) {
-  @return hsl(var(--#{$name}));
+  @if map.has-key($color-vars, $name) {
+    $var-name: map.get($color-vars, $name);
+    $prefixed-var: _prefixed-css-var($var-name);
+    @return hsl(var(#{$prefixed-var}, var(#{$var-name})));
+  }
+  @error "Unknown color: #{$name}. Available: #{map.keys($color-vars)}";
 }
 
-// With alpha - Usage: color-alpha('primary', 0.5)
+// With alpha - Usage: color-alpha('primary', 0.5) returns hsl(var(--aro-primary, var(--primary)) / 0.5)
 @function color-alpha($name, $alpha) {
-  @return hsl(var(--#{$name}) / #{$alpha});
+  @if map.has-key($color-vars, $name) {
+    $var-name: map.get($color-vars, $name);
+    $prefixed-var: _prefixed-css-var($var-name);
+    @return hsl(var(#{$prefixed-var}, var(#{$var-name})) / #{$alpha});
+  }
+  @error "Unknown color: #{$name}. Available: #{map.keys($color-vars)}";
 }
+
+// Non-themed values - Usage: static-color('white'), 'black', 'transparent', or 'current'
+@function static-color($name);
 ```
+
+### 3.7 Shadows, Motion, Blur, and Opacity
+
+`_variables.scss` also defines these token maps. Each accessor raises `@error` for an unknown key.
+
+| Map                          | Keys                                                                                                         | Accessor          |
+| ---------------------------- | ------------------------------------------------------------------------------------------------------------ | ----------------- |
+| `$shadows` / `$shadows-dark` | `none`, `sm`, `md`, `lg`, `xl`, `2xl`                                                                        | `shadow($level)`  |
+| `$durations`                 | `instant` 0ms, `fast` 100ms, `normal` 150ms, `moderate` 250ms, `slow` 350ms, `slower` 500ms, `slowest` 700ms | `duration($key)`  |
+| `$easings`                   | `linear`, `ease`, `ease-in`, `ease-out`, `ease-in-out`, `spring`                                             | `easing($key)`    |
+| `$blurs`                     | `sm` 2px, `md` 4px, `lg` 8px, `xl` 12px, `2xl` 16px                                                          | `blur-size($key)` |
+| `$opacities`                 | `subtle` 0.05, `light` 0.1, `medium` 0.2, `semi` 0.5, `heavy` 0.8, `near` 0.9, `full` 1                      | `opacity($key)`   |
+
+`shadow($level)` returns the light value from `$shadows`; `$shadows-dark` holds the dark-mode values used by the `shadow` mixin (§7.3).
 
 ---
 
@@ -320,13 +388,8 @@ All mixins are defined in `src/styles/abstracts/_mixins.scss`.
   }
 }
 
-// Between breakpoints
-// Usage: @include respond-between('sm', 'lg') { ... }
-@mixin respond-between($min, $max) {
-  @media (min-width: map.get($breakpoints, $min)) and (max-width: calc(map.get($breakpoints, $max) - 1px)) {
-    @content;
-  }
-}
+// Between breakpoints: nest respond-below inside respond-to
+// Usage: @include respond-to('sm') { @include respond-below('lg') { ... } }
 ```
 
 ### 4.2 Flexbox Mixins
@@ -334,11 +397,17 @@ All mixins are defined in `src/styles/abstracts/_mixins.scss`.
 ```scss
 // Full flexbox control
 // Usage: @include flex(row, center, center, wrap)
-@mixin flex($direction: row, $justify: flex-start, $align: stretch, $wrap: nowrap) // Common shortcuts
-  @mixin flex-center // justify-content: center; align-items: center
-  @mixin flex-between // justify-content: space-between; align-items: center
-  @mixin flex-column // flex-direction: column
-  @mixin flex-column-center; // column + align-items: center
+@mixin flex($direction: row, $justify: flex-start, $align: stretch, $wrap: nowrap);
+
+// Common shortcuts
+@mixin flex-center; // justify-content: center; align-items: center
+@mixin flex-between; // justify-content: space-between; align-items: center
+@mixin flex-column; // flex-direction: column
+@mixin flex-column-center; // column + align-items: center
+
+// Vertical stack (flex column with gap)
+// Usage: @include stack(space(6))
+@mixin stack($gap: space(4));
 ```
 
 ### 4.3 Grid Mixins
@@ -346,35 +415,56 @@ All mixins are defined in `src/styles/abstracts/_mixins.scss`.
 ```scss
 // Fixed columns grid
 // Usage: @include grid(3, space(4))
-@mixin grid($columns: 1, $gap: space(4)) // Auto-fit responsive grid
-  // Usage: @include grid-auto-fit(250px, space(4))
-  @mixin grid-auto-fit($min-width: 250px, $gap: space(4)) // Auto-fill responsive grid
-  // Usage: @include grid-auto-fill(250px, space(4))
-  @mixin grid-auto-fill($min-width: 250px, $gap: space(4));
+@mixin grid($columns: 1, $gap: space(4));
+
+// Responsive column counts: $mobile, then $tablet at 'md' and $desktop at 'lg'
+// Usage: @include responsive-grid(1, 2, 4, space(4))
+@mixin responsive-grid($mobile: 1, $tablet: 2, $desktop: 3, $gap: space(6), $desktop-gap: null);
+
+// Auto-fit/auto-fill grids have no mixin; write them in the module, e.g.
+// grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
 ```
 
 ### 4.4 Visual Effects
 
 ```scss
-// Box shadows
+// Box shadows (with a `.dark &` override; see §7.3 for CSS Modules)
 // Usage: @include shadow('lg')
 // Levels: 'sm', 'md', 'lg', 'xl', '2xl', 'none'
-@mixin shadow($level: "md") // Transitions
-  // Usage: @include transition(transform, box-shadow)
-  @mixin transition($properties: all, $duration: 150ms, $timing: cubic-bezier(0.4, 0, 0.2, 1)) // Hover lift effect (translateY + shadow)
-  // Usage: @include hover-lift(-2px)
-  @mixin hover-lift($distance: -2px) // Gradient text
-  // Usage: @include gradient-text
-  @mixin gradient-text {
-  background: linear-gradient(to right, hsl(var(--gradient-from)), hsl(var(--gradient-via)), hsl(var(--gradient-to)));
+@mixin shadow($level: "md");
+
+// Transitions - $dur and $timing accept a $durations/$easings key or a raw value.
+// Pass several properties as one parenthesized list.
+// Usage: @include transition((transform, box-shadow)) or @include transition(opacity, "fast")
+@mixin transition($properties: all, $dur: "normal", $timing: "ease");
+
+// Hover lift effect (translateY + shadow)
+// Usage: @include hover-lift(-2px)
+@mixin hover-lift($distance: -2px);
+
+// Gradient background (primary -> tertiary -> secondary theme colors)
+// Usage: @include gradient-bg(to bottom)
+@mixin gradient-bg($direction: to right);
+
+// Gradient text: clip gradient-bg to the glyphs
+.titleGradient {
+  @include gradient-bg;
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
 }
 
-// Gradient background
-// Usage: @include gradient-bg(to bottom)
-@mixin gradient-bg($direction: to right);
+// Backdrop blur (frosted glass effect)
+// Usage: @include backdrop-blur(4px)
+@mixin backdrop-blur($blur: 8px);
+
+// Glass surface: backdrop-blur + translucent token background + border
+// Usage: @include glass(12px, 0.8, 'background')
+@mixin glass($blur: 8px, $opacity: 0.5, $bg: "card");
+
+// Interactive card: border highlight + shadow elevation on hover
+// Usage: @include card-hover('xl', 0.5)
+@mixin card-hover($shadow-level: "lg", $border-alpha: 0.3, $border-color: "primary");
 ```
 
 ### 4.5 Utility Mixins
@@ -382,22 +472,46 @@ All mixins are defined in `src/styles/abstracts/_mixins.scss`.
 ```scss
 // Visually hidden (accessible)
 // Usage: @include visually-hidden
-@mixin visually-hidden // Text truncation with ellipsis
-  // Usage: @include truncate
-  @mixin truncate // Multi-line truncation
-  // Usage: @include line-clamp(3)
-  @mixin line-clamp($lines: 2) // Centered container
-  // Usage: @include container(80rem)
-  @mixin container($max-width: 80rem) // Focus ring (accessibility)
-  // Usage: @include focus-ring
-  @mixin focus-ring {
+@mixin visually-hidden;
+
+// Text truncation with ellipsis
+// Usage: @include truncate
+@mixin truncate;
+
+// Multi-line truncation
+// Usage: @include line-clamp(3)
+@mixin line-clamp($lines: 2);
+
+// Balanced wrapping ('balance' for headings, 'pretty' for body text)
+// Usage: @include text-balance('pretty')
+@mixin text-balance($mode: "balance");
+
+// Muted helper text (font-size token + muted-foreground color)
+// Usage: @include text-muted('sm')
+@mixin text-muted($size: "xs");
+
+// Square sizing for icons and avatars
+// Usage: @include icon-size(1.5rem)
+@mixin icon-size($size);
+
+// Owl-selector spacing between direct children
+// Usage: @include spaced-children(space(2))
+@mixin spaced-children($spacing: space(4));
+
+// Centered container
+// Usage: @include container(80rem)
+@mixin container($max-width: 80rem);
+
+// Focus ring (accessibility)
+// Usage: @include focus-ring
+@mixin focus-ring {
   &:focus-visible {
     outline: 2px solid hsl(var(--ring));
     outline-offset: 2px;
   }
 }
 
-// Dark mode helper
+// Dark mode helper - global partials only (CSS Modules hash `.dark`; see §7.3)
 // Usage: @include dark { background: black; }
 @mixin dark {
   .dark & {
@@ -409,6 +523,14 @@ All mixins are defined in `src/styles/abstracts/_mixins.scss`.
 // Usage: @include reduced-motion { animation: none; }
 @mixin reduced-motion {
   @media (prefers-reduced-motion: reduce) {
+    @content;
+  }
+}
+
+// Reduced transparency (accessibility)
+// Usage: @include reduced-transparency { backdrop-filter: none; }
+@mixin reduced-transparency {
+  @media (prefers-reduced-transparency: reduce) {
     @content;
   }
 }
@@ -432,14 +554,14 @@ All mixins are defined in `src/styles/abstracts/_mixins.scss`.
 // Image drop shadow (for illustrations/photos)
 // Usage: @include image-drop-shadow
 @mixin image-drop-shadow {
-  filter: drop-shadow(0 10px 8px rgba(0, 0, 0, 0.04)) drop-shadow(0 4px 3px rgba(0, 0, 0, 0.1));
+  filter: drop-shadow(0 10px 8px colors.color-alpha("foreground", 0.04)) drop-shadow(0 4px 3px colors.color-alpha("foreground", 0.1));
 }
 ```
 
 ### 4.7 Mixin Usage Examples
 
 ```scss
-// Real example from Hero.module.scss
+// Abridged from src/app/_components/Hero.module.scss
 .title {
   font-size: font-size("4xl");
   font-weight: font-weight("normal");
@@ -460,7 +582,7 @@ All mixins are defined in `src/styles/abstracts/_mixins.scss`.
 
 // Card with hover effect
 .card {
-  @include transition(border-color, box-shadow);
+  @include transition((border-color, box-shadow));
 
   &:hover {
     border-color: hsl(var(--primary) / 0.4);
@@ -475,7 +597,8 @@ All mixins are defined in `src/styles/abstracts/_mixins.scss`.
 
 ### 5.1 Class Naming: Semantic camelCase
 
-CSS Module classes use **semantic camelCase** naming (NOT BEM):
+CSS Module classes use **semantic camelCase** naming (NOT BEM). This rule applies to CSS Modules only; the global component partials in
+`src/styles/components/` use BEM kebab-case (for example `.card__header`, `.btn-gradient--sm`), as documented in `src/styles/main.scss`.
 
 ```scss
 // CORRECT - Semantic camelCase
@@ -556,13 +679,13 @@ Use common prefixes to group related elements:
 
 ### 5.3 File Naming
 
-| Type          | Convention                  | Example            |
-| ------------- | --------------------------- | ------------------ |
-| CSS Module    | `ComponentName.module.scss` | `Hero.module.scss` |
-| Shared Styles | `feature.module.scss`       | `Auth.module.scss` |
-| Page Styles   | `page.module.scss`          | `page.module.scss` |
-| SCSS Partial  | `_partialname.scss`         | `_variables.scss`  |
-| SCSS Index    | `_index.scss`               | `_index.scss`      |
+| Type           | Convention                                  | Example                 |
+| -------------- | ------------------------------------------- | ----------------------- |
+| CSS Module     | `ComponentName.module.scss`                 | `Hero.module.scss`      |
+| Shared Partial | `_feature-shared.scss` (loaded with `@use`) | `_settings-shared.scss` |
+| Page Styles    | `page.module.scss`                          | `page.module.scss`      |
+| SCSS Partial   | `_partialname.scss`                         | `_variables.scss`       |
+| SCSS Index     | `_index.scss`                               | `_index.scss`           |
 
 ### 5.4 Component Import Pattern
 
@@ -600,7 +723,7 @@ The relative path to abstracts varies by file location:
 
 - `src/app/_components/` → `../../styles/abstracts`
 - `src/app/auth/` → `../../styles/abstracts`
-- `src/app/about/_components/` → `../../../../styles/abstracts`
+- `src/app/about/_components/` → `../../../styles/abstracts`
 
 ---
 
@@ -714,18 +837,18 @@ All responsive styles use **mobile-first** methodology:
 
 ```scss
 .heading {
-  font-size: font-size("3xl"); // Mobile: 1.875rem
+  font-size: font-size("3xl"); // fluid 1.5rem → 1.875rem
 
   @include respond-to("sm") {
-    font-size: font-size("4xl"); // Small: 2.25rem
+    font-size: font-size("4xl"); // fluid 1.875rem → 2.25rem
   }
 
   @include respond-to("lg") {
-    font-size: font-size("5xl"); // Large: 3rem
+    font-size: font-size("5xl"); // fluid 2.25rem → 3rem
   }
 
   @include respond-to("xl") {
-    font-size: font-size("6xl"); // XL: 3.75rem
+    font-size: font-size("6xl"); // fluid 2.75rem → 3.75rem
   }
 }
 ```
@@ -756,24 +879,24 @@ Theme values are defined by the SCSS system (`app/globals.scss` + `styles/base/_
 /* Light mode (default) */
 :root {
   --background: 0 0% 100%;
-  --foreground: 240 10% 3.9%;
+  --foreground: 222.2 84% 4.9%;
   --card: 0 0% 100%;
-  --card-foreground: 240 10% 3.9%;
-  --primary: 240 5.9% 10%;
-  --primary-foreground: 0 0% 98%;
-  --muted: 240 4.8% 95.9%;
-  --muted-foreground: 240 3.8% 46.1%;
-  --border: 240 5.9% 90%;
-  --ring: 240 5.9% 10%;
+  --card-foreground: 222.2 84% 4.9%;
+  --primary: 221.2 83.2% 53.3%;
+  --primary-foreground: 210 40% 98%;
+  --muted: 210 40% 96.1%;
+  --muted-foreground: 215.4 16.3% 46.9%;
+  --border: 214.3 31.8% 91.4%;
+  --ring: 221.2 83.2% 53.3%;
   /* ... */
 }
 
 /* Dark mode */
 .dark {
-  --background: 240 10% 3.9%;
-  --foreground: 0 0% 98%;
-  --primary: 0 0% 98%;
-  --primary-foreground: 240 5.9% 10%;
+  --background: 0 0% 0%;
+  --foreground: 0 0% 100%;
+  --primary: 214 100% 47%;
+  --primary-foreground: 0 0% 100%;
   /* ... */
 }
 ```
@@ -803,14 +926,14 @@ Theme values are defined by the SCSS system (`app/globals.scss` + `styles/base/_
 
 ```scss
 .element {
-  color: color("primary"); // hsl(var(--primary))
-  background: color-alpha("background", 0.5); // hsl(var(--background) / 0.5)
+  color: color("primary"); // hsl(var(--aro-primary, var(--primary)))
+  background: color-alpha("background", 0.5); // hsl(var(--aro-background, var(--background)) / 0.5)
 }
 ```
 
 ### 7.3 Dark Mode Styling
 
-**Method 1: `:global(.dark) &` selector (CURRENT)**
+**Method 1: `:global(.dark) &` selector (REQUIRED in CSS Modules)**
 
 ```scss
 .card {
@@ -823,9 +946,10 @@ Theme values are defined by the SCSS system (`app/globals.scss` + `styles/base/_
 }
 ```
 
-**Method 2: `@include dark` mixin (PREFERRED)**
+**Method 2: `@include dark` mixin (global partials only)**
 
 ```scss
+// Global partial under src/styles/ (not a .module.scss file)
 .card {
   background: hsl(var(--card));
   border-color: rgb(229, 231, 235);
@@ -836,22 +960,29 @@ Theme values are defined by the SCSS system (`app/globals.scss` + `styles/base/_
 }
 ```
 
-**Note:** Both methods are valid. The `@include dark` mixin is preferred for consistency and readability.
+**Note:** next-themes sets the unhashed `dark` class on `<html>`. `@include dark` emits a plain `.dark &` selector; inside a `.module.scss`
+file CSS Modules scope that `.dark` class locally, so the rule never matches `<html class="dark">`. The dark-mode override built into the
+`shadow` mixin (also used by `hover-lift` and `card-hover`) has the same limitation. In CSS Modules, write dark-mode rules as
+`:global(.dark) & { … }`, as live modules do (for example `src/app/domains/invoices/edit-invoice/[id]/_dialogs/AnalyzeDialog.module.scss`).
+`@include dark` works only in global partials under `src/styles/`.
 
 ### 7.4 Gradient Theme Variables
 
-Dynamic gradients are set by `GradientThemeContext`:
+`PreferencesSubscriptions` (subscribed to `usePreferencesStore`) sets the `data-theme-preset` attribute on `<html>`; built-in presets are
+`[data-theme-preset]` rules generated from `$theme-presets` in `themes/_presets.scss`. Only while the `custom` preset is active does it also
+set `--gradient-from`, `--gradient-via`, `--gradient-to`, `--primary`, `--primary-foreground`, `--accent-primary` and `--footer-bg` inline
+on `<html>`; for every other preset it removes them. No SCSS defines `--gradient-*`, so use `@include gradient-bg` for the theme gradient.
 
 ```scss
-// Gradient CSS variables (runtime-set)
+// Gradient CSS variables (set inline on <html> only for the custom preset)
 var(--gradient-from)     // Starting color
 var(--gradient-via)      // Middle color
 var(--gradient-to)       // Ending color
-var(--accent-primary)    // Primary accent
+var(--accent-primary)    // Primary accent (static default in base/_globals.scss)
 
-// Usage
+// Usage - theme gradient from the design tokens
 .badge {
-  background: linear-gradient(to right, var(--gradient-from), var(--gradient-via), var(--gradient-to));
+  @include gradient-bg;
 }
 ```
 
@@ -883,21 +1014,40 @@ For backgrounds that differ significantly between themes:
 
 ### 7.6 Available CSS Variables
 
-| Variable               | Purpose             |
-| ---------------------- | ------------------- |
-| `--background`         | Page background     |
-| `--foreground`         | Default text color  |
-| `--card`               | Card backgrounds    |
-| `--card-foreground`    | Card text           |
-| `--primary`            | Primary brand color |
-| `--primary-foreground` | Text on primary     |
-| `--secondary`          | Secondary color     |
-| `--muted`              | Muted backgrounds   |
-| `--muted-foreground`   | Muted text          |
-| `--accent`             | Accent highlights   |
-| `--border`             | Border color        |
-| `--ring`               | Focus ring color    |
-| `--destructive`        | Error/danger color  |
+All 36 color tokens are defined in `base/_globals.scss` (`:root` and `.dark`) and mirrored by the `$color-vars` allow-list used by `color()`
+and `color-alpha()`. Each color is also exposed as `--aro-<name>` (`$css-prefix`), for example `--aro-primary`.
+
+| Variable                                     | Purpose                                               |
+| -------------------------------------------- | ----------------------------------------------------- |
+| `--background`                               | Page background                                       |
+| `--foreground`                               | Default text color                                    |
+| `--surface` / `--surface-elevated`           | Surface and raised-surface backgrounds                |
+| `--inverse-surface` / `--inverse-foreground` | Inverted surface and its text                         |
+| `--card`                                     | Card backgrounds                                      |
+| `--card-foreground`                          | Card text                                             |
+| `--popover` / `--popover-foreground`         | Popover background and text                           |
+| `--primary`                                  | Primary brand color                                   |
+| `--primary-foreground`                       | Text on primary                                       |
+| `--secondary`                                | Secondary color                                       |
+| `--secondary-foreground`                     | Text on secondary                                     |
+| `--tertiary` / `--tertiary-foreground`       | Tertiary brand color and its text                     |
+| `--muted`                                    | Muted backgrounds                                     |
+| `--muted-foreground`                         | Muted text                                            |
+| `--accent`                                   | Accent highlights                                     |
+| `--accent-foreground`                        | Text on accent                                        |
+| `--destructive`                              | Error/danger color                                    |
+| `--destructive-foreground`                   | Text on destructive                                   |
+| `--success` / `--success-foreground`         | Success status color and its text                     |
+| `--warning` / `--warning-foreground`         | Warning status color and its text                     |
+| `--info` / `--info-foreground`               | Informational status color and its text               |
+| `--border`                                   | Border color                                          |
+| `--border-strong`                            | Higher-contrast border                                |
+| `--input`                                    | Form input border                                     |
+| `--ring`                                     | Focus ring color                                      |
+| `--link` / `--link-foreground`               | Link color (`--tertiary` light, `--secondary` dark)   |
+| `--accent-primary`                           | Accent alias (`--tertiary` light, `--secondary` dark) |
+| `--footer-bg`                                | Footer background (alias of `--primary`)              |
+| `--radius`                                   | Base border radius (`0.5rem`; not a color)            |
 
 ---
 
@@ -945,14 +1095,11 @@ For backgrounds that differ significantly between themes:
 
 // Interactive elements
 .button {
-  @include transition(background-color, box-shadow);
+  @include transition((background-color, box-shadow));
+  @include focus-ring;
 
   &:hover {
     // Hover styles
-  }
-
-  &:focus-visible {
-    @include focus-ring;
   }
 }
 ```
@@ -967,7 +1114,7 @@ For backgrounds that differ significantly between themes:
   border: 1px solid hsl(var(--border) / 0.5);
   border-radius: radius("xl");
   backdrop-filter: blur(4px);
-  @include transition(border-color, box-shadow);
+  @include transition((border-color, box-shadow));
 
   &:hover {
     border-color: hsl(var(--primary) / 0.4);
@@ -1053,9 +1200,11 @@ For backgrounds that differ significantly between themes:
   }
 }
 
-// Auto-fit grid
+// Auto-fit grid (no mixin; write it directly)
 .cardsGrid {
-  @include grid-auto-fit(280px, space(6));
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: space(6);
 }
 ```
 
@@ -1110,7 +1259,7 @@ Use the `@include orb()` mixin for decorative blur orbs:
   border: 1px solid hsl(var(--border));
   border-radius: radius("md");
   background: hsl(var(--background));
-  @include transition(border-color, box-shadow);
+  @include transition((border-color, box-shadow));
 
   &:focus {
     border-color: hsl(var(--ring));
@@ -1150,6 +1299,7 @@ Use the `@include orb()` mixin for decorative blur orbs:
 
 ```scss
 // Reduced motion support
+// CSS Modules scope @keyframes names, so define the animation in the module
 .animatedElement {
   @include transition(transform);
   animation: pulse 2s infinite;
@@ -1157,6 +1307,17 @@ Use the `@include orb()` mixin for decorative blur orbs:
   @include reduced-motion {
     animation: none;
     transition: none;
+  }
+}
+
+@keyframes pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+
+  50% {
+    opacity: 0.5;
   }
 }
 
@@ -1175,8 +1336,8 @@ Use the `@include orb()` mixin for decorative blur orbs:
 **Step 1: Create SCSS Module File**
 
 ```bash
-# For component in src/app/domain/_components/MyComponent.tsx
-touch src/app/domain/_components/MyComponent.module.scss
+# For component in src/app/about/_components/MyComponent.tsx
+touch src/app/about/_components/MyComponent.module.scss
 ```
 
 **Step 2: Add Standard Header and Import**
@@ -1185,28 +1346,28 @@ touch src/app/domain/_components/MyComponent.module.scss
 // ===========================================
 // MY COMPONENT - Brief Description
 // ===========================================
-@use "../../../../styles/abstracts" as *;
+@use "../../../styles/abstracts" as *;
 ```
 
 **Step 3: Define Component Styles**
 
 Common pattern examples:
 
-| Pattern            | SCSS Implementation                                               |
-| ------------------ | ----------------------------------------------------------------- |
-| Flexbox layout     | `@include flex-between`                                           |
-| Grid layout        | `@include grid(3, space(4))`                                      |
-| Padding            | `padding: space(4)`                                               |
-| Spacing            | `margin-top: space(8); margin-bottom: space(4)`                   |
-| Typography         | `font-size: font-size('xl'); font-weight: font-weight('bold')`    |
-| Muted text         | `color: hsl(var(--muted-foreground))`                             |
-| Card background    | `background-color: hsl(var(--card))`                              |
-| Border radius      | `border-radius: radius('xl')`                                     |
-| `shadow-lg`        | `@include shadow('lg')`                                           |
-| `hover:scale-105`  | `&:hover { transform: scale(1.05); }`                             |
-| `transition-all`   | `@include transition(all)`                                        |
-| `md:flex-row`      | `@include respond-to('md') { flex-direction: row; }`              |
-| `dark:bg-gray-900` | `:global(.dark) & { background: ... }` or `@include dark { ... }` |
+| Pattern            | SCSS Implementation                                            |
+| ------------------ | -------------------------------------------------------------- |
+| Flexbox layout     | `@include flex-between`                                        |
+| Grid layout        | `@include grid(3, space(4))`                                   |
+| Padding            | `padding: space(4)`                                            |
+| Spacing            | `margin-top: space(8); margin-bottom: space(4)`                |
+| Typography         | `font-size: font-size('xl'); font-weight: font-weight('bold')` |
+| Muted text         | `color: hsl(var(--muted-foreground))`                          |
+| Card background    | `background-color: hsl(var(--card))`                           |
+| Border radius      | `border-radius: radius('xl')`                                  |
+| `shadow-lg`        | `@include shadow('lg')`                                        |
+| `hover:scale-105`  | `&:hover { transform: scale(1.05); }`                          |
+| `transition-all`   | `@include transition(all)`                                     |
+| `md:flex-row`      | `@include respond-to('md') { flex-direction: row; }`           |
+| `dark:bg-gray-900` | `:global(.dark) & { background: ... }`                         |
 
 **Step 4: Update React Component**
 
@@ -1290,7 +1451,7 @@ export function MyPage() {
       {/* Shared component library components */}
       <Card>
         <h2 className={styles["title"]}>Title</h2>
-        <Button variant='primary'>Click</Button>
+        <Button variant='default'>Click</Button>
       </Card>
     </section>
   );
@@ -1363,7 +1524,7 @@ export function MyPage() {
 
 - Pages folder optional (CSS Modules are page-scoped)
 - No separate vendors folder (npm dependencies)
-- Utilities integrated into mixins/functions
+- Utilities kept to a small, usage-backed set of global classes in `utilities/` (loaded into `@layer utilities`)
 
 ### 10.4 Architecture Consistency
 
@@ -1373,7 +1534,7 @@ The SCSS system maintains consistency through:
 2. **Component library integration** - CSS Modules-based `@arolariu/components`
 3. **Theme system** - CSS custom properties for runtime theme switching
 4. **Mobile-first approach** - Consistent responsive design methodology
-5. **Documentation standards** - SassDoc annotations for all public APIs
+5. **Documentation standards** - SassDoc annotations for public APIs (`_colors.scss` members currently have only a file-level block)
 
 ---
 
@@ -1381,40 +1542,48 @@ The SCSS system maintains consistency through:
 
 ### 11.1 Core SCSS Infrastructure
 
-| File                                     | Purpose                                                   |
-| ---------------------------------------- | --------------------------------------------------------- |
-| `src/styles/main.scss`                   | 7-1 pattern entry point                                   |
-| `src/styles/abstracts/_index.scss`       | Barrel export for abstracts                               |
-| `src/styles/abstracts/_config.scss`      | Feature flags, namespace prefix, defaults                 |
-| `src/styles/abstracts/_variables.scss`   | Spacing, breakpoints, z-index, radius, shadows, motion    |
-| `src/styles/abstracts/_colors.scss`      | CSS variable helpers, static/interactive colors           |
-| `src/styles/abstracts/_typography.scss`  | Font families, sizes, weights, heights, spacing           |
-| `src/styles/abstracts/_mixins.scss`      | 30+ mixins (responsive, layout, visual, a11y, decorative) |
-| `src/styles/abstracts/_functions.scss`   | Unit conversion, map/list/string utilities                |
-| `src/styles/base/_reset.scss`            | CSS reset                                                 |
-| `src/styles/animations/_keyframes.scss`  | Animation definitions                                     |
-| `src/styles/components/_header.scss`     | Header styles                                             |
-| `src/styles/components/_navigation.scss` | Navigation styles                                         |
+| File                                                 | Purpose                                                               |
+| ---------------------------------------------------- | --------------------------------------------------------------------- |
+| `src/app/globals.scss`                               | App entry imported by `layout.tsx`; `@use`s `styles/main`             |
+| `src/styles/main.scss`                               | 7-1 pattern entry point                                               |
+| `src/styles/abstracts/_index.scss`                   | Barrel export for abstracts                                           |
+| `src/styles/abstracts/_config.scss`                  | Feature flags, namespace prefix, defaults                             |
+| `src/styles/abstracts/_variables.scss`               | Spacing, breakpoints, z-index, radius, shadows, motion, blur, opacity |
+| `src/styles/abstracts/_colors.scss`                  | CSS variable helpers, static colors                                   |
+| `src/styles/abstracts/_typography.scss`              | Font families, sizes, weights, heights, spacing                       |
+| `src/styles/abstracts/_mixins.scss`                  | 30+ mixins (responsive, layout, visual, a11y, decorative)             |
+| `src/styles/abstracts/_functions.scss`               | Unit conversion, map/list/string utilities                            |
+| `src/styles/base/_globals.scss`                      | `:root`/`.dark` theme tokens (CSS custom properties)                  |
+| `src/styles/base/_reset.scss`                        | CSS reset                                                             |
+| `src/styles/base/_elements.scss`                     | Default HTML element styles                                           |
+| `src/styles/themes/_presets.scss`                    | `$theme-presets` map and `[data-theme-preset]` overrides              |
+| `src/styles/animations/_keyframes.scss`              | Animation definitions                                                 |
+| `src/styles/animations/_transitions.scss`            | Transition and animation utility classes                              |
+| `src/styles/components/_header.scss`                 | Header styles                                                         |
+| `src/styles/components/_navigation.scss`             | Navigation styles                                                     |
+| `src/styles/components/_footer.scss`                 | Footer styles                                                         |
+| `src/styles/components/_{buttons,cards,badges}.scss` | Shared BEM button, card, and badge styles                             |
+| `src/styles/utilities/_*.scss`                       | Global utility classes (layout, display, colors, sizing, effects)     |
 
 ### 11.2 Migrated CSS Modules
 
-| Route            | Files                                                                      |
-| ---------------- | -------------------------------------------------------------------------- |
-| Home             | `src/app/_components/{Hero,Features,Technologies}.module.scss`             |
-| Auth             | `src/app/auth/Auth.module.scss`                                            |
-| About            | `src/app/about/page.module.scss`, `_components/*.module.scss`              |
-| About/Author     | `src/app/about/the-author/page.module.scss`, `_components/*.module.scss`   |
-| About/Platform   | `src/app/about/the-platform/page.module.scss`, `_components/*.module.scss` |
-| Privacy          | `src/app/(privacy-and-terms)/privacy-policy/page.module.scss`              |
-| Terms            | `src/app/(privacy-and-terms)/terms-of-service/page.module.scss`            |
-| Acknowledgements | `src/app/(privacy-and-terms)/acknowledgements/*.module.scss`               |
+| Route              | Files                                                                                                                                                             |
+| ------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Home               | `src/app/_components/{Hero,Features,Technologies}.module.scss`                                                                                                    |
+| Auth               | `src/app/auth/{page,island,loading}.module.scss`, `_components/Auth*.module.scss`, `sign-in/[[...sign-in]]/*.module.scss`, `sign-up/[[...sign-up]]/*.module.scss` |
+| About              | `src/app/about/page.module.scss`, `_components/*.module.scss`                                                                                                     |
+| About/Author       | `src/app/about/the-author/page.module.scss`, `_components/*.module.scss`                                                                                          |
+| About/Platform     | `src/app/about/the-platform/page.module.scss`, `_components/*.module.scss`                                                                                        |
+| Privacy            | `src/app/(privacy-and-terms)/privacy-policy/page.module.scss`                                                                                                     |
+| Terms              | `src/app/(privacy-and-terms)/terms-of-service/page.module.scss`                                                                                                   |
+| Acknowledgements   | `src/app/(privacy-and-terms)/acknowledgements/*.module.scss`                                                                                                      |
+| Domains/Invoices   | `src/app/domains/**/*.module.scss` (166 files)                                                                                                                    |
+| My Profile         | `src/app/my-profile/**/*.module.scss` (11 files) + `_components/_settings-shared.scss`                                                                            |
+| App shell & shared | `src/app/*.module.scss`, `src/app/_components/RouteErrorContent.module.scss`, `src/app/_effects/`, `src/components/**`, `src/hooks/`, `src/presentation/**`       |
 
 ### 11.3 Routes Pending Migration
 
-| Route               | Component Count | Priority |
-| ------------------- | --------------- | -------- |
-| `/domains/invoices` | 78 components   | High     |
-| `/my-profile`       | 11 components   | Medium   |
+None — all routes use CSS Modules.
 
 ### 11.4 Related Documentation
 
@@ -1428,8 +1597,8 @@ The SCSS system maintains consistency through:
 
 ### 12.1 SassDoc Annotations
 
-All public SCSS APIs (variables, functions, mixins) are documented using [SassDoc](http://sassdoc.com/) triple-slash (`///`) comment syntax.
-This enables automated documentation generation and IDE support.
+Public SCSS APIs (variables, functions, mixins) are documented using [SassDoc](http://sassdoc.com/) triple-slash (`///`) comment syntax; the
+`_colors.scss` members currently have only a file-level block. This enables automated documentation generation and IDE support.
 
 **Required annotations for functions:**
 
@@ -1472,25 +1641,33 @@ $spacing: (...);
 
 ### 12.2 SassDoc Groups
 
-| Group                | File               | Description                                 |
-| -------------------- | ------------------ | ------------------------------------------- |
-| `config`             | `_config.scss`     | Feature flags and global settings           |
-| `tokens`             | `_variables.scss`  | File-level overview                         |
-| `tokens-spacing`     | `_variables.scss`  | Spacing scale tokens                        |
-| `tokens-breakpoints` | `_variables.scss`  | Responsive breakpoints                      |
-| `tokens-z-index`     | `_variables.scss`  | Z-index layering system                     |
-| `tokens-radius`      | `_variables.scss`  | Border radius tokens                        |
-| `tokens-shadows`     | `_variables.scss`  | Shadow elevation tokens                     |
-| `tokens-motion`      | `_variables.scss`  | Duration and easing tokens                  |
-| `tokens-colors`      | `_colors.scss`     | Color system (CSS var refs + static)        |
-| `tokens-typography`  | `_typography.scss` | Font sizes, weights, heights, spacing       |
-| `functions`          | `_functions.scss`  | Unit conversion and utility functions       |
-| `mixins-responsive`  | `_mixins.scss`     | Breakpoint media query mixins               |
-| `mixins-layout`      | `_mixins.scss`     | Flex, grid, container mixins                |
-| `mixins-visual`      | `_mixins.scss`     | Shadow, transition, gradient mixins         |
-| `mixins-utility`     | `_mixins.scss`     | Truncate, dark mode, content-visibility     |
-| `mixins-a11y`        | `_mixins.scss`     | Visually-hidden, focus-ring, reduced-motion |
-| `mixins-decorative`  | `_mixins.scss`     | Orb, accent-bar, icon-color variants        |
+| Group                | File               | Description                                                          |
+| -------------------- | ------------------ | -------------------------------------------------------------------- |
+| `config`             | `_config.scss`     | Feature flags and global settings                                    |
+| `tokens`             | `_variables.scss`  | File-level overview                                                  |
+| `tokens-spacing`     | `_variables.scss`  | Spacing scale tokens                                                 |
+| `tokens-breakpoints` | `_variables.scss`  | Responsive breakpoints                                               |
+| `tokens-z-index`     | `_variables.scss`  | Z-index layering system                                              |
+| `tokens-radius`      | `_variables.scss`  | Border radius tokens                                                 |
+| `tokens-shadows`     | `_variables.scss`  | Shadow elevation tokens                                              |
+| `tokens-motion`      | `_variables.scss`  | Duration and easing tokens                                           |
+| `tokens-colors`      | `_colors.scss`     | Color system (CSS var refs + static)                                 |
+| `tokens-typography`  | `_typography.scss` | Font sizes, weights, heights, spacing                                |
+| `functions`          | `_functions.scss`  | Unit conversion and utility functions                                |
+| `mixins-responsive`  | `_mixins.scss`     | Breakpoint media query mixins                                        |
+| `mixins-layout`      | `_mixins.scss`     | Flex, grid, container, stack, spacing mixins                         |
+| `mixins-visual`      | `_mixins.scss`     | Shadow, transition, gradient, glass, hover mixins                    |
+| `mixins-utility`     | `_mixins.scss`     | Text-balance, truncate, line-clamp, icon-size, text-muted, dark mode |
+| `mixins-a11y`        | `_mixins.scss`     | Visually-hidden, focus-ring, reduced-motion, reduced-transparency    |
+| `mixins-decorative`  | `_mixins.scss`     | Orb, image-drop-shadow                                               |
+| `tokens-visual`      | `_variables.scss`  | Blur and opacity tokens                                              |
+| `mixins`             | `_mixins.scss`     | File-level overview                                                  |
+| `entry`              | `main.scss`        | Entry point and cascade layers                                       |
+| `base`               | `base/`            | Theme tokens, reset, element defaults                                |
+| `themes`             | `themes/`          | Theme presets                                                        |
+| `animations`         | `animations/`      | Keyframes and transition utilities                                   |
+| `components`         | `components/`      | Shared BEM component styles                                          |
+| `utilities`          | `utilities/`       | Global utility classes                                               |
 
 ### 12.3 Shadow Elevation Guide
 
@@ -1524,8 +1701,8 @@ The shadow system uses a 6-level elevation scale inspired by Material Design 3:
 }
 ```
 
-Dark mode shadows use stronger opacity (0.3-0.6 vs 0.05-0.25) for visibility against dark backgrounds. The `shadow()` mixin handles this
-automatically.
+Dark mode shadows use stronger opacity (0.3-0.6 vs 0.05-0.25) for visibility against dark backgrounds. The `shadow()` mixin applies this
+automatically in global partials; in CSS Modules add the dark value under `:global(.dark) &` (see §7.3).
 
 ---
 
@@ -1533,17 +1710,22 @@ automatically.
 
 ### 13.1 Feature Flags (`_config.scss`)
 
-The design system supports compile-time feature flags:
+The design system supports compile-time feature flags and settings:
 
-| Flag                         | Default | Purpose                                  |
-| ---------------------------- | ------- | ---------------------------------------- |
-| `$enable-fluid-type`         | `true`  | Enable `clamp()`-based fluid typography  |
-| `$enable-logical-properties` | `true`  | Enable `margin-inline` / `padding-block` |
-| `$enable-container-queries`  | `true`  | Enable CSS container queries             |
-| `$enable-reduced-motion`     | `true`  | Enable `prefers-reduced-motion` wrappers |
-| `$enable-high-contrast`      | `true`  | Enable high-contrast mode adjustments    |
-| `$enable-print-styles`       | `true`  | Enable print stylesheet generation       |
-| `$enable-css-layers`         | `true`  | Enable CSS `@layer` for cascade control  |
+| Flag                         | Default                        | Purpose                                              |
+| ---------------------------- | ------------------------------ | ---------------------------------------------------- |
+| `$enable-fluid-type`         | `true`                         | Enable `clamp()`-based fluid typography              |
+| `$fluid-min-viewport`        | `320px`                        | Viewport where fluid font sizes reach their minimum  |
+| `$fluid-max-viewport`        | `1280px`                       | Viewport where fluid font sizes reach their maximum  |
+| `$enable-logical-properties` | `true`                         | Enable `margin-inline` / `padding-block`             |
+| `$enable-reduced-motion`     | `true`                         | Enable `prefers-reduced-motion` wrappers             |
+| `$enable-high-contrast`      | `true`                         | Enable high-contrast mode adjustments                |
+| `$enable-print-styles`       | `true`                         | Enable print stylesheet generation                   |
+| `$enable-css-layers`         | `true`                         | Enable CSS `@layer` for cascade control              |
+| `$css-prefix`                | `"aro"`                        | Namespace for prefixed custom properties (`--aro-*`) |
+| `$base-font-size`            | `16px`                         | Base font size for rem calculations                  |
+| `$default-duration`          | `150ms`                        | Default transition duration                          |
+| `$default-easing`            | `cubic-bezier(0.4, 0, 0.2, 1)` | Default easing curve                                 |
 
 ### 13.2 Overriding Defaults
 

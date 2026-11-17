@@ -15,6 +15,10 @@ The root manifest currently declares `eslint-plugin-react-compiler`. Presence in
 
 The website config currently registers React, React DOM, React Hooks, React X, React Web API, and related plugins. It does not import or
 register `eslint-plugin-react-compiler`, so that package currently contributes no explicit plugin diagnostics through this config.
+Compiler-derived diagnostics still run: the `[@arolariu/website]` block spreads the installed `eslint-plugin-react-hooks` `recommended` and
+`recommended-latest` presets, which include React Compiler rules such as `react-hooks/purity`, `refs`, `immutability`,
+`preserve-manual-memoization`, and `error-boundaries` (`react-x/purity` and `react-x/error-boundaries` are off as duplicates). The
+`[@arolariu/packages]` block spreads only `recommended` and turns off `refs`, `purity`, `immutability`, and `preserve-manual-memoization`.
 
 ## Next.js transform
 
