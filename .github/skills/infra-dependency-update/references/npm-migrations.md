@@ -70,6 +70,11 @@ Treat each cohort as an evidence set, not an instruction to upgrade every member
   packed declaration portability: inferred public types may accidentally reference a dependency's nested private type packages. A type
   annotation on a destructuring pattern may still leave an inferred exported binding; a direct third-party re-export can preserve the public
   contract without exposing private type paths.
+- Changing or removing `install-strategy` does not re-place an existing lock: `npm install`/`npm ci` keep the recorded nested placement.
+  Count package names that exist only below another package (never at root) before and after. To restore hoisting without re-resolving
+  versions, run `npm dedupe --package-lock-only`, move single-copy nested entries to root only where every dependency edge keeps its
+  resolved version, then prove `npm ls --all`, a clean `npm ci`, and preview/packaging of generated framework output (for example SvelteKit
+  server chunks importing `devalue`).
 - Inspect CI/container stages that omit `.npmrc` or copy only a workspace subset. Probe their actual inputs and required output paths; a
   successful dry-run proves lock consistency, not installation or container runtime behavior.
 - After a layout change, inventory unresolved bare imports across affected tracked sources, including type-only imports and `createRequire`
