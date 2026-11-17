@@ -41,7 +41,8 @@ are true here, and visitors can verify them.
 
 - Two live environments: production at `https://arolariu.ro` and staging at `https://dev.arolariu.ro`. Branch-to-environment mapping is
   owned by root `AGENTS.md`. The staging site is the visual reference for the documentation in this folder.
-- Sibling sites are linked from the footer: `cv`, `api`, and `docs` subdomains.
+- Sibling sites are linked from the footer: `cv`, `api`, and `docs` subdomains, plus a cross-link between `arolariu.ro` and
+  `dev.arolariu.ro`.
 - Pages sit behind a first-visit EULA and cookie-preferences gate (the global 404 page is outside it). Authentication uses Clerk. Invoice
   workflows need a signed-in account; guests can browse public surfaces and publicly shared invoices.
 - The interface ships in English, Romanian, and French, in light and dark mode, and with a theme-preset system.
@@ -67,8 +68,8 @@ Constraints that future work must preserve:
 - Shared UI comes from `@arolariu/components`; site styling uses SCSS and CSS Modules.
 - The repository, versions, commands, and risk boundaries are owned by root `AGENTS.md`; this document does not restate them.
 
-Terminology: a **domain** is a product area under `/domains`; a **scan** is an uploaded receipt image; an **invoice** is the structured
-record derived from one or more scans; **Commander** is the command palette.
+Terminology: a **domain** is a product area under `/domains`; a **scan** is an uploaded receipt image or PDF; an **invoice** is the
+structured record derived from one or more scans; **Commander** is the command palette.
 
 Open product facts, recorded rather than decided: homepage technology cards currently disagree with the About page and the architecture card
 on framework versions (see the known gaps in `UX-FLOWS.md`).
