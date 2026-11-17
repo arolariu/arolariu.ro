@@ -1,6 +1,6 @@
 # PWA Icons
 
-This folder should contain the following icon files for the PWA manifest:
+This folder contains the following icon files for the PWA manifest:
 
 ## Required Icons (PNG format)
 
@@ -30,9 +30,9 @@ This folder should contain the following icon files for the PWA manifest:
 - `shortcut-pdf.png` - 96×96px (for PDF shortcut)
 - `shortcut-json.png` - 96×96px (for JSON shortcut)
 
-## Generating Icons
+## Regenerating Icons
 
-You can generate these from a single high-resolution source image (1024×1024px recommended) using:
+You can regenerate these from a single high-resolution source image (1024×1024px recommended) using:
 
 ### Option 1: Online Tools
 
@@ -56,14 +56,15 @@ done
 
 ## Social/OG Images
 
-Also create these in the parent `static/` folder:
+The parent `static/` folder also contains:
 
 - `og-image.png` - 1200×630px (Open Graph / social sharing)
-- `author.jpeg` - Already exists (profile photo)
+- `author.jpeg` - profile photo
 
 ## Screenshots (in `/screenshots` folder)
 
-For richer PWA install experience:
+Not yet present: `static/manifest.json` lists these under `screenshots`, but `static/screenshots/` does not exist. Add them for a richer PWA
+install experience:
 
 - `desktop-home.png` - 1920×1080px (wide form factor)
 - `mobile-home.png` - 750×1334px (narrow form factor)
