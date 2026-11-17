@@ -47,7 +47,7 @@
   "dependencies": {
     "@arolariu/components": "https://registry.npmjs.org/@arolariu/components/-/components-3.0.0.tgz",
     "@azure/identity": "*",
-    "@azure/monitor-opentelemetry-exporter": "1.0.0-beta.47",
+    "@azure/monitor-opentelemetry-exporter": "*",
     "@azure/storage-blob": "*",
     "@clerk/localizations": "*",
     "@clerk/nextjs": "*",
