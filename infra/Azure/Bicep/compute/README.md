@@ -1,13 +1,11 @@
 # 💻 Compute Module
 
-This module provisions Linux-based Azure App Service Plans for production and development workloads, with secure defaults and managed
-identity integration.
+This module provisions Linux-based Azure App Service Plans for production and development workloads, with secure defaults.
 
 ## 📋 Overview
 
 - Two App Service Plans: Production (B2) and Development (B1)
-- Linux containers, per-site scaling (production), cost-optimized
-- Managed identity integration for secure authentication
+- Linux containers, single instance, cost-optimized (no per-site scaling)
 
 ## 📁 Module Files
 
@@ -28,16 +26,9 @@ identity integration.
 ```mermaid
 graph TB
     subgraph "Compute Module"
-        ASP1[Production App Service Plan<br/>B2 - Per-site scaling]
-        ASP2[Development App Service Plan<br/>B1 - Standard scaling]
+        ASP1[Production App Service Plan<br/>B2 - Basic, 1 instance]
+        ASP2[Development App Service Plan<br/>B1 - Basic, 1 instance]
     end
-
-    subgraph "Dependencies"
-        ID[Managed Identities]
-    end
-
-    ID --> ASP1
-    ID --> ASP2
 
     ASP1 --> WEB1[Production Web Apps]
     ASP2 --> WEB2[Development Web Apps]
@@ -45,11 +36,11 @@ graph TB
 
 ## 🔧 Parameters
 
-| Parameter                  | Type   | Required | Description                                                       |
-| -------------------------- | ------ | -------- | ----------------------------------------------------------------- |
-| `resourceConventionPrefix` | string | ✅       | Prefix for resource naming (1-20 chars)                           |
-| `resourceLocation`         | string | ✅       | Azure region (swedencentral, norwayeast, westeurope, northeurope) |
-| `resourceDeploymentDate`   | string | ✅       | Deployment timestamp                                              |
+| Parameter                  | Type   | Required | Description                                                          |
+| -------------------------- | ------ | -------- | -------------------------------------------------------------------- |
+| `resourceConventionPrefix` | string | ✅       | Prefix for resource naming (1-20 chars)                              |
+| `resourceLocation`         | string | ✅       | Azure region (francecentral, northeurope, westeurope, swedencentral) |
+| `resourceDeploymentDate`   | string | ❌       | Deployment timestamp (default: `utcNow()`)                           |
 
 ### Example Usage
 
@@ -59,7 +50,6 @@ module computeDeployment 'compute/deploymentFile.bicep' = {
   params: {
     resourceConventionPrefix: 'arolariu'
     resourceLocation: 'swedencentral'
-    resourceDeploymentDate: utcNow()
   }
 }
 ```
@@ -71,11 +61,9 @@ module computeDeployment 'compute/deploymentFile.bicep' = {
 | `productionAppPlanId`  | string | Resource ID of the production App Service Plan  |
 | `developmentAppPlanId` | string | Resource ID of the development App Service Plan |
 
-## �️ Security Features
+## 🛡️ Security Features
 
 - Linux-based plans for security and performance
-- Managed identity integration for secure authentication
-- Per-site scaling (production)
 - Resource tags for governance and cost tracking
 
 ## 💰 Cost Considerations
@@ -85,22 +73,23 @@ module computeDeployment 'compute/deploymentFile.bicep' = {
 | Production  | B2  | 2    | 3.5 GB  | ~€24                     |
 | Development | B1  | 1    | 1.75 GB | ~€12                     |
 
-\*Estimates based on Sweden Central pricing (July 2025)
+\*Estimates based on Sweden Central pricing (July 2025). `main.bicepparam` deploys to France Central, so actual prices may differ.
 
 ## 🔧 Customization Options
 
-- **Per-site scaling**: Enabled for production plan
+- **Per-site scaling**: Disabled on both plans (`perSiteScaling: false`)
 - **SKU upgrades**: Upgrade to Standard or Premium for more features
 
 ## 🛠️ Maintenance
 
 - Integrates with Application Insights, Log Analytics, Azure Monitor
-- Production plan supports manual and automatic scaling
+- Both plans run a single instance (capacity 1); Basic tier has no autoscale — upgrade to Standard (S1+) for automatic scaling and
+  deployment slots
 
 ## 🔄 Dependencies
 
-- **Requires**: Managed Identities (for RBAC)
-- **Used by**: Sites Module (needs App Service Plan IDs)
+- **Requires**: None (ordered after the Identity module via `dependsOn` in `facade.bicep`)
+- **Used by**: Sites and Bindings modules (App Service Plan IDs)
 
 ## 📊 Deployment Flow
 
@@ -110,11 +99,11 @@ module computeDeployment 'compute/deploymentFile.bicep' = {
 
 ## 🚨 Troubleshooting
 
-| Issue                                | Solution                                                                |
-| ------------------------------------ | ----------------------------------------------------------------------- |
-| Deployment fails with location error | Use allowed regions: swedencentral, norwayeast, westeurope, northeurope |
-| Resource naming conflicts            | Ensure unique `resourceConventionPrefix`                                |
-| Permission errors                    | Verify managed identity permissions                                     |
+| Issue                                | Solution                                                                                             |
+| ------------------------------------ | ---------------------------------------------------------------------------------------------------- |
+| Deployment fails with location error | Use allowed regions: francecentral, northeurope, westeurope, swedencentral                           |
+| Resource naming conflicts            | Ensure unique `resourceConventionPrefix`                                                             |
+| Permission errors                    | Verify the deploying principal can create resources in the resource group (for example, Contributor) |
 
 ## 📚 References
 
@@ -125,5 +114,5 @@ module computeDeployment 'compute/deploymentFile.bicep' = {
 ---
 
 **Module Version**: 2.0.0  
-**Last Updated**: July 2025  
+**Last Updated**: November 2026\
 **Maintainer**: Alexandru-Razvan Olariu
