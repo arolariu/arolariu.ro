@@ -31,9 +31,13 @@ export function createFeatureXImplementation(): FeatureXApi {
 import {expose} from "@/workers/runtime";
 import {createFeatureXImplementation} from "./feature-x.implementation";
 expose(createFeatureXImplementation());
+```
 
-// useFeatureXWorker.ts
-("use client");
+`useFeatureXWorker.ts` (the directive must be the file's first statement):
+
+```typescript
+"use client";
+
 import {createWorkerHook} from "@/workers/react";
 import type {FeatureXApi} from "./feature-x.api";
 
@@ -87,9 +91,10 @@ Default idle timeout: 5 minutes. Override with `idleTimeoutMs`.
 ## Errors
 
 - `WorkerError` — your handler threw. Has `.cause` and `.method`.
-- `WorkerCrashError` — worker terminated unexpectedly.
+- `WorkerCrashError` — worker terminated unexpectedly. Has `.inFlightMethods`.
 - `WorkerTimeoutError` — per-call timeout fired. Has `.method` and `.elapsedMs`.
 - `WorkerDeadError` — call attempted on dead/disposed host.
+- `WorkerMessageError` — a message failed structured-clone deserialization (`messageerror`); the host goes `dead`. Has `.detail`.
 - `WorkerNotAvailableError` — SSR or `globalThis.Worker` missing.
 
 ### Why we wrap handler errors in a `__workerError` envelope
@@ -176,14 +181,14 @@ message rather than at runtime.
 
 ## Playground
 
-A live developer playground is available **in development only**:
+A live developer playground is available in development and on `SITE_ENV=DEV`/`STAGING` deployments:
 
 ```
-http://localhost:3000/playground/workers/
+https://localhost:3000/playground/workers/
 ```
 
-It exercises every state transition and is the canonical worked example. It returns **404 in production** (the route is gated). The
-playground worker chunk itself is still emitted by the bundler, but it's tiny and only reachable via the gated route.
+It exercises every state transition and is the canonical worked example. Other environments, including production, get a **404** (the route
+is gated). The playground worker chunk itself is still emitted by the bundler, but it's tiny and only reachable via the gated route.
 
 ## Known limitations
 
@@ -205,7 +210,7 @@ playground worker chunk itself is still emitted by the bundler, but it's tiny an
   `eventPort` for streaming worker → parent updates.
 
 - **`unhandledrejection` inside a worker is now bridged.** Rejections from forgotten `await`s in handlers surface in the parent's logger as
-  `[worker:<name>] error` lines via the side channel.
+  error-level `[worker:<name>] Unhandled rejection in worker` entries (reason in `attrs.reason`) via the side channel.
 
 - **`messageerror` is now treated as a crash.** A non-cloneable value crossing the boundary in either direction transitions the host to
   `dead` and rejects in-flight calls with `WorkerMessageError`.
@@ -222,4 +227,4 @@ known fidelity gaps** vs. a real `Worker`:
 - **Parallel `terminate()`:** synchronous; real `terminate()` is an async task per WHATWG HTML §10.2.4.
 - **Off-thread execution:** runs on the main thread, so racy worker code may pass MockWorker tests and fail in production.
 
-End-to-end coverage of these gaps lives in the Playwright suite at `src/app/playground/workers/worker-playground.spec.ts`.
+There is currently no end-to-end coverage for these gaps; exercise them manually in the playground (`/playground/workers/`).
