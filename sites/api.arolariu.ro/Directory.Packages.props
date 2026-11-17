@@ -38,10 +38,10 @@
     <PackageVersion Include="Microsoft.Extensions.AI" Version="11.0.0" />
     <PackageVersion Include="Microsoft.Extensions.AI.OpenAI" Version="11.0.0" />
     <PackageVersion Include="Microsoft.Extensions.Azure" Version="1.14.1" />
-    <PackageVersion Include="Microsoft.Extensions.Configuration.Json" Version="11.0.0" />
+    <PackageVersion Include="Microsoft.Extensions.Configuration.Json" Version="10.0.15" />
     <PackageVersion Include="Microsoft.Extensions.Identity.Core" Version="10.0.15" />
     <PackageVersion Include="Microsoft.Extensions.Identity.Stores" Version="10.0.15" />
-    <PackageVersion Include="Microsoft.Extensions.Logging" Version="11.0.0" />
+    <PackageVersion Include="Microsoft.Extensions.Logging" Version="10.0.15" />
   </ItemGroup>
   <ItemGroup Label="Azure SDK Packages">
     <PackageVersion Include="Azure.Core" Version="1.65.0" />
