@@ -150,8 +150,10 @@ const sdk = new NodeSDK({
 **Design Decisions**:
 
 - **Exporter Selection**: Azure Monitor exporters when `APPLICATIONINSIGHTS_CONNECTION_STRING` is set (production); OTLP HTTP exporters when
-  `OTEL_EXPORTER_OTLP_ENDPOINT` is set (local collector); otherwise no export (instrumentation and propagation stay active). There is no
-  default OTLP endpoint, which avoids connection storms from auto-instrumented export requests to an unreachable collector.
+  `OTEL_EXPORTER_OTLP_ENDPOINT` is set (local collector); otherwise `createExporters()` returns no exporters (instrumentation and
+  propagation stay active). The code applies no default OTLP endpoint, to avoid connection storms from auto-instrumented export requests to
+  an unreachable collector. Because the SDK then receives no trace exporter or metric reader, it applies its own environment defaults (see
+  §6.1).
 - **Batch Span Processor**: Reduces network overhead by batching trace exports
 - **Periodic Metric Reader**: Exports metrics every 60 seconds
 - **Log Pipeline**: `LoggerProvider` + `BatchLogRecordProcessor`, created only when a log exporter exists
@@ -581,9 +583,13 @@ All types provide full autocomplete:
 APPLICATIONINSIGHTS_CONNECTION_STRING=<set by infra/Azure/Bicep/sites/arolariu-ro.bicep>
 AZURE_CLIENT_ID=<managed identity client ID for DefaultAzureCredential>
 
-# Optional: local OTLP collector. No default; if neither this nor the connection string is set, nothing is exported.
-# The code appends /v1/traces, /v1/metrics, and /v1/logs.
+# Optional: local OTLP collector. createExporters() applies no default; the code appends /v1/traces, /v1/metrics, and /v1/logs.
 OTEL_EXPORTER_OTLP_ENDPOINT=http://localhost:4318
+
+# When neither APPLICATIONINSIGHTS_CONNECTION_STRING nor OTEL_EXPORTER_OTLP_ENDPOINT is set, NodeSDK falls back to its environment
+# defaults and still exports traces and metrics over OTLP (HTTP/protobuf) to http://localhost:4318. These turn that fallback off:
+OTEL_TRACES_EXPORTER=none
+OTEL_METRICS_EXPORTER=none
 
 # Optional: health-probe telemetry suppression for /health, /api/health, and /api/ready (default on; only "false" disables it)
 OTEL_SUPPRESS_HEALTH_TELEMETRY=true
@@ -626,7 +632,8 @@ export async function register(): Promise<void> {
 
 Exporters are selected at startup by `createExporters()`. Azure Monitor (Application Insights) is used when
 `APPLICATIONINSIGHTS_CONNECTION_STRING` is set, which is the production path configured in `infra/Azure/Bicep/sites/arolariu-ro.bicep`. OTLP
-HTTP is used when `OTEL_EXPORTER_OTLP_ENDPOINT` is set. Otherwise nothing is exported. The OTLP HTTP exporter is compatible with:
+HTTP is used when `OTEL_EXPORTER_OTLP_ENDPOINT` is set. Otherwise `createExporters()` selects no exporter and the SDK's environment defaults
+apply (§6.1). The OTLP HTTP exporter is compatible with:
 
 | Backend                    | Traces | Metrics | Logs | Notes                                                  |
 | -------------------------- | ------ | ------- | ---- | ------------------------------------------------------ |
@@ -695,7 +702,7 @@ npm run lint
 # Start local OpenTelemetry Collector
 docker run -p 4318:4318 otel/opentelemetry-collector:latest
 
-# Start development server with OTLP export enabled (there is no default endpoint)
+# Start the development server with the code's OTLP exporters enabled
 OTEL_EXPORTER_OTLP_ENDPOINT=http://localhost:4318 npm run dev:website
 
 # Make requests and verify telemetry data (the dev server uses --experimental-https)
