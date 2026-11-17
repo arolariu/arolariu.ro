@@ -29,17 +29,9 @@ flowchart LR
         WEBSITE[sites/arolariu.ro<br/>server context only]
     end
 
-    subgraph InfraConsumers[CI/CD infrastructure]
-        CICD_API[official-api-trigger.yml]
-        CICD_WEB[official-website-build.yml]
-    end
-
     API -->|GET /api/v1/config?name=...| EXP[exp.arolariu.ro]
+    WEBSITE -->|GET /api/v1/run-time?for=website at startup| EXP
     WEBSITE -->|GET /api/v1/config?name=...| EXP
-    CICD_API -->|GET /api/v1/build-time?for=api| EXP
-    CICD_API -->|GET /api/v1/run-time?for=api| EXP
-    CICD_WEB -->|GET /api/v1/build-time?for=website| EXP
-    CICD_WEB -->|GET /api/v1/run-time?for=website| EXP
 
     subgraph ExpRuntime[exp runtime]
         ROUTERS[api/* slices]
@@ -79,6 +71,7 @@ The service keeps source and tests side-by-side directly under the service root:
 
 ```text
 api/
+  admin.py
   build_time.py
   build_time.test.py
   common.py
@@ -101,6 +94,8 @@ runtime/
 telemetry/
   bootstrap.py
   bootstrap.test.py
+  health_policy.py
+  health_policy.test.py
   settings.py
   settings.test.py
 models.py
@@ -109,11 +104,12 @@ main.test.py
 conftest.py
 ```
 
-- `api/*` owns the public HTTP slices (`health`, `build-time`, `run-time`, `config`)
+- `api/*` owns the public HTTP slices (`health`, `build-time`, `run-time`, `config`) and the operator `admin` UI/API
 - `config/*` owns target indexes, configuration loading, and shared env-driven runtime settings
 - `security/*` owns caller authorization
 - `runtime/*` owns process-local diagnostics that are useful for probes but never persisted across restarts
-- `telemetry/*` owns OpenTelemetry resource settings, exporter bootstrap, manual spans, and custom metrics
+- `telemetry/*` owns OpenTelemetry resource settings, exporter bootstrap, manual spans, custom metrics, and the health-probe telemetry
+  suppression policy (`health_policy.py`)
 - `models.py` holds the dedicated API/website build-time and run-time contracts plus the single-key config response
 - `main.py` is the FastAPI / ASGI composition root
 - Slice directories intentionally avoid `__init__.py` so sibling `*.test.py` files stay importable under pytest's importlib mode.
@@ -212,18 +208,23 @@ Returns the build-time configuration document for the requested target.
   "contractVersion": "1",
   "version": "<12-char hash>",
   "config": {
-    "Endpoints:Storage:Blob": "https://...",
-    "Auth:JWT:Issuer": "https://...",
+    "Auth:Clerk:PublishableKey": "pk_...",
+    "Auth:Clerk:SecretKey": "sk_...",
     "Auth:JWT:Audience": "https://...",
-    "Endpoints:Service:Api": "https://..."
+    "Auth:JWT:Issuer": "https://...",
+    "Endpoints:Service:Api": "https://...",
+    "Endpoints:Storage:Blob": "https://...",
+    "Site:Environment": "...",
+    "Site:Name": "...",
+    "Site:Url": "https://..."
   },
   "refreshIntervalSeconds": 300,
   "fetchedAt": "2025-01-01T00:00:00+00:00"
 }
 ```
 
-The build-time document contains only the keys indexed for startup/build-sensitive behavior. For the website target, server-only secrets
-such as `Auth:JWT:Secret` are excluded from this slice.
+The build-time document contains only the keys indexed for startup/build-sensitive behavior. For the website target it omits
+`Auth:JWT:Secret` and `Communication:Email:ApiKey`, but it does include the server-only `Auth:Clerk:SecretKey`.
 
 ### `GET /api/v1/run-time?for=api|website`
 
@@ -235,11 +236,16 @@ Returns the runtime configuration document plus feature flags for the requested 
   "contractVersion": "1",
   "version": "<12-char hash>",
   "config": {
-    "Endpoints:Storage:Blob": "https://...",
-    "Auth:JWT:Issuer": "https://...",
+    "Auth:Clerk:PublishableKey": "pk_...",
+    "Auth:Clerk:SecretKey": "sk_...",
     "Auth:JWT:Audience": "https://...",
+    "Auth:JWT:Issuer": "https://...",
     "Auth:JWT:Secret": "...",
     "Endpoints:Service:Api": "https://...",
+    "Endpoints:Storage:Blob": "https://...",
+    "Site:Environment": "...",
+    "Site:Name": "...",
+    "Site:Url": "https://...",
     "Communication:Email:ApiKey": ""
   },
   "features": {
@@ -251,7 +257,7 @@ Returns the runtime configuration document plus feature flags for the requested 
 }
 ```
 
-This is the single runtime bootstrap call for both consumers.
+This is the website server's startup bootstrap call. The API does not call it; it reads individual keys through `/api/v1/config`.
 
 ```mermaid
 sequenceDiagram
@@ -266,7 +272,11 @@ sequenceDiagram
     Router->>Catalog: resolve target index
     Router->>Auth: authorize_target_request()
     Auth-->>Router: authorized / denied
-    Router->>Loader: get_config()
+    alt label given and INFRA=azure
+        Router->>Loader: get_config_for_label(label)
+    else no label or another mode
+        Router->>Loader: get_config()
+    end
     alt first load or refresh due
         Loader->>Source: load snapshot
         Source-->>Loader: key/value config
@@ -288,7 +298,7 @@ Returns exactly one indexed configuration value plus its ownership and usage met
   "availableForTargets": ["website"],
   "availableInDocuments": ["website.build-time", "website.run-time"],
   "requiredInDocuments": ["website.build-time", "website.run-time"],
-  "description": "Base URL of the backend API that the website calls from server-only code.",
+  "description": "Base URL of the backend API under the Endpoint hierarchy, called by the website from server-only code.",
   "usage": "Website-only. Use this value for server-to-server fetches instead of hard-coding environment-specific API URLs.",
   "refreshIntervalSeconds": 300,
   "fetchedAt": "2025-01-01T00:00:00+00:00"
@@ -296,64 +306,80 @@ Returns exactly one indexed configuration value plus its ownership and usage met
 ```
 
 `name` is always a configuration key such as `Endpoints:Service:Api` or `Auth:JWT:Secret`. When a key is shared by multiple targets, callers
-must also send `X-Exp-Target` so authorization remains explicit.
+must also send `X-Exp-Target` so authorization remains explicit. Without it, local and proxy mode return `400`; Azure mode returns `400`
+when the caller's identity is allow-listed for more than one of the key's targets.
+
+### Optional `label` query parameter
+
+`/build-time`, `/run-time`, and `/config` accept an optional `label` that selects an Azure App Configuration label. The value is trimmed and
+uppercased. Only `DEVELOPMENT` and `PRODUCTION` are honored, and only when `INFRA=azure`. Any other value, and any other mode, uses the
+default snapshot (see `EXP_ENVIRONMENT`). Label-specific snapshots are cached and refreshed on the same interval as the default snapshot.
+
+The API always sends `label=PRODUCTION`. The website server sends `PRODUCTION` or `DEVELOPMENT`, derived from `SITE_ENV`.
+
+### Admin UI (`/admin`)
+
+`api/admin.py` serves an operator configuration editor outside the versioned API:
+
+| Route                         | Purpose                                                 |
+| ----------------------------- | ------------------------------------------------------- |
+| `GET /admin`                  | HTML configuration editor for human operators           |
+| `GET /admin/api/config`       | Reads the configuration, including secret values        |
+| `PUT /admin/api/config/{key}` | Writes one configuration value, including secret values |
+
+These routes read and write configuration, including secret values. Outside Azure mode (`INFRA=local` or `proxy`) they apply no
+authentication, so never expose the exp port beyond your machine. In Azure mode they apply a lightweight tenant check implemented in
+`api/admin.py`. The caller authorization described under "Security model" applies to `/api/v1/*` only.
 
 ## Endpoint access patterns
 
 ### Runtime consumers (API + Website)
 
-Both the API and website services consume exp exclusively through the single-key `/api/v1/config?name=<key>` endpoint at runtime. They do
-NOT call `/build-time` or `/run-time` — those are infrastructure endpoints.
+The API and the website server use different call patterns at runtime:
 
-| Consumer          | Identity      | Endpoint                  | Authentication                    |
-| ----------------- | ------------- | ------------------------- | --------------------------------- |
-| API (.NET)        | Backend UAMI  | `/api/v1/config?name=...` | Bearer token via Managed Identity |
-| Website (Next.js) | Frontend UAMI | `/api/v1/config?name=...` | Bearer token via Managed Identity |
+- **Website server:** the Next.js instrumentation hook calls `GET /api/v1/run-time?for=website&label=<SITE_ENV>` once at startup and copies
+  the keys listed in `RUNTIME_ENVIRONMENT_KEYS` (`sites/arolariu.ro/src/lib/config/configProxy.ts`) into server environment variables. Keys
+  outside that snapshot, such as the feature flags, use `GET /api/v1/config?name=<key>&label=<SITE_ENV>` with a per-key TTL cache.
+- **API:** calls `GET /api/v1/config?name=<key>&label=PRODUCTION` for each key at startup, and `ConfigRefreshHostedService` refreshes them
+  every 5 minutes. The API never calls `/build-time` or `/run-time`.
+
+| Consumer          | Identity      | Endpoint                                                            | Authentication                    |
+| ----------------- | ------------- | ------------------------------------------------------------------- | --------------------------------- |
+| API (.NET)        | Backend UAMI  | `/api/v1/config?name=...`                                           | Bearer token via Managed Identity |
+| Website (Next.js) | Frontend UAMI | `/api/v1/run-time?for=website` (startup), `/api/v1/config?name=...` | Bearer token via Managed Identity |
 
 **API whitelisted keys** (fetched at startup + refreshed every 5 min):
 
 - `Auth:JWT:Secret`, `Auth:JWT:Issuer`, `Auth:JWT:Audience`
 - `Identity:Tenant:Id`
-- `Endpoints:AI:OpenAI`, `Endpoints:AI:OCR`, `Endpoints:AI:OCR:Key`
+- `Endpoints:AI:OCR`, `Endpoints:AI:OCR:Key`
 - `Endpoints:Database:SQL`, `Endpoints:Database:NoSQL`
 - `Endpoints:Storage:Blob`, `Endpoints:Observability:Telemetry`
 
-**Website whitelisted keys** (fetched on demand with TTL cache):
+**Website whitelisted keys:**
 
-- `Endpoints:Service:Api` — backend API base URL
-- `Auth:JWT:Secret` — JWT signing secret
-- `Communication:Email:ApiKey` — Resend email key (optional)
-- `Endpoints:Storage:Blob` — blob storage endpoint
-- `website.commander.enabled` — feature flag
-- `website.web-vitals.enabled` — feature flag
+- Copied from the startup `/run-time` snapshot into environment variables: `Auth:Clerk:SecretKey`, `Auth:JWT:Secret`, `Auth:JWT:Issuer`,
+  `Auth:JWT:Audience`, `Communication:Email:ApiKey` (optional), `Endpoints:Service:Api`, `Endpoints:Storage:Blob`
+- Fetched on demand through `/config` with a TTL cache: the `website.commander.enabled` and `website.web-vitals.enabled` feature flags, plus
+  `Endpoints:Service:Api`, `Auth:JWT:Secret`, and `Communication:Email:ApiKey` when their environment variable is empty
 
-### Infrastructure consumers (CI/CD)
+### Infrastructure identity
 
-The `/api/v1/build-time` and `/api/v1/run-time` endpoints are designed for infrastructure tooling — CI/CD pipelines that need to inject
-configuration values into container images during the build phase.
+The Infrastructure UAMI (the CI/CD identity) is allow-listed in exp's Easy Auth `allowedPrincipals` and granted access to both `api` and
+`website` targets via `EXP_CALLER_INFRA_IDS`. No workflow calls exp today.
 
-| Consumer                     | Identity            | Endpoint                         | Authentication        |
-| ---------------------------- | ------------------- | -------------------------------- | --------------------- |
-| `official-api-trigger.yml`   | Infrastructure UAMI | `/api/v1/build-time?for=api`     | Bearer token via OIDC |
-| `official-api-trigger.yml`   | Infrastructure UAMI | `/api/v1/run-time?for=api`       | Bearer token via OIDC |
-| `official-website-build.yml` | Infrastructure UAMI | `/api/v1/build-time?for=website` | Bearer token via OIDC |
-
-The Infrastructure UAMI is the CI/CD orchestrator — it handles Azure login, ACR push, and config fetching. It is whitelisted in exp's Easy
-Auth allow-list and granted access to both `api` and `website` targets via `EXP_CALLER_INFRA_IDS`.
-
-The `npm run generate -- env` script (called during website container builds) will fetch build-time environment variables from exp instead
-of directly accessing Azure App Configuration. This keeps the Infrastructure UAMI as the single identity responsible for all CI/CD
-operations.
+`npm run generate:env` is a local/offline utility. With `INFRA=azure` it fetches `/api/v1/build-time?for=website` to write a local `.env`;
+cloud website builds do not run it.
 
 ### Local Docker consumers
 
 In local Docker mode (`INFRA=local`), exp runs without Easy Auth. Authorization falls back to query-parameter validation and optional
 shared-token auth via `EXP_LOCAL_SHARED_TOKEN` / `X-Exp-Local-Token`.
 
-| Consumer          | Endpoint                  | Authentication                 |
-| ----------------- | ------------------------- | ------------------------------ |
-| API container     | `/api/v1/config?name=...` | `X-Exp-Target: api` header     |
-| Website container | `/api/v1/config?name=...` | `X-Exp-Target: website` header |
+| Consumer          | Endpoint                                                  | Authentication                 |
+| ----------------- | --------------------------------------------------------- | ------------------------------ |
+| API container     | `/api/v1/config?name=...`                                 | `X-Exp-Target: api` header     |
+| Website container | `/api/v1/run-time?for=website`, `/api/v1/config?name=...` | `X-Exp-Target: website` header |
 
 ## Indexed target ownership
 
@@ -364,7 +390,6 @@ shared-token auth via `EXP_LOCAL_SHARED_TOKEN` / `X-Exp-Local-Token`.
   - `Auth:JWT:Issuer`
   - `Auth:JWT:Audience`
   - `Identity:Tenant:Id`
-  - `Endpoints:AI:OpenAI`
   - `Endpoints:Database:SQL`
   - `Endpoints:Database:NoSQL`
   - `Endpoints:Storage:Blob`
@@ -379,16 +404,17 @@ shared-token auth via `EXP_LOCAL_SHARED_TOKEN` / `X-Exp-Local-Token`.
 ### `website`
 
 - Build-time keys
-  - `Endpoints:Storage:Blob`
-  - `Auth:JWT:Issuer`
+  - `Auth:Clerk:PublishableKey`
+  - `Auth:Clerk:SecretKey`
   - `Auth:JWT:Audience`
+  - `Auth:JWT:Issuer`
   - `Endpoints:Service:Api`
+  - `Endpoints:Storage:Blob`
+  - `Site:Environment`
+  - `Site:Name`
+  - `Site:Url`
 - Runtime keys
-  - `Endpoints:Storage:Blob`
-  - `Auth:JWT:Issuer`
-  - `Auth:JWT:Audience`
-  - `Auth:JWT:Secret`
-  - `Endpoints:Service:Api`
+  - same as build-time, plus `Auth:JWT:Secret`
 - Runtime optional keys
   - `Communication:Email:ApiKey`
 - Feature IDs
@@ -429,16 +455,20 @@ Only relevant arrays are included.
 - Allowed callers are configured with:
   - `EXP_CALLER_API_IDS`
   - `EXP_CALLER_WEBSITE_IDS`
-- Access is deny-by-default
+  - `EXP_CALLER_INFRA_IDS` (merged into both targets)
+- `/api/v1/*` access is deny-by-default
+  - `X-Exp-Target` names a target the resource does not allow -> `403`
   - unknown caller -> `401`
   - caller not allowed for requested target -> `403`
+  - caller allowed for several of the resource's targets and no `X-Exp-Target` -> `400`
 
 ### Local and proxy mode (`INFRA=local|proxy`)
 
 - Query inputs are required
   - `for=api|website` for build-time and run-time
   - `name=<config-key>` for config
-- `X-Exp-Target` is optional, but when present it must match the requested target
+- `X-Exp-Target` is optional for single-target requests, but when present it must name an allowed target (otherwise `403`). It is required
+  for `/config` keys shared by several targets (otherwise `400`).
 - Optional shared token support
   - configure `EXP_LOCAL_SHARED_TOKEN`
   - send `X-Exp-Local-Token`
@@ -451,17 +481,22 @@ flowchart TD
     Mode -->|other| Error500[500 invalid infrastructure mode]
 
     Local --> Token{Local token configured?}
-    Token -->|no| LocalTarget[Allow if target exists and optional header matches]
+    Token -->|no| LocalTarget{X-Exp-Target allowed for the resource?}
     Token -->|yes| LocalHeader{X-Exp-Local-Token valid?}
     LocalHeader -->|no| Deny401[401 unauthorized]
     LocalHeader -->|yes| LocalTarget
+    LocalTarget -->|names a disallowed target| Deny403[403 forbidden]
+    LocalTarget -->|shared /config key without header| Deny400[400 X-Exp-Target required]
+    LocalTarget -->|yes or not needed| Allow[200 authorized]
 
-    Azure --> Claims{Caller IDs extracted?}
+    Azure --> AzureHeader{X-Exp-Target allowed for the resource?}
+    AzureHeader -->|no| Deny403
+    AzureHeader -->|yes or absent| Claims{Caller IDs extracted?}
     Claims -->|no| Deny401
     Claims -->|yes| Policy{Caller allow-listed for target?}
-    Policy -->|no| Deny403[403 forbidden]
-    Policy -->|yes| Allow[200 authorized]
-    LocalTarget --> Allow
+    Policy -->|no| Deny403
+    Policy -->|several targets, no header| Deny400
+    Policy -->|yes| Allow
 ```
 
 ## Azure Easy Auth deployment guide
@@ -501,7 +536,7 @@ App Service (exp-arolariu-ro)
   │   ├── globalValidation:
   │   │   ├── requireAuthentication: true
   │   │   ├── unauthenticatedClientAction: Return401
-  │   │   └── excludedPaths: [/api/health, /api/ready]
+  │   │   └── excludedPaths: [/api/health, /api/ready, /admin, /admin/*]
   │   └── identityProviders.azureActiveDirectory:
   │       ├── clientId: <expEntraAppClientId>
   │       ├── openIdIssuer: https://login.microsoftonline.com/<tenant>/v2.0
@@ -510,23 +545,27 @@ App Service (exp-arolariu-ro)
   │           ├── Backend UAMI principal ID
   │           └── Infrastructure UAMI principal ID
   ├── App Settings:
+  │   ├── WEBSITES_PORT = 8080
   │   ├── AZURE_CLIENT_ID = <backend UAMI client ID>
+  │   ├── APPLICATIONINSIGHTS_CONNECTION_STRING = <Application Insights connection string>
   │   ├── AZURE_APPCONFIG_ENDPOINT = https://<name>.azconfig.io
   │   ├── EXP_CALLER_API_IDS = <backend principal ID>
   │   ├── EXP_CALLER_WEBSITE_IDS = <frontend principal ID>
   │   ├── EXP_CALLER_INFRA_IDS = <infrastructure principal ID>
+  │   ├── EXP_CONFIG_REFRESH_INTERVAL_SECONDS = 300
+  │   ├── EXP_ENTRA_APP_CLIENT_ID = <expEntraAppClientId>
+  │   ├── AZURE_TENANT_ID = <tenant ID>
   │   └── INFRA = azure
   └── IP Restrictions: AzureCloud service tag only
 ```
 
-Deploy with:
+Set `expEntraAppClientId` in `infra/Azure/Bicep/main.bicepparam`, then deploy with:
 
 ```bash
-# Set the App Registration client ID in parameters
 az deployment sub create \
-  --location swedencentral \
+  --location francecentral \
   --template-file infra/Azure/Bicep/main.bicep \
-  --parameters expEntraAppClientId=<your-app-registration-client-id>
+  --parameters infra/Azure/Bicep/main.bicepparam
 ```
 
 ### Step 3 — Deploy the exp container
@@ -563,7 +602,7 @@ curl -H "Authorization: Bearer $TOKEN" \
 
 ```mermaid
 sequenceDiagram
-    participant Caller as API / Website / CI
+    participant Caller as API / Website server
     participant EasyAuth as Azure Easy Auth (v2)
     participant Exp as exp.arolariu.ro
     participant Authz as security/authz.py
@@ -600,8 +639,8 @@ sequenceDiagram
 | **security/authz.py** | Caller-to-target mapping via `EXP_CALLER_*_IDS` env vars | `403` — caller known but not authorized for this target |
 
 This double gate means even if a UAMI is in the `allowedPrincipals` Bicep list, it still needs to be in the correct `EXP_CALLER_*_IDS` env
-var to access target-scoped config. The Infrastructure UAMI is merged into both `api` and `website` targets so CI/CD pipelines can fetch
-config for any target.
+var to access target-scoped config. The Infrastructure UAMI is merged into both `api` and `website` targets, so infrastructure tooling can
+fetch config for any target (no workflow does so today).
 
 ### Excluded paths
 
@@ -714,6 +753,8 @@ flowchart TD
 
 - Local Docker mode exports traces and metrics to the container console.
 - Azure mode exports traces, metrics, and logs directly to Azure Monitor / Application Insights.
+- When `OTEL_EXPORTER_OTLP_ENDPOINT` is set (Aspire sets it to the dashboard endpoint), traces, metrics, and logs are also exported via
+  OTLP/HTTP to that endpoint.
 - Azure exporters use `APPLICATIONINSIGHTS_CONNECTION_STRING` plus `DefaultAzureCredential`, honoring `AZURE_CLIENT_ID` when a user-assigned
   managed identity is configured.
 - Python logs stay correlated with the active trace/span IDs.
@@ -743,6 +784,12 @@ flowchart LR
         AzureLogs[Azure Monitor log exporter]
     end
 
+    subgraph Otlp[OTLP endpoint when configured]
+        OtlpTraces[OTLP span exporter]
+        OtlpMetrics[OTLP metric exporter]
+        OtlpLogs[OTLP log exporter]
+    end
+
     HttpSpan --> ConsoleTraces
     Meter --> ConsoleMetrics
     Logs --> ConsoleLogs
@@ -750,57 +797,79 @@ flowchart LR
     HttpSpan --> AzureTraces
     Meter --> AzureMetrics
     Logs --> AzureLogs
+
+    HttpSpan --> OtlpTraces
+    Meter --> OtlpMetrics
+    Logs --> OtlpLogs
 ```
 
 ## Environment variables
 
-### Application settings (set by exp code)
+### Application settings (read by exp code)
 
-| Name                                  | Required   | Description                                                                                                                                            |
-| ------------------------------------- | ---------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `INFRA`                               | Yes        | `azure`, `local`, or `proxy`                                                                                                                           |
-| `AZURE_APPCONFIG_ENDPOINT`            | Azure only | Azure App Configuration endpoint (e.g., `https://<name>.azconfig.io`)                                                                                  |
-| `AZURE_CLIENT_ID`                     | Azure only | User-assigned managed identity client ID for App Config + Key Vault access                                                                             |
-| `EXP_CALLER_API_IDS`                  | Azure only | Comma-separated principal IDs allowed as `api` target                                                                                                  |
-| `EXP_CALLER_WEBSITE_IDS`              | Azure only | Comma-separated principal IDs allowed as `website` target                                                                                              |
-| `EXP_CALLER_INFRA_IDS`                | Azure only | Comma-separated principal IDs for Infrastructure UAMI (merged into both targets). Alternative: append the infra ID to both `API_IDS` and `WEBSITE_IDS` |
-| `EXP_CONFIG_REFRESH_INTERVAL_SECONDS` | Optional   | Snapshot refresh interval in seconds (default: 300, minimum: 60)                                                                                       |
-| `EXP_LOCAL_SHARED_TOKEN`              | Optional   | Shared token for local/proxy mode                                                                                                                      |
-| `EXP_LOCAL_CONFIG_PATH`               | Optional   | Absolute path to alternate local config JSON                                                                                                           |
-| `EXP_ENVIRONMENT`                     | Optional   | Azure App Configuration label selector (`DEVELOPMENT` or `PRODUCTION`)                                                                                 |
+| Name                                  | Required       | Description                                                                                                                                                                                                                                                                                                        |
+| ------------------------------------- | -------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `INFRA`                               | Yes            | `azure`, `local`, or `proxy`                                                                                                                                                                                                                                                                                       |
+| `AZURE_APPCONFIG_ENDPOINT`            | Azure only     | Azure App Configuration endpoint (e.g., `https://<name>.azconfig.io`)                                                                                                                                                                                                                                              |
+| `AZURE_CLIENT_ID`                     | Azure only     | User-assigned managed identity client ID for App Config + Key Vault access                                                                                                                                                                                                                                         |
+| `EXP_CALLER_API_IDS`                  | Azure only     | Comma-separated principal IDs allowed as `api` target                                                                                                                                                                                                                                                              |
+| `EXP_CALLER_WEBSITE_IDS`              | Azure only     | Comma-separated principal IDs allowed as `website` target                                                                                                                                                                                                                                                          |
+| `EXP_CALLER_INFRA_IDS`                | Azure only     | Comma-separated principal IDs for Infrastructure UAMI (merged into both targets). Alternative: append the infra ID to both `API_IDS` and `WEBSITE_IDS`                                                                                                                                                             |
+| `EXP_CONFIG_REFRESH_INTERVAL_SECONDS` | Optional       | Snapshot refresh interval in seconds (default `300`; `0` disables automatic refresh; invalid or negative values fall back to `300`)                                                                                                                                                                                |
+| `EXP_LOCAL_SHARED_TOKEN`              | Optional       | Shared token for local/proxy mode                                                                                                                                                                                                                                                                                  |
+| `EXP_LOCAL_CONFIG_PATH`               | Optional       | Path (absolute, or relative to the working directory) to an alternate local config JSON (Aspire: `config.aspire.json`; selfhost: `/app/config.docker.json`)                                                                                                                                                        |
+| `EXP_ENVIRONMENT`                     | Optional       | Azure App Configuration label for the default snapshot (requests without an honored `label`): `Production` (exact case) selects `PRODUCTION`; any other value, or unset, selects `DEVELOPMENT`. Falls back to `AZURE_FUNCTIONS_ENVIRONMENT`, then `ENVIRONMENT`. Also used as the telemetry deployment environment |
+| `EXP_ENTRA_APP_CLIENT_ID`             | Azure admin UI | Entra ID app registration client ID used by the `/admin` sign-in; falls back to `MICROSOFT_PROVIDER_AUTHENTICATION_CLIENT_ID`                                                                                                                                                                                      |
+| `AZURE_TENANT_ID`                     | Azure admin UI | Tenant ID for the `/admin` tenant check; falls back to `WEBSITE_AUTH_AAD_ALLOWED_TENANTS`                                                                                                                                                                                                                          |
+| `COMMIT_SHA` / `EXP_SERVICE_VERSION`  | Optional       | Telemetry `service.version` (defaults to the `pyproject.toml` version); `COMMIT_SHA` is also shown on the `/admin` page                                                                                                                                                                                            |
 
 ### Telemetry settings
 
-| Name                                      | Required        | Description                                                                                          |
-| ----------------------------------------- | --------------- | ---------------------------------------------------------------------------------------------------- |
-| `APPLICATIONINSIGHTS_CONNECTION_STRING`   | Azure telemetry | Application Insights connection string for Azure Monitor OTel exporters                              |
-| `EXP_OTEL_ENABLED`                        | Optional        | Enables or disables OpenTelemetry bootstrap (defaults to `true`)                                     |
-| `EXP_OTEL_EXCLUDED_URLS`                  | Optional        | Comma-delimited request-path regexes excluded from FastAPI tracing                                   |
-| `EXP_OTEL_TRACE_SAMPLE_RATIO`             | Optional        | Trace sampling ratio between `0.0` and `1.0`                                                         |
-| `EXP_OTEL_METRIC_EXPORT_INTERVAL_SECONDS` | Optional        | Export cadence for console/Azure metric readers                                                      |
-| `EXP_OTEL_LOG_LEVEL`                      | Optional        | Root Python log level used when telemetry bootstraps logging correlation                             |
-| `EXP_OTEL_CONSOLE_TRACE_EXPORT_ENABLED`   | Optional        | Enables local console trace export; defaults to `true` outside Azure                                 |
-| `EXP_OTEL_CONSOLE_METRIC_EXPORT_ENABLED`  | Optional        | Enables local console metric export; defaults to `true` outside Azure                                |
-| `EXP_OTEL_CONSOLE_LOG_EXPORT_ENABLED`     | Optional        | Enables OTel log export to the local console; defaults to `false` to avoid duplicate local log lines |
+| Name                                      | Required        | Description                                                                                                                                                |
+| ----------------------------------------- | --------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `APPLICATIONINSIGHTS_CONNECTION_STRING`   | Azure telemetry | Application Insights connection string for Azure Monitor OTel exporters                                                                                    |
+| `EXP_OTEL_ENABLED`                        | Optional        | Enables or disables OpenTelemetry bootstrap (defaults to `true`)                                                                                           |
+| `EXP_OTEL_EXCLUDED_URLS`                  | Optional        | Comma-delimited request-path regexes excluded from FastAPI tracing                                                                                         |
+| `EXP_OTEL_TRACE_SAMPLE_RATIO`             | Optional        | Trace sampling ratio between `0.0` and `1.0`                                                                                                               |
+| `EXP_OTEL_METRIC_EXPORT_INTERVAL_SECONDS` | Optional        | Export cadence for console/Azure metric readers                                                                                                            |
+| `EXP_OTEL_LOG_LEVEL`                      | Optional        | Root Python log level used when telemetry bootstraps logging correlation                                                                                   |
+| `EXP_OTEL_CONSOLE_TRACE_EXPORT_ENABLED`   | Optional        | Enables local console trace export; defaults to `true` outside Azure                                                                                       |
+| `EXP_OTEL_CONSOLE_METRIC_EXPORT_ENABLED`  | Optional        | Enables local console metric export; defaults to `true` outside Azure                                                                                      |
+| `EXP_OTEL_CONSOLE_LOG_EXPORT_ENABLED`     | Optional        | Enables OTel log export to the local console; defaults to `false` to avoid duplicate local log lines                                                       |
+| `OTEL_EXPORTER_OTLP_ENDPOINT`             | Optional        | Enables OTLP/HTTP export of traces, metrics, and logs to this endpoint (Aspire sets it to the dashboard)                                                   |
+| `OTEL_SUPPRESS_HEALTH_TELEMETRY`          | Optional        | Keeps `/health`, `/api/health`, and `/api/ready` probe traffic out of request logs, traces, and HTTP metrics. Enabled when unset; only `false` disables it |
 
 ### Azure platform settings (managed by App Service / Easy Auth)
 
-These are set automatically by the Azure platform or via portal configuration — **not** consumed by exp code directly:
+These are set automatically by the Azure platform or via portal configuration and are **not** consumed by exp code directly, except where
+noted:
 
-| Name                                         | Purpose                                                                  |
-| -------------------------------------------- | ------------------------------------------------------------------------ |
-| `DOCKER_REGISTRY_SERVER_URL`                 | ACR endpoint for container image pull (e.g., `https://<acr>.azurecr.io`) |
-| `DOCKER_REGISTRY_SERVER_USERNAME`            | ACR pull credential username                                             |
-| `DOCKER_REGISTRY_SERVER_PASSWORD`            | ACR pull credential password                                             |
-| `MICROSOFT_PROVIDER_AUTHENTICATION_SECRET`   | Easy Auth v2 app registration client secret                              |
-| `WEBSITE_AUTH_AAD_ALLOWED_TENANTS`           | Entra ID tenant restriction for Easy Auth                                |
-| `WEBSITES_ENABLE_APP_SERVICE_STORAGE`        | Persistent storage mount (`false` — exp is stateless)                    |
-| `ApplicationInsightsAgent_EXTENSION_VERSION` | App Insights agent version (`~3`)                                        |
-| `XDT_MicrosoftApplicationInsights_Mode`      | App Insights instrumentation mode (`Recommended`)                        |
+| Name                                         | Purpose                                                                                                            |
+| -------------------------------------------- | ------------------------------------------------------------------------------------------------------------------ |
+| `DOCKER_REGISTRY_SERVER_URL`                 | ACR endpoint for container image pull (e.g., `https://<acr>.azurecr.io`)                                           |
+| `DOCKER_REGISTRY_SERVER_USERNAME`            | ACR pull credential username                                                                                       |
+| `DOCKER_REGISTRY_SERVER_PASSWORD`            | ACR pull credential password                                                                                       |
+| `MICROSOFT_PROVIDER_AUTHENTICATION_SECRET`   | Easy Auth v2 app registration client secret                                                                        |
+| `WEBSITE_AUTH_AAD_ALLOWED_TENANTS`           | Entra ID tenant restriction for Easy Auth; `api/admin.py` also reads it as the fallback tenant for the admin check |
+| `WEBSITES_ENABLE_APP_SERVICE_STORAGE`        | Persistent storage mount (`false` — exp is stateless)                                                              |
+| `ApplicationInsightsAgent_EXTENSION_VERSION` | App Insights agent version (`~3`)                                                                                  |
+| `XDT_MicrosoftApplicationInsights_Mode`      | App Insights instrumentation mode (`Recommended`)                                                                  |
 
 ## Local development
 
 ### Run with Docker Compose
+
+Aspire is the default local mode: `npm run dev -- --engine rancher` (or `--engine podman`) runs exp natively on `http://localhost:5002` with
+`INFRA=local` and a `config.aspire.json` generated from `config.docker.json`. For container parity, use
+`npm run dev:selfhost -- --engine rancher` (or `--engine podman`). See the [local-environment runbook](../../infra/Local/readme.md).
+
+Both modes read the gitignored `config.docker.json`. Create it from the template and fill in your values first:
+
+```powershell
+cp sites/exp.arolariu.ro/config.template.json sites/exp.arolariu.ro/config.docker.json
+```
+
+To start only the exp container:
 
 ```powershell
 docker network create arolariu-network
@@ -820,16 +889,24 @@ Invoke-WebRequest -Uri "http://localhost:5002/api/v1/run-time?for=website" -Head
 ### Run tests
 
 ```powershell
+cd sites/exp.arolariu.ro
 python -m pytest -q
 python -m ruff check .
 ```
+
+From the repository root, `npm run test:exp` (installs `requirements-dev.txt`, then runs pytest) and `npm run lint:exp` (runs `ruff check`)
+cover the same checks.
 
 ### Run directly
 
 ```powershell
 cd sites/exp.arolariu.ro
+$env:INFRA = "local"
 python -m uvicorn main:app --host 0.0.0.0 --port 5002
 ```
+
+On POSIX shells, use `INFRA=local python -m uvicorn main:app --host 0.0.0.0 --port 5002`. Without `INFRA`, every `/api/v1/*` request returns
+`500`. From the repository root, `npm run dev:exp` sets `INFRA=local` and starts exp with reload on port 5002.
 
 Local console exporters are enabled by default for traces and metrics. If you also want OpenTelemetry log records printed in addition to the
 normal container logs, set `EXP_OTEL_CONSOLE_LOG_EXPORT_ENABLED=true`.
