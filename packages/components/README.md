@@ -17,7 +17,7 @@
 _A comprehensive collection of React components built on [Base UI](https://base-ui.com/) primitives, styled with CSS Modules, and designed
 for modern applications that demand both beauty and performance._
 
-[🚀 Get Started](#-quick-start) • [📖 Documentation](#-component-catalog) • 🎨 Storybook demos (Coming soon) •
+[🚀 Get Started](#-quick-start) • [📖 Documentation](#-component-catalog) • 🎨 Hosted Storybook demos (Coming soon) •
 [💡 Examples](#-usage-examples) • [🤝 Contributing](#-contributing)
 
 </div>
@@ -118,7 +118,7 @@ Get up and running with @arolariu/components in under 2 minutes.
 npm install @arolariu/components
 
 # Peer dependencies (install if not already in your project)
-npm install react@^19 react-dom@^19 @base-ui/react@^1.9 motion react-hook-form recharts
+npm install react@^19 react-dom@^19 @base-ui/react@^1.9 "motion@^13 || ^14" react-hook-form@^7 recharts@^3.8
 ```
 
 ### Basic Setup
@@ -235,13 +235,13 @@ Explore representative components below. The live public inventory is owned by `
 
 ### 📊 Data Display
 
-| Component    | Description                            | Import                          |
-| ------------ | -------------------------------------- | ------------------------------- |
-| **Table**    | Data tables with sorting/pagination    | `@arolariu/components/table`    |
-| **Calendar** | Date selection and navigation          | `@arolariu/components/calendar` |
-| **Avatar**   | User profile pictures and placeholders | `@arolariu/components/avatar`   |
-| **Badge**    | Status indicators and labels           | `@arolariu/components/badge`    |
-| **Chart**    | Data visualization components          | `@arolariu/components/chart`    |
+| Component    | Description                                            | Import                          |
+| ------------ | ------------------------------------------------------ | ------------------------------- |
+| **Table**    | Semantic table parts in a keyboard-scrollable viewport | `@arolariu/components/table`    |
+| **Calendar** | Date selection and navigation                          | `@arolariu/components/calendar` |
+| **Avatar**   | User profile pictures and placeholders                 | `@arolariu/components/avatar`   |
+| **Badge**    | Status indicators and labels                           | `@arolariu/components/badge`    |
+| **Chart**    | Data visualization components                          | `@arolariu/components/chart`    |
 
 Version 3 also adds the `NativeSelect`, `Attachment`, `Bubble`, `Marker` and `Message` families and exposes Base UI's direction context.
 These are domain-independent native/composed display APIs, not upload controls or an AI/chat SDK. Callers supply text, data and policy.
@@ -284,13 +284,15 @@ that region).
 | **FireworksBackground** | Particle explosion effects      | `@arolariu/components/fireworks-background` |
 | **GradientBackground**  | Dynamic gradient animations     | `@arolariu/components/gradient-background`  |
 
-**Storybook demos:** Coming soon.
+**Storybook demos:** Hosted demos are coming soon. To browse the stories locally, run `npm run storybook` in `packages/components`
+(Storybook serves on port 6006).
 
 ---
 
 ## 🔄 Migrating from v0.x
 
-- `@radix-ui/*` has been replaced internally with `@base-ui/react`; this is automatic and does not require consumer changes.
+- `@radix-ui/*` was replaced by `@base-ui/react`, which is a peer dependency (`^1.9`); install it alongside the package (see
+  [Installation](#installation)).
 - `tailwindcss` is no longer a peer dependency.
 - `asChild` is removed. Compose with `render` and preserve the primitive's DOM props/ref.
 - The former `sonner` wrapper is removed; use the current `@arolariu/components/toast` surface.
@@ -316,7 +318,8 @@ that region).
 - Components that own visual presentation use a colocated **CSS Module** such as `button.module.css`; style-free composition primitives may
   omit one
 - `className` remains the public extension point for consumer overrides
-- Base UI state attributes such as `[data-open]`, `[data-disabled]`, `[data-checked]`, and `[data-selected]` drive stateful styling
+- Base UI state attributes such as `[data-popup-open]`, `[data-panel-open]`, `[data-starting-style]`/`[data-ending-style]`,
+  `[data-disabled]`, `[data-checked]`, and `[data-selected]` drive stateful styling
 - `cn()` now uses **`clsx` only** for predictable class composition
 
 ### Theming
@@ -727,11 +730,7 @@ npm run build:components
 
 ### Bundle Information
 
-```bash
-# Package size analysis
-npm install @arolariu/components
-npx bundlephobia @arolariu/components
-```
+Package size analysis: see [Bundlephobia](https://bundlephobia.com/package/@arolariu/components).
 
 **Key Stats**
 
@@ -744,13 +743,17 @@ npx bundlephobia @arolariu/components
 
 ### Dependencies
 
-Core runtime dependencies include:
+Peer dependencies, installed by your app (ranges in [Installation](#installation)):
 
+- **react** and **react-dom**
 - **@base-ui/react** - Accessible component primitives in a single package
+- **motion** - Animation library
+- **react-hook-form** and **recharts** - Form and chart integrations
+
+Runtime dependencies installed with the package:
+
 - **clsx** - Class name composition used by `cn()`
 - **lucide-react** - Icon set
-- **motion** - Animation library
-- **react-hook-form** and **recharts** - Form and chart peer integrations
 - **embla-carousel-react**, **react-day-picker**, **input-otp**, and **react-resizable-panels** - Specialized UI integrations
 
 Removed from the current Base UI architecture:

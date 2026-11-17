@@ -381,7 +381,8 @@ const buttonProps: ButtonProps = {
 
 ```bash
 npm install --save-dev webpack-bundle-analyzer
-npx webpack-bundle-analyzer build/static/js/*.js
+# Pass a webpack stats JSON file, not the emitted .js chunks
+npx webpack-bundle-analyzer path/to/stats.json
 ```
 
 #### Import Cost Analysis
@@ -493,7 +494,7 @@ import {Button} from "@arolariu/components/button";
 
 ```bash
 # Check if source maps are present
-ls node_modules/@arolariu/components/dist/**/*.map
+find node_modules/@arolariu/components/dist -name '*.map'
 
 # Validate source map content
 cat node_modules/@arolariu/components/dist/components/ui/button.js.map

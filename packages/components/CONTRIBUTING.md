@@ -46,9 +46,13 @@ cd packages/components
 ### Useful Commands
 
 ```bash
-npm run build
-npm run test
-npm run build:clean
+npm run build                                          # build dist/ and regenerate the package.json exports
+npm run test                                           # build, pack, and run the full suite against the packed archive
+npm run test:unit -- <files> --coverage.enabled=false  # fast source-only test loop
+npm run storybook                                      # local Storybook on port 6006
+npm run build-storybook                                # static Storybook build
+npm run build:exports                                  # regenerate the package.json exports only
+npm run build:clean                                    # remove dist/
 ```
 
 ---
@@ -82,16 +86,20 @@ Canonical component file structure:
 ```text
 src/components/ui/
   component.tsx          ← Component implementation
-  component.module.css   ← Scoped styles
+  component.module.css   ← Scoped styles (when the component owns visual styling)
   component.test.tsx     ← Unit tests
+  component.stories.tsx  ← Storybook stories
 ```
 
 When adding a new public component:
 
 1. Create the implementation in `src/components/ui/`.
-2. Create a colocated CSS Module.
+2. Create a colocated CSS Module when the component owns visual styling.
 3. Create a colocated test file.
-4. Export the public API from `src/index.ts`.
+4. Create a colocated `component.stories.tsx`.
+5. Export the public API from `src/index.ts`.
+6. Run `npm run build` (or `npm run build:exports`) and commit the regenerated `package.json` `exports` entry that provides the
+   `@arolariu/components/<name>` subpath.
 
 ---
 
@@ -147,11 +155,14 @@ export interface ComponentProps extends useRender.ComponentProps<"div", Componen
 
 // 3. Implement with useRender
 function Component(props: Component.Props) {
-  const { render, className, children, ...otherProps } = props;
-  return useRender({
+  const { ref, render, className, ...otherProps } = props;
+  const state: ComponentState = { ... };
+  return useRender<ComponentState, HTMLDivElement>({
     defaultTagName: "div",
+    ref,
     render,
-    props: mergeProps({ className: cn(styles.root, className) }, otherProps, { children }),
+    state,
+    props: mergeProps<"div">({ className: cn(styles.root, className) }, otherProps),
   });
 }
 Component.displayName = "Component";
@@ -165,7 +176,8 @@ export namespace Component {
 
 ### Implementation Notes
 
-- Import `useRender` and `mergeProps` from `@base-ui/react`.
+- Import `useRender` from `@base-ui/react/use-render` and `mergeProps` from `@base-ui/react/merge-props`.
+- Pass `ref` and the render `state` to `useRender` as options, as `src/components/ui/badge.tsx` does.
 - Merge consumer `className` values with module classes via `cn`.
 - Set a stable `displayName`.
 - Add the `Component` namespace with `State` and `Props` aliases for the public typing pattern used in this package.
@@ -183,8 +195,10 @@ as:
 That usually means:
 
 1. render the Base UI primitive
-2. pass the wrapper styles through the primitive's `render` prop
-3. merge consumer props with `mergeProps`
+2. pass the wrapper class through the primitive's `className`; use the state-callback form
+   (`(state) => cn(styles.root, typeof className === "function" ? className(state) : className)`) when the consumer `className` may be a
+   function
+3. forward the consumer's `render` and spread the remaining props onto the primitive
 4. preserve Base UI state and accessibility behavior
 
 ### Canonical React 19 APIs
@@ -447,13 +461,25 @@ Before opening a pull request, verify that you have:
 - [ ] followed the Base UI + CSS Modules architecture
 - [ ] added or updated JSDoc for public APIs
 - [ ] added `component.test.tsx`
+- [ ] added `component.stories.tsx`
 - [ ] covered smoke, ref, className, interaction, and accessibility cases
 - [ ] used `--ac-*` tokens from `src/index.css`
 - [ ] styled component states with `data-*` attributes where applicable
 - [ ] wrapped hover styles in `@media (hover: hover)`
 - [ ] used `color-mix(in oklch, ...)` when deriving dynamic colors
 - [ ] exported the component from `src/index.ts`
+- [ ] regenerated and committed the `package.json` `exports`
 - [ ] confirmed the package builds and tests pass
+
+---
+
+## Releasing
+
+The [`official-components-publish`](../../.github/workflows/official-components-publish.yml) workflow publishes the version in
+`package.json` to npm. It runs on a manual `workflow_dispatch` (inputs: `dry-run` and the npm dist `tag`, default `latest`) or when a
+`components-v*` tag is pushed. It fails if that version is already published, and it builds, tests and dry-run packs the package before
+`npm publish --provenance` (or `npm publish --dry-run` when `dry-run` is set). Notable changes are recorded in
+[CHANGELOG.md](./CHANGELOG.md).
 
 ---
 
