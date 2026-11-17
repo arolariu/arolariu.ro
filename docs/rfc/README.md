@@ -10,7 +10,8 @@ options considered, and what landed.
    - `0xxx` — process / CI / governance
    - `1xxx` — frontend
    - `2xxx` — backend
-2. Fill in `Status`, `Context`, `Decision`, `Consequences`.
+2. Fill in the template's header fields (`Status`, `Date`, `Authors`, `Related Components`) and its sections (`Abstract`, `Motivation`,
+   `Technical Design`, `Trade-offs and Alternatives`, and the remaining numbered sections).
 3. Open a PR against `main`. Update any documentation-site pointer/index owned by the docs project; do not create an independently
    maintained RFC copy.
 
