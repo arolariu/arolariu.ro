@@ -5,17 +5,19 @@ without copying a volatile event-by-event inventory.
 
 ## Live owners
 
-| Area                           | Source owner                                                             |
-| ------------------------------ | ------------------------------------------------------------------------ |
-| Common configuration/telemetry | `sites/api.arolariu.ro/src/Common/**/Log.cs` and logging extension files |
-| Core host/middleware/health    | `sites/api.arolariu.ro/src/Core/**/Log.cs`                               |
-| Core.Auth                      | `sites/api.arolariu.ro/src/Core.Auth/**/Log.cs`                          |
-| Invoices                       | `sites/api.arolariu.ro/src/Invoices/Modules/Log.cs`                      |
+| Area                           | Source owner                                        | Identifier families                        |
+| ------------------------------ | --------------------------------------------------- | ------------------------------------------ |
+| Common configuration/telemetry | `sites/api.arolariu.ro/src/Common/Log.cs`           | `0`–`2`, `410_1xx`, `410_2xx`              |
+| Core host/middleware/health    | `sites/api.arolariu.ro/src/Core/Log.cs`             | `500_1xx`–`500_3xx`                        |
+| Core.Auth                      | `sites/api.arolariu.ro/src/Core.Auth/Log.cs`        | `600_1xx`–`600_3xx`                        |
+| Invoices                       | `sites/api.arolariu.ro/src/Invoices/Modules/Log.cs` | `100_xxx`–`600_xxx`, `900_xxx` (see below) |
 
-Search those declarations before assigning a new identifier:
+Declarations use both the positional form (`[LoggerMessage(600_100, LogLevel.Debug, "...")]`, occasionally split so the identifier sits on
+the next line) and the named form (`EventId = 600_100,` on the line after `[LoggerMessage(`). List every declaration with its following line
+before assigning a new identifier:
 
-```text
-[LoggerMessage(<event-id>, <level>, "<message template>")]
+```bash
+git grep -n -A1 "LoggerMessage(" -- 'sites/api.arolariu.ro/src/*.cs'
 ```
 
 Do not choose an identifier from this document alone.
@@ -24,18 +26,31 @@ Do not choose an identifier from this document alone.
 
 The Invoices log module groups established families by broad role:
 
-| Prefix family | Current use                                            |
-| ------------- | ------------------------------------------------------ |
-| `100_xxx`     | Foundation/capability failures                         |
-| `200_xxx`     | Orchestration failures                                 |
-| `300_xxx`     | Processing, worker, queue, and durable-analysis events |
-| `400_xxx`     | Classifier/generative-provider events                  |
-| `500_xxx`     | Management classification                              |
-| `600_xxx`     | Provider call lifecycle                                |
-| `900_xxx`     | Shared validation warnings                             |
+| Prefix family | Current use                                                        |
+| ------------- | ------------------------------------------------------------------ |
+| `100_xxx`     | Foundation/capability failures                                     |
+| `200_xxx`     | Orchestration failures                                             |
+| `300_xxx`     | Processing, worker, queue, and durable-analysis events             |
+| `400_xxx`     | Classifier/generative-provider events (declared; currently unused) |
+| `500_xxx`     | Management classification                                          |
+| `600_xxx`     | Provider call lifecycle                                            |
+| `900_xxx`     | Shared validation warnings (declared; currently unused)            |
 
 These are conventions observed in the live module, not reserved global numeric ranges. Confirm uniqueness across all compiled
 `[LoggerMessage]` declarations before adding an event.
+
+### Known collisions
+
+Some live identifiers are already declared more than once:
+
+- `600_100` and `600_101` are shared by Core.Auth (`LogUserLoggedOut`, `LogLogoutFailed`) and Invoices (`LogStructuredGenerationStarted`,
+  `LogQueueOperationStarted`). Both declarations in each pair have live call sites.
+- `500_100`–`500_103` are declared in both `src/Core/Log.cs` and `src/Invoices/Modules/Log.cs`. The Core declarations currently have no call
+  sites.
+- `src/Common/Log.cs:29` declares `LogOptionValueIsCompletelyMissing` with event ID `0`, the same ID used by log calls that do not specify
+  one.
+
+Do not copy these collisions when adding events. Renumbering any of them is an observable contract change (see below).
 
 ## Adding or changing an event
 
