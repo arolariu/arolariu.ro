@@ -4,6 +4,12 @@
 
 This guide provides practical examples for implementing OpenTelemetry tracing, logging, and metrics in the Next.js frontend.
 
+Every telemetry helper in this guide is exported from the server-only module `sites/arolariu.ro/src/instrumentation.server.ts` (imported as
+`@/instrumentation.server`), so Client Components cannot import them. The snippets are illustrative: business functions, types, and routes
+such as `InvoiceData`, `saveInvoice`, and `/api/invoices` are placeholders. For live usage, see the invoice Server Actions in
+`sites/arolariu.ro/src/app/domains/invoices/_actions/invoices/` and `sites/arolariu.ro/src/app/api/user/route.ts`, which combines spans,
+metrics, and logs.
+
 ## Quick Start
 
 ### 1. Import Telemetry Functions
@@ -34,12 +40,12 @@ import {withSpan} from "@/instrumentation.server";
 export async function processInvoice(invoiceId: string) {
   return withSpan("business.invoice.process", async (span) => {
     // Operation name follows convention: category.subcategory.action
-    // Categories: http.server, http.client, db, cache, api, component, page, auth, business
+    // Categories: http.server, http.client, db, cache, api, component, page, auth, validation, business
 
-    const invoice = await fetchInvoice(invoiceId);
-    const result = await analyzeInvoice(invoice);
+    const invoice = await fetchInvoice({invoiceId});
+    if (!invoice.success) return invoice;
 
-    return result;
+    return analyzeInvoice({invoiceIdentifier: invoiceId, profile: "balanced"});
   });
 }
 ```
@@ -136,23 +142,24 @@ export async function deleteInvoice(invoiceId: string) {
 
 ```typescript
 import {withSpan} from "@/instrumentation.server";
+import {notFound} from "next/navigation";
 
-export default async function InvoicePage({params}: {params: {id: string}}) {
+export default async function InvoicePage(props: Readonly<PageProps<"/domains/invoices/view-invoice/[id]">>) {
+  const {id} = await props.params;
+
   return withSpan("page.invoice.render", async (span) => {
     span.setAttributes({
-      "page.route": "/invoices/[id]",
-      "page.invoice_id": params.id,
+      "page.route": "/domains/invoices/view-invoice/[id]",
+      "page.invoice_id": id,
       "render.context": "server",
     });
 
-    const invoice = await fetchInvoice(params.id);
+    const result = await fetchInvoice({invoiceId: id});
+    if (!result.success) notFound();
 
-    span.setAttributes({
-      "invoice.loaded": true,
-      "invoice.merchant": invoice.merchantName,
-    });
+    span.setAttributes({"invoice.loaded": true});
 
-    return <InvoiceDetails invoice={invoice} />;
+    return <InvoiceDetails invoice={result.data} />;
   });
 }
 ```
@@ -161,71 +168,78 @@ export default async function InvoicePage({params}: {params: {id: string}}) {
 
 ```typescript
 import {withSpan, logWithTrace} from "@/instrumentation.server";
-import {NextRequest, NextResponse} from "next/server";
+import {NextResponse} from "next/server";
 
-export async function GET(request: NextRequest) {
+export async function GET() {
   return withSpan("http.server.invoice.get", async (span) => {
-    const {searchParams} = new URL(request.url);
-    const userId = searchParams.get("userId");
-
     span.setAttributes({
       "http.method": "GET",
       "http.route": "/api/invoices",
-      "user.id": userId ?? "anonymous",
     });
 
-    logWithTrace("info", "Fetching invoices", {userId}, "server");
+    logWithTrace("info", "Fetching invoices", undefined, "api");
 
-    const invoices = await fetchInvoices(userId);
+    // fetchInvoices() derives the caller's identity on the server, so no user ID is passed in.
+    const result = await fetchInvoices();
+    if (!result.success) return NextResponse.json({error: result.error.code}, {status: result.error.status ?? 500});
 
     span.setAttributes({
-      "invoice.count": invoices.length,
+      "invoice.count": result.data.length,
       "http.status_code": 200,
     });
 
-    logWithTrace("info", "Invoices fetched successfully", {count: invoices.length}, "server");
+    logWithTrace("info", "Invoices fetched successfully", {count: result.data.length}, "api");
 
-    return NextResponse.json(invoices);
+    return NextResponse.json(result.data);
   });
 }
 ```
 
 ### JWT Token Operations
 
+This mirrors the live `createJwtToken` in `sites/arolariu.ro/src/lib/utils.server.ts`:
+
 ```typescript
-import {withSpan, addSpanEvent, logWithTrace} from "@/instrumentation.server";
+import {addSpanEvent, logWithTrace, recordSpanError, withSpan} from "@/instrumentation.server";
+import {type JWTPayload, SignJWT} from "jose";
 
-export async function createJwtToken(payload: Record<string, any>, secret: string) {
+export async function createJwtToken(payload: Readonly<JWTPayload>, secret: Readonly<string>): Promise<Readonly<string>> {
   return withSpan("auth.jwt.create", async (span) => {
-    const startTime = Date.now();
+    try {
+      const startTime = Date.now();
 
-    span.setAttributes({
-      "jwt.algorithm": "HS256",
-      "jwt.subject": payload.sub ?? "unknown",
-      "jwt.issuer": payload.iss ?? "unknown",
-      "jwt.audience": payload.aud ?? "unknown",
-    });
+      span.setAttributes({
+        "jwt.algorithm": "HS256",
+        "jwt.subject": payload["sub"] ?? "unknown",
+        "jwt.issuer": payload["iss"] ?? "unknown",
+        "jwt.audience": payload["aud"] ?? "unknown",
+      });
 
-    addSpanEvent("jwt.signing.start");
-    logWithTrace("debug", "Creating JWT token", {subject: payload.sub}, "server");
+      addSpanEvent("jwt.signing.start");
+      logWithTrace("debug", "Creating JWT token", {subject: payload["sub"]}, "server");
 
-    const secretKey = new TextEncoder().encode(secret);
-    const jwt = await new SignJWT(payload).setProtectedHeader({alg: "HS256", typ: "JWT"}).setIssuedAt().sign(secretKey);
+      const secretKey = new TextEncoder().encode(secret);
+      const jwt = await new SignJWT(payload).setProtectedHeader({alg: "HS256", typ: "JWT"}).setIssuedAt().sign(secretKey);
 
-    const duration = Date.now() - startTime;
+      const duration = Date.now() - startTime;
+      addSpanEvent("jwt.signing.complete", {
+        "jwt.duration_ms": duration,
+      });
 
-    addSpanEvent("jwt.signing.complete", {
-      "jwt.duration_ms": duration,
-    });
+      span.setAttributes({
+        "jwt.created": true,
+        "jwt.duration_ms": duration,
+      });
 
-    span.setAttributes({
-      "jwt.created": true,
-      "jwt.duration_ms": duration,
-    });
+      logWithTrace("info", "JWT token created successfully", {subject: payload["sub"], duration}, "server");
 
-    logWithTrace("info", "JWT token created successfully", {subject: payload.sub, duration}, "server");
-
-    return jwt;
+      return jwt;
+    } catch (error) {
+      recordSpanError(error, "Failed to create JWT token");
+      const errorMessage = error instanceof Error ? error.message : "Failed to create JWT token";
+      logWithTrace("error", "JWT token creation failed", {error: errorMessage}, "server");
+      throw new Error(errorMessage, {cause: error});
+    }
   });
 }
 ```
@@ -234,11 +248,14 @@ export async function createJwtToken(payload: Record<string, any>, secret: strin
 
 ### Structured Logging with Trace Context
 
+`logWithTrace` writes each entry to the console as JSON with the active `traceId` and `spanId`. When an exporter is configured, it also
+emits the entry as an OpenTelemetry log record.
+
 ```typescript
 import {logWithTrace} from "@/instrumentation.server";
 
 // Log levels: debug, info, warn, error
-// Render contexts: server, client, edge
+// Render contexts: server, client, edge, api
 
 export async function processPayment(amount: number) {
   logWithTrace("info", "Processing payment", {amount, currency: "USD"}, "server");
@@ -263,6 +280,8 @@ export async function processPayment(amount: number) {
 ```
 
 ### Debug Logging
+
+`debug` entries are skipped when `NODE_ENV` is `production`.
 
 ```typescript
 import {logWithTrace} from "@/instrumentation.server";
@@ -293,7 +312,8 @@ export function validateInvoiceData(data: InvoiceData) {
 
 ## Semantic Attribute Helpers
 
-The telemetry system provides pre-built helpers for common attribute patterns:
+The telemetry module exports positional helpers for common attribute sets: `createHttpServerAttributes`, `createHttpClientAttributes`,
+`createNextJsAttributes`, `createDatabaseAttributes`, `createCacheAttributes`, `createAuthAttributes`, and `createErrorAttributes`.
 
 ### HTTP Server Attributes
 
@@ -302,10 +322,8 @@ import {withSpan, createHttpServerAttributes} from "@/instrumentation.server";
 
 export async function GET(request: NextRequest) {
   return withSpan("http.server.api.route", async (span) => {
-    const attributes = createHttpServerAttributes({
-      method: "GET",
+    const attributes = createHttpServerAttributes("GET", 200, {
       route: "/api/invoices",
-      statusCode: 200,
       userAgent: request.headers.get("user-agent") ?? undefined,
     });
 
@@ -323,11 +341,7 @@ import {withSpan, createHttpClientAttributes} from "@/instrumentation.server";
 
 export async function fetchExternalAPI() {
   return withSpan("http.client.external.api", async (span) => {
-    const attributes = createHttpClientAttributes({
-      method: "POST",
-      url: "https://api.example.com/data",
-      statusCode: 200,
-    });
+    const attributes = createHttpClientAttributes("POST", "https://api.example.com/data", 200);
 
     span.setAttributes(attributes);
 
@@ -347,12 +361,7 @@ import {withSpan, createDatabaseAttributes} from "@/instrumentation.server";
 
 export async function queryInvoices(userId: string) {
   return withSpan("db.query.invoices", async (span) => {
-    const attributes = createDatabaseAttributes({
-      system: "postgresql",
-      operation: "SELECT",
-      table: "invoices",
-      rowsAffected: 0, // Will update after query
-    });
+    const attributes = createDatabaseAttributes("postgresql", "SELECT", {collection: "invoices"});
 
     span.setAttributes(attributes);
 
@@ -374,11 +383,8 @@ import {withSpan, createCacheAttributes} from "@/instrumentation.server";
 
 export async function getCachedInvoice(invoiceId: string) {
   return withSpan("cache.get.invoice", async (span) => {
-    const attributes = createCacheAttributes({
-      operation: "get",
-      key: `invoice:${invoiceId}`,
-      hit: false, // Will update after check
-    });
+    // hit starts as false and is updated after the lookup
+    const attributes = createCacheAttributes("redis", "get", false, `invoice:${invoiceId}`);
 
     span.setAttributes(attributes);
 
@@ -400,11 +406,8 @@ import {withSpan, createAuthAttributes} from "@/instrumentation.server";
 
 export async function authenticateUser(token: string) {
   return withSpan("auth.verify", async (span) => {
-    const attributes = createAuthAttributes({
-      method: "jwt",
-      userId: undefined, // Will set after verification
-      success: false,
-    });
+    // Starts unauthenticated and is updated after verification
+    const attributes = createAuthAttributes(false, {method: "jwt"});
 
     span.setAttributes(attributes);
 
@@ -412,14 +415,13 @@ export async function authenticateUser(token: string) {
       const payload = await verifyToken(token);
 
       span.setAttributes({
+        "user.authenticated": true,
         "auth.user_id": payload.sub,
-        "auth.success": true,
       });
 
       return payload;
     } catch (error) {
       span.setAttributes({
-        "auth.success": false,
         "auth.error": error instanceof Error ? error.message : "Unknown error",
       });
       throw error;
@@ -428,21 +430,67 @@ export async function authenticateUser(token: string) {
 }
 ```
 
+## Metrics
+
+Create each instrument once at module scope with `createCounter`, `createHistogram`, or `createUpDownCounter`. Each takes
+`(name, description?, unit?)`, and `name` must be a `MetricName`: a dotted name that starts with `http.server`, `http.client`, `db`,
+`cache`, `api`, `user`, `page`, `component`, `business`, `website`, or `arolariu`. Instruments come from the `arolariu-website` meter, and
+metrics are exported every 60 seconds when an exporter is configured. Keep metric attributes bounded: the live example records the route and
+authentication method, never the user ID.
+
+From `src/app/api/user/route.ts`:
+
+```typescript
+import {
+  createAuthAttributes,
+  createCounter,
+  createHistogram,
+  createHttpServerAttributes,
+  createNextJsAttributes,
+} from "@/instrumentation.server";
+
+// Module scope: create each instrument once
+const userRequestCounter = createCounter("user.api.requests", "Total number of /api/user requests", "1");
+const requestDurationHistogram = createHistogram("api.user.duration", "Request duration in milliseconds", "ms");
+
+// Inside the handler
+userRequestCounter.add(1, {
+  ...createHttpServerAttributes("GET", 200, {route: "/api/user"}),
+  ...createNextJsAttributes("api", {runtime: "nodejs"}),
+});
+
+const duration = Date.now() - startTime;
+requestDurationHistogram.record(duration, {
+  ...createHttpServerAttributes("GET", 200, {route: "/api/user"}),
+  ...createAuthAttributes(true, {method: "clerk"}),
+});
+```
+
+## Trace Propagation
+
+Outbound requests made with `fetchWithTimeout` (`src/lib/utils.server.ts`) carry the active trace context. It calls
+`injectTraceContextHeaders`, which injects the W3C trace context (`traceparent`) and mirrors the trace ID to `X-Request-Id` when that header
+is absent. This links website spans to API spans; see the [Distributed Tracing Reference](../backend/distributed-tracing.md).
+`injectTraceContextHeaders(headers)` is exported for requests that bypass `fetchWithTimeout`. `getTraceparentHeader()` is a compatibility
+helper that production code no longer calls.
+
 ## Span Naming Conventions
 
 Follow these conventions for consistent tracing:
 
-| Category    | Pattern                      | Example                    |
-| ----------- | ---------------------------- | -------------------------- |
-| HTTP Server | `http.server.{route}`        | `http.server.invoice.get`  |
-| HTTP Client | `http.client.{service}`      | `http.client.external.api` |
-| Database    | `db.{operation}.{table}`     | `db.query.invoices`        |
-| Cache       | `cache.{operation}.{key}`    | `cache.get.invoice`        |
-| API         | `api.{resource}.{action}`    | `api.invoice.create`       |
-| Page        | `page.{route}.{action}`      | `page.invoice.render`      |
-| Component   | `component.{name}.{action}`  | `component.chart.render`   |
-| Auth        | `auth.{action}`              | `auth.jwt.create`          |
-| Business    | `business.{domain}.{action}` | `business.invoice.process` |
+| Category      | Pattern                       | Example                             |
+| ------------- | ----------------------------- | ----------------------------------- |
+| HTTP Server   | `http.server.{route}`         | `http.server.invoice.get`           |
+| HTTP Client   | `http.client.{service}`       | `http.client.external.api`          |
+| Database      | `db.{operation}.{table}`      | `db.query.invoices`                 |
+| Cache         | `cache.{operation}.{key}`     | `cache.get.invoice`                 |
+| API           | `api.{resource}.{action}`     | `api.invoice.create`                |
+| Server Action | `api.actions.{area}.{action}` | `api.actions.invoices.fetchInvoice` |
+| Page          | `page.{route}.{action}`       | `page.invoice.render`               |
+| Component     | `component.{name}.{action}`   | `component.chart.render`            |
+| Auth          | `auth.{action}`               | `auth.jwt.create`                   |
+| Validation    | `validation.{subject}`        | `validation.invoice.input`          |
+| Business      | `business.{domain}.{action}`  | `business.invoice.process`          |
 
 ## Best Practices
 
@@ -450,11 +498,7 @@ Follow these conventions for consistent tracing:
 
 ```typescript
 // ✅ Good - uses helper
-const attributes = createHttpServerAttributes({
-  method: "GET",
-  route: "/api/invoices",
-  statusCode: 200,
-});
+const attributes = createHttpServerAttributes("GET", 200, {route: "/api/invoices"});
 span.setAttributes(attributes);
 ```
 
@@ -463,9 +507,9 @@ span.setAttributes(attributes);
 ```typescript
 // ✅ Good - includes business metrics
 span.setAttributes({
-  "invoice.total_amount": invoice.totalAmount,
+  "invoice.total_amount": invoice.paymentInformation.totalCostAmount,
   "invoice.item_count": invoice.items.length,
-  "merchant.id": invoice.merchantId,
+  "merchant.id": invoice.merchantReference,
 });
 ```
 
@@ -541,18 +585,21 @@ return withSpan("business.calculate.total", async () => {
 
 **Check**:
 
-1. OpenTelemetry is initialized in `src/instrumentation.ts`
-2. Environment variable `OTEL_EXPORTER_OTLP_ENDPOINT` is set
-3. Exporter endpoint is reachable
+1. `register()` in `src/instrumentation.ts` calls `startTelemetry()` from `@/instrumentation.server` (Node.js runtime only)
+2. An exporter variable is set: `APPLICATIONINSIGHTS_CONNECTION_STRING` or `OTEL_EXPORTER_OTLP_ENDPOINT` (see
+   [Exporter Selection](#exporter-selection)); the startup log line that begins with `>>> 📡` names the selected exporter
+3. The selected destination is reachable
+4. The route is not a suppressed health path (`/health`, `/api/health`, or `/api/ready`)
 
 **Solution**:
 
 ```bash
 # Check environment
-echo $OTEL_EXPORTER_OTLP_ENDPOINT
+echo "$APPLICATIONINSIGHTS_CONNECTION_STRING"
+echo "$OTEL_EXPORTER_OTLP_ENDPOINT"
 
-# Test endpoint
-curl http://localhost:4318/v1/traces
+# Test the OTLP endpoint when using a local collector
+curl "$OTEL_EXPORTER_OTLP_ENDPOINT/v1/traces"
 ```
 
 ### Issue: Span Attributes Missing
@@ -563,7 +610,7 @@ curl http://localhost:4318/v1/traces
 
 ```typescript
 // ✅ Set attributes before span ends
-return withSpan("operation", async (span) => {
+return withSpan("business.example.operation", async (span) => {
   span.setAttributes({key: "value"}); // ← Before return
   return result;
 });
@@ -574,7 +621,8 @@ return withSpan("operation", async (span) => {
 **Solution**: Use sampling for high-traffic routes
 
 ```typescript
-// Configure in instrumentation.ts
+// No sampler is configured in code, so the SDK reads `OTEL_TRACES_SAMPLER` (default: parent-based always-on).
+// To sample in code, pass `sampler` to the `NodeSDK` in `src/instrumentation.server.ts`.
 import {TraceIdRatioBasedSampler} from "@opentelemetry/sdk-trace-node";
 
 const sdk = new NodeSDK({
@@ -584,44 +632,92 @@ const sdk = new NodeSDK({
 
 ## Configuration
 
-### Environment Variables
+### Exporter Selection
 
-```bash
-# Required
-OTEL_EXPORTER_OTLP_ENDPOINT=http://localhost:4318
+`createExporters()` in `src/instrumentation.server.ts` uses the first match:
 
-# Optional
-OTEL_SERVICE_NAME=arolariu.ro
-OTEL_LOG_LEVEL=info
-OTEL_TRACES_SAMPLER=always_on
-```
+| Order | Condition                                   | Exporters                                                                                                                                   |
+| ----- | ------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1     | `APPLICATIONINSIGHTS_CONNECTION_STRING` set | Azure Monitor trace, metric, and log exporters, authenticated with `DefaultAzureCredential`; `AZURE_CLIENT_ID` selects the managed identity |
+| 2     | `OTEL_EXPORTER_OTLP_ENDPOINT` set           | OTLP HTTP exporters at `{endpoint}/v1/traces`, `{endpoint}/v1/metrics`, and `{endpoint}/v1/logs`                                            |
+| 3     | Neither set                                 | None from `createExporters()`; `logWithTrace` writes to the console only (see the SDK fallback below)                                       |
+
+The code applies no default OTLP endpoint. Production sets `APPLICATIONINSIGHTS_CONNECTION_STRING` and `AZURE_CLIENT_ID` in
+`infra/Azure/Bicep/sites/arolariu-ro.bicep`.
+
+Case 3 is meant to disable export, and its startup log says so. However, the code then passes `NodeSDK` no trace exporter or metric reader,
+so the SDK applies its own environment defaults: with `OTEL_TRACES_EXPORTER` and `OTEL_METRICS_EXPORTER` unset, it still exports traces and
+metrics over OTLP (HTTP/protobuf) to `http://localhost:4318`, and they arrive only if a collector listens there. Setting both variables to
+`none` turns this fallback off; `OTEL_SDK_DISABLED=true`, which the container smoke test uses, disables the SDK entirely.
+
+Under Aspire, the AppHost's `AddNextJsApp` applies Aspire's default OTLP configuration, so case 2 applies: `OTEL_EXPORTER_OTLP_ENDPOINT` is
+the dashboard's gRPC endpoint (`https://localhost:21030` in `tooling/src/AppHost/Properties/launchSettings.json`) and
+`OTEL_EXPORTER_OTLP_PROTOCOL` is `grpc`, although these exporters always speak OTLP/HTTP. The exp service, by contrast, is pointed at the
+HTTP endpoint explicitly in `tooling/src/AppHost/Applications/Exp/ExpResources.cs`. Aspire also sets `OTEL_SERVICE_NAME` (the resource name,
+`website`), `OTEL_RESOURCE_ATTRIBUTES` (`service.instance.id`), and, in Development, `OTEL_TRACES_SAMPLER=always_on`.
+
+### Other Environment Variables
+
+| Variable                         | Effect                                                                                                                                                             |
+| -------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `COMMIT_SHA`                     | `service.version` resource attribute                                                                                                                               |
+| `HOSTNAME`                       | `service.instance.id` resource attribute; falls back to `node-<pid>`                                                                                               |
+| `SITE_ENV`                       | `deployment.environment` resource attribute                                                                                                                        |
+| `OTEL_SUPPRESS_HEALTH_TELEMETRY` | Health-path suppression (inbound and outbound spans for `/health`, `/api/health`, and `/api/ready`) is on by default; only `false` (case-insensitive) turns it off |
+
+`sites/arolariu.ro/next.config.ts` inlines `COMMIT_SHA` and `SITE_ENV` at build time through its `env` block. The service name and the
+remaining resource attributes are set in code: `service.name` is `arolariu-website`, `service.namespace` is `arolariu.ro`, `cloud.role` is
+`website`, and `cloud.provider` is `azure`.
+
+Repository code does not read `OTEL_SERVICE_NAME`, `OTEL_RESOURCE_ATTRIBUTES`, `OTEL_LOG_LEVEL`, or `OTEL_TRACES_SAMPLER`, but the
+OpenTelemetry `NodeSDK` does. Its environment resource detector lets `OTEL_SERVICE_NAME` and `OTEL_RESOURCE_ATTRIBUTES` override the
+code-defined resource attributes on traces and metrics; the separate log provider keeps the code values. `OTEL_LOG_LEVEL` enables the SDK's
+diagnostic console logger, and `OTEL_TRACES_SAMPLER` selects the sampler because none is configured in code.
 
 ### Instrumentation Setup
 
-Located in `src/instrumentation.ts`:
+`src/instrumentation.ts` starts the SDK for the Node.js runtime only, then loads runtime configuration:
 
 ```typescript
-export async function register() {
-  if (process.env.NEXT_RUNTIME === "nodejs") {
-    await import("./telemetry");
+export async function register(): Promise<void> {
+  // Initialize OpenTelemetry early in the application lifecycle
+  if (process.env["NEXT_RUNTIME"] === "nodejs") {
+    // Dynamic import to avoid bundling telemetry code in client bundles
+    const {startTelemetry} = await import("@/instrumentation.server");
+    startTelemetry();
+    console.log(">>> 🔭 OpenTelemetry has been initialized for the Node.js runtime!");
+
+    const {initializeRuntimeEnvironmentConfiguration} = await import("./lib/config/configProxy");
+    await initializeRuntimeEnvironmentConfiguration();
   }
+
+  console.log(">>> Instrumentation has been registered!");
 }
 ```
 
+The `NodeSDK` itself is configured in `src/instrumentation.server.ts`: Node.js auto-instrumentations with file-system instrumentation
+disabled, batched span export, and metric export every 60 seconds. `SIGTERM` and `SIGINT` handlers call `stopTelemetry()` to flush pending
+telemetry before the process exits.
+
 ## Quick Reference
 
-| Task           | Function                              | Example                                              |
-| -------------- | ------------------------------------- | ---------------------------------------------------- |
-| Create span    | `withSpan(name, fn)`                  | `withSpan("api.fetch", async (span) => {})`          |
-| Add attributes | `span.setAttributes({})`              | `span.setAttributes({"user.id": "123"})`             |
-| Add event      | `addSpanEvent(name, attrs?)`          | `addSpanEvent("cache.hit", {key: "invoice"})`        |
-| Record error   | `recordSpanError(error, msg)`         | `recordSpanError(err, "Failed")`                     |
-| Log with trace | `logWithTrace(level, msg, data, ctx)` | `logWithTrace("info", "Success", {id: 1}, "server")` |
+| Task                              | Function                                                                                             | Example                                                        |
+| --------------------------------- | ---------------------------------------------------------------------------------------------------- | -------------------------------------------------------------- |
+| Create span                       | `withSpan(name, fn, attributes?)`                                                                    | `withSpan("api.fetch", async (span) => {})`                    |
+| Add attributes                    | `span.setAttributes({})`                                                                             | `span.setAttributes({"user.id": "123"})`                       |
+| Add attributes to the active span | `setSpanAttributes(attributes)`                                                                      | `setSpanAttributes({"invoice.count": 3})`                      |
+| Add event                         | `addSpanEvent(name, attrs?)`                                                                         | `addSpanEvent("cache.hit", {key: "invoice"})`                  |
+| Record error                      | `recordSpanError(error, msg?)`                                                                       | `recordSpanError(err, "Failed")`                               |
+| Log with trace                    | `logWithTrace(level, msg, attrs?, ctx?)`                                                             | `logWithTrace("info", "Success", {id: 1}, "server")`           |
+| Build semantic attributes         | `createHttpServerAttributes(method, statusCode, options?)` and the other `create*Attributes` helpers | `createHttpServerAttributes("GET", 200, {route: "/api/user"})` |
+| Create a metric                   | `createCounter(name, description?, unit?)`, `createHistogram`, `createUpDownCounter`                 | `createCounter("user.api.requests", "Total requests", "1")`    |
+| Propagate trace context           | `injectTraceContextHeaders(headers)`                                                                 | `injectTraceContextHeaders(new Headers())`                     |
+| Get a tracer or meter             | `getTracer(name?)`, `getMeter(name?)`                                                                | `getMeter()` (defaults to `arolariu-website`)                  |
 
 ## Additional Resources
 
-- **RFC 1001**: Complete OpenTelemetry system documentation
-- **Telemetry Module**: `sites/arolariu.ro/src/telemetry.ts`
+- **[RFC 1001](../rfc/1001-opentelemetry-observability-system.md)**: Complete OpenTelemetry system documentation
+- **Telemetry Module**: `sites/arolariu.ro/src/instrumentation.server.ts`
 - **Instrumentation**: `sites/arolariu.ro/src/instrumentation.ts`
 - **OpenTelemetry Docs**: <https://opentelemetry.io/docs/languages/js/>
 - **Semantic Conventions**: <https://opentelemetry.io/docs/specs/semconv/>
