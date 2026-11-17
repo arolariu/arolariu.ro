@@ -17,16 +17,19 @@ The [native facade catalog](helpers/sdk/fixtures/public-entrypoints.json) is a t
 export maps. Facades preserve native values, types, overloads, defaults, errors, and sentinels; decorators add documented stricter behavior.
 See the [helper guide](helpers/README.md).
 
-| Area                                                          | Owner                                                   |
-| ------------------------------------------------------------- | ------------------------------------------------------- |
-| Native Actions APIs                                           | `helpers/sdk/`                                          |
-| Checked exec, Git, filesystem, HTTP, cache, artifacts, GitHub | Narrow helper modules                                   |
-| Serialized Newman/Playwright/Vitest/JUnit/TRX/ESLint decoding | `helpers/newman/`, `playwright/`, `vitest/`, `reports/` |
-| Context, clock, and Actions/local identity                    | `lib/context.ts`                                        |
-| Graph wire validation and affected selection                  | `lib/planning/`                                         |
-| Provider metadata, payloads, execution, outcomes, aggregation | `lib/hygiene/`                                          |
-| Independent required/optional publication                     | `lib/reporting/`                                        |
-| Live and unit report applications                             | `lib/live-tests/`, `lib/unit-tests/`                    |
+| Area                                                                                       | Owner                                                   |
+| ------------------------------------------------------------------------------------------ | ------------------------------------------------------- |
+| Native Actions APIs                                                                        | `helpers/sdk/`                                          |
+| Checked exec, Git, filesystem, HTTP, cache, artifacts, GitHub                              | Narrow helper modules                                   |
+| Serialized Newman/Playwright/Vitest/JUnit/TRX/ESLint decoding                              | `helpers/newman/`, `playwright/`, `vitest/`, `reports/` |
+| Context, clock, and Actions/local identity                                                 | `lib/context.ts`                                        |
+| Graph wire validation and affected selection                                               | `lib/planning/`                                         |
+| Provider metadata, payloads, execution, outcomes, aggregation                              | `lib/hygiene/`                                          |
+| Workflow suite normalization (JUnit/TRX/Vitest to suites and findings)                     | `lib/testing/`                                          |
+| Independent required/optional publication                                                  | `lib/reporting/`                                        |
+| Reporting policy constants (comment markers, report limits; other values are legacy hints) | `lib/workflow-constants.ts`                             |
+| Live and unit report applications                                                          | `lib/live-tests/`, `lib/unit-tests/`                    |
+| Compatible shared type re-exports                                                          | `types/`                                                |
 
 Importing either `runLiveTestAction.ts` or `runUnitTestAction.ts` does not run it. Their default functions retain the existing workflow
 invocation style:
