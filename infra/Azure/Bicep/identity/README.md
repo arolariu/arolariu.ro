@@ -3,13 +3,13 @@
 This module provisions managed identities, federated credentials, and security groups for secure, passwordless access and RBAC in the
 arolariu.ro platform.
 
-## 📋 Overview
+## 📋 **Overview**
 
 - User-assigned managed identities for frontend, backend, and infrastructure
 - Federated identity credentials for GitHub Actions (OIDC)
 - Security groups for JIT access (manual membership)
 
-## 📁 Module Files
+## 📁 **Module Files**
 
 | File                         | Purpose                                     |
 | ---------------------------- | ------------------------------------------- |
@@ -18,172 +18,92 @@ arolariu.ro platform.
 | `federatedCredentials.bicep` | GitHub Actions federated credentials (OIDC) |
 | `securityGroups.bicep`       | Security groups for JIT access              |
 
-## 🏗️ Resources Created
+## 🏗️ **Resources Created**
 
-| Resource Type                  | Name Pattern                | Purpose                           |
-| ------------------------------ | --------------------------- | --------------------------------- |
-| User Assigned Managed Identity | `{prefix}-frontend`         | Frontend applications access      |
-| User Assigned Managed Identity | `{prefix}-backend`          | Backend services access           |
-| User Assigned Managed Identity | `{prefix}-infrastructure`   | Infrastructure management access  |
-| Federated Identity Credential  | `FederatedGithubCredential` | GitHub Actions authentication     |
-| Security Group                 | `arolariu-JIT-Users`        | JIT user access (manual)          |
-| Security Group                 | `arolariu-JIT-Apps`         | Managed identities group (manual) |
+| Resource Type                      | Name Pattern                                                                        | Purpose                                                     |
+| ---------------------------------- | ----------------------------------------------------------------------------------- | ----------------------------------------------------------- |
+| User Assigned Managed Identity     | `{prefix}-uami-frontend`                                                            | Frontend applications access                                |
+| User Assigned Managed Identity     | `{prefix}-uami-backend`                                                             | Backend services access                                     |
+| User Assigned Managed Identity     | `{prefix}-uami-infrastructure`                                                      | CI/CD and infrastructure operations access                  |
+| Federated Identity Credential (×2) | `FederatedGithubCredentialForDevelopment`, `FederatedGithubCredentialForProduction` | GitHub Actions OIDC (development / production environments) |
+| Security Group                     | `arolariu-JIT-Users`                                                                | JIT user access (manual)                                    |
+| Security Group                     | `arolariu-JIT-Apps`                                                                 | Managed identities group (manual)                           |
 
-## 📊 Architecture
-
-```mermaid
-graph TB
-    subgraph "Apps"
-        MAIN[Main Website]
-        API[API Service]
-        DEV[Dev Site]
-    end
-    subgraph "Identities"
-        FE[Frontend]
-        BE[Backend]
-        INFRA[Infrastructure]
-    end
-    subgraph "Federation"
-        GITHUB[GitHub Actions]
-        FED[Federated Credential]
-    end
-    subgraph "Groups"
-        USERS[arolariu-JIT-Users]
-        APPS[arolariu-JIT-Apps]
-    end
-    MAIN --> FE
-    DEV --> FE
-    API --> BE
-    GITHUB --> FED
-    FED --> INFRA
-    FE --> USERS
-    BE --> APPS
-    INFRA --> APPS
-```
-
-## 🔧 Parameters
-
-| Parameter                  | Type   | Required | Description                            |
-| -------------------------- | ------ | -------- | -------------------------------------- |
-| `resourceConventionPrefix` | string | ✅       | Prefix for resource names (1-20 chars) |
-| `resourceLocation`         | string | ✅       | Azure region for deployment            |
-| `resourceDeploymentDate`   | string | ✅       | Deployment timestamp                   |
-
-## 📤 Outputs
-
-| Output                  | Type       | Description                             |
-| ----------------------- | ---------- | --------------------------------------- |
-| `managedIdentitiesList` | identity[] | Array of all created managed identities |
-
-## 👥 Security Groups
-
-- **arolariu-JIT-Users**: Manual membership for JIT user access
-- **arolariu-JIT-Apps**: Manual membership for managed identities
-
-> **Note:** Membership in both groups is managed manually. No automatic assignment is performed by the module.
-
-## 🛡️ Security & RBAC
-
-- All identities are passwordless (Azure AD)
-- RBAC is used for resource access
-- Federated credentials enable secure CI/CD from GitHub Actions
-
-## 🚀 Example Usage
-
-```bicep
-module identitiesDeployment 'identity/deploymentFile.bicep' = {
-  name: 'identitiesDeployment'
-  params: {
-    resourceConventionPrefix: 'arolariu'
-    resourceLocation: 'swedencentral'
-    resourceDeploymentDate: utcNow()
-  }
-}
-```
-
-## 🚨 Troubleshooting
-
-| Issue                        | Solution                                |
-| ---------------------------- | --------------------------------------- |
-| Group membership not updated | Add/remove members manually in Azure AD |
-| Federated credential failed  | Check OIDC subject and permissions      |
-
-## 📚 References
-
-- [Azure Managed Identities](https://docs.microsoft.com/en-us/azure/active-directory/managed-identities-azure-resources/)
-- [Workload Identity Federation](https://docs.microsoft.com/en-us/azure/active-directory/workload-identities/workload-identity-federation)
-- [Microsoft Graph Groups](https://docs.microsoft.com/en-us/graph/api/resources/group)
-
----
-
-**Module Version**: 2.0.0  
-**Last Updated**: July 2025  
-**Maintainer**: Alexandru-Razvan Olariu
+`{prefix}` is the `resourceConventionPrefix` generated by `facade.bicep` for each deployment.
 
 ## 📊 **Architecture**
 
 ```mermaid
 graph TB
     subgraph "CI/CD Pipeline"
-        GITHUB[GitHub Actions<br/>Production Environment]
+        GITHUB[GitHub Actions<br/>development / production environments]
     end
 
     subgraph "Applications"
         MAIN_APP[arolariu.ro<br/>Main Website]
         API_APP[api.arolariu.ro<br/>API Service]
         DEV_APP[dev.arolariu.ro<br/>Development Site]
+        EXP_APP[exp.arolariu.ro<br/>Experimental Service]
     end
 
     subgraph "Managed Identities"
-        MI_FE[Frontend Identity<br/>Read-only Access]
-        MI_BE[Backend Identity<br/>Read/Write Access]
-        MI_INFRA[Infrastructure Identity<br/>Full Administrative Access]
+        MI_FE[Frontend Identity]
+        MI_BE[Backend Identity]
+        MI_INFRA[Infrastructure Identity]
     end
 
     subgraph "Federated Identity"
-        FED_CRED[GitHub Federated Credential<br/>OIDC Token Exchange]
+        FED_DEV[Development Federated Credential<br/>OIDC Token Exchange]
+        FED_PROD[Production Federated Credential<br/>OIDC Token Exchange]
     end
 
-    subgraph "Security Groups"
+    subgraph "Security Groups (manual membership)"
         SG_USERS[arolariu-JIT-Users<br/>Human Access]
         SG_APPS[arolariu-JIT-Apps<br/>Application Access]
     end
 
-    subgraph "Azure Resources"
-        KV[Key Vault<br/>Secrets & Certificates]
-        SA[Storage Accounts<br/>Blob, Table, Queue]
-        AI[Application Insights<br/>Monitoring]
+    subgraph "Azure Resources (role assignments)"
+        KV[Key Vault<br/>Secrets]
+        SA[Storage Account<br/>Blob, Table, Queue]
         AC[App Configuration<br/>Settings]
-        COMPUTE[App Services<br/>Compute Resources]
+        ACR[Container Registry<br/>Images]
+        SQL[SQL Server<br/>Databases]
+        COSMOS[Cosmos DB<br/>NoSQL]
+        AIF[AI Foundry<br/>Document Intelligence & Inference]
+        APPI[Application Insights<br/>Monitoring]
+        WEBAPPS[Web Apps<br/>main, api, dev, exp]
     end
 
-    GITHUB --> FED_CRED
-    FED_CRED --> MI_INFRA
+    GITHUB --> FED_DEV
+    GITHUB --> FED_PROD
+    FED_DEV --> MI_INFRA
+    FED_PROD --> MI_INFRA
 
     MAIN_APP --> MI_FE
     DEV_APP --> MI_FE
     API_APP --> MI_BE
+    EXP_APP --> MI_BE
 
-    MI_FE --> KV
     MI_FE --> SA
-    MI_FE --> AI
     MI_FE --> AC
+    MI_FE --> ACR
+    MI_FE --> APPI
 
     MI_BE --> KV
     MI_BE --> SA
-    MI_BE --> AI
     MI_BE --> AC
-    MI_BE --> COMPUTE
+    MI_BE --> ACR
+    MI_BE --> SQL
+    MI_BE --> COSMOS
+    MI_BE --> AIF
+    MI_BE --> APPI
 
     MI_INFRA --> KV
     MI_INFRA --> SA
-    MI_INFRA --> AI
     MI_INFRA --> AC
-    MI_INFRA --> COMPUTE
-
-    MI_FE --> SG_APPS
-    MI_BE --> SG_APPS
-    MI_INFRA --> SG_APPS
+    MI_INFRA --> ACR
+    MI_INFRA --> APPI
+    MI_INFRA --> WEBAPPS
 
     classDef cicd fill:#e8f5e8,stroke:#1b5e20,stroke-width:2px
     classDef app fill:#e3f2fd,stroke:#0277bd,stroke-width:2px
@@ -193,22 +113,47 @@ graph TB
     classDef resource fill:#e0f2f1,stroke:#00695c,stroke-width:2px
 
     class GITHUB cicd
-    class MAIN_APP,API_APP,DEV_APP app
+    class MAIN_APP,API_APP,DEV_APP,EXP_APP app
     class MI_FE,MI_BE,MI_INFRA identity
-    class FED_CRED federated
+    class FED_DEV,FED_PROD federated
     class SG_USERS,SG_APPS security
-    class KV,SA,AI,AC,COMPUTE resource
+    class KV,SA,AC,ACR,SQL,COSMOS,AIF,APPI,WEBAPPS resource
 ```
+
+Identity-to-resource edges are the role assignments listed under Identity Details. No identity is added to a security group by this module.
 
 ## 🔧 **Configuration**
 
+### **Parameters**
+
+| Parameter                  | Type   | Required | Description                                                                                                             |
+| -------------------------- | ------ | -------- | ----------------------------------------------------------------------------------------------------------------------- |
+| `resourceConventionPrefix` | string | ✅       | Prefix for resource names (generated by `facade.bicep` as `q` + 5 characters of `uniqueString(resourceDeploymentDate)`) |
+| `resourceLocation`         | string | ✅       | Azure region (`francecentral`, `northeurope`, `westeurope`, `swedencentral`)                                            |
+| `resourceDeploymentDate`   | string | ✅       | Deployment timestamp                                                                                                    |
+
+### **Example Usage**
+
+`facade.bicep` declares `param resourceDeploymentDate string = utcNow()` and passes its generated prefix:
+
+```bicep
+module identitiesDeployment 'identity/deploymentFile.bicep' = {
+  name: 'identitiesDeployment-${resourceDeploymentDate}'
+  params: {
+    resourceLocation: resourceLocation
+    resourceDeploymentDate: resourceDeploymentDate
+    resourceConventionPrefix: resourceConventionPrefix
+  }
+}
+```
+
 ## 📤 **Outputs**
 
-| Output                  | Type       | Description                             |
-| ----------------------- | ---------- | --------------------------------------- |
-| `managedIdentitiesList` | identity[] | Array of all created managed identities |
+| Output                  | Type       | Description                                                                                   |
+| ----------------------- | ---------- | --------------------------------------------------------------------------------------------- |
+| `managedIdentitiesList` | identity[] | Array of all created managed identities (`[0]` frontend, `[1]` backend, `[2]` infrastructure) |
 
-**Output Structure:**
+**Output Structure** (`../types/identity.type.bicep`):
 
 ```bicep
 type identity = {
@@ -216,61 +161,74 @@ type identity = {
   displayName: string  // Human-readable name
   resourceId: string   // Full Azure resource ID
   principalId: string  // Azure Principal ID (GUID)
+  clientId: string     // Azure Client ID (GUID) — used for DefaultAzureCredential
 }
 ```
 
 ## 🔒 **Identity Details**
 
-### **Frontend Identity (`{prefix}-frontend`)**
+Role assignments are defined in the [`../rbac/`](../rbac/) modules (role GUIDs in [`../constants/roles.bicep`](../constants/roles.bicep))
+and wired in the RBAC section of [`../facade.bicep`](../facade.bicep). The lists below summarize them.
+
+### **Frontend Identity (`{prefix}-uami-frontend`)**
 
 **Purpose:** Secure access for frontend applications (main website, development site)
 
-**Permissions:**
+**Role Assignments:**
 
-- **Read-only** access to Key Vault secrets
-- **Read-only** access to storage accounts
-- **Read-only** access to App Configuration
-- **Read** access to Application Insights
+- **Storage account**: Storage Blob Data Contributor, Storage Queue Data Reader, Storage Table Data Reader
+- **App Configuration**: App Configuration Data Reader
+- **Container registry**: AcrPull, Container Registry Repository Reader
+- **Application Insights**: Monitoring Metrics Publisher
+- No Key Vault role
 
 **Used By:**
 
 - `arolariu.ro` (main website)
 - `dev.arolariu.ro` (development site)
 
-### **Backend Identity (`{prefix}-backend`)**
+### **Backend Identity (`{prefix}-uami-backend`)**
 
 **Purpose:** Enhanced access for backend services and APIs
 
-**Permissions:**
+**Role Assignments:**
 
-- **Read/Write** access to Key Vault secrets
-- **Read/Write** access to storage accounts
-- **Read/Write** access to App Configuration
-- **Read/Write** access to Application Insights
-- **Read** access to compute resources for monitoring
+- **Key Vault**: Key Vault Secrets User
+- **Storage account**: Storage Blob Data Owner, Storage Queue Data Contributor, Storage Table Data Contributor
+- **App Configuration**: App Configuration Data Reader, App Configuration Contributor (constant `appConfigurationDataOwner`)
+- **Container registry**: AcrPull, Container Registry Repository Reader
+- **SQL server**: SQL DB Contributor
+- **Cosmos DB account**: Cosmos DB Operator (constant `cosmosDbDataOperator`; no data access)
+- **AI Foundry account**: Cognitive Services User and the `azureAiUser` constant, whose ID matches no built-in role (see
+  [`../rbac/README.md`](../rbac/README.md#role-ids-that-differ-from-their-constant-names))
+- **Application Insights**: Monitoring Metrics Publisher
 
 **Used By:**
 
 - `api.arolariu.ro` (API service)
+- `exp.arolariu.ro` (experimental FastAPI service)
 
-### **Infrastructure Identity (`{prefix}-infrastructure`)**
+### **Infrastructure Identity (`{prefix}-uami-infrastructure`)**
 
-**Purpose:** Full administrative access for infrastructure management and CI/CD
+**Purpose:** CI/CD access for GitHub Actions (through the federated credentials) and infrastructure operations
 
-**Permissions:**
+**Role Assignments:**
 
-- **Full** access to Key Vault (all operations)
-- **Full** access to storage accounts
-- **Full** access to App Configuration
-- **Full** access to Application Insights
-- **Full** access to compute resources
-- **Deployment** permissions for resource provisioning
+- **Key Vault**: Key Vault Secrets User, Key Vault Reader
+- **Storage account**: Storage Blob Data Reader, Storage Queue Data Reader, Storage Table Data Reader
+- **App Configuration**: App Configuration Data Reader
+- **Container registry**: AcrPush, AcrPull, Container Registry Repository Reader
+- **Web apps** (main, api, dev, exp): Website Contributor
+- **Application Insights**: Monitoring Metrics Publisher
+- No Owner, Contributor, or deployment-scope role is assigned in Bicep
 
 **Used By:**
 
 - GitHub Actions CI/CD pipeline
-- Infrastructure deployment scripts
 - Administrative operations
+
+All three identities are allowed callers of `exp.arolariu.ro` (Easy Auth `allowedPrincipals` in `../sites/exp-arolariu-ro.bicep`). Database
+users for the managed identities are created by manually running `../rbac/sql-rbac-uami.sql`; no Bicep module runs it.
 
 ## 🌐 **Federated Identity**
 
@@ -297,9 +255,9 @@ single template (`federatedCredentials.bicep`).
 **Usage in GitHub Actions:**
 
 ```yaml
-# .github/workflows/deploy.yml
+# Example step (no repository workflow deploys this Bicep; Azure login is used in e.g. .github/workflows/official-api-trigger.yml)
 - name: Azure Login
-  uses: azure/login@v1
+  uses: azure/login@v3
   with:
     client-id: ${{ secrets.AZURE_CLIENT_ID }} # Infrastructure Identity Client ID
     tenant-id: ${{ secrets.AZURE_TENANT_ID }}
@@ -341,12 +299,14 @@ assignments.
 - Centralized access control for managed identities
 - Simplified RBAC management and auditing
 
+> **Note:** Membership in both groups is managed manually. No automatic assignment is performed by the module.
+
 ## 💰 **Cost Considerations**
 
 | Resource Type                  | Quantity | Monthly Cost |
 | ------------------------------ | -------- | ------------ |
 | User Assigned Managed Identity | 3        | €0 (Free)    |
-| Federated Identity Credential  | 1        | €0 (Free)    |
+| Federated Identity Credential  | 2        | €0 (Free)    |
 | Microsoft Graph Groups         | 2        | €0 (Free)    |
 | **Total**                      |          | **€0**       |
 
@@ -368,14 +328,17 @@ assignments.
 ### **RBAC Implementation**
 
 ```bicep
-// Example: Assign Key Vault Reader role to frontend identity
-resource keyVaultReaderAssignment 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
+// Excerpt from ../rbac/key-vault-rbac.bicep: Key Vault Secrets User role for the backend identity
+import { keyVaultSecretsUser } from '../constants/roles.bicep'
+
+resource backendSecretsUser 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
   scope: keyVault
-  name: guid(keyVault.id, frontendIdentity.id, 'Key Vault Reader')
+  name: guid(keyVault.id, backendPrincipalId, keyVaultSecretsUser)
   properties: {
-    roleDefinitionId: subscriptionResourceId('Microsoft.Authorization/roleDefinitions', '4633458b-17de-408a-b874-0445c86b69e6') // Key Vault Reader
-    principalId: frontendIdentity.properties.principalId
+    roleDefinitionId: subscriptionResourceId('Microsoft.Authorization/roleDefinitions', keyVaultSecretsUser)
+    principalId: backendPrincipalId
     principalType: 'ServicePrincipal'
+    description: 'Backend: read secrets from key vault'
   }
 }
 ```
@@ -395,7 +358,7 @@ resource keyVaultReaderAssignment 'Microsoft.Authorization/roleAssignments@2022-
 
 1. Identities created during initial deployment
 2. Security group membership is managed manually as needed
-3. RBAC permissions applied via dependent modules
+3. RBAC permissions applied by the `rbac/*.bicep` modules wired in `facade.bicep` (section 10, RBAC)
 
 **Management:**
 
@@ -427,48 +390,40 @@ az role assignment list \
 
 ### **Required Dependencies**
 
-**None** - This module is typically deployed first as other modules depend on it.
+**None** - `facade.bicep` deploys this module without `dependsOn`.
 
 ### **Dependent Modules**
 
-All other modules depend on the identity module for secure access:
-
-1. **Configuration Module**: Requires identities for Key Vault access
-2. **Storage Module**: Requires identities for RBAC assignments
-3. **Compute Module**: Requires identities for App Service assignment
-4. **Sites Module**: Requires identities for application authentication
-5. **Observability Module**: Requires identities for monitoring access
+Identity outputs are consumed by the **Sites** module (UAMI resource/client/principal IDs) and by the **RBAC** modules (`../rbac/*.bicep`).
+Storage, Compute and Observability only order after Identity via `dependsOn`; Configuration, Network and AI take no identity input.
 
 ## 📊 **Deployment Flow**
 
 ```mermaid
 graph LR
-    A[Identity Module] --> B[Configuration Module]
-    A --> C[Storage Module]
-    A --> D[Compute Module]
-    A --> E[Observability Module]
-
-    B --> F[Sites Module]
-    C --> F
-    D --> F
-    E --> F
+    A[Identity Module] -->|identity outputs| F[Sites Module]
+    A -->|principal IDs| R[RBAC Modules]
+    A -.->|dependsOn| C[Storage Module]
+    A -.->|dependsOn| D[Compute Module]
+    A -.->|dependsOn| E[Observability Module]
 ```
 
 **Order:**
 
-1. **Identity Module** (first - no dependencies)
-2. **All other modules** (depend on identities)
+1. **Identity Module** (first - no dependencies; Configuration and AI also have none)
+2. Remaining modules as their `dependsOn` and output references allow (most do not consume identity outputs)
 
 ## 🚨 **Troubleshooting**
 
 ### **Common Issues**
 
-| Issue                           | Symptoms                             | Solution                                          |
-| ------------------------------- | ------------------------------------ | ------------------------------------------------- |
-| **Federated credential failed** | GitHub Actions authentication errors | Verify repository name and environment in subject |
-| **Missing Graph permissions**   | Security group creation fails        | Ensure deployment identity has Graph permissions  |
-| **Identity not found**          | Resource access denied               | Check identity exists and has proper RBAC         |
-| **Principal ID not available**  | Role assignment fails                | Wait for identity propagation (up to 5 minutes)   |
+| Issue                            | Symptoms                                  | Solution                                          |
+| -------------------------------- | ----------------------------------------- | ------------------------------------------------- |
+| **Federated credential failed**  | GitHub Actions authentication errors      | Verify repository name and environment in subject |
+| **Missing Graph permissions**    | Security group creation fails             | Ensure deployment identity has Graph permissions  |
+| **Group membership not updated** | Expected members missing from a JIT group | Add/remove members manually in Azure AD           |
+| **Identity not found**           | Resource access denied                    | Check identity exists and has proper RBAC         |
+| **Principal ID not available**   | Role assignment fails                     | Wait for identity propagation (up to 5 minutes)   |
 
 ### **Validation Commands**
 
@@ -480,16 +435,19 @@ az identity list \
 
 # Check identity details
 az identity show \
-  --name "arolariu-frontend" \
+  --name "<prefix>-uami-frontend" \
   --resource-group "arolariu-rg"
 
-# Verify federated credential
+# Verify federated credentials
 az identity federated-credential list \
-  --identity-name "arolariu-infrastructure" \
+  --identity-name "<prefix>-uami-infrastructure" \
   --resource-group "arolariu-rg"
 
-# Test GitHub Actions authentication
-az login --identity --username "infrastructure-identity-client-id"
+# Inspect the production credential's issuer, subject, and audience
+az identity federated-credential show \
+  --name "FederatedGithubCredentialForProduction" \
+  --identity-name "<prefix>-uami-infrastructure" \
+  --resource-group "arolariu-rg"
 ```
 
 ### **Security Verification**
@@ -503,8 +461,7 @@ az role assignment list \
 
 # Verify Key Vault access
 az keyvault secret list \
-  --vault-name "your-key-vault" \
-  --auth-mode login
+  --vault-name "<prefix>kv"
 ```
 
 ## 📚 **References**
@@ -518,4 +475,5 @@ az keyvault secret list \
 ---
 
 **Module Version**: 2.0.0  
-**Last Updated**: December 2025 **Maintainer**: Alexandru-Razvan Olariu
+**Last Updated**: November 2026\
+**Maintainer**: Alexandru-Razvan Olariu
