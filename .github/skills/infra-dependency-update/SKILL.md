@@ -58,7 +58,8 @@ Read-only compatibility research may begin without mutation approval.
 6. Prove the proposed graph early: inspect peers, engines, provenance, and transitive deltas, then perform a clean install/restore from the
    generated lock where one exists. Do this before expensive application-wide validation or speculative source migrations.
 7. Apply only adaptations required by the selected targets, preserving behavior. If targets or channel policy change, remove this task's
-   obsolete adapters, configuration, tests, and workspace pins before proceeding.
+   obsolete adapters, configuration, tests, and workspace pins before proceeding. Reassess temporary security pins, overrides, and
+   workaround-only direct references against the upgraded parents and restored graph; do not blindly bump or retain them.
 8. Run focused regressions per changed cohort. Once targets and the graph are frozen, run the affected broad checks once; rerun only checks
    invalidated by a later edit or unresolved failure. Separate baseline failures from migration regressions.
 9. Re-query authoritative metadata for every declaration before closing, including unchanged packages and holds. Compare final manifests,
@@ -70,8 +71,9 @@ Read-only compatibility research may begin without mutation approval.
 
 - Originally stable dependencies stay on the latest supported, compatible stable release. Do not introduce canary, beta, alpha, RC, or
   preview versions merely because their number or publication date is newer.
-- An originally prerelease dependency may remain prerelease only when no supported compatible stable release exists. Prefer a usable stable
-  release even when its version sorts below the existing preview; verify that transition's API compatibility.
+- For an originally prerelease dependency, prefer a supported compatible stable release only when it does not downgrade the original
+  version. Otherwise select the latest compatible release in its existing preview channel. An older stable release is not an upgrade;
+  crossing back to it requires explicit downgrade approval, even when its API still compiles.
 - Compare complete published versions using ecosystem-aware ordering, not only a `latest` tag. Exclude yanked, unlisted, accidental,
   deprecated-placeholder, and incompatible releases; record the reason rather than presenting a hold as latest.
 - Distinguish direct channel choices from prereleases pulled in by stable packages. Review that transitive graph explicitly instead of

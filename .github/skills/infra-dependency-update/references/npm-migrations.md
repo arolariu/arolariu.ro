@@ -73,20 +73,26 @@ Treat each cohort as an evidence set, not an instruction to upgrade every member
 - Inspect CI/container stages that omit `.npmrc` or copy only a workspace subset. Probe their actual inputs and required output paths; a
   successful dry-run proves lock consistency, not installation or container runtime behavior.
 - After a layout change, inventory unresolved bare imports across affected tracked sources, including type-only imports and `createRequire`
-  calls. Classify framework aliases and host-provided modules separately; generic Node resolution is not authority for installing them.
+  calls and chained `.resolve()` calls in E2E fixtures. Run test discovery even when browser execution is deferred. Classify framework
+  aliases and host-provided modules separately; generic Node resolution is not authority for installing them.
 - Run each affected owner's full typecheck and packaging smoke before broad suites. Generated adapters can copy imports into a different
   resolution directory, and missing optional type providers can masquerade as unsupported configuration properties.
 - Declare genuinely consumed dependencies at their owner instead of relying on accidental hoisting or another package's private
   dependencies. Framework-managed environment markers may need the existing non-production boundary-stub pattern in both tests and
   Storybook; preserve their production framework semantics.
-- A workspace `"*"` excludes prereleases. Align a member's exact preview pin only when required by the approved root target; restore the
-  original wildcard when that target returns to stable.
+- Preserve workspace wildcard ownership. `"*"` does not explicitly opt into prereleases or mean "inherit the root pin", but npm can reuse a
+  locked root prerelease. Verify native resolution, `npm ls`, and clean-install consistency before claiming an extra member pin or override
+  is necessary; do not duplicate root versions based only on generic SemVer reasoning.
 - Freeze manifests/configuration/lock before installing into the validation tree. Never mutate its `node_modules` while tests or builds are
   using it. Compare tracked source/configuration with the real worktree, including configurations restored after a target change, so
   snapshot results cover the actual diff. Validate an independent nested owner separately.
 
 For framework/compiler changes, distinguish CLI compatibility from consumers of the compiler's JavaScript API. For Storybook and other build
 tools, inspect changed defaults and use a focused build before migrating configuration or interpreting timeouts as API failures.
+
+After formatter or rule-preset upgrades, run the complete configured hygiene scope once, including unchanged source and generated locks that
+CI checks. Every independent ESLint config block inherits new preset rules. Use the existing provider's project batching and memory
+settings; a single monorepo-wide invocation is not an equivalent resource profile. Distinguish real diagnostics from output-parser failures.
 
 Use the separate [phased rollout checklist](../checklists/phased-rollout.md) for a major/framework migration and the
 [rollback checklist](../checklists/rollback-checklist.md) before mutation.

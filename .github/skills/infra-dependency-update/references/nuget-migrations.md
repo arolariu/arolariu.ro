@@ -66,6 +66,21 @@ Representative contract locations include:
 
 Inspect whether the target package actually affects these surfaces; do not run or update unrelated suites mechanically.
 
+## Retiring Security Workarounds
+
+After upgrading a parent package, revisit direct references and central pins added only to mitigate a transitive advisory:
+
+1. Identify the advisory, affected and fixed ranges, original dependency path, and whether application code genuinely consumes the package.
+   A central version entry alone does not prove a direct dependency or transitive override; inspect references and pinning configuration.
+2. With mutation approval, remove only the workaround in an isolated restore and inspect every affected project/target-framework graph.
+   Check actual resolved versions and upstream minimum constraints, not just the parent's release number or an advisory-free old assets
+   file.
+3. If all affected paths disappear or resolve outside the vulnerable ranges without the workaround, remove its unused central declaration,
+   workaround-only references, and stale explanatory comments together. Regenerate existing locks natively and verify consuming
+   builds/tests.
+4. Otherwise retain the smallest necessary mitigation and record the still-vulnerable path. Preserve genuine direct API dependencies even
+   when their original advisory is fixed. Report the reproducibility limit for lockless owners.
+
 ## Stop Conditions
 
 - The target does not support the live target framework/runtime.
