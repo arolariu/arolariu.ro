@@ -748,7 +748,7 @@
           "AspNetCore.HealthChecks.SqlServer": "[9.0.0, )",
           "AspNetCore.HealthChecks.UI.Client": "[9.0.0, )",
           "AspNetCore.HealthChecks.Uris": "[9.0.0, )",
-          "Azure.AI.OpenAI": "[2.1.0, )",
+          "Azure.AI.OpenAI": "[2.9.0-beta.1, )",
           "Azure.Storage.Blobs": "[12.30.1, )",
           "Microsoft.ApplicationInsights.AspNetCore": "[3.2.0, )",
           "Microsoft.Azure.Cosmos": "[3.64.0, )",
@@ -778,7 +778,7 @@
         "type": "Project",
         "dependencies": {
           "Azure.AI.DocumentIntelligence": "[1.0.0, )",
-          "Azure.AI.OpenAI": "[2.1.0, )",
+          "Azure.AI.OpenAI": "[2.9.0-beta.1, )",
           "Azure.Storage.Queues": "[12.28.1, )",
           "Microsoft.Azure.Cosmos": "[3.64.0, )",
           "Microsoft.Extensions.AI": "[11.0.0, )",
@@ -862,12 +862,12 @@
       },
       "Azure.AI.OpenAI": {
         "type": "CentralTransitive",
-        "requested": "[2.1.0, )",
-        "resolved": "2.1.0",
-        "contentHash": "doixr3tcsIcdzbzF9NxKt+6U0NKj6aPeOCPYONPsWjyf3gxVndVJAdjPcVdqeR/3vcRHXRgGnGlv+iXx5jMA4g==",
+        "requested": "[2.9.0-beta.1, )",
+        "resolved": "2.9.0-beta.1",
+        "contentHash": "CgIYDuCSOFx+yPuCdK7iz71OW2envfVeIE/YoNYK+mhr6bxgIJV6jfBF+mV9aHDQ6KVQjeSL6OZ7x90XrvsoRg==",
         "dependencies": {
-          "Azure.Core": "1.44.1",
-          "OpenAI": "2.1.0"
+          "Azure.Core": "1.51.1",
+          "OpenAI": "2.9.1"
         }
       },
       "Azure.Core": {

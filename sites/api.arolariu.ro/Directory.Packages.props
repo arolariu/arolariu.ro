@@ -50,7 +50,7 @@
     <PackageVersion Include="Azure.Storage.Queues" Version="12.28.1" />
   </ItemGroup>
   <ItemGroup Label="Azure AI Packages">
-    <PackageVersion Include="Azure.AI.OpenAI" Version="2.1.0" />
+    <PackageVersion Include="Azure.AI.OpenAI" Version="2.9.0-beta.1" />
   </ItemGroup>
   <ItemGroup Label="Azure Cosmos DB Packages">
     <PackageVersion Include="Microsoft.Azure.Cosmos" Version="3.64.0" />
