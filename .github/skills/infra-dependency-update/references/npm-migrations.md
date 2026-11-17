@@ -52,11 +52,41 @@ Treat each cohort as an evidence set, not an instruction to upgrade every member
 2. Run the native npm operation from each approved manifest owner, preserving that domain's save/workspace policy. Do not edit a lockfile by
    hand or run one owner from another domain.
 3. Review manifest and lock changes before source changes; reject unexplained packages, registry drift, duplicate incompatible majors, or
-   peer warnings.
+   peer warnings. Preserve existing placements where possible; use a native cohort update when stale locked peers block an otherwise
+   compatible set rather than immediately deleting the entire lock.
 4. If an official Nx/framework codemod is approved, inspect its proposed scope, run it as its own phase, and review every generated change.
 5. Update source/config/tests in bounded consumer cohorts.
 6. Run the affected project's live test/build/type targets and any runtime smoke boundary required by the framework change.
 7. Re-check each affected domain's resolution, workspace membership, peers, advisories, and lockfile determinism.
+
+## Early Graph Gate
+
+- Inspect the lock-backed dependency tree and its `problems`, including invalid and extraneous optional peers; a successful install or zero
+  exit code alone is insufficient. Prove a clean `npm ci` and inspect the resulting tree before broad builds.
+- When install succeeds but prune/clean install drops a compatible optional peer, compare the affected placement and current upstream npm
+  issue/release evidence. Do not cycle through identical installs/dedupe runs or hand-edit generated dependency flags.
+- Consider supported installation layouts only after isolating the resolver defect. Measure package-count/size and workspace impact,
+  document the trade-off, preserve security settings, and prove the selected layout with a fresh native lock and clean install. Recheck
+  packed declaration portability: inferred public types may accidentally reference a dependency's nested private type packages. A type
+  annotation on a destructuring pattern may still leave an inferred exported binding; a direct third-party re-export can preserve the public
+  contract without exposing private type paths.
+- Inspect CI/container stages that omit `.npmrc` or copy only a workspace subset. Probe their actual inputs and required output paths; a
+  successful dry-run proves lock consistency, not installation or container runtime behavior.
+- After a layout change, inventory unresolved bare imports across affected tracked sources, including type-only imports and `createRequire`
+  calls. Classify framework aliases and host-provided modules separately; generic Node resolution is not authority for installing them.
+- Run each affected owner's full typecheck and packaging smoke before broad suites. Generated adapters can copy imports into a different
+  resolution directory, and missing optional type providers can masquerade as unsupported configuration properties.
+- Declare genuinely consumed dependencies at their owner instead of relying on accidental hoisting or another package's private
+  dependencies. Framework-managed environment markers may need the existing non-production boundary-stub pattern in both tests and
+  Storybook; preserve their production framework semantics.
+- A workspace `"*"` excludes prereleases. Align a member's exact preview pin only when required by the approved root target; restore the
+  original wildcard when that target returns to stable.
+- Freeze manifests/configuration/lock before installing into the validation tree. Never mutate its `node_modules` while tests or builds are
+  using it. Compare tracked source/configuration with the real worktree, including configurations restored after a target change, so
+  snapshot results cover the actual diff. Validate an independent nested owner separately.
+
+For framework/compiler changes, distinguish CLI compatibility from consumers of the compiler's JavaScript API. For Storybook and other build
+tools, inspect changed defaults and use a focused build before migrating configuration or interpreting timeouts as API failures.
 
 Use the separate [phased rollout checklist](../checklists/phased-rollout.md) for a major/framework migration and the
 [rollback checklist](../checklists/rollback-checklist.md) before mutation.

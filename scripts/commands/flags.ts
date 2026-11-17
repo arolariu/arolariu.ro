@@ -17,9 +17,13 @@ import {Environment} from "../platform/Environment.ts";
 import {commandLayer, type BaseServices, type CommandServices} from "../platform/layers.ts";
 import {resolveColor, withLogContext} from "../platform/Output.ts";
 
-/** `--json`: emit one machine-readable JSON document instead of human output. */
+/** `--json`: emit one machine-readable JSON document; repeated flags keep the first value. */
 export const JsonFlag: GlobalFlag.Setting<"json", boolean> = GlobalFlag.Setting("json")({
-  flag: Flag.Boolean("json").pipe(Flag.withDefault(false), Flag.withDescription("Emit one machine-readable JSON document.")),
+  flag: Flag.Boolean("json").pipe(
+    Flag.atLeast(0),
+    Flag.map((values) => values[0] ?? false),
+    Flag.withDescription("Emit one machine-readable JSON document."),
+  ),
 });
 
 /** Values effect/cli accepts as `true` for a boolean flag (`--json=yes`, `--json on`, …). */
@@ -32,8 +36,8 @@ const FALSE_LITERALS: ReadonlySet<string> = new Set(["false", "no", "off", "0", 
  *
  * @remarks
  * The CLI entry needs the mode to render failures that happen before or outside a command handler
- * (usage errors included), so it cannot read the parsed setting. Mirrors the effect/cli 4.0.0
- * lexer and boolean-flag parser: scanning stops at `--` (every later token is a passthrough
+ * (usage errors included), so it cannot read the parsed setting. Mirrors the effect/cli
+ * lexer and the first-value selection configured by {@link JsonFlag}: scanning stops at `--` (every later token is a passthrough
  * operand); `--json` means `true` unless the next token is a boolean literal, which it then
  * consumes (`--json false`); `--json=<literal>` sets the literal; `--no-json` means `false`; the
  * first occurrence wins; and an invalid inline value (`--json=maybe`, a usage error) counts as not requested.

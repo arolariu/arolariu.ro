@@ -15,19 +15,19 @@
   <ItemGroup Label="Security">
     <!-- Temporary security floor until Aspire.Hosting.SqlServer includes the fix:
          https://github.com/advisories/GHSA-846f-f764-76mx -->
-    <PackageVersion Include="System.Security.Cryptography.Pkcs" Version="10.0.14" />
+    <PackageVersion Include="System.Security.Cryptography.Pkcs" Version="11.0.0" />
   </ItemGroup>
   <ItemGroup Label="Storage and Identity">
     <PackageVersion Include="Azure.Data.Tables" Version="12.13.0" />
     <PackageVersion Include="Azure.Storage.Blobs" Version="12.30.1" />
     <PackageVersion Include="Azure.Storage.Queues" Version="12.28.1" />
-    <PackageVersion Include="Microsoft.Azure.Cosmos" Version="3.63.2" />
+    <PackageVersion Include="Microsoft.Azure.Cosmos" Version="3.64.0" />
     <PackageVersion Include="System.IdentityModel.Tokens.Jwt" Version="8.23.0" />
   </ItemGroup>
   <ItemGroup Label="Testing">
-    <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="18.11.0" />
-    <PackageVersion Include="MSTest.TestAdapter" Version="4.5.1" />
-    <PackageVersion Include="MSTest.TestFramework" Version="4.5.1" />
-    <PackageVersion Include="coverlet.collector" Version="10.1.0" />
+    <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="18.12.0" />
+    <PackageVersion Include="MSTest.TestAdapter" Version="4.5.3" />
+    <PackageVersion Include="MSTest.TestFramework" Version="4.5.3" />
+    <PackageVersion Include="coverlet.collector" Version="10.1.1" />
   </ItemGroup>
 </Project>

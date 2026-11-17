@@ -86,6 +86,7 @@ const websiteEslintConfig: Config = defineConfig({
     ...eslintPluginReactHooks.configs.recommended.rules,
     ...eslintPluginReactHooks.configs["recommended-latest"].rules,
     ...eslintPluginUnicorn.configs.all.rules,
+    "unicorn/prefer-options-parameter": "off", // Added in v80; preserve existing positional API contracts.
     // Opinionated rules newly enabled by unicorn 64 -> 73 via `configs.all` (nine majors of additions)
     // that this codebase deliberately never adopted. Each is style/preference, a too-new runtime API, or a
     // false positive in our context (SSR, module-level caches, safe constant replacements).
