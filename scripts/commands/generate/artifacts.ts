@@ -567,7 +567,9 @@ export abstract class TaxonomyClassificationGenerator {
           ),
       });
 
-      yield* Effect.logWarning(`[${this.sourceName}] Source unavailable after retries; using validated cached artifact '${fileName}'.`);
+      yield* Effect.logWarning(
+        `[${this.sourceName}] Using validated cached artifact '${fileName}' after source failure: ${sourceError.message}`,
+      );
       return paths;
     });
   }

@@ -17,11 +17,11 @@ The live repository demonstrates two valid domains:
   exceptions. The shared package's `peerDependencies` carry real ranges, and the website pins a published `@arolariu/components` registry
   tarball (lock entry `sites/arolariu.ro/node_modules/@arolariu/components`) instead of the root workspace link to `packages/components`, so
   a shared-package change reaches the website only after it is published and that URL is bumped. Change other versions at the root, and edit
-  a member manifest only to add or remove usage or to change a peer range. The root `overrides` block (`typescript`, the transitive
-  `webpackbar`, a nested `zod-validation-error` under `eslint-plugin-react-hooks`, and `$eslint` references under `eslint-plugin-react` and
-  `eslint-plugin-jsx-a11y`) also belongs to this domain: keep the `typescript` override equal to its root devDependency, and re-check each
-  override when its target or parent package changes. [`.npmrc`](../../../../.npmrc) and [`nx.json`](../../../../nx.json) affect this
-  domain.
+  a member manifest only to add or remove usage or to change a peer range. The root `overrides` block in
+  [`package.json`](../../../../package.json) also belongs to this domain: keep the `typescript` override equal to its root devDependency,
+  and re-check every override when its target, parent, or peer constraints change. The Docusaurus-scoped `css-loader` 7.1.5 override
+  satisfies the optional Rspack 2 peer; remove it only after a native resolution proves the updated Docusaurus graph satisfies that peer
+  without the override. [`.npmrc`](../../../../.npmrc) and [`nx.json`](../../../../nx.json) affect this domain.
 - [`.github/scripts/package.json`](../../../../.github/scripts/package.json) is outside the root workspace membership and owns its adjacent
   [`.github/scripts/package-lock.json`](../../../../.github/scripts/package-lock.json). It is an independent install and resolution domain.
 
@@ -78,11 +78,10 @@ Treat each cohort as an evidence set, not an instruction to upgrade every member
   packed declaration portability: inferred public types may accidentally reference a dependency's nested private type packages. A type
   annotation on a destructuring pattern may still leave an inferred exported binding; a direct third-party re-export can preserve the public
   contract without exposing private type paths.
-- Changing or removing `install-strategy` does not re-place an existing lock: `npm install`/`npm ci` keep the recorded nested placement.
-  Count package names that exist only below another package (never at root) before and after. To restore hoisting without re-resolving
-  versions, run `npm dedupe --package-lock-only`, move single-copy nested entries to root only where every dependency edge keeps its
-  resolved version, then prove `npm ls --all`, a clean `npm ci`, and preview/packaging of generated framework output (for example SvelteKit
-  server chunks importing `devalue`).
+- Changing or removing `install-strategy` does not re-place an existing lock: `npm install`/`npm ci` keep the recorded nested placement. Use
+  npm-native operations to generate any approved placement change, then verify every dependency edge, peer, and resolved version. Never
+  hand-edit `package-lock.json` or move entries between locations. If native tooling cannot preserve the approved graph, stop and request a
+  revised plan rather than manually editing the generated lock.
 - Inspect CI/container stages that omit `.npmrc` or copy only a workspace subset. Probe their actual inputs and required output paths; a
   successful dry-run proves lock consistency, not installation or container runtime behavior.
 - After a layout change, inventory unresolved bare imports across affected tracked sources, including type-only imports and `createRequire`
