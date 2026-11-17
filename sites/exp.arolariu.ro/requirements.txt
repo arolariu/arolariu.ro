@@ -3,7 +3,7 @@ azure-monitor-opentelemetry-exporter==1.0.0b59
 azure-appconfiguration==1.10.0
 azure-appconfiguration-provider==2.5.1
 azure-keyvault-secrets==4.12.0
-fastapi==0.163.1
+fastapi==0.163.2
 opentelemetry-api==1.45.2
 opentelemetry-exporter-otlp-proto-http~=1.45.2
 opentelemetry-instrumentation-fastapi==0.66b2
