@@ -10,7 +10,7 @@ description:
 ## When to Use
 
 - Extend an explicitly requested existing global client store.
-- Share client state across unrelated mounted route branches.
+- Share client state across unrelated mounted route branches, or keep client state that must persist globally.
 - Change approved persistence, hydration, reset, selector, or account-isolation behavior.
 - Create a new store only after explicit approval.
 
