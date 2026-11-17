@@ -1,10 +1,13 @@
 # Root Tooling Scripts
 
 The root [`package.json`](../package.json) owns the supported npm commands that invoke this directory. Every one of them is an alias of a
-command path of [`cli.ts`](./cli.ts), the single Effect v4 command entrypoint. Command families live in [`commands`](./commands), the Effect
-platform services they run on live in [`platform`](./platform), repository inspection lives in [`inspection`](./inspection), container
-runtime behavior lives in [`container-runtime`](./container-runtime), and shared repository helpers live in [`common`](./common) beside the
-frozen format/lint closure (see [Format, lint, and the frozen closure](#format-lint-and-the-frozen-closure)).
+command path of [`cli.ts`](./cli.ts), the single Effect v4 command entrypoint. The docs site (its `prepare:site` script and Nx `assemble`
+target), the `infra/Local` selfhost wrappers, and the website devcontainer also call `cli.ts` directly. Command families live in
+[`commands`](./commands), the Effect platform services they run on live in [`platform`](./platform), repository inspection lives in
+[`inspection`](./inspection), container runtime behavior lives in [`container-runtime`](./container-runtime), and shared repository helpers
+live in [`common`](./common) beside the frozen format/lint closure (see
+[Format, lint, and the frozen closure](#format-lint-and-the-frozen-closure)). [`azure`](./azure) maps exp configuration keys to the website
+environment variables that `generate env` writes, and [`types`](./types) holds shared type contracts.
 
 [RFC 0002](../docs/rfc/0002-lean-monorepo-tooling-architecture.md) (revision 3, Effect Command Platform) is the accepted architecture record
 for everything below.
@@ -14,8 +17,8 @@ for everything below.
 [`cli.ts`](./cli.ts) is the single command entrypoint (`node scripts/cli.ts <command>`), recorded in
 [RFC 0002 section 4](../docs/rfc/0002-lean-monorepo-tooling-architecture.md#4-command-line-interface). It builds the `arolariu` root command
 with `effect/cli`, owns all argv parsing, help, version, and shell completions, and starts the program once with `NodeRuntime.runMain` over
-`NodeBaseLayer`. Every npm script is an alias of one command path, for example `"doctor": "node scripts/cli.ts doctor"` and
-`"generate:artifacts": "node scripts/cli.ts generate artifacts"`.
+`NodeBaseLayer`. Every root npm script that invokes `scripts/` is an alias of one command path, for example
+`"doctor": "node scripts/cli.ts doctor"` and `"generate:artifacts": "node scripts/cli.ts generate artifacts"`.
 
 ### Command tree
 
@@ -24,7 +27,9 @@ arolariu setup [--dry-run] [--yes] [--engine <rancher|podman>]
 arolariu doctor [--quick]
 arolariu status
 arolariu generate [env] [i18n] [gql] [artifacts]       variadic task names; none selected warns that nothing is selected (exit 0); the first failing task stops the run (exit 1)
+arolariu generate --website-licenses-only              website license attribution only; combining it with task names is a usage failure (exit 2)
 arolariu docs assemble
+arolariu docs prepare-site
 arolariu rates update [--year <y>] [--from <y>] [--to <y>]
 arolariu dev aspire [--engine <rancher|podman>]
 arolariu dev selfhost [start|stop|logs] [--engine <rancher|podman>]
@@ -63,11 +68,13 @@ Global flags are accepted before or after the subcommand.
 | `0`   | Success, including `--help`, a bare command group, `--version`, and `--completions`                                                                                             |
 | `1`   | `ReportedFailure{exitCode: 1}` (a business-negative result, such as doctor with a failing check, after its full output), a typed failure, or a defect                           |
 | `2`   | A `CliError` usage or parse failure, or `ReportedFailure{exitCode: 2}` (for example an invalid `rates update` year range or `containers compose` without passthrough arguments) |
-| `130` | Interruption after `SIGINT`, interruption with no recorded signal, or a terminal quit (`QuitError`)                                                                             |
+| `130` | Interruption after `SIGINT`, an interruption with no recorded signal whose cause holds only interrupts, or a terminal quit (`QuitError`)                                        |
 | `143` | Interruption after `SIGTERM`                                                                                                                                                    |
 
-Interruption wins over any failure, finalizer failures included, so a signalled run keeps its signal exit code. No script calls
-`process.exit()` or assigns `process.exitCode`.
+A signalled run keeps its signal exit code (`130` after `SIGINT`, `143` after `SIGTERM`) even when a failure, a finalizer failure included,
+accompanies the interruption. An interruption with no recorded signal exits `130` only when its cause holds nothing but interrupts;
+otherwise the accompanying failure's exit code applies. Apart from the frozen `format.ts` and `lint.ts` entrypoints, which exit through
+`process.exit`, no script calls `process.exit()` or assigns `process.exitCode`.
 
 ### Failures and JSON output
 
@@ -295,9 +302,9 @@ already break (a stale exemption fails as loudly as a new violation). It also en
 - `@effect/platform-node` is imported only inside `scripts/platform/` and by [`cli.ts`](./cli.ts);
 - Effect runtimes (`Effect.run*`, `ManagedRuntime.make`, `NodeRuntime.runMain`) start only in `cli.ts`, `platform/worker.ts`,
   `platform/testing.ts`, and `Output.ts`'s synchronous logger sink;
-- the only modules with an `import.meta.main` block are `cli.ts`, `format.ts`, `lint.ts`, and the two inspection workers. Inside that block,
-  `cli.ts` may read `process.argv` and no other ambient state (the exemption does not apply elsewhere in the file), and each inspection
-  worker's block consists of exactly one `runWorker(...)` call;
+- the only modules with an `import.meta.main` block are `cli.ts`, `format.ts`, `lint.ts`, and the three inspection workers. Inside that
+  block, `cli.ts` may read `process.argv` and no other ambient state (the exemption does not apply elsewhere in the file), and each
+  inspection worker's block consists of exactly one `runWorker(...)` call;
 - the read-only families (`scripts/inspection/**` and `scripts/commands/{doctor,status}/**`) never import a mutating capability (see
   [Read-only command policy](#read-only-command-policy));
 - `effect/cli` is imported only under `scripts/commands/`, by `cli.ts`, by `platform/exit.ts`, and by `platform/Prompts.ts`;
@@ -328,19 +335,22 @@ The [shared repository helpers](#shared-repository-helpers) (for example `resolv
 
 ### Module map
 
-| Module                                                               | Responsibility                                                                                                                                                                                                                         |
-| -------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| [`commands/generate/cli.ts`](./commands/generate/cli.ts)             | `generate [env] [i18n] [gql] [artifacts]`; renders the stop line or the success lines                                                                                                                                                  |
-| [`commands/generate/index.ts`](./commands/generate/index.ts)         | `runGenerate` orchestrator: runs the selected leaves silently, one at a time, in the fixed order `env`, `i18n`, `gql`, `artifacts`                                                                                                     |
-| [`commands/generate/env.ts`](./commands/generate/env.ts)             | Local/offline website `.env` utility; cloud website CI excludes this generator and injects public inputs directly. With `INFRA=azure`, fetches exp configuration; otherwise prompts for missing required keys. Secrets stay `Redacted` |
-| [`commands/generate/i18n.ts`](./commands/generate/i18n.ts)           | Synchronizes `ro`/`fr` locale files with the English source, adding missing keys as empty strings                                                                                                                                      |
-| [`commands/generate/gql.ts`](./commands/generate/gql.ts)             | Writes the GraphQL placeholder artifact under `scripts/__generated__/gql`                                                                                                                                                              |
-| [`commands/generate/artifacts.ts`](./commands/generate/artifacts.ts) | Taxonomy and license artifacts from pinned sources, with bounded retries and a validated cached-mirror fallback                                                                                                                        |
-| [`commands/rates/cli.ts`](./commands/rates/cli.ts)                   | `rates update [--year <y>] [--from <y>] [--to <y>]`; invalid years are usage failures (exit `2`)                                                                                                                                       |
-| [`commands/rates/update.ts`](./commands/rates/update.ts)             | `updateExchangeRates`: yearly Frankfurter averages merged into `sites/arolariu.ro/public/data/exchange-rates.csv`                                                                                                                      |
-| [`commands/docs/cli.ts`](./commands/docs/cli.ts)                     | `docs assemble`; renders the extractor and tier summary                                                                                                                                                                                |
-| [`commands/docs/assemble.ts`](./commands/docs/assemble.ts)           | `assembleDocumentation`: concurrent TypeDoc, pydoc-markdown, and DefaultDocumentation runs, tier validation, landing pages, prose mirroring                                                                                            |
-| [`commands/docs/normalize.ts`](./commands/docs/normalize.ts)         | Fills missing Docusaurus frontmatter (`title`, `sidebar_position`) without overwriting existing keys                                                                                                                                   |
+| Module                                                                                             | Responsibility                                                                                                                                                                                                                         |
+| -------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| [`commands/generate/cli.ts`](./commands/generate/cli.ts)                                           | `generate [env] [i18n] [gql] [artifacts]` and `generate --website-licenses-only` (a usage failure, exit `2`, when combined with task names); renders the stop line or the success lines                                                |
+| [`commands/generate/index.ts`](./commands/generate/index.ts)                                       | `runGenerate` orchestrator: runs the selected leaves silently, one at a time, in the fixed order `env`, `i18n`, `gql`, `artifacts`                                                                                                     |
+| [`commands/generate/env.ts`](./commands/generate/env.ts)                                           | Local/offline website `.env` utility; cloud website CI excludes this generator and injects public inputs directly. With `INFRA=azure`, fetches exp configuration; otherwise prompts for missing required keys. Secrets stay `Redacted` |
+| [`commands/generate/i18n.ts`](./commands/generate/i18n.ts)                                         | Synchronizes `ro`/`fr` locale files with the English source, adding missing keys as empty strings                                                                                                                                      |
+| [`commands/generate/gql.ts`](./commands/generate/gql.ts)                                           | Writes the GraphQL placeholder artifact under `scripts/__generated__/gql`                                                                                                                                                              |
+| [`commands/generate/artifacts.ts`](./commands/generate/artifacts.ts)                               | Taxonomy and license artifacts from pinned sources, with bounded retries and a validated cached-mirror fallback                                                                                                                        |
+| [`commands/generate/prepare-website-licenses.ts`](./commands/generate/prepare-website-licenses.ts) | `prepareWebsiteLicenses`: only the website license attribution, for `generate --website-licenses-only` (run by the website devcontainer); the JSON document is `{paths}`                                                               |
+| [`commands/rates/cli.ts`](./commands/rates/cli.ts)                                                 | `rates update [--year <y>] [--from <y>] [--to <y>]`; invalid years are usage failures (exit `2`)                                                                                                                                       |
+| [`commands/rates/update.ts`](./commands/rates/update.ts)                                           | `updateExchangeRates`: yearly Frankfurter averages merged into `sites/arolariu.ro/public/data/exchange-rates.csv`                                                                                                                      |
+| [`commands/docs/cli.ts`](./commands/docs/cli.ts)                                                   | `docs assemble` (renders the extractor and tier summary) and `docs prepare-site`                                                                                                                                                       |
+| [`commands/docs/assemble.ts`](./commands/docs/assemble.ts)                                         | `assembleDocumentation`: concurrent TypeDoc, pydoc-markdown, and DefaultDocumentation runs, tier validation, landing pages, prose mirroring                                                                                            |
+| [`commands/docs/normalize.ts`](./commands/docs/normalize.ts)                                       | Fills missing Docusaurus frontmatter (`title`, `sidebar_position`) without overwriting existing keys                                                                                                                                   |
+| [`commands/docs/prepare-site.ts`](./commands/docs/prepare-site.ts)                                 | `prepareSiteDocs`: prose-only preparation, without reference extractors or application builds, for the docs site's `prepare:site` script; the JSON document is `{scope: "prose-only"}`                                                 |
+| [`commands/docs/prose.ts`](./commands/docs/prose.ts)                                               | `syncProse`: mirrors authored `docs/` prose into `sites/docs.arolariu.ro/docs/monorepo/`, excluding ignored agent working artifacts; shared by `assemble` and `prepare-site`                                                           |
 
 ### Behavior
 
@@ -382,17 +392,21 @@ period ends (exit `130`), and a SIGTERM to the CLI alone is forwarded to the chi
 catchable signal to another process, a self-interrupt of the main fiber takes the immediate `taskkill /T /F` path (exit `130`). In each case
 the processes it stops are gone within three seconds.
 
-| Module                                                                                                       | Responsibility                                                                                                                                                               |
-| ------------------------------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| [`commands/dev/cli.ts`](./commands/dev/cli.ts)                                                               | `dev aspire [--engine]` and `dev selfhost [start\|stop\|logs] [--engine]`; provides `LocalBlobStorageLive` to selfhost only                                                  |
-| [`commands/containers/cli.ts`](./commands/containers/cli.ts)                                                 | `containers build\|run --target` and `containers compose --file -- <args…>`; Compose without passthrough arguments is a usage failure (exit `2`)                             |
-| [`commands/containers/output.ts`](./commands/containers/output.ts)                                           | `renderContainerCompletion` (the JSON document or the success line) and `reportChildExit` (a non-zero engine or AppHost exit)                                                |
-| [`container-runtime/selection.ts`](./container-runtime/selection.ts)                                         | Pure `resolveContainerEngine` (also used by Setup and Doctor) and its Effect counterpart for the commands                                                                    |
-| [`container-runtime/preflight.ts`](./container-runtime/preflight.ts)                                         | Engine CLI and Compose provider probes plus Docker Desktop backend rejection; a failing probe is a `ContainerRuntimeError` describing the failing check and its probe output |
-| [`container-runtime/aspire.ts`](./container-runtime/aspire.ts)                                               | AppHost startup with inherited output                                                                                                                                        |
-| [`container-runtime/compose.ts`](./container-runtime/compose.ts), [`image.ts`](./container-runtime/image.ts) | Compose passthrough and image build/run with tee output; frontend/backend images generate the taxonomy artifacts silently first                                              |
-| [`container-runtime/selfhost.ts`](./container-runtime/selfhost.ts)                                           | Selfhost start/stop/logs over the `infra/Local` stacks, artifacts, certificates, the Traefik config, and the storage bootstrap                                               |
-| [`container-runtime/selfhost.bootstrap.ts`](./container-runtime/selfhost.bootstrap.ts)                       | Cosmos provisioning through `HttpClient` (bounded bodies) and Azurite through the `LocalBlobStorage` service, the only Blob SDK owner                                        |
+| Module                                                                                                       | Responsibility                                                                                                                                                                                       |
+| ------------------------------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| [`commands/dev/cli.ts`](./commands/dev/cli.ts)                                                               | `dev aspire [--engine]` and `dev selfhost [start\|stop\|logs] [--engine]`; provides `LocalBlobStorageLive` to selfhost only                                                                          |
+| [`commands/containers/cli.ts`](./commands/containers/cli.ts)                                                 | `containers build\|run --target` and `containers compose --file -- <args…>`; Compose without passthrough arguments is a usage failure (exit `2`)                                                     |
+| [`commands/containers/output.ts`](./commands/containers/output.ts)                                           | `renderContainerCompletion` (the JSON document or the success line) and `reportChildExit` (a non-zero engine or AppHost exit)                                                                        |
+| [`container-runtime/selection.ts`](./container-runtime/selection.ts)                                         | Pure `resolveContainerEngine` (also used by Setup and Doctor) and its Effect counterpart for the commands                                                                                            |
+| [`container-runtime/adapters.ts`](./container-runtime/adapters.ts)                                           | `getContainerAdapter`: the per-engine CLI, Compose, `exec`, `logs`, `build`, and `run` commands and the Aspire runtime selector, plus `runEchoedRuntimeCommand` (the `$ <command>` echo and tee run) |
+| [`container-runtime/preflight.ts`](./container-runtime/preflight.ts)                                         | Engine CLI and Compose provider probes plus Docker Desktop backend rejection; a failing probe is a `ContainerRuntimeError` describing the failing check and its probe output                         |
+| [`container-runtime/aspire.ts`](./container-runtime/aspire.ts)                                               | AppHost startup with inherited output                                                                                                                                                                |
+| [`container-runtime/compose.ts`](./container-runtime/compose.ts), [`image.ts`](./container-runtime/image.ts) | Compose passthrough and image build/run with tee output; frontend/backend images generate the taxonomy artifacts silently first                                                                      |
+| [`container-runtime/selfhost.ts`](./container-runtime/selfhost.ts)                                           | Selfhost start/stop/logs over the `infra/Local` stacks, artifacts, certificates, the Traefik config, and the storage bootstrap                                                                       |
+| [`container-runtime/selfhost.bootstrap.ts`](./container-runtime/selfhost.bootstrap.ts)                       | Cosmos provisioning through `HttpClient` (bounded bodies) and Azurite through the `LocalBlobStorage` service, the only Blob SDK owner                                                                |
+| [`container-runtime/traefik.ts`](./container-runtime/traefik.ts)                                             | Builds, writes, and removes the generated Traefik file-provider routes (`infra/Local/Management/traefik/dynamic/selfhost-services.yml`)                                                              |
+| [`container-runtime/types.ts`](./container-runtime/types.ts)                                                 | Shared engine, selection, input, and result types and `ContainerRuntimeError`                                                                                                                        |
+| [`container-runtime/selfhost.testing.ts`](./container-runtime/selfhost.testing.ts)                           | Test support for the selfhost program and `dev selfhost` CLI tests: one harness that records every side effect on one timeline                                                                       |
 
 - **JSON.** With `--json`, every completed invocation writes one stdout document, failures included: the typed result (`{engine}`,
   `{engine, file, passthrough}`, `{engine, action, target}`, or `{action, engine, stacks}`) on success; on a non-zero engine or AppHost
@@ -454,39 +468,39 @@ interrupts the whole run rather than failing the current phase.
 
 ### Module map
 
-| Module                                                                                 | Owns                                                                                                                                 |
-| -------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------ |
-| [`commands/setup/index.ts`](./commands/setup/index.ts)                                 | `runSetup`: phase ordering, paths, requirements, the shared inspection session, and the readiness rollup                             |
-| [`commands/setup/cli.ts`](./commands/setup/cli.ts)                                     | Flag decoding and the completion: summary table, degraded capabilities, next actions, banner, and exit code                          |
-| [`commands/setup/runner.ts`](./commands/setup/runner.ts)                               | `runSetupPhases`: sequential, dependency-gated phase execution and per-phase rendering                                               |
-| [`commands/setup/actions.ts`](./commands/setup/actions.ts)                             | `SetupActions`: the consent-gated runner of every setup mutation                                                                     |
-| [`commands/setup/phase-support.ts`](./commands/setup/phase-support.ts)                 | Native phase building blocks: `runPhaseCommand` (setup command defaults), `submitSetupAction`, and `phaseResult`                     |
-| [`commands/setup/phase-testing.ts`](./commands/setup/phase-testing.ts)                 | Test support for the native phase tests: scripted commands, recording inspection/actions, and the counting clock                     |
-| [`commands/setup/errors.ts`](./commands/setup/errors.ts)                               | `SetupActionFailed`, the typed failure of a setup action                                                                             |
-| [`commands/setup/types.ts`](./commands/setup/types.ts)                                 | `SetupInput`, `SetupContext`, `SetupPhaseDefinition`, `SetupAction`, `SetupRequirements`, and the status/scope/disposition contracts |
-| [`commands/setup/phases/workspace.ts`](./commands/setup/phases/workspace.ts)           | Prerequisite validation, root and `.github/scripts` npm restore, and generated taxonomy/GraphQL/i18n artifacts                       |
-| [`commands/setup/phases/dotnet.ts`](./commands/setup/phases/dotnet.ts)                 | .NET SDK install, workload/solution/tool restore, AppHost user secrets, and the local HTTPS dev certificate                          |
-| [`commands/setup/phases/react.ts`](./commands/setup/phases/react.ts)                   | Website package validation, additive website `.env` defaults, and Playwright Chromium                                                |
-| [`commands/setup/phases/svelte.ts`](./commands/setup/phases/svelte.ts)                 | CV and status SvelteKit generated `.svelte-kit` state                                                                                |
-| [`commands/setup/phases/python.ts`](./commands/setup/phases/python.ts)                 | Isolated `exp` Python virtual environment, pinned dependency install, and its requirements fingerprint                               |
-| [`commands/setup/phases/infrastructure.ts`](./commands/setup/phases/infrastructure.ts) | Container engine selection/persistence/install, mkcert, selfhost certificates, required ports, and required runtime files            |
+| Module                                                                                 | Owns                                                                                                                                                        |
+| -------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| [`commands/setup/index.ts`](./commands/setup/index.ts)                                 | `runSetup`: phase ordering, paths, requirements, the shared inspection session, and the readiness rollup                                                    |
+| [`commands/setup/cli.ts`](./commands/setup/cli.ts)                                     | Flag decoding and the completion: summary table, degraded capabilities, next actions, banner, and exit code                                                 |
+| [`commands/setup/runner.ts`](./commands/setup/runner.ts)                               | `runSetupPhases`: sequential, dependency-gated phase execution and per-phase rendering                                                                      |
+| [`commands/setup/actions.ts`](./commands/setup/actions.ts)                             | `SetupActions`: the consent-gated runner of every setup mutation                                                                                            |
+| [`commands/setup/phase-support.ts`](./commands/setup/phase-support.ts)                 | Native phase building blocks: `runPhaseCommand` (setup command defaults), `submitSetupAction`, and `phaseResult`                                            |
+| [`commands/setup/phase-testing.ts`](./commands/setup/phase-testing.ts)                 | Test support for the native phase tests: scripted commands, recording inspection/actions, and the counting clock                                            |
+| [`commands/setup/errors.ts`](./commands/setup/errors.ts)                               | `SetupActionFailed`, the typed failure of a setup action                                                                                                    |
+| [`commands/setup/types.ts`](./commands/setup/types.ts)                                 | `SetupInput`, `SetupContext`, `SetupPhaseDefinition`, `SetupAction`, `SetupRequirements`, and the status/scope/disposition contracts                        |
+| [`commands/setup/phases/workspace.ts`](./commands/setup/phases/workspace.ts)           | Prerequisite validation, root dependency-tree validation (run `npm ci` first), `.github/scripts` npm restore, and generated taxonomy/GraphQL/i18n artifacts |
+| [`commands/setup/phases/dotnet.ts`](./commands/setup/phases/dotnet.ts)                 | .NET SDK install, workload/solution/tool restore, AppHost user secrets, and the local HTTPS dev certificate                                                 |
+| [`commands/setup/phases/react.ts`](./commands/setup/phases/react.ts)                   | Website package validation, additive website `.env` defaults, and Playwright Chromium                                                                       |
+| [`commands/setup/phases/svelte.ts`](./commands/setup/phases/svelte.ts)                 | CV and status SvelteKit generated `.svelte-kit` state                                                                                                       |
+| [`commands/setup/phases/python.ts`](./commands/setup/phases/python.ts)                 | Isolated `exp` Python interpreter selection/installation, virtual environment, pip upgrade, and pinned dependency install                                   |
+| [`commands/setup/phases/infrastructure.ts`](./commands/setup/phases/infrastructure.ts) | Container engine selection/persistence/install, mkcert, selfhost certificates, required ports, and required runtime files                                   |
 
 ### Phase dependency table
 
 Phases run in this exact order; a required dependency that is not `succeeded`/`degraded` (or, during `--dry-run`, planned) skips its
 dependent phase and names the blocking dependency.
 
-| Phase id                                | Title                               | Required | Depends on                                            |
-| --------------------------------------- | ----------------------------------- | :------: | ----------------------------------------------------- |
-| `workspace.prerequisites`               | Validate workspace prerequisites    |    ✅    | —                                                     |
-| `workspace.root-dependencies`           | Restore root workspace dependencies |    ✅    | `workspace.prerequisites`                             |
-| `workspace.github-scripts-dependencies` | Restore GitHub scripts dependencies |    ✅    | `workspace.prerequisites`                             |
-| `workspace.generators`                  | Generate checkout artifacts         |    ✅    | `workspace.root-dependencies`                         |
-| `dotnet`                                | .NET toolchain                      |    ✅    | —                                                     |
-| `react`                                 | React workspace                     |    ✅    | `workspace.root-dependencies`, `workspace.generators` |
-| `svelte`                                | Svelte workspaces                   |    ✅    | `workspace.root-dependencies`                         |
-| `python`                                | Python toolchain                    |    ✅    | —                                                     |
-| `infrastructure`                        | Local infrastructure                |    ✅    | —                                                     |
+| Phase id                                | Title                                | Required | Depends on                                            |
+| --------------------------------------- | ------------------------------------ | :------: | ----------------------------------------------------- |
+| `workspace.prerequisites`               | Validate workspace prerequisites     |    ✅    | —                                                     |
+| `workspace.root-dependencies`           | Validate root workspace dependencies |    ✅    | `workspace.prerequisites`                             |
+| `workspace.github-scripts-dependencies` | Restore GitHub scripts dependencies  |    ✅    | `workspace.prerequisites`                             |
+| `workspace.generators`                  | Generate checkout artifacts          |    ✅    | `workspace.root-dependencies`                         |
+| `dotnet`                                | .NET toolchain                       |    ✅    | —                                                     |
+| `react`                                 | React workspace                      |    ✅    | `workspace.root-dependencies`, `workspace.generators` |
+| `svelte`                                | Svelte workspaces                    |    ✅    | `workspace.root-dependencies`                         |
+| `python`                                | Python toolchain                     |    ✅    | —                                                     |
+| `infrastructure`                        | Local infrastructure                 |    ✅    | —                                                     |
 
 ### Mutation scopes and consent
 
@@ -510,11 +524,11 @@ Each decision renders exactly one action line under the invocation context `[aro
 | `declined`  | `⚠️ Declined setup action <metadata>`                             | stderr   |
 | `executed`  | `✅ Executed setup action <metadata>` (after the action succeeds) | stdout   |
 
-| Scope        | Consent behavior                                                             | Representative actions                                                                                                                                                                                                                                                                                               |
-| ------------ | ---------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `repository` | Never prompts (still only planned under `--dry-run`)                         | Root/`.github/scripts` `npm ci`, dependency fingerprint writes, checkout-artifact generation, additive website `.env` writes, Playwright Chromium install, Python venv creation/pip install/fingerprint write, SvelteKit generated-state preparation, container engine persistence to `.arolariu/tooling.local.json` |
-| `user`       | Never prompts (still only planned under `--dry-run`)                         | .NET local tool restore, AppHost local-development user-secret generation, HTTPS dev certificate creation, selfhost certificate generation                                                                                                                                                                           |
-| `system`     | Requires an interactive confirm unless `--yes`; without a TTY it is declined | .NET SDK install, .NET workload restore, HTTPS certificate trust, Playwright system dependency install, container engine install, mkcert install/trust                                                                                                                                                               |
+| Scope        | Consent behavior                                                             | Representative actions                                                                                                                                                                                                                                                                                   |
+| ------------ | ---------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `repository` | Never prompts (still only planned under `--dry-run`)                         | `.github/scripts` `npm ci`, .NET solution restore, checkout-artifact generation, additive website `.env` writes, Playwright Chromium install, Python venv creation/pip upgrade/dependency install, SvelteKit generated-state preparation, container engine persistence to `.arolariu/tooling.local.json` |
+| `user`       | Never prompts (still only planned under `--dry-run`)                         | .NET local tool restore, AppHost local-development user-secret generation, HTTPS dev certificate creation, selfhost certificate generation                                                                                                                                                               |
+| `system`     | Requires an interactive confirm unless `--yes`; without a TTY it is declined | .NET SDK install, .NET workload restore, HTTPS certificate trust, Playwright system dependency install, Python interpreter install, container engine install, mkcert install/trust                                                                                                                       |
 
 `--yes` approves only `system`-scoped actions; it never selects a container engine, invents prompted text, or supplies a secret. Under
 `--dry-run`, no phase mutates the repository, the invoking user's profile, or the host — every action reports `planned` instead.
@@ -558,6 +572,7 @@ outside that boundary.
 | [`commands/doctor/index.ts`](./commands/doctor/index.ts)                                   | `runDoctor`: module orchestration/ordering, fact prewarming, and module-defect normalization                                                                                                  |
 | [`commands/doctor/cli.ts`](./commands/doctor/cli.ts)                                       | Flag parsing, the live `NetworkProbe` layer, JSON/human completion, and the exit-code rollup                                                                                                  |
 | [`commands/doctor/types.ts`](./commands/doctor/types.ts)                                   | Shared `DiagnosticResult`/`DoctorContext`/`DoctorInput`/`DoctorRequirements` contracts and diagnostic-result helpers                                                                          |
+| [`commands/doctor/diagnostics.ts`](./commands/doctor/diagnostics.ts)                       | Shared diagnostic helpers for bounded evidence, error normalization, and diagnostic-result factories                                                                                          |
 | [`commands/doctor/NetworkProbe.ts`](./commands/doctor/NetworkProbe.ts)                     | The bounded, `GET`-only `NetworkProbe` service (10 MiB body bound, one deadline for request and body)                                                                                         |
 | [`commands/doctor/reporter.ts`](./commands/doctor/reporter.ts)                             | Stable per-check score weights, schema-v1 validation (`createDoctorReport`), and human rendering through `Presenter`                                                                          |
 | [`commands/doctor/modules/workspace.ts`](./commands/doctor/modules/workspace.ts)           | Repository root, git, Node/npm runtime, dependency trees, Nx workspace graph (read from repository metadata, see below), config files, generated artifacts, host capacity, npm audit/outdated |
