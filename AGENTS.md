@@ -37,7 +37,8 @@ source changes; downstream instructions, agents, skills, and prompts reference t
 ## Commands
 
 ```powershell
-# First-time setup
+# First-time setup (setup validates the root npm tree; it does not install it)
+npm ci
 npm run setup
 
 # Aspire local development with an explicit container engine
@@ -78,7 +79,7 @@ npm run test:website
 # Quality and generation
 npm run lint
 npm run format
-npm run generate
+npm run generate -- artifacts gql i18n
 npm run generate:i18n
 npm run rates:update
 
@@ -278,8 +279,10 @@ sites/cv.arolariu.ro and sites/status.arolariu.ro remain standalone sites.
 | Prompts          | `.github/prompts/`                | Local VS Code shortcuts                     |
 | Extensions       | `.github/extensions/`             | Optional Copilot CLI acceleration           |
 | Memory           | `.github/memory/memory.json`      | Durable, non-source-derived learned context |
+| Governance       | `.github/agent-governance/`       | Operating protocol and threat model         |
 
-`CLAUDE.md` is a best-effort symlink to this file. Repository MCP configuration lives in `.github/mcp.json`.
+`CLAUDE.md` is a best-effort symlink to this file. Repository MCP configuration lives in `.github/mcp.json`. The human-oriented overview of
+this system is `.github/docs/ai-customization-guide.md`.
 
 ## RFC Map
 
@@ -304,9 +307,9 @@ sites/cv.arolariu.ro and sites/status.arolariu.ro remain standalone sites.
 
 | Problem                               | Action                                                                                  |
 | ------------------------------------- | --------------------------------------------------------------------------------------- |
-| Build reports missing generated files | Run `npm run generate`                                                                  |
+| Build reports missing generated files | Run `npm run generate -- artifacts gql i18n`                                            |
 | Missing translations                  | Run `npm run generate:i18n`                                                             |
-| API is unavailable                    | Run `npm run dev:api`                                                                   |
+| API is unavailable                    | Run `npm run dev` (Aspire); standalone `npm run dev:api` also needs `npm run dev:exp`   |
 | Shared component import fails         | Verify `packages/components/src/index.ts`                                               |
 | .NET warnings fail the build          | Fix the warning; do not suppress it                                                     |
 | Public C# API fails CS1591            | Add the required XML documentation                                                      |
