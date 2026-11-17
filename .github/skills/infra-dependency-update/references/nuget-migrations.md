@@ -9,9 +9,9 @@ Load only after live inspection establishes NuGet ownership.
   [`Invoices.csproj`](../../../../sites/api.arolariu.ro/src/Invoices/arolariu.Backend.Domain.Invoices.csproj) declare package use without
   duplicating centrally managed versions.
 - [`Directory.Build.props`](../../../../sites/api.arolariu.ro/Directory.Build.props) owns API target-framework/language/compiler policy.
-- API projects with a committed lock, such as
-  [`Invoices/packages.lock.json`](../../../../sites/api.arolariu.ro/src/Invoices/packages.lock.json), have durable resolved-state evidence.
-  Do not infer a lock for a project that has none.
+- Every API project commits a lock, such as
+  [`Invoices/packages.lock.json`](../../../../sites/api.arolariu.ro/src/Invoices/packages.lock.json), which is durable resolved-state
+  evidence. Do not infer a lock for a project that has none.
 - [`Tooling Directory.Packages.props`](../../../../tooling/Directory.Packages.props) owns tooling PackageReference versions independently of
   the API catalog. Tooling projects declare package use, including [`AppHost.csproj`](../../../../tooling/src/AppHost/AppHost.csproj),
   [`LocalDevelopment.Bootstrap.csproj`](../../../../tooling/src/LocalDevelopment.Bootstrap/LocalDevelopment.Bootstrap.csproj),

@@ -17,9 +17,10 @@ state, and usage before research or mutation.
 - [`.github/scripts/package-lock.json`](../../../../.github/scripts/package-lock.json)
 - [`sites/arolariu.ro/src/components/Navigation.tsx`](../../../../sites/arolariu.ro/src/components/Navigation.tsx)
 
-**Why representative:** the root owns its workspaces and root lock, while `.github/scripts` is outside that workspace membership and owns an
-adjacent manifest/lock pair. The website and shared package demonstrate member dependency/peer intent, and live website source demonstrates
-an actual package use. Nx treats root-domain dependency metadata as project input.
+**Why representative:** the root owns its workspaces, root lock, exact versions, and `overrides`, while `.github/scripts` is outside that
+workspace membership and owns an adjacent manifest/lock pair. The website and shared package demonstrate member presence (`"*"`), peer-range
+intent, and the website's pinned `@arolariu/components` registry tarball, and live website source demonstrates an actual package use. Nx
+treats root-domain dependency metadata as project input.
 
 **Inspect:** first pair every tracked npm lockfile with its owning manifest and workspace membership. Then inspect only the target's owning
 manifest, relevant member declarations, lock entries, effective npm configuration, peer/engine/export metadata, imports/config/plugins, and
@@ -47,9 +48,10 @@ crosses them.
 - [`AzureDocumentIntelligenceBroker.Internals.cs`](../../../../sites/api.arolariu.ro/src/Invoices/Brokers/DocumentIntelligenceBroker/AzureDocumentIntelligenceBroker.Internals.cs)
 - [`DocumentIntelligenceRecordContractTests.cs`](../../../../sites/api.arolariu.ro/tests/arolariu.Backend.Domain.Tests/Invoices/Brokers/DocumentIntelligenceRecordContractTests.cs)
 
-**Why representative:** API projects inherit central package versions and some commit per-project lockfiles. Tooling projects inherit their
-independent central package catalog, retain project-local SDK declarations, and have no committed package lock. Provider-specific SDK calls,
-provider-neutral mapping, and contract tests show how usage surfaces remain separate from version ownership.
+**Why representative:** API projects inherit central package versions, and every API project commits a per-project `packages.lock.json`.
+Tooling projects inherit their independent central package catalog, retain project-local SDK declarations, and have no committed package
+lock. Provider-specific SDK calls, provider-neutral mapping, and contract tests show how usage surfaces remain separate from version
+ownership.
 
 **Inspect:** the target's actual central or project-local declaration, MSBuild imports, all consumers, existing lockfiles or recorded
 lockless graph evidence, target-framework compatibility, constructors/methods/models, serialization mapping, DI, lifecycle, analyzers,
@@ -67,13 +69,15 @@ EF/persistence. Follow its actual version owner, consuming projects, available l
 - [`pyproject.toml`](../../../../sites/exp.arolariu.ro/pyproject.toml)
 - [`project.json`](../../../../sites/exp.arolariu.ro/project.json)
 - [`Dockerfile`](../../../../sites/exp.arolariu.ro/Dockerfile)
+- [`infra/containers/Dockerfile.exp`](../../../../infra/containers/Dockerfile.exp)
 - [`models.py`](../../../../sites/exp.arolariu.ro/models.py)
 - [`main.py`](../../../../sites/exp.arolariu.ro/main.py)
 - [`main.test.py`](../../../../sites/exp.arolariu.ro/main.test.py)
 
-**Why representative:** production and development constraints are layered, runtime/tool configuration is separate, the container installs
-only the production layer, and live FastAPI/Pydantic source plus tests expose migration surfaces. The requirements include compatible ranges
-and no committed Python lockfile supplies an exact resolved graph.
+**Why representative:** production and development constraints are layered, runtime/tool configuration is separate, both container images
+(the CI `Dockerfile` and the selfhost/local `Dockerfile.exp`) install only the production layer, and live FastAPI/Pydantic source plus tests
+expose migration surfaces. The requirements include one compatible-release (`~=`) range, and no committed Python lockfile supplies an exact
+resolved graph.
 
 **Inspect:** exact direct specifier text, observed transitive graph and its evidence limit, Python support, models,
 validation/serialization, routes/dependencies, telemetry/lifespan, TestClient, pytest/Ruff behavior, local project targets, and production

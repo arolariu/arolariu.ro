@@ -16,8 +16,8 @@ Enter through the concrete symptom. Capture the first failed command, resource, 
 | exp live but not ready                    | Compare exp liveness and readiness route implementations and payload/status                                | Treat readiness failure as config unreadiness; follow its log before starting API dependents.                                                                                                                  |
 | API startup/health failure                | AppHost/selfhost dependency graph, API health report entries, exp readiness, identity/bootstrap completion | Trace the named failed health check or upstream. Do not diagnose the website until API dependencies are ready.                                                                                                 |
 | Website unhealthy                         | Website foreground/container logs and its live health route dependency entries                             | Separate website serving/build failure from exp/API dependency failure; repair the first unhealthy upstream.                                                                                                   |
-| Local TLS failure                         | Active mode scheme, website dev script, Traefik routes/TLS file, cert existence and trust                  | Native website HTTPS and selfhost Traefik have different owners. Ask before mkcert generation, CA install, host-file, certificate, or trust changes.                                                           |
-| OTLP export/TLS or protocol failure       | AppHost launch settings and exp OTLP environment in `Program.cs`; dashboard endpoint logs                  | Verify the injected HTTP/protobuf versus gRPC endpoint and scheme. Do not disable TLS or telemetry globally to hide a protocol mismatch.                                                                       |
+| Local TLS failure                         | Active mode scheme, website dev script, renewal start error, Traefik routes/TLS file, cert existence/trust | Native website HTTPS (AppHost `WebsiteCertificateRenewal`, then Next.js) and selfhost Traefik have different owners. Ask before mkcert generation, CA install, host-file, certificate, or trust changes.       |
+| OTLP export/TLS or protocol failure       | AppHost launch settings and exp OTLP environment in `ExpResources.cs`; dashboard endpoint logs             | Verify the injected HTTP/protobuf versus gRPC endpoint and scheme. Do not disable TLS or telemetry globally to hide a protocol mismatch.                                                                       |
 | Image/build failure                       | Root image script, target mapping, Dockerfile, repository-root context, generator step                     | Frontend/backend may require generated artifacts before build; derive that gate from `image.ts`. Ask before dependency installation. Preserve the first failing build stage.                                   |
 | Health says running but user path fails   | Probe semantics, direct route, reverse proxy, immediate upstreams                                          | A liveness probe may not prove readiness or dependencies. Check the narrow user path after readiness and report both outcomes.                                                                                 |
 
@@ -31,7 +31,8 @@ Enter through the concrete symptom. Capture the first failed command, resource, 
 6. Recover API, then website.
 7. Recheck only the affected route and one immediate consumer.
 
-Use current `Program.cs` and `buildSelfhostPlan` to adjust this order if the graph changes.
+Use current `LocalApplication.WireStartupDependencies` (`tooling/src/AppHost/LocalApplication.cs`) and `buildSelfhostPlan` to adjust this
+order if the graph changes.
 
 ## Unsafe Shortcuts
 

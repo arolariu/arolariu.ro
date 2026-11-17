@@ -46,8 +46,9 @@ Read-only compatibility research may begin without mutation approval.
 
 ## Core Procedure
 
-1. Inspect live manifests, existing lockfiles or resolution evidence, runtime/tool configuration, direct imports, configuration, tests, and
-   container/deployment use. Determine the ownership domain rather than assuming the nearest manifest owns resolution.
+1. Inspect live manifests, existing lockfiles or resolution evidence, runtime/tool configuration, the matching `.github/dependabot.yml`
+   entry, direct imports, configuration, tests, and container/deployment use, including Dockerfile base images. Determine the ownership
+   domain rather than assuming the nearest manifest owns resolution.
 2. Record exact current and proposed target states from primary sources.
 3. Research the exact target and every crossed release using official package metadata, maintainer changelogs/releases, migration guides,
    framework and runtime documentation. Identify breaking/deprecated APIs, changed defaults, peers/engines, advisories, transitive risk,
