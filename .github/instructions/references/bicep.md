@@ -24,7 +24,7 @@ dependencies created by symbolic output references.
 // 6. Sites         → Deploys web applications (depends on: Storage, Configuration)
 // 7. Network       → Creates Front Door, DNS (depends on: Sites)
 // 8. Bindings      → Configures custom domains (depends on: Sites, Network)
-// 9. AI            → Deploys Azure OpenAI (header says Configuration)
+// 9. AI            → Deploys Azure OpenAI (depends on: Configuration)
 // 10. RBAC         → Resource-scoped role assignments (depends on: respective resources)
 ```
 
@@ -74,11 +74,12 @@ managedIdentityFrontendClientId: identitiesDeployment.outputs.managedIdentitiesL
 managedIdentityInfrastructurePrincipalId: identitiesDeployment.outputs.managedIdentitiesList[2].principalId
 ```
 
-The convention is documented only in `facade.bicep`'s header comment (`[0] = Frontend`, `[1] = Backend`, `[2] = Infrastructure`) and in
-`identity/userAssignedIdentity.bicep`'s `identities` array literal — nothing enforces the ordering at compile time. Anti-pattern:
-reordering, inserting, or removing an entry in that `identities` array without updating every `managedIdentitiesList[N]` consumer across
-`facade.bicep` silently rebinds RBAC and app settings to the wrong identity. Treat any change to that array as touching every module that
-indexes into it, not just `identity/`.
+The convention is documented only in `facade.bicep`'s header comment (`[0] = Frontend`, `[1] = Backend`, `[2] = Infrastructure`),
+`identity/deploymentFile.bicep`'s header, and `identity/userAssignedIdentity.bicep`'s `identities` array literal — nothing enforces the
+ordering at compile time. Anti-pattern: reordering, inserting, or removing an entry in that `identities` array without updating every index
+consumer (`managedIdentitiesList[N]` across `facade.bicep` and `userAssignedManagedIdentities[2]` in `identity/deploymentFile.bicep`)
+silently rebinds RBAC, app settings, and federated credentials to the wrong identity. Treat any change to that array as touching every
+module that indexes into it, not just `identity/`.
 
 ## User-defined types and naming
 
@@ -142,10 +143,11 @@ Most resource modules (`storageAccount.bicep`, `keyVault.bicep`, `appServicePlan
 `bindings/dev-arolariu-ro-bindings.bicep`. Search for `var commonTags resourceTags` before assuming the shared function is universal, and do
 not normalize these files as unrelated cleanup.
 
-Naming follows `${resourceConventionPrefix}-<role>` for identities (`${prefix}-frontend`, `${prefix}-backend`, `${prefix}-infrastructure`)
-and `${resourceConventionPrefix}-<purpose>` elsewhere (`${prefix}-workspace`, `${prefix}-insights`, `${prefix}-production` /
-`${prefix}-development` for App Service Plans). Match the existing prefix pattern for a given module family instead of inventing a new
-naming scheme.
+Identities use `${resourceConventionPrefix}-uami-<role>` (`-uami-frontend`, `-uami-backend`, `-uami-infrastructure`). Most other resources
+use `${resourceConventionPrefix}-<purpose>` (`-workspace`, `-insights`, `-sqlserver`, `-nosqlserver`, `-afd`; `-production` / `-development`
+for App Service Plans), while Key Vault, App Configuration, Storage, and Container Registry names strip the hyphens and append the suffix
+directly (`${replace(resourceConventionPrefix, '-', '')}kv`, `…appconfig`, `…sacc`, `…acrprod`). Match the existing prefix pattern for a
+given module family instead of inventing a new naming scheme.
 
 ## Identity, RBAC, and least privilege
 
@@ -184,8 +186,8 @@ Adding a new capability for one identity (for example, giving Frontend queue wri
 confirmation per the Infrastructure Expert agent's identity/RBAC decision matrix — it is not a "just add a line" edit even though the
 surrounding file structure makes it look mechanical.
 
-`constants/roles.bicep` is the single source of truth for role GUIDs, each with an inline comment pointing at the Microsoft built-in roles
-reference:
+`constants/roles.bicep` is the single source of truth for role GUIDs, with one header comment pointing at the Microsoft built-in roles
+reference and section comments grouping the exports:
 
 ```bicep
 // infra/Azure/Bicep/constants/roles.bicep
@@ -317,7 +319,8 @@ Storage CORS is deliberately scoped per consumer. The root/development origin ru
 The API and localhost rule sets also currently allow `PUT` for their own consumers. Do not remove it from either based only on the
 SAS-upload comment; inspect the corresponding caller before changing any method list.
 
-Cosmos DB explicitly disables VNet filtering and AAD-bypass while still requiring TLS 1.2 and disabling key-based auth:
+Cosmos DB explicitly disables VNet filtering and the Azure-services network-ACL bypass (`networkAclBypass: 'None'`) while still requiring
+TLS 1.2 and disabling key-based auth:
 
 ```bicep
 // infra/Azure/Bicep/storage/noSqlServer.bicep
@@ -407,17 +410,19 @@ Infrastructure Expert agent's cost/SKU matrix, even when it looks like a one-lin
 
 ## `what-if` and validation
 
-The repository's own `DEPLOYMENT_GUIDE.md` documents `az bicep build`, `az bicep lint`, and `az deployment sub create` for
-subscription-scope deployment — it does not currently document an `az deployment sub what-if` invocation. Constructing one for an approved
-change follows the same subscription-scope shape as the documented `create` command:
+`main.bicep`'s header documents the live subscription-scope `az deployment sub create` invocation, which reads `main.bicepparam`;
+`DEPLOYMENT_GUIDE.md` and `README.md` add `az bicep build` and `az bicep lint`. No repository workflow or script deploys Bicep, and no
+`infra/` document shows an `az deployment sub what-if` invocation. Constructing one for an approved change mirrors the `create` form.
+`main.bicep` requires `expEntraAppClientId` (no default), so the placeholder in `main.bicepparam` must hold the real App Registration client
+ID, as that file's own comment instructs:
 
 ```bash
-# infra/Azure/Bicep/DEPLOYMENT_GUIDE.md documents the create form; what-if
-# uses the identical scope and parameters:
+# infra/Azure/Bicep/main.bicep documents the create form; what-if uses the
+# same scope, location, and parameters file:
 az deployment sub what-if \
-  --location swedencentral \
+  --location francecentral \
   --template-file main.bicep \
-  --parameters @main.parameters.json
+  --parameters main.bicepparam
 ```
 
 `what-if` against a live subscription is itself a mutation-adjacent validation step under the Infrastructure Expert agent's contract — it
@@ -451,5 +456,7 @@ requires the same approval as the change it validates, not just approval to "che
 - `infra/Azure/Bicep/compute/appServicePlans.bicep`, `COST_OPTIMIZATION.md` — SKU rationale and current cost distribution
 - `infra/Azure/Bicep/network/azureFrontDoor.bicep` — Front Door/WAF tier ceiling
 - `infra/Azure/Bicep/observability/README.md` — documented-but-not-deployed diagnostic settings shape
-- `infra/Azure/Bicep/DEPLOYMENT_GUIDE.md` — the only live `az bicep`/ `az deployment sub` commands actually documented in this repository
+- `infra/Azure/Bicep/main.bicep` (header) and `main.bicepparam` — the canonical `az deployment sub create` invocation and parameter values;
+  `DEPLOYMENT_GUIDE.md` and `README.md` also document `az bicep`/`az deployment sub` commands, but where they differ, `main.bicep` and
+  `main.bicepparam` win
 - `infra/Azure/Bicep/bicepconfig.json` — enforced analyzer rules (secure parameters, API-version age, resource/parameter/output limits)

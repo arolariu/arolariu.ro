@@ -117,7 +117,9 @@ read the file's `@remarks` before extending the union.
 
 ## Generics for reusable stores and entities
 
-`sites/arolariu.ro/src/stores/createEntityStore.ts` (RFC 1007 §2) generalizes the invoice/merchant/scan store shape:
+`sites/arolariu.ro/src/stores/createEntityStore.ts`
+([RFC 1007 §1](../../../docs/rfc/1007-advanced-frontend-patterns.md#1-entity-store-factory)) generalizes the invoice/merchant entity store
+shape:
 
 ```ts
 export interface BaseEntity {
@@ -130,6 +132,7 @@ export interface EntityActions<E extends BaseEntity> {
   removeEntity: (entityId: string) => void;
   updateEntity: (entityId: string, updates: Partial<E>) => void;
   getEntityById: (entityId: string) => E | undefined;
+  // ... selection, clear, and hydration actions
 }
 
 export type EntityStore<E extends BaseEntity> = EntityState<E> & EntityActions<E>;
@@ -143,16 +146,18 @@ lifecycle state and actions exceed the generic entity contract. Check the target
 
 ## `readonly` and immutability
 
-- `BaseEntity<T>` marks `id` `readonly`; audit fields follow the same convention in `IAuditable`.
+- `BaseEntity<T>` marks `id` `readonly`; `IAuditable` makes only the creation fields (`createdAt`, `createdBy`) `readonly` and leaves the
+  update and flag fields mutable.
 - Component and hook contracts use `Readonly<Props>` / `Readonly<{...}>` — see the React catalog for the component-shape rule.
-- Prefer `ReadonlyArray<T>` for persisted collections (Zustand persisted state in `invoicesStore.tsx`, `EntityPersistedState<E>`) so a
-  consumer cannot mutate the array in place; the store still exposes a mutable in-memory `selectedEntities: E[]` field for local list
-  manipulation, so `readonly` is a per-field decision, not a blanket rule.
+- Prefer `ReadonlyArray<T>` for persisted collections (Zustand persisted state: `EntityPersistedState<E>` in `createEntityStore.ts`, which
+  backs `invoicesStore.tsx` and `merchantsStore.tsx`, and `scans` in `scansStore.tsx`) so a consumer cannot mutate the array in place; the
+  entity stores still expose a mutable in-memory `selectedEntities: E[]` field for local list manipulation, so `readonly` is a per-field
+  decision, not a blanket rule.
 
 ## `satisfies` for shape-checked object literals without widening
 
-`sites/arolariu.ro/src/metadata.ts` uses `satisfies` throughout so a typo in a literal key fails at the definition site while the resulting
-value keeps its literal type (as opposed to widening to the annotated interface):
+`sites/arolariu.ro/src/metadata.ts` uses `satisfies` on nested literals so a typo in a literal key fails at the definition site (the
+exported `metadata` constant itself is still annotated `Metadata`):
 
 ```ts
 export const metadata: Metadata = {
@@ -200,8 +205,13 @@ preset key to `string` and lose the literal `"default" | "midnight" | ...` union
 - `noUncheckedIndexedAccess` is enabled by the root default, so array/index access returns `T | undefined` in inheriting projects. The CV
   site explicitly disables it (along with `noPropertyAccessFromIndexSignature`) for its CSS Module typing. Check the nearest merged
   `tsconfig` before relying on either strictness flag.
+- `packages/components/tsconfig.json`, which rslib uses (`source.tsconfigPath`) to build the library and emit its declarations, disables
+  `exactOptionalPropertyTypes`, `noPropertyAccessFromIndexSignature`, `strictNullChecks`, `strictPropertyInitialization`, and
+  `noImplicitReturns`. CSS Module dot access (`styles.button`) therefore compiles in the library but not in the website, and the inherited
+  `noUncheckedIndexedAccess` adds no `undefined` to index access there because null checking is off.
 - Use `import type` for type-only imports as a repository convention and to keep runtime import intent explicit. The current root config
-  does not enable `verbatimModuleSyntax`, so do not diagnose a build failure on that flag without checking the nearest live `tsconfig`.
+  does not enable `verbatimModuleSyntax`, and the CV and status sites also extend the generated `.svelte-kit/tsconfig.json`, so do not
+  diagnose a build failure on that flag without checking the nearest merged live `tsconfig`.
 
 ## Anti-pattern corrections summary
 

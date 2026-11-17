@@ -74,6 +74,8 @@ class ThemeState {
       this.applyTheme(value);
     }
   }
+
+  // ... toggle() and the private applyTheme() DOM helper
 }
 
 const themeState = new ThemeState();
@@ -83,6 +85,7 @@ export function useTheme() {
     get current(): Theme {
       return themeState.current;
     },
+    // ... currentTheme alias getter
     toggle: () => themeState.toggle(),
     set: (value: Theme) => themeState.set(value),
   };
@@ -132,9 +135,9 @@ export let theme: "light" | "dark" = "dark";
 // ✅ Correction — a runes class with a controlled setter, as ThemeState does.
 ```
 
-## Static rendering: `+layout.ts` page options are the whole story
+## Static rendering: root `+layout.ts` page options and one runtime endpoint
 
-Every route inherits its rendering mode from one root `src/routes/+layout.ts` — there is no per-route override anywhere in the site:
+Every page route inherits its rendering mode from one root `src/routes/+layout.ts` — there is no per-page override anywhere in the site:
 
 ```ts
 // sites/cv.arolariu.ro/src/routes/+layout.ts
@@ -144,13 +147,19 @@ export const csr = true;
 export const trailingSlash = "never";
 ```
 
-`prerender = true` means every route must be resolvable at build time from data already available in `src/data/*.ts` — do not add a route
-that depends on a runtime-only external fetch without first confirming prerendering still succeeds with the CV build command owned by root
-`AGENTS.md`. `csr = true` is why client-only interactivity (Command Palette, theme toggle, scroll progress) works after hydration even
+`prerender = true` means every page route must be resolvable at build time from data already available in `src/data/*.ts` — do not add a
+route that depends on a runtime-only external fetch without first confirming prerendering still succeeds with the CV build command owned by
+root `AGENTS.md`. `csr = true` is why client-only interactivity (Command Palette, theme toggle, scroll progress) works after hydration even
 though the HTML is fully pre-baked. If a new route genuinely cannot be prerendered, that is a page-option change and needs explicit approval
 before introducing `export const prerender = false` anywhere.
 
-## State and effects: `onMount` for DOM listeners, `$effect` for derived resets
+The exception is `src/routes/rest/json/+server.ts`, a `GET`/`OPTIONS` endpoint that reads the `section`, `format`, and `pretty` query
+parameters on each request (the Command Palette's copy-JSON action also fetches it from the browser). Layout page options do not apply to
+`+server.ts` files, so the SWA adapter serves it at runtime from its server output (`apiLocation: "./build/server"` in
+`swa-cli.config.json`) instead of a prerendered file; prerendering would forbid its `url.searchParams` reads. Do not treat the site as fully
+static.
+
+## State and effects: `onMount` for DOM listeners, `$effect` for reactive updates
 
 `CommandPalette.svelte` is a documented **layout singleton** — mounted exactly once from `+layout.svelte` — specifically because it attaches
 a document-level `keydown` listener in `onMount` and returns the cleanup function:
@@ -173,8 +182,9 @@ a document-level `keydown` listener in `onMount` and returns the cleanup functio
 Any new component that binds a global (`document`/`window`) listener needs the same comment-documented singleton contract, or it must scope
 the listener to the component's own DOM node instead.
 
-`$effect` in this codebase is reserved for reacting to a derived value changing, not for one-time setup — `onMount` still owns
-setup/teardown:
+Prefer `onMount` for one-time setup/teardown. `src/presentation/human/Hero.svelte` and `src/components/motion/AnimatedSection.svelte`
+currently start one-shot timers inside an `$effect` with no tracked reads; that is existing practice, not a pattern to extend. Use `$effect`
+to react to reactive values, such as the bindable-prop-to-DOM sync in `HelpDialog.svelte` or the derived reset in `CommandPalette.svelte`:
 
 ```svelte
 <!-- sites/cv.arolariu.ro/src/components/CommandPalette.svelte -->
@@ -256,11 +266,14 @@ accessibility properties a new route or component must not regress, and extend `
 
 ## Styling: co-located CSS Modules, shared tokens via `_tokens.scss`
 
-Every component owns a sibling `ComponentName.module.scss` imported as `styles` and applied via `class={styles.x}` —
-`ThemeToggle.svelte`/`ThemeToggle.module.scss`, `CommandPalette.svelte`/`CommandPalette.module.scss`. Global design tokens, breakpoints, and
-shared effects live once in `src/styles/_tokens.scss`, `_breakpoints.scss`, and `_effects.scss`, imported by `global.scss` — do not redefine
-a color/spacing token inside a component module; import the shared partial instead. Class-name composition across conditional states uses
-the repository's small `cx` helper from `@/lib/utils`, not string concatenation or a template literal:
+Every component that owns visual styling has a sibling `ComponentName.module.scss` imported as `styles` and applied via `class={styles.x}` —
+`ThemeToggle.svelte`/`ThemeToggle.module.scss`, `CommandPalette.svelte`/`CommandPalette.module.scss`. Class-prop primitives
+(`src/presentation/Icon.svelte`, `src/components/motion/AnimatedSection.svelte`) and the thin route files have no module, and
+`src/routes/+error.svelte` uses `ErrorPage.module.scss`. Global design tokens are `--cv-*` CSS custom properties declared once in
+`src/styles/_tokens.scss` and loaded through `global.scss`, which the root `+layout.svelte` imports; consume them with `var(--cv-…)` and do
+not redefine a color/spacing token inside a component module. Breakpoint and effect mixins live in `_breakpoints.scss` and `_effects.scss`;
+`@use` those partials directly from the component module that needs them. Class-name composition across conditional states uses the
+repository's small `cx` helper from `@/lib/utils`, not string concatenation or a template literal:
 
 ```svelte
 <!-- sites/cv.arolariu.ro/src/components/CommandPalette.svelte -->
@@ -270,8 +283,9 @@ the repository's small `cx` helper from `@/lib/utils`, not string concatenation 
 
 ## Tests: Vitest + Testing Library for units, Playwright for behavior/a11y
 
-Unit tests are colocated `Component.test.ts` files using `@testing-library/svelte` and query by accessible role/name, not by implementation
-detail:
+Unit tests are colocated `Component.test.ts` files using `@testing-library/svelte`. `ThemeToggle.test.ts` queries by accessible role/name,
+but most component tests also use `container.querySelector` (for example, the native `<dialog>` in `CommandPalette.test.ts`); prefer
+role/name queries where an accessible name exists:
 
 ```ts
 // sites/cv.arolariu.ro/src/components/ThemeToggle.test.ts

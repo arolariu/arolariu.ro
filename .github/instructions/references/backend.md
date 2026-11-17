@@ -84,9 +84,10 @@ public static partial class AuthEndpoints
 
 ## CRUD, analysis, and queue patterns
 
-Foundation CRUD (shown above) is the simplest shape. Analysis composition lives in `AnalysisOrchestrationService`, which sequences OCR,
-generative, and taxonomy Foundations and returns a tuple of the mutated aggregate plus the options that failed or were dependency-blocked —
-it does not throw for a partial capability failure; Processing decides what that means for persistence and retry.
+Foundation CRUD (shown above) is the simplest shape. Analysis composition lives in `AnalysisOrchestrationService`, which composes OCR,
+generative, and taxonomy capabilities through the unified `IAnalysisFoundationService` (queue work goes through
+`IAnalysisQueueFoundationService`) and returns a tuple of the mutated aggregate plus the options that failed or were dependency-blocked — it
+does not throw for a partial capability failure; Processing decides what that means for persistence and retry.
 
 Durable queue work is validated at construction, not at enqueue time:
 
@@ -175,7 +176,10 @@ public async ValueTask<Invoice> CreateInvoiceAsync(Invoice invoice, Cancellation
 {
   ArgumentNullException.ThrowIfNull(invoice);
   using var activity = InvoicePackageTracing.StartActivity(nameof(CreateInvoiceAsync));
-  activity?.SetCosmosDbContext("primary", "invoices", "create", invoice.UserIdentifier.ToString());
+  activity?
+    .SetLayerContext("Broker", nameof(CosmosDatabaseBroker))
+    .SetCosmosDbContext("primary", "invoices", "create", invoice.UserIdentifier.ToString())
+    .SetInvoiceContext(invoice.id, invoice.UserIdentifier);
   var database = CosmosClient.GetDatabase("primary");
   var container = database.GetContainer("invoices");
   // ...
@@ -233,7 +237,7 @@ public void ServiceConstructors_ApprovedGraph_MatchesExpectedDependencies()
 }
 ```
 
-A representative Foundation test pairs a `MockBehavior.Strict` Broker double with an exact classified-exception assertion:
+A representative Foundation test pairs a `MockBehavior.Strict` Broker double with an exact result assertion and `VerifyAll()`:
 
 ```csharp
 // sites/api.arolariu.ro/tests/arolariu.Backend.Domain.Tests/Invoices/Services/Foundation/AnalysisQueueFoundationServiceTests.cs

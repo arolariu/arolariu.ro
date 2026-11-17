@@ -202,10 +202,12 @@ feature_ids=[
 
 ## Configuration: local/Azure loading, refresh, and label overrides
 
-`config/loader.py` has exactly one load path selector, `_load_config_for_infrastructure(infra)`, driven by `INFRA` (`local` or `azure`); do
-not add a second branch elsewhere in the service that reads `INFRA` directly. Local mode reads `config.json` and falls back to
-`config.template.json` with a warning log — it never raises on a missing file. Azure mode requires `AZURE_APPCONFIG_ENDPOINT` and raises
-`RuntimeError` immediately if it is absent, because a silently-empty snapshot in Azure mode would be a worse failure than a fast crash:
+`config/loader.py` selects the startup load path in `_load_config_for_infrastructure(infra)` and the label-scoped path in
+`get_config_for_label`; both resolve the mode through `config.settings.get_runtime_infra_mode()`, which reads `INFRA` (anything other than
+`azure`, such as `local` or `proxy`, loads locally). Do not add another branch that reads `INFRA` directly. Local mode reads `config.json`
+and falls back to `config.template.json` with a warning log — it never raises on a missing file. Azure mode requires
+`AZURE_APPCONFIG_ENDPOINT` and raises `RuntimeError` immediately if it is absent, because a silently-empty snapshot in Azure mode would be a
+worse failure than a fast crash:
 
 ```python
 # sites/exp.arolariu.ro/config/loader.py
@@ -215,6 +217,9 @@ def _load_azure_config(label: str | None = None) -> ConfigSnapshot:
     if not endpoint:
         raise RuntimeError("AZURE_APPCONFIG_ENDPOINT env var is required in azure mode")
 ```
+
+`api/admin.py`'s `_load_azure_config_for_label` and `_set_azure_config_value` are current exceptions: they read `AZURE_APPCONFIG_ENDPOINT`
+with an empty-string default and no `RuntimeError` guard.
 
 Refresh is time-based via `EXP_CONFIG_REFRESH_INTERVAL_SECONDS` (`config/settings.py get_refresh_interval_seconds`), and `0` is a valid,
 intentional "disable automatic refresh" value — but only when the caller passes `allow_zero=True`. The default path treats non-positive
@@ -239,12 +244,13 @@ since FastAPI/uvicorn can serve concurrent requests in the same process.
 
 - `UP` (pyupgrade) is why every union is `str | None` instead of `Optional[str]`, and why type aliases use PEP 695 `type X = ...` instead of
   `TypeAlias`.
-- `SIM` is why `_parse_bool` returns early with guard clauses instead of nested `if/else`, and why comprehensions are used over manual
-  accumulation loops (see `_dedupe`, `_build_config_registry`).
-- `B` (bugbear) is why mutable defaults never appear in function signatures; every default collection uses `default_factory=dict`
-  (`models.py`'s `requestsByPath: dict[str, int] = Field(default_factory=dict, ...)`).
-- `RUF` is why f-strings are preferred over `%`-formatting in new code, except inside `logger.*` calls, which intentionally use `%`-style
-  lazy formatting (`logger.info("Loaded %d configuration keys", len(_config))`) so the string is only built when the log level is enabled.
+- `SIM` (flake8-simplify) flags collapsible nested `if`s (SIM102) and needless `return True`/`return False` branches (SIM103); keep
+  conditionals flat, like `_parse_bool`'s early-return guard clauses.
+- `B` (bugbear) is why mutable defaults never appear in function signatures (B006); Pydantic collection fields use `default_factory=dict` by
+  convention (`models.py`'s `requestsByPath: dict[str, int] = Field(default_factory=dict, ...)`).
+- `UP031`/`UP032` (also pyupgrade) are why f-strings are preferred over `%`/`.format()` formatting in new code, except inside `logger.*`
+  calls, which intentionally use `%`-style lazy formatting (`logger.info("Loaded %d configuration keys", len(_config))`) so the string is
+  only built when the log level is enabled.
 
 If a rule genuinely cannot be satisfied for a specific line, that is a Ruff rule-set change, not a suppression — ask before touching
 `pyproject.toml`.

@@ -23,8 +23,11 @@ Use a private helper that imports `"server-only"` when only Server Components, R
 a `"use server"` export only when the browser must invoke it; every exported Server Action is a public RPC surface with its own input
 validation and authorization contract.
 
-The invoices landing page currently reads its auth snapshot through `fetchAaaSUserFromAuthService`, an export from a `"use server"` module.
-This is live debt, not a precedent: a Server Component does not need a browser-callable RPC action for a private server read.
+Route Server Components currently read their auth snapshot through `fetchAaaSUserFromAuthService` or `fetchBFFUserFromAuthService`, exports
+from the `"use server"` module `sites/arolariu.ro/src/lib/actions/user/fetchUser.ts`. The importing server entries are
+`src/app/auth/page.tsx`, `src/app/global-not-found.tsx`, and the invoices landing, `create-invoice`, `edit-invoice/[id]`, `upload-scans`,
+`view-invoice/[id]` (BFF variant), `view-invoices`, and `view-scans` pages under `src/app/domains/invoices/`. This is live debt, not a
+precedent: a Server Component does not need a browser-callable RPC action for a private server read.
 
 Server Action implementation, transport, security, and result mapping belong to `react-server-action`. Authentication and ownership policy
 belong to `react-auth`.

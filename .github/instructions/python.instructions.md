@@ -37,7 +37,7 @@ Open `references/python.md` only when the task needs one of:
 - a FastAPI router/middleware/DI-free composition decision, or a question about where shared validation/response-building behavior should
   live;
 - a feature-flag storage-prefix or resolution-precedence question;
-- a Ruff rule the task cannot obviously satisfy, or a pytest fixture/patch- target/reload question;
+- a Ruff rule the task cannot obviously satisfy, or a pytest fixture/patch-target/reload question;
 - a configuration loading, refresh, label-caching, or error-shape edge case not resolved by the rules above.
 
 The catalog does not redefine these rules or the verification/escalation sections below; it only adds repository-specific examples and

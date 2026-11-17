@@ -47,8 +47,8 @@ Open `references/frontend.md` only when the task needs one of:
 
 Open `references/nextjs.md` only when the task needs one of:
 
-- deciding ownership or behavior among App Router `page.tsx`, `layout.tsx`, `template.tsx`, `loading.tsx`, `error.tsx`, `not-found.tsx`, or
-  `route.ts` artifacts;
+- deciding ownership or behavior among App Router `page.tsx`, `layout.tsx`, `template.tsx`, `loading.tsx`, `error.tsx`, `not-found.tsx`,
+  `global-error.tsx`, `global-not-found.tsx`, or `route.ts` artifacts;
 - handling promised route `params`/`searchParams`, `redirect()`/`notFound()`, segment streaming/Suspense, or Route Handler response/cache
   behavior;
 - changing the Next.js metadata lifecycle while leaving localized message schema and website metadata-helper behavior with their existing
