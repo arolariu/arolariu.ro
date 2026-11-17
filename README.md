@@ -519,7 +519,9 @@ The dashboard exposes two OTLP endpoints — **gRPC on `:21030`** and **HTTP on 
 website uses the HTTP exporter. If you see no traces:
 
 1. Check the resource's **Console logs** tab in the dashboard for `OTLP exporter` errors.
-2. Confirm `OTEL_EXPORTER_OTLP_ENDPOINT` is set to the right protocol's port — the AppHost sets these per-resource.
+2. Confirm the resource's `OTEL_EXPORTER_OTLP_ENDPOINT` uses the port for its exporter's protocol. The AppHost points exp at the HTTP port
+   explicitly (`tooling/src/AppHost/Applications/Exp/ExpResources.cs`). The website gets Aspire's `AddNextJsApp` default, which selects the
+   gRPC port and sets `OTEL_EXPORTER_OTLP_PROTOCOL=grpc`, even though its exporters speak OTLP/HTTP.
 3. For Aspire dashboard TLS, inspect the Kestrel endpoint in `tooling/src/AppHost/Properties/launchSettings.json` and the current ASP.NET
    Core development certificate. `mkcert` owns selfhost Traefik certificates, not the Aspire dashboard.
 
