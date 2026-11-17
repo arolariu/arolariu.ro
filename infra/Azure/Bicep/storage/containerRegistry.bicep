@@ -17,7 +17,7 @@
 //
 // Authentication:
 // - Azure AD authentication enabled (azureADAuthenticationAsArmPolicy)
-// - Admin user enabled for legacy tooling compatibility
+// - Admin user disabled; managed identities own image pull/push access
 // - RBAC-based access via managed identities (see rbac/*.bicep)
 //
 // Security Configuration:

@@ -56,8 +56,51 @@ internal static class WebApplicationBuilderExtensions
   /// <summary>Config proxy URL when running in a local Docker environment (service name resolution via Docker DNS).</summary>
   private const string ConfigProxyUrlDocker = "http://exp";
 
-  /// <summary>Entra ID scope for the exp service bearer-token flow.</summary>
-  private const string ExpScope = "api://950ac239-5c2c-4759-bd83-911e68f6a8c9/.default";
+  /// <summary>Resolves a canonical runtime experiments application ID without exposing malformed configuration.</summary>
+  /// <param name="applicationClientId">The required runtime Entra application ID for Azure requests.</param>
+  /// <returns>The normalized application scope used for Azure token acquisition.</returns>
+  /// <exception cref="ArgumentException">Configuration is absent or is not a canonical GUID.</exception>
+  internal static string ResolveExpTokenScope(string? applicationClientId)
+  {
+    if (!Guid.TryParseExact(applicationClientId?.Trim(), "D", out var clientId))
+    {
+      throw new ArgumentException("EXP_ENTRA_APP_CLIENT_ID must be a canonical GUID.", nameof(applicationClientId));
+    }
+
+    return $"api://{clientId:D}/.default";
+  }
+
+  /// <summary>Resolves the Cosmos service URI used by cloud or emulator health checks.</summary>
+  /// <param name="value">The configured Cosmos endpoint or keyed emulator connection string.</param>
+  /// <returns>The configured service URI, or null when no endpoint is present.</returns>
+  /// <exception cref="UriFormatException">A keyed connection string contains a malformed endpoint.</exception>
+  internal static Uri? ResolveCosmosHealthEndpoint(string? value)
+  {
+    if (Uri.TryCreate(value, UriKind.Absolute, out var endpoint) && endpoint.Scheme == Uri.UriSchemeHttps)
+    {
+      return endpoint;
+    }
+
+    var match = System.Text.RegularExpressions.Regex.Match(value ?? string.Empty, @"AccountEndpoint=([^;]+)");
+    return match.Success ? new Uri(match.Groups[1].Value) : null;
+  }
+
+  /// <summary>Registers authenticated cloud database health or the existing local emulator probe.</summary>
+  /// <param name="healthBuilder">The application's health-check registrations.</param>
+  /// <param name="cosmosEndpoint">The configured service URI, or null when unconfigured.</param>
+  internal static void AddCosmosHealthCheck(IHealthChecksBuilder healthBuilder, Uri? cosmosEndpoint)
+  {
+    if (cosmosEndpoint is null) return;
+
+    if (cosmosEndpoint.AbsoluteUri.Contains("documents.azure.com", StringComparison.OrdinalIgnoreCase))
+    {
+      healthBuilder.AddCheck<CosmosDbHealthCheck>("cosmosdb", tags: ["db", "nosql"], timeout: TimeSpan.FromSeconds(10));
+    }
+    else
+    {
+      healthBuilder.AddUrlGroup(name: "cosmosdb", uri: cosmosEndpoint, tags: ["db", "nosql"]);
+    }
+  }
 
   /// <summary>
   /// Configures the application to use local configuration sources instead of Azure services.
@@ -129,8 +172,9 @@ internal static class WebApplicationBuilderExtensions
     var useAzureAuth = baseUrl == ConfigProxyUrlAzure;
     if (useAzureAuth)
     {
+      var expScope = ResolveExpTokenScope(Environment.GetEnvironmentVariable("EXP_ENTRA_APP_CLIENT_ID"));
       httpClientBuilder.AddHttpMessageHandler(() =>
-        new BearerTokenHandler(AzureCredentialFactory.CreateCredential(), ExpScope));
+        new BearerTokenHandler(AzureCredentialFactory.CreateCredential(), expScope));
     }
 
     // Fetch config values at startup with retry.
@@ -216,8 +260,7 @@ internal static class WebApplicationBuilderExtensions
     services.AddHostedService<ConfigRefreshHostedService>();
 
     // Wire dependency health checks using the config values fetched at startup.
-    var cosmosConnStr = configValues.GetValueOrDefault("Endpoints:Database:NoSQL", string.Empty);
-    var cosmosMatch = System.Text.RegularExpressions.Regex.Match(cosmosConnStr, @"AccountEndpoint=([^;]+)");
+    var cosmosEndpoint = ResolveCosmosHealthEndpoint(configValues.GetValueOrDefault("Endpoints:Database:NoSQL", string.Empty));
 
     var healthBuilder = services.AddHealthChecks()
       .AddSqlServer(
@@ -248,23 +291,7 @@ internal static class WebApplicationBuilderExtensions
         name: "exp",
         tags: ["config"]);
 
-    if (cosmosMatch.Success)
-    {
-      var cosmosEndpoint = cosmosMatch.Groups[1].Value;
-      if (cosmosEndpoint.Contains("documents.azure.com", StringComparison.OrdinalIgnoreCase))
-      {
-        // Azure Cosmos DB — use the already-registered CosmosClient singleton for health checks.
-        healthBuilder.AddCheck("cosmosdb", new CosmosDbHealthCheck(cosmosEndpoint), tags: ["db", "nosql"]);
-      }
-      else
-      {
-        // Local emulator — unauthenticated URL probe is sufficient.
-        healthBuilder.AddUrlGroup(
-          name: "cosmosdb",
-          uri: new Uri(cosmosEndpoint),
-          tags: ["db", "nosql"]);
-      }
-    }
+    AddCosmosHealthCheck(healthBuilder, cosmosEndpoint);
   }
 
   /// <summary>

@@ -52,10 +52,8 @@ var acrRepositoryReader = 'b93aa761-3e63-49ed-ac28-beffa264f7ac'
 // Database Roles
 // -------------------------------------------------------------------------------------
 @export()
-var sqlDbContributor = '9b7fa17d-e63e-47b0-bb0a-15c516ac86ec'
-
-@export()
-var cosmosDbDataOperator = '230815da-be43-4aae-9cb4-875f7bd000aa'
+@description('Account-relative Cosmos native SQL data-contributor role, not an Azure RBAC role.')
+var cosmosDbSqlDataContributor = '00000000-0000-0000-0000-000000000002'
 
 // -------------------------------------------------------------------------------------
 // Configuration Roles
@@ -68,6 +66,9 @@ var appConfigurationDataOwner = 'fe86443c-f201-4fc4-9d2a-ac61149fbda0'
 
 @export()
 var keyVaultSecretsUser = '4633458b-17de-408a-b874-0445c86b69e6'
+
+@export()
+var keyVaultSecretsOfficer = 'b86a8fe4-44ce-4948-aee5-eccb2c155cd7'
 
 @export()
 var keyVaultReader = '21090545-7ca7-4776-b22c-e363652d74d2'

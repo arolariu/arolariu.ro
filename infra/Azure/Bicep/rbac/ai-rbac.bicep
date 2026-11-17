@@ -36,7 +36,7 @@ param backendPrincipalId string
 // Existing Resource References
 // -------------------------------------------------------------------------------------
 
-resource aiFoundryAccount 'Microsoft.CognitiveServices/accounts@2025-10-01-preview' existing = {
+resource aiFoundryAccount 'Microsoft.CognitiveServices/accounts@2026-09-01' existing = {
   name: aiFoundryAccountName
 }
 

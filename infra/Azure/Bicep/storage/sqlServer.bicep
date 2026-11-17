@@ -9,16 +9,10 @@
 //
 // Deployed Databases:
 // - primary: Main production database
-// - secondary: Read replica or backup database
+// - secondary: Independent secondary database (not a replica)
 //
-// Authentication Model (Hybrid):
-// - Azure AD authentication (primary, recommended)
-// - SQL authentication (fallback, for legacy tools)
-//
-// Azure AD Administrator:
-// - admin@arolariu.ro is configured as the Azure AD admin
-// - All managed identities can authenticate via Azure AD
-// - See rbac/sql-rbac-uami.sql for database-level permissions
+// Authentication is Entra-only. The infrastructure identity administers this
+// server; deployment bootstrap grants the backend its contained database user.
 //
 // Security Configuration:
 // - TLS 1.2 minimum (minimalTlsVersion: '1.2')
@@ -28,13 +22,13 @@
 // Note: Advanced Threat Protection and Auditing are disabled to reduce costs.
 // Enable these features for production workloads with compliance requirements.
 //
-// See: rbac/sql-rbac-uami.sql (database-level RBAC for UAMIs)
+// See: rbac/sql-rbac-uami.sql (manual reference; database-user provisioning is separate)
 // See: configuration/keyVault.bicep (connection strings stored securely)
 // =====================================================================================
 
 targetScope = 'resourceGroup'
 
-metadata description = 'Azure SQL Server with Azure AD authentication and hybrid auth support'
+metadata description = 'Azure SQL Server with Entra-only authentication and managed deployment administration.'
 metadata author = 'Alexandru-Razvan Olariu <admin@arolariu.ro>'
 metadata version = '2.0.0'
 
@@ -47,13 +41,10 @@ param sqlServerName string
 @allowed(['francecentral', 'northeurope', 'westeurope', 'swedencentral'])
 param sqlServerLocation string
 
-@description('The username for the local SQL Server administrator.')
-@secure()
-param sqlServerAdministratorUserName string
+import { identity } from '../types/identity.type.bicep'
 
-@description('The password for the local SQL Server administrator.')
-@secure()
-param sqlServerAdministratorPassword string
+@description('The permanent infrastructure identity that administers this SQL server.')
+param infrastructureManagedIdentity identity
 
 @description('The date when the deployment is executed.')
 param sqlServerDeploymentDate string
@@ -68,46 +59,59 @@ var sqlDatabaseSecondaryName = '${sqlDatabaseNamePrefix}-secondary'
 import { createTags } from '../constants/tags.bicep'
 var commonTags = createTags('storage', sqlServerDeploymentDate)
 
-resource sqlServer 'Microsoft.Sql/servers@2024-11-01-preview' = {
+resource sqlServer 'Microsoft.Sql/servers@2025-01-01' = {
   name: sqlServerName
   location: sqlServerLocation
   properties: {
     minimalTlsVersion: '1.2'
     publicNetworkAccess: 'Enabled'
     version: '12.0'
-    administratorLogin: sqlServerAdministratorUserName
-    administratorLoginPassword: sqlServerAdministratorPassword
     administrators: {
       administratorType: 'ActiveDirectory'
-      login: 'admin@arolariu.ro'
-      sid: 'ee9acc3d-8a79-489d-b4bf-aaae428b29db'
+      principalType: 'Application'
+      azureADOnlyAuthentication: true
+      login: infrastructureManagedIdentity.name
+      sid: infrastructureManagedIdentity.principalId
       tenantId: subscription().tenantId
     }
   }
 
-  resource sqlServerAdvancedThreatProtection 'advancedThreatProtectionSettings@2024-11-01-preview' = {
+  resource sqlServerAdvancedThreatProtection 'advancedThreatProtectionSettings@2025-01-01' = {
     name: 'Default'
     properties: { state: 'Disabled' }
   }
 
   resource sqlServerAuditPolicy 'auditingPolicies@2014-04-01' = {
     name: 'Default'
+    dependsOn: [sqlServerAdvancedThreatProtection]
     properties: { auditingState: 'Disabled' }
   }
 
-  resource sqlServerAuditSettings 'auditingSettings@2024-11-01-preview' = {
+  resource sqlServerAuditSettings 'auditingSettings@2025-01-01' = {
     name: 'default'
+    dependsOn: [sqlServerAuditPolicy]
     properties: { state: 'Disabled' }
   }
 
-  resource sqlServerConnectionPolicies 'connectionPolicies@2024-11-01-preview' = {
+  resource sqlServerConnectionPolicies 'connectionPolicies@2025-01-01' = {
     name: 'Default'
+    dependsOn: [sqlServerAuditSettings]
     properties: { connectionType: 'Default' }
   }
 
-  resource sqlServerAzureAdOnlyAuth 'azureADOnlyAuthentications@2024-11-01-preview' = {
+  resource sqlServerAzureAdOnlyAuth 'azureADOnlyAuthentications@2025-01-01' = {
     name: 'Default'
-    properties: { azureADOnlyAuthentication: false }
+    dependsOn: [sqlServerConnectionPolicies]
+    properties: { azureADOnlyAuthentication: true }
+  }
+
+  resource allowAzureServices 'firewallRules@2025-01-01' = {
+    name: 'AllowAzureServices'
+    dependsOn: [sqlServerAzureAdOnlyAuth]
+    properties: {
+      startIpAddress: '0.0.0.0'
+      endIpAddress: '0.0.0.0'
+    }
   }
 
   tags: union(commonTags, {
@@ -115,7 +119,7 @@ resource sqlServer 'Microsoft.Sql/servers@2024-11-01-preview' = {
   })
 }
 
-resource sqlDatabasePrimary 'Microsoft.Sql/servers/databases@2024-11-01-preview' = {
+resource sqlDatabasePrimary 'Microsoft.Sql/servers/databases@2025-01-01' = {
   parent: sqlServer
   name: sqlDatabasePrimaryName
   location: sqlServerLocation
@@ -123,11 +127,7 @@ resource sqlDatabasePrimary 'Microsoft.Sql/servers/databases@2024-11-01-preview'
   // auditing, connection policies, AD auth) contend for the same SQL Server lock.
   // Without this, parallel deployment causes ConflictingServerOperation errors.
   dependsOn: [
-    sqlServer::sqlServerAdvancedThreatProtection
-    sqlServer::sqlServerAuditPolicy
-    sqlServer::sqlServerAuditSettings
-    sqlServer::sqlServerConnectionPolicies
-    sqlServer::sqlServerAzureAdOnlyAuth
+    sqlServer::allowAzureServices
   ]
   sku: {
     name: 'Standard'
@@ -150,7 +150,7 @@ resource sqlDatabasePrimary 'Microsoft.Sql/servers/databases@2024-11-01-preview'
   })
 }
 
-resource sqlDatabaseSecondary 'Microsoft.Sql/servers/databases@2024-11-01-preview' = {
+resource sqlDatabaseSecondary 'Microsoft.Sql/servers/databases@2025-01-01' = {
   parent: sqlServer
   name: sqlDatabaseSecondaryName
   location: sqlServerLocation
@@ -182,3 +182,5 @@ resource sqlDatabaseSecondary 'Microsoft.Sql/servers/databases@2024-11-01-previe
 output sqlServerName string = sqlServer.name
 output sqlServerResourceId string = sqlServer.id
 output sqlServerFqdn string = sqlServer.properties.fullyQualifiedDomainName
+output sqlDatabasePrimaryName string = sqlDatabasePrimary.name
+output sqlDatabaseSecondaryName string = sqlDatabaseSecondary.name

@@ -51,7 +51,7 @@ param appConfigurationDeploymentDate string
 import { createTags } from '../constants/tags.bicep'
 var commonTags = createTags('configuration', appConfigurationDeploymentDate)
 
-resource appConfiguration 'Microsoft.AppConfiguration/configurationStores@2025-06-01-preview' = {
+resource appConfiguration 'Microsoft.AppConfiguration/configurationStores@2025-08-01-preview' = {
   name: appConfigurationName
   location: appConfigurationLocation
   sku: { name: 'free' }
@@ -60,7 +60,6 @@ resource appConfiguration 'Microsoft.AppConfiguration/configurationStores@2025-0
     softDeleteRetentionInDays: 0 // the free SKU does not support soft delete
     enablePurgeProtection: false // the free SKU does not support purge protection
     publicNetworkAccess: 'Enabled' // Allow public access to the App Configuration
-    dataPlaneProxy: { authenticationMode: 'Pass-through' }
   }
 
   tags: union(commonTags, {
@@ -69,14 +68,6 @@ resource appConfiguration 'Microsoft.AppConfiguration/configurationStores@2025-0
   })
 }
 
-var configs = loadJsonContent('appConfiguration.json')
-resource appConfigurationKeyValues 'Microsoft.AppConfiguration/configurationStores/keyValues@2025-06-01-preview' = [
-  for config in configs.items: {
-    parent: appConfiguration
-    name: '${config.key}$${config.label}'
-    properties: { value: config.value }
-  }
-]
-
 output appConfigurationResourceId string = appConfiguration.id
 output appConfigurationName string = appConfiguration.name
+output appConfigurationEndpoint string = appConfiguration.properties.endpoint

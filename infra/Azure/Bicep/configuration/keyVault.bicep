@@ -5,11 +5,8 @@
 // connection strings, API keys, and certificates. Key Vault is the single source
 // of truth for all sensitive configuration data in the arolariu.ro platform.
 //
-// Stored Secrets (from keyVault.json):
-// - Database connection strings
-// - API keys for third-party services
-// - Clerk authentication secrets
-// - Application Insights instrumentation keys
+// Secret population is a separate operational task. It must preserve real
+// internal secrets and never writes operator-owned third-party credentials.
 //
 // Security Configuration:
 // - RBAC authorization enabled (no access policies)
@@ -24,12 +21,7 @@
 // Access Model:
 // - All access is via Azure RBAC roles (see rbac/*.bicep)
 // - Backend UAMI: Key Vault Secrets User (read secrets)
-// - Frontend UAMI: Key Vault Secrets User (read secrets)
 // - Infrastructure UAMI: Key Vault Secrets Officer (read/write)
-//
-// IMPORTANT: Secrets are loaded from keyVault.json which should contain
-// placeholder values. Real secrets should be updated after deployment
-// or injected via CI/CD pipeline.
 //
 // See: rbac/backend-uami-rbac.bicep (secret read access)
 // See: rbac/infrastructure-uami-rbac.bicep (secret write access)
@@ -54,7 +46,7 @@ param keyVaultDeploymentDate string
 import { createTags } from '../constants/tags.bicep'
 var commonTags = createTags('configuration', keyVaultDeploymentDate)
 
-resource keyVault 'Microsoft.KeyVault/vaults@2025-05-01' = {
+resource keyVault 'Microsoft.KeyVault/vaults@2026-05-15' = {
   name: keyVaultName
   location: keyVaultLocation
   properties: {
@@ -75,18 +67,6 @@ resource keyVault 'Microsoft.KeyVault/vaults@2025-05-01' = {
     resourceType: 'Key Vault'
   })
 }
-
-var secrets = loadJsonContent('keyVault.json')
-resource keyVaultSecrets 'Microsoft.KeyVault/vaults/secrets@2025-05-01' = [
-  for secret in secrets.items: {
-    parent: keyVault
-    name: secret.name
-    properties: {
-      value: secret.value
-      attributes: { enabled: true }
-    }
-  }
-]
 
 output mainKeyVaultUri string = keyVault.properties.vaultUri
 output mainKeyVaultResourceId string = keyVault.id

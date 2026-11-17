@@ -1,425 +1,183 @@
 # 🌍 Sites Module
 
-This module provisions all web applications and static sites for the arolariu.ro platform, including the main website, API services,
-development environment, CV portfolio, and documentation portal.
+Application hosts and runtime settings for the existing delivery workflows. Provisioning hosts is not releasing their applications.
 
 ## 📋 **Overview**
 
-The sites module creates five distinct web applications and static sites:
-
-- **Main Website**: Production frontend application (arolariu.ro)
-- **API Service**: RESTful backend services (api.arolariu.ro)
-- **Development Site**: Development environment (dev.arolariu.ro)
-- **CV Portfolio**: Personal CV/resume site (cv.arolariu.ro) - SvelteKit
-- **Documentation Portal**: Static documentation site (docs.arolariu.ro) - DocFX
+Four App Services and three Free Static Web Apps retain fixed names for pipeline compatibility. Their availability must be checked before a
+fresh deployment; another resource group does not isolate globally unique names.
 
 ## 🏗️ **Resources Created**
 
-| Resource Type  | Name Pattern       | Environment | Purpose                         |
-| -------------- | ------------------ | ----------- | ------------------------------- |
-| App Service    | `www-arolariu-ro`  | Production  | Main frontend website           |
-| App Service    | `api-arolariu-ro`  | Production  | Backend API services            |
-| App Service    | `dev-arolariu-ro`  | Development | Development/staging environment |
-| Static Web App | `cv-arolariu-ro`   | Production  | CV/resume portfolio (SvelteKit) |
-| Static Web App | `docs-arolariu-ro` | Production  | Documentation portal (DocFX)    |
+| Resource             | Purpose                      | Plan/identity               | Port / health             |
+| -------------------- | ---------------------------- | --------------------------- | ------------------------- |
+| `www-arolariu-ro`    | Production website           | Production / frontend UAMI  | 3000 / `/api/health/`     |
+| `api-arolariu-ro`    | API                          | Production / backend UAMI   | 8080 / `/health`          |
+| `dev-arolariu-ro`    | DEVELOPMENT-labelled website | Development / frontend UAMI | 3000 / `/api/health/`     |
+| `exp-arolariu-ro`    | Configuration/feature proxy  | Development / backend UAMI  | 8080 / `/api/health`      |
+| `cv-arolariu-ro`     | CV                           | Free SWA, West Europe       | Not an App Service probe. |
+| `docs-arolariu-ro`   | Documentation                | Free SWA, West Europe       | Not an App Service probe. |
+| `status-arolariu-ro` | Status                       | Free SWA, West Europe       | Not an App Service probe. |
 
 ## 📁 **Module Files**
 
-| File                     | Purpose                           |
-| ------------------------ | --------------------------------- |
-| `deploymentFile.bicep`   | Orchestrates all site deployments |
-| `arolariu-ro.bicep`      | Main website (arolariu.ro)        |
-| `api-arolariu-ro.bicep`  | API backend service               |
-| `dev-arolariu-ro.bicep`  | Development/staging site          |
-| `cv-arolariu-ro.bicep`   | CV portfolio Static Web App       |
-| `docs-arolariu-ro.bicep` | Documentation Static Web App      |
+`deploymentFile.bicep` composes the correspondingly named website/SWA leaves, including `exp-arolariu-ro.bicep` and
+`status-arolariu-ro.bicep`. Runtime and infrastructure identities are distinct contracts.
 
 ## 📊 **Architecture**
 
 ```mermaid
-graph TB
-    subgraph "Azure Front Door"
-        AFD[Azure Front Door<br/>Global Load Balancer]
-    end
-
-    subgraph "Production Environment"
-        PROD_PLAN[Production App Service Plan<br/>B2 SKU]
-
-        MAIN[www-arolariu-ro<br/>Main Website<br/>Linux Container]
-        API[api-arolariu-ro<br/>API Services<br/>.NET 10.0]
-
-        PROD_PLAN --> MAIN
-        PROD_PLAN --> API
-    end
-
-    subgraph "Development Environment"
-        DEV_PLAN[Development App Service Plan<br/>B1 SKU]
-
-        DEV[dev-arolariu-ro<br/>Development Site<br/>Linux Container]
-
-        DEV_PLAN --> DEV
-    end
-
-    subgraph "Static Web Apps"
-        CV[cv-arolariu-ro<br/>Static Web App<br/>SvelteKit]
-        DOCS[docs-arolariu-ro<br/>Static Web App<br/>DocFX]
-    end
-
-    subgraph "Dependencies"
-        MI_FE[Frontend Managed Identity]
-        MI_BE[Backend Managed Identity]
-        CONFIG[App Configuration]
-        STORAGE[Storage Account]
-        MONITOR[Application Insights]
-    end
-
-    AFD --> MAIN
-    AFD --> API
-    AFD --> DEV
-    AFD --> CV
-    AFD --> DOCS
-
-    MI_FE --> MAIN
-    MI_FE --> DEV
-    MI_BE --> API
-
-    CONFIG --> MAIN
-    CONFIG --> API
-    CONFIG --> DEV
-
-    STORAGE --> MAIN
-    STORAGE --> API
-
-    MONITOR --> MAIN
-    MONITOR --> API
-    MONITOR --> DEV
-
-    classDef production fill:#e1f5fe,stroke:#01579b,stroke-width:2px
-    classDef development fill:#f3e5f5,stroke:#4a148c,stroke-width:2px
-    classDef static fill:#e8f5e8,stroke:#1b5e20,stroke-width:2px
-    classDef dependency fill:#fff3e0,stroke:#e65100,stroke-width:2px
-
-    class PROD_PLAN,MAIN,API production
-    class DEV_PLAN,DEV development
-    class CV,DOCS static
-    class MI_FE,MI_BE,CONFIG,STORAGE,MONITOR dependency
+flowchart TD
+    Production[Production B2 plan] --> Main[Main website]
+    Production --> API[API]
+    Development[Development B1 plan] --> Dev[Development website]
+    Development --> Exp[Experiments proxy]
+    Frontend[Frontend UAMI] --> Main
+    Frontend --> Dev
+    Backend[Backend UAMI] --> API
+    Backend --> Exp
+    Stores[Actual config / registry / telemetry outputs] --> Main
+    Stores --> API
+    Stores --> Dev
+    Stores --> Exp
+    Static[Free Static Web Apps] --> CV[CV / docs / status]
 ```
 
 ## 🔧 **Configuration**
 
 ### **Parameters**
 
-| Parameter                       | Type   | Required | Description                                 |
-| ------------------------------- | ------ | -------- | ------------------------------------------- |
-| `resourceLocation`              | string | ✅       | Azure region for deployment                 |
-| `resourceDeploymentDate`        | string | ✅       | Deployment timestamp                        |
-| `productionAppPlanId`           | string | ✅       | Resource ID of production App Service Plan  |
-| `developmentAppPlanId`          | string | ✅       | Resource ID of development App Service Plan |
-| `appInsightsConnectionString`   | string | ✅       | Application Insights connection string      |
-| `appInsightsInstrumentationKey` | string | ✅       | Application Insights instrumentation key    |
-| `managedIdentityFrontendId`     | string | ✅       | Resource ID of frontend managed identity    |
-| `managedIdentityBackendId`      | string | ✅       | Resource ID of backend managed identity     |
+Actual plan IDs, UAMI resource/client/principal IDs, App Configuration endpoint, registry login server, telemetry connection string,
+generated experiments client ID, regional location, and deployment timestamp.
 
 ### **Example Usage**
 
-```bicep
-module sitesDeployment 'sites/deploymentFile.bicep' = {
-  name: 'sitesDeployment'
-  params: {
-    resourceLocation: 'swedencentral'
-    resourceDeploymentDate: utcNow()
-    productionAppPlanId: computeDeployment.outputs.productionAppPlanId
-    developmentAppPlanId: computeDeployment.outputs.developmentAppPlanId
-    appInsightsConnectionString: observabilityDeployment.outputs.appInsightsConnectionString
-    appInsightsInstrumentationKey: observabilityDeployment.outputs.appInsightsInstrumentationKey
-    managedIdentityFrontendId: identitiesDeployment.outputs.managedIdentitiesList[0].resourceId
-    managedIdentityBackendId: identitiesDeployment.outputs.managedIdentitiesList[1].resourceId
-  }
-}
-```
+The facade passes outputs directly. Identity attachment uses resource IDs; `AZURE_CLIENT_ID` and ACR pull selection use client IDs; Easy
+Auth caller policies use principal/object IDs.
 
 ## 📤 **Outputs**
 
-| Output            | Type   | Description                              |
-| ----------------- | ------ | ---------------------------------------- |
-| `mainWebsiteUrl`  | string | Default hostname of the main website     |
-| `apiWebsiteUrl`   | string | Default hostname of the API service      |
-| `devWebsiteUrl`   | string | Default hostname of the development site |
-| `cvWebsiteUrl`    | string | Default hostname of the CV portfolio     |
-| `docsWebsiteUrl`  | string | Default hostname of the documentation    |
-| `mainWebsiteName` | string | Name of the main website resource        |
-| `apiWebsiteName`  | string | Name of the API website resource         |
-| `devWebsiteName`  | string | Name of the dev website resource         |
-| `cvWebsiteName`   | string | Name of the CV website resource          |
-| `docsWebsiteName` | string | Name of the docs website resource        |
+Site names/default hostnames plus the typed `applicationDnsRecords` list with actual CNAME and verification values. Network owns the
+corresponding Azure records; no duplicate record owner is retained in the binding leaves.
 
 ## 🌐 **Application Details**
 
 ### **Main Website (www-arolariu-ro)**
 
-**Specifications:**
-
-- **Platform**: Linux containers
-- **Runtime**: Node.js 22
-- **SSL**: HTTPS only (TLS 1.3 minimum)
-- **Scaling**: Elastic with minimum 1 instance
-- **Health Check**: `/` endpoint
-
-**Security Features:**
-
-- IP restrictions (Azure Front Door only)
-- User-assigned managed identity
-- FTPS disabled
-- Client certificate support disabled
-
-**Configuration:**
-
-- Always On enabled
-- HTTP/2 enabled
-- WebSockets enabled
-- CORS configured for trusted origins
-- Sticky sessions enabled
+Linux hosting, frontend identity, production Node runtime, production configuration label, actual registry/telemetry/audience settings.
 
 ### **API Service (api-arolariu-ro)**
 
-**Specifications:**
-
-- **Platform**: Linux App Service
-- **Runtime**: .NET Core 8.0
-- **SSL**: HTTPS only
-- **Authentication**: Managed Identity
-- **Load Balancing**: Least Requests
-
-**Features:**
-
-- Request tracing enabled
-- HTTP logging enabled (35MB limit)
-- WebSockets support
-- Key Vault integration via managed identity
+Backend identity, production ASP.NET environment, actual config/registry inputs, port 8080, authenticated Cosmos database health.
 
 ### **Development Site (dev-arolariu-ro)**
 
-**Specifications:**
-
-- **Platform**: Linux containers
-- **Runtime**: Node.js 22
-- **SSL**: HTTPS only (TLS 1.1 minimum)
-- **Access**: Open (no IP restrictions)
-
-**Development-Specific Settings:**
-
-- Relaxed TLS requirements
-- Open network access for testing
-- Container-based deployment
-- GitHub Actions integration
+Uses `NODE_ENV=production` while retaining the DEVELOPMENT label. Both website labels call the same API and require its signing key.
 
 ### **Documentation Portal (docs-arolariu-ro)**
 
-**Specifications:**
+Free Static Web App, independent content delivery. CV/status follow their own existing static-site paths.
 
-- **Type**: Static Web App (Free tier)
-- **Source**: GitHub repository
-- **Branch**: main
-- **Enterprise-grade edge**: Disabled (cost optimization)
+### **Experiments Proxy (exp-arolariu-ro)**
 
-**Features:**
-
-- Automatic deployment from GitHub
-- No staging environments
-- Configuration file updates allowed
+Backend identity, actual App Configuration endpoint, explicitly enabled Easy Auth v2, and the generated tenant-only application ID. The
+hello-world container remains a pre-release placeholder, not a functioning configuration service.
 
 ## 🔒 **Security Features**
 
 ### **Network Security**
 
-| Application | Access Control             | IP Restrictions       |
-| ----------- | -------------------------- | --------------------- |
-| Main Site   | Azure Front Door only      | Service Tag based     |
-| API         | Public with authentication | None (app-level auth) |
-| Dev Site    | Open access                | None (development)    |
-| Docs        | Public static content      | N/A                   |
+Preserve each leaf's current access restrictions; experiments remains AzureCloud-allowed/public-denied by its IP rules. Do not equate
+control-plane provisioning with end-to-end access or managed-certificate eligibility.
 
 ### **Identity & Authentication**
 
-- **Managed Identities**: Passwordless authentication
-- **Frontend Identity**: Used by main and dev sites
-- **Backend Identity**: Used by API service
-- **Key Vault Integration**: Secure configuration retrieval
+Three approved UAMI object IDs form the experiments caller allowlist. Azure website/API callers require configured
+`EXP_ENTRA_APP_CLIENT_ID`; there is no legacy fallback. Local proxy requests do not create Azure credentials.
 
 ### **SSL/TLS Configuration**
 
-- **Production**: TLS 1.3 minimum
-- **Development**: TLS 1.1 minimum (for testing)
-- **Certificates**: Managed by Azure
-- **HTTPS Redirect**: Enforced on all sites
+HTTPS/TLS settings live in the source leaves. App Service and SWA custom-domain certificates are owned by Bindings; apex/www TLS is owned by
+Front Door.
 
 ## 💰 **Cost Considerations**
 
-| Application | Hosting Plan     | Estimated Monthly Cost\* |
-| ----------- | ---------------- | ------------------------ |
-| Main Site   | Production (B2)  | Shared cost (~€12)       |
-| API Service | Production (B2)  | Shared cost (~€12)       |
-| Dev Site    | Development (B1) | Shared cost (~€11)       |
-| Docs Site   | Static Web App   | €0 (Free tier)           |
-
-\*Estimates based on Sweden Central pricing (June 2025). Multiple apps share the same App Service Plan.
+Two shared Linux plans, not one paid plan per application. See [current retail meters](../COST_OPTIMIZATION.md); static-site Free tier does
+not make the entire platform free.
 
 ### **Cost Optimization**
 
-- **Shared App Service Plans**: Multiple apps on same plan
-- **Free Static Web App**: Documentation with no hosting costs
-- **Elastic Scaling**: Pay only for used instances
-- **Development Auto-Shutdown**: Can be configured for cost savings
+Stopping an app does not stop App Service plan charges. SKU/capacity changes need measured evidence and separate approval.
 
 ## 🔧 **Customization Options**
 
 ### **Scaling Configuration**
 
-```bicep
-// Example: Configure auto-scaling
-siteConfig: {
-  minimumElasticInstanceCount: 1    // Minimum instances
-  functionAppScaleLimit: 10         // Maximum instances
-  autoHealEnabled: true             // Auto-recovery
-}
-```
+No implicit autoscaling, deployment-slot migration, or paid-tier upgrade is introduced.
 
 ### **Custom Domains**
 
-Each application supports custom domain configuration:
-
-```bash
-# Add custom domain
-az webapp config hostname add \
-  --webapp-name "www-arolariu-ro" \
-  --resource-group "arolariu-rg" \
-  --hostname "arolariu.ro"
-```
+Update the declarative Network/Bindings owners and public prerequisites; do not repair an unapproved target with ad hoc hostname commands.
 
 ### **Environment Variables**
 
-Applications can be configured with environment-specific settings through App Configuration service.
+App Service runtime settings override baked build values. Existing frontend/backend-named CI-login secrets select infrastructure, not the
+actual runtime identity.
 
 ## 🛠️ **Maintenance**
 
 ### **Deployment**
 
-All applications support:
-
-- **GitHub Actions**: Automated CI/CD
-- **Deployment Slots**: Blue-green deployments (Standard+ plans)
-- **Configuration Management**: Centralized via App Configuration
+Existing workflows release experiments, then API, then websites. Infrastructure no longer performs configuration/SQL/bootstrap tasks.
 
 ### **Monitoring**
 
-Applications integrate with:
-
-- **Application Insights**: Performance monitoring
-- **Log Analytics**: Centralized logging
-- **Health Checks**: Automatic endpoint monitoring
+Verify actual health endpoints, image pulls, and telemetry after releases; configured health paths are not observed health.
 
 ### **Backup & Recovery**
 
-- **Configuration**: Stored in App Configuration service
-- **Code**: Source control in GitHub
-- **Data**: Database backups via storage module
+Application data backup contracts belong to Storage. No resource-group-delete rollback is permitted by this guide.
 
 ## 🔄 **Dependencies**
 
 ### **Required Dependencies**
 
-1. **Compute Module**: App Service Plans must exist
-2. **Identity Module**: Managed identities for authentication
-3. **Configuration Module**: App Configuration service
-4. **Storage Module**: Storage accounts for application data
-5. **Observability Module**: Application Insights for monitoring
+Identity, actual Compute/Configuration/Storage/Observability outputs, and scoped grants.
 
 ### **Deployment Order**
 
-```mermaid
-graph LR
-    A[Identity] --> B[Compute]
-    A --> C[Configuration]
-    A --> D[Storage]
-    A --> E[Observability]
-
-    B --> F[Sites Module]
-    C --> F
-    D --> F
-    E --> F
-```
+Resources/grants → hosts/settings → Azure DNS/bindings with public prerequisites → separately configured/released applications.
 
 ## 📊 **Deployment Flow**
 
-1. **Prerequisites**: Ensure all dependent modules are deployed
-2. **API Service**: Deploy backend services first
-3. **Main Website**: Deploy production frontend
-4. **Development Site**: Deploy development environment
-5. **Documentation**: Deploy static documentation site
-6. **Configuration**: Apply application settings
-7. **DNS**: Configure custom domains (if required)
+The facade owns resource composition directly. Operational data seeding and real dependency probes are separate from ARM provisioning.
 
 ## 🚨 **Troubleshooting**
 
 ### **Common Issues**
 
-| Issue                           | Symptoms                                 | Solution                                                 |
-| ------------------------------- | ---------------------------------------- | -------------------------------------------------------- |
-| **App Service Plan not found**  | Deployment fails with resource not found | Ensure compute module deployed successfully              |
-| **Managed Identity errors**     | Authentication failures                  | Verify identity module and RBAC permissions              |
-| **Custom domain issues**        | SSL certificate errors                   | Check DNS configuration and certificate binding          |
-| **Static Web App not updating** | Old content served                       | Verify GitHub Actions workflow and repository connection |
-| **CORS errors**                 | Frontend cannot connect to API           | Check CORS configuration in App Service settings         |
+| Issue                       | Check                                                          |
+| --------------------------- | -------------------------------------------------------------- |
+| Container pull denied       | Actual attached UAMI client ID and registry-scoped pull grant. |
+| Missing Azure audience      | Required generated application client ID in runtime settings.  |
+| Configuration startup fails | Separate store population and required secret availability.    |
+| TLS pending                 | Public ownership and actual correct hosting plan.              |
 
 ### **Validation Commands**
 
-```bash
-# Check App Service status
-az webapp show \
-  --name "www-arolariu-ro" \
-  --resource-group "arolariu-rg" \
-  --query "state"
-
-# Test application endpoints
-curl -I https://www-arolariu-ro.azurewebsites.net
-curl -I https://api-arolariu-ro.azurewebsites.net/health
-
-# Check managed identity assignment
-az webapp identity show \
-  --name "www-arolariu-ro" \
-  --resource-group "arolariu-rg"
-
-# View application logs
-az webapp log tail \
-  --name "api-arolariu-ro" \
-  --resource-group "arolariu-rg"
-```
+Use approved read-only site metadata, public health requests, and safe logs. Never print runtime secrets or tokens.
 
 ### **Performance Troubleshooting**
 
-```bash
-# Check application performance metrics
-az monitor metrics list \
-  --resource "/subscriptions/{sub}/resourceGroups/{rg}/providers/Microsoft.Web/sites/www-arolariu-ro" \
-  --metric "CpuPercentage,MemoryPercentage,HttpResponseTime" \
-  --start-time "2024-01-01T00:00:00Z"
-
-# Scale application manually
-az webapp update \
-  --name "www-arolariu-ro" \
-  --resource-group "arolariu-rg" \
-  --instance-count 3
-```
+Correlate actual plan utilization and application traces before changing shared-plan capacity.
 
 ## 📚 **References**
 
-- [Azure App Service](https://docs.microsoft.com/en-us/azure/app-service/)
-- [Azure Static Web Apps](https://docs.microsoft.com/en-us/azure/static-web-apps/)
-- [App Service Linux](https://docs.microsoft.com/en-us/azure/app-service/overview#app-service-on-linux)
-- [Managed Identity](https://docs.microsoft.com/en-us/azure/active-directory/managed-identities-azure-resources/)
-- [GitHub Actions for Azure](https://docs.microsoft.com/en-us/azure/developer/github/github-actions)
+- [App Service](https://learn.microsoft.com/azure/app-service/)
+- [Static Web Apps](https://learn.microsoft.com/azure/static-web-apps/)
+- [Deployment guide](../DEPLOYMENT_GUIDE.md)
 
 ---
 
-**Module Version**: 2.0.0  
-**Last Updated**: July 2025 **Maintainer**: Alexandru-Razvan Olariu
+**Module Version**: 3.0.0\
+**Last Updated**: October 2026
