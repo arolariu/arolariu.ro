@@ -11,7 +11,7 @@
  * is mocked; nothing reads the live taxonomy cache or the network.
  */
 
-import {join, relative} from "node:path";
+import {join, relative, resolve} from "node:path";
 
 import {Effect, Fiber, FileSystem, type Duration, type PlatformError, type Scope} from "effect";
 import {HttpClient, HttpClientError, HttpClientResponse, type HttpClientRequest} from "effect/http";
@@ -912,6 +912,30 @@ describe("EcoicopTaxonomyClassificationGenerator", () => {
         expect(harness.httpCalls()).toHaveLength(1);
       }),
   );
+
+  for (const status of [401, 403]) {
+    artifactTest(
+      `uses the validated cached artifact without retrying when the anonymous source denies access (HTTP ${String(status)})`,
+      {
+        http: unavailableSources(status),
+        files: {
+          [join(TEST_ROOTS[0], "ecoicop-v2.min.json")]:
+            EXPECTED_ARTIFACT_BYTES["sites/api.arolariu.ro/src/Invoices/Resources/Taxonomies/ecoicop-v2.min.json"] ?? "",
+          [join(TEST_ROOTS[1], "ecoicop-v2.min.json")]:
+            EXPECTED_ARTIFACT_BYTES["sites/api.arolariu.ro/src/Invoices/Resources/Taxonomies/ecoicop-v2.min.json"] ?? "",
+        },
+      },
+      ({harness}) =>
+        Effect.gen(function* () {
+          // Act
+          const paths = yield* new EcoicopTaxonomyClassificationGenerator(TEST_ROOTS).generate();
+
+          // Assert
+          expect(paths).toEqual(TEST_ROOTS.map((root) => resolve(root, "ecoicop-v2.min.json")));
+          expect(harness.httpCalls()).toHaveLength(1);
+        }),
+    );
+  }
 
   const validNode = PROBE_ARTIFACT.nodes[0];
   const invalidCaches: readonly (readonly [string, unknown, string])[] = [
