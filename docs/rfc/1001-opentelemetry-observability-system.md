@@ -3,7 +3,8 @@
 - **Status**: Implemented
 - **Date**: 2025-10-11
 - **Authors**: arolariu
-- **Related Components**: `sites/arolariu.ro`, `src/instrumentation.server.ts`, `src/instrumentation.ts`
+- **Related Components**: `sites/arolariu.ro`, `src/instrumentation.server.ts`, `src/instrumentation.ts`,
+  `src/lib/telemetry/healthPolicy.ts`
 
 ---
 
@@ -51,16 +52,23 @@ Modern Next.js applications operating in SSR-first, CSR-second, and Backend-for-
 ├─────────────────────────────────────────────────────────────────┤
 │  instrumentation.server.ts                                      │
 │  ├─ NodeSDK Configuration                                       │
-│  │  ├─ Auto-instrumentations (HTTP, Fetch, FS, DNS, etc.)       │
-│  │  ├─ OTLP Trace Exporter (BatchSpanProcessor)                 │
-│  │  └─ OTLP Metric Exporter (PeriodicExportingMetricReader)     │
+│  │  ├─ Auto-instrumentations (HTTP, undici/fetch, DNS, etc.)    │
+│  │  │  └─ FS disabled; health-probe requests ignored            │
+│  │  ├─ createExporters(): Azure Monitor / OTLP HTTP / none      │
+│  │  ├─ Traces: BatchSpanProcessor                               │
+│  │  ├─ Metrics: PeriodicExportingMetricReader (60 s)            │
+│  │  └─ Logs: LoggerProvider (BatchLogRecordProcessor)           │
 │  ├─ Type System                                                 │
 │  │  ├─ LogLevel, RenderContext, HttpMethod                      │
 │  │  ├─ SpanOperationType, MetricName (template literals)        │
 │  │  └─ Semantic Attribute Interfaces (6 types)                  │
 │  ├─ API Functions                                               │
+│  │  ├─ startTelemetry(), stopTelemetry()                        │
 │  │  ├─ withSpan(), addSpanEvent(), setSpanAttributes()          │
+│  │  ├─ recordSpanError()                                        │
 │  │  ├─ createCounter(), createHistogram(), createUpDownCounter()│
+│  │  ├─ getTracer(), getMeter()                                  │
+│  │  ├─ injectTraceContextHeaders(), getTraceparentHeader()      │
 │  │  └─ logWithTrace()                                           │
 │  └─ Semantic Helpers                                            │
 │     ├─ createHttpServerAttributes()                             │
@@ -76,13 +84,14 @@ Modern Next.js applications operating in SSR-first, CSR-second, and Backend-for-
 └─────────────────────────────────────────────────────────────────┘
                               │
                               ▼
-                    OTLP HTTP Exporters
+Azure Monitor exporters (prod) / OTLP HTTP exporters (local)
                               │
                               ▼
-              ┌───────────────────────────────┐
-              │  Observability Backend        │
-              │  (Jaeger, Prometheus, etc.)   │
-              └───────────────────────────────┘
+      ┌───────────────────────────────────────────────┐
+      │  Observability Backend                        │
+      │  (Azure Application Insights in production;   │
+      │   any OTLP-compatible backend locally)        │
+      └───────────────────────────────────────────────┘
 ```
 
 ### 2.2 Core Components
@@ -90,35 +99,76 @@ Modern Next.js applications operating in SSR-first, CSR-second, and Backend-for-
 #### 2.2.1 SDK Configuration
 
 ```typescript
+// sites/arolariu.ro/src/instrumentation.server.ts (condensed)
+function createExporters() {
+  if (connectionString /* APPLICATIONINSIGHTS_CONNECTION_STRING */) {
+    const credential = new DefaultAzureCredential({managedIdentityClientId: process.env["AZURE_CLIENT_ID"]});
+    return {
+      logExporter: new AzureMonitorLogExporter({connectionString, credential}),
+      traceExporter: new AzureMonitorTraceExporter({connectionString, credential}),
+      metricExporter: new AzureMonitorMetricExporter({connectionString, credential}),
+    };
+  }
+
+  if (otlpEndpoint /* OTEL_EXPORTER_OTLP_ENDPOINT (no default) */) {
+    return {
+      logExporter: new OTLPLogExporter({url: `${otlpEndpoint}/v1/logs`, headers: {}}),
+      traceExporter: new OTLPTraceExporter({url: `${otlpEndpoint}/v1/traces`, headers: {}}),
+      metricExporter: new OTLPMetricExporter({url: `${otlpEndpoint}/v1/metrics`, headers: {}}),
+    };
+  }
+
+  // Instrumentation and propagation stay active; logs go to the console only.
+  return {logExporter: null, traceExporter: undefined, metricExporter: undefined};
+}
+
+const {traceExporter, metricExporter, logExporter} = createExporters();
+
+let websiteLoggerProvider: LoggerProvider | null = null;
+if (logExporter !== null) {
+  websiteLoggerProvider = new LoggerProvider({
+    ...(serviceResource ? {resource: serviceResource} : {}),
+    processors: [new BatchLogRecordProcessor({exporter: logExporter})],
+  });
+}
+
 const sdk = new NodeSDK({
-  serviceName: "arolariu.ro",
+  ...(serviceResource ? {resource: serviceResource} : {serviceName: "arolariu-website"}),
+  ...(traceExporter ? {traceExporter} : {}),
+  ...(metricExporter ? {metricReaders: [new PeriodicExportingMetricReader({exporter: metricExporter, exportIntervalMillis: 60_000})]} : {}),
+  ...(traceExporter ? {spanProcessors: [new BatchSpanProcessor(traceExporter)]} : {}),
   instrumentations: [
     getNodeAutoInstrumentations({
-      "@opentelemetry/instrumentation-http": {enabled: true},
-      "@opentelemetry/instrumentation-fetch": {enabled: true},
-      "@opentelemetry/instrumentation-fs": {enabled: true},
-      // ... 20+ auto-instrumentations
+      "@opentelemetry/instrumentation-fs": {enabled: false},
+      "@opentelemetry/instrumentation-http": {ignoreIncomingRequestHook: (request) => shouldSuppressTelemetry(request.url)},
+      "@opentelemetry/instrumentation-undici": {ignoreRequestHook: (request) => shouldSuppressTelemetry(request.path)},
     }),
   ],
-  traceExporter: new OTLPTraceExporter({
-    url: process.env.OTEL_EXPORTER_OTLP_ENDPOINT || "http://localhost:4318/v1/traces",
-  }),
-  spanProcessor: new BatchSpanProcessor(traceExporter),
-  metricReader: new PeriodicExportingMetricReader({
-    exporter: new OTLPMetricExporter({
-      url: process.env.OTEL_EXPORTER_OTLP_ENDPOINT || "http://localhost:4318/v1/metrics",
-    }),
-    exportIntervalMillis: 60_000,
-  }),
 });
 ```
 
 **Design Decisions**:
 
+- **Exporter Selection**: Azure Monitor exporters when `APPLICATIONINSIGHTS_CONNECTION_STRING` is set (production); OTLP HTTP exporters when
+  `OTEL_EXPORTER_OTLP_ENDPOINT` is set (local collector); otherwise no export (instrumentation and propagation stay active). There is no
+  default OTLP endpoint, which avoids connection storms from auto-instrumented export requests to an unreachable collector.
 - **Batch Span Processor**: Reduces network overhead by batching trace exports
 - **Periodic Metric Reader**: Exports metrics every 60 seconds
-- **OTLP HTTP Protocol**: Industry-standard protocol for observability data
-- **Auto-Instrumentation**: Automatic spans for HTTP, fetch, database, and file system operations
+- **Log Pipeline**: `LoggerProvider` + `BatchLogRecordProcessor`, created only when a log exporter exists
+- **Auto-Instrumentation**: Node.js auto-instrumentations (HTTP, undici/`fetch`, DNS, …); file-system instrumentation is disabled;
+  health-probe requests are ignored (`src/lib/telemetry/healthPolicy.ts`)
+
+**Resource Attributes** (traces, metrics, and logs):
+
+| Attribute                | Value                                |
+| ------------------------ | ------------------------------------ |
+| `service.name`           | `"arolariu-website"`                 |
+| `service.namespace`      | `"arolariu.ro"`                      |
+| `service.version`        | `COMMIT_SHA` (default `"unknown"`)   |
+| `service.instance.id`    | `HOSTNAME` (default `node-<pid>`)    |
+| `deployment.environment` | `SITE_ENV` (default `"development"`) |
+| `cloud.role`             | `"website"`                          |
+| `cloud.provider`         | `"azure"`                            |
 
 #### 2.2.2 Type System
 
@@ -146,7 +196,9 @@ type MetricName =
   | `user.${string}`
   | `page.${string}`
   | `component.${string}`
-  | `business.${string}`;
+  | `business.${string}`
+  | `website.${string}`
+  | `arolariu.${string}`;
 ```
 
 **Benefits**:
@@ -208,20 +260,21 @@ interface ErrorAttributes {
 }
 ```
 
-**Compliance**: Interfaces follow [OpenTelemetry Semantic Conventions](https://opentelemetry.io/docs/specs/semconv/)
+**Compliance**: Interfaces follow [OpenTelemetry Semantic Conventions](https://opentelemetry.io/docs/specs/semconv/) naming; the HTTP and
+database interfaces use legacy attribute keys (see §12.2)
 
 #### 2.2.3 API Functions
 
 ##### Tracing API
 
 ```typescript
-async function withSpan<T>(name: SpanOperationType, fn: (span: Span) => Promise<T>, options?: SpanOptions): Promise<T>;
+async function withSpan<T>(spanName: SpanOperationType, fn: (span: Span) => Promise<T>, attributes?: TelemetryAttributes): Promise<T>;
 
-function addSpanEvent(eventName: string, attributes?: TelemetryAttributes): void;
+function addSpanEvent(name: string, attributes?: TelemetryAttributes): void;
 
 function setSpanAttributes(attributes: TelemetryAttributes): void;
 
-function recordSpanError(error: Error | unknown): void;
+function recordSpanError(error: Error | unknown, message?: string): void;
 ```
 
 ##### Metrics API
@@ -237,8 +290,11 @@ function createUpDownCounter(name: MetricName, description?: string, unit?: stri
 ##### Logging API
 
 ```typescript
-function logWithTrace(level: LogLevel, message: string, attributes?: TelemetryAttributes, context?: RenderContext): void;
+function logWithTrace(level: LogLevel, message: string, attributes?: Record<string, unknown>, renderContext?: RenderContext): void;
 ```
+
+Each call writes a JSON line to the console and, when a log exporter is configured, emits an OpenTelemetry log record through the
+`arolariu.website.server` logger (severity text and number plus `app.log.context`, `app.log.trace_id`, and `app.log.span_id` attributes).
 
 **Production Optimization**: Debug logs are automatically suppressed in production:
 
@@ -247,6 +303,27 @@ if (level === "debug" && process.env.NODE_ENV === "production") {
   return; // Skip debug logs in production
 }
 ```
+
+##### Lifecycle and Propagation API
+
+```typescript
+function startTelemetry(): void; // Starts the NodeSDK and logs the health-telemetry suppression status
+
+async function stopTelemetry(): Promise<void>; // Shuts down the NodeSDK and the LoggerProvider
+
+function injectTraceContextHeaders(headers: Headers): Headers;
+
+function getTraceparentHeader(): string;
+
+function getTracer(name?: string): Tracer; // Defaults to "arolariu-website"
+
+function getMeter(name?: string): Meter; // Defaults to "arolariu-website"
+```
+
+- `stopTelemetry()` is also registered on `SIGTERM` and `SIGINT` when the module loads; the handlers then exit the process.
+- `injectTraceContextHeaders()` injects the active context with the global propagator and mirrors the trace ID to `X-Request-Id` when that
+  header is absent. It is used by `src/lib/utils.server.ts`, `src/lib/config/configProxy.ts`, and `src/app/api/health/route.ts`.
+- `getTraceparentHeader()` is kept for older call sites; prefer `injectTraceContextHeaders()`.
 
 #### 2.2.4 Semantic Helper Functions
 
@@ -288,6 +365,11 @@ function createErrorAttributes(error: Error | unknown, handled: boolean): ErrorA
 ## 3. Implementation Examples
 
 ### 3.1 API Route Instrumentation
+
+> **Illustrative example.** The production route is `sites/arolariu.ro/src/app/api/user/route.ts`. It records the counters
+> `user.api.requests`, `user.guest.requests`, and `user.authenticated.requests` and the histogram `api.user.duration` (ms). It wraps the
+> handler in an `api.user.get` span with child spans `api.user.authenticated` and `api.user.guest`. On error it calls
+> `recordSpanError(error, "Failed to process /api/user request")` and returns guest fallback information with status 200.
 
 ```typescript
 export async function GET(request: NextRequest) {
@@ -478,9 +560,9 @@ All types provide full autocomplete:
 
 1. **Batch Exporting**: Spans are batched before export (reduces network overhead by 95%)
 2. **Debug Log Suppression**: Debug logs are stripped in production
-3. **Efficient Serialization**: OTLP HTTP protocol uses efficient binary encoding
+3. **Efficient Serialization**: Batched OTLP/HTTP (JSON) export locally; Azure Monitor exporters in production
 4. **Lazy Initialization**: Tracer and meter are lazily initialized
-5. **Low-Cardinality Attributes**: Type system prevents high-cardinality attributes
+5. **Low-Cardinality Attributes**: Helpers and guidelines discourage high-cardinality attributes
 
 ### 5.3 Resource Requirements
 
@@ -495,19 +577,23 @@ All types provide full autocomplete:
 ### 6.1 Environment Variables
 
 ```bash
-# Required: OTLP endpoint for traces and metrics
+# Production: Azure Monitor exporters (take precedence over OTLP)
+APPLICATIONINSIGHTS_CONNECTION_STRING=<set by infra/Azure/Bicep/sites/arolariu-ro.bicep>
+AZURE_CLIENT_ID=<managed identity client ID for DefaultAzureCredential>
+
+# Optional: local OTLP collector. No default; if neither this nor the connection string is set, nothing is exported.
+# The code appends /v1/traces, /v1/metrics, and /v1/logs.
 OTEL_EXPORTER_OTLP_ENDPOINT=http://localhost:4318
 
-# Optional: Override trace endpoint
-OTEL_EXPORTER_OTLP_TRACES_ENDPOINT=http://localhost:4318/v1/traces
+# Optional: health-probe telemetry suppression for /health, /api/health, and /api/ready (default on; only "false" disables it)
+OTEL_SUPPRESS_HEALTH_TELEMETRY=true
 
-# Optional: Override metrics endpoint
-OTEL_EXPORTER_OTLP_METRICS_ENDPOINT=http://localhost:4318/v1/metrics
+# Resource attributes (service.name is set in code to "arolariu-website"; service.namespace is "arolariu.ro")
+COMMIT_SHA=<git sha>   # service.version (default "unknown")
+HOSTNAME=<host>        # service.instance.id (default node-<pid>)
+SITE_ENV=production    # deployment.environment (default "development")
 
-# Optional: Service name (defaults to "arolariu.ro")
-OTEL_SERVICE_NAME=arolariu.ro
-
-# Node environment
+# Node environment (debug logs are skipped when "production")
 NODE_ENV=production
 ```
 
@@ -515,13 +601,18 @@ NODE_ENV=production
 
 ```typescript
 // src/instrumentation.ts
-import {startTelemetry} from "@/instrumentation.server";
-
-export async function register() {
-  if (process.env.NEXT_RUNTIME === "nodejs") {
+export async function register(): Promise<void> {
+  if (process.env["NEXT_RUNTIME"] === "nodejs") {
+    // Dynamic import to avoid bundling telemetry code in client bundles
+    const {startTelemetry} = await import("@/instrumentation.server");
     startTelemetry();
-    console.log(">>> OpenTelemetry initialized for Node.js runtime");
+    console.log(">>> 🔭 OpenTelemetry has been initialized for the Node.js runtime!");
+
+    const {initializeRuntimeEnvironmentConfiguration} = await import("./lib/config/configProxy");
+    await initializeRuntimeEnvironmentConfiguration();
   }
+
+  console.log(">>> Instrumentation has been registered!");
 }
 ```
 
@@ -533,22 +624,25 @@ export async function register() {
 
 ### 7.1 Supported Backends
 
-The OTLP HTTP exporter is compatible with:
+Exporters are selected at startup by `createExporters()`. Azure Monitor (Application Insights) is used when
+`APPLICATIONINSIGHTS_CONNECTION_STRING` is set, which is the production path configured in `infra/Azure/Bicep/sites/arolariu-ro.bicep`. OTLP
+HTTP is used when `OTEL_EXPORTER_OTLP_ENDPOINT` is set. Otherwise nothing is exported. The OTLP HTTP exporter is compatible with:
 
-| Backend       | Traces | Metrics | Logs | Notes                                |
-| ------------- | ------ | ------- | ---- | ------------------------------------ |
-| Jaeger        | ✅     | ❌      | ❌   | Native OTLP support in v1.35+        |
-| Prometheus    | ❌     | ✅      | ❌   | Via OpenTelemetry Collector          |
-| Grafana Tempo | ✅     | ❌      | ❌   | Native OTLP support                  |
-| Grafana Loki  | ❌     | ❌      | ✅   | Via OpenTelemetry Collector          |
-| Elastic APM   | ✅     | ✅      | ✅   | Full OTLP support in 8.0+            |
-| Datadog       | ✅     | ✅      | ✅   | Via Datadog Agent with OTLP receiver |
-| New Relic     | ✅     | ✅      | ✅   | Native OTLP support                  |
-| Honeycomb     | ✅     | ✅      | ❌   | Native OTLP support                  |
+| Backend                    | Traces | Metrics | Logs | Notes                                                  |
+| -------------------------- | ------ | ------- | ---- | ------------------------------------------------------ |
+| Azure Application Insights | ✅     | ✅      | ✅   | Production (Azure Monitor exporters, managed identity) |
+| Jaeger                     | ✅     | ❌      | ❌   | Native OTLP support in v1.35+                          |
+| Prometheus                 | ❌     | ✅      | ❌   | Via OpenTelemetry Collector                            |
+| Grafana Tempo              | ✅     | ❌      | ❌   | Native OTLP support                                    |
+| Grafana Loki               | ❌     | ❌      | ✅   | Via OpenTelemetry Collector                            |
+| Elastic APM                | ✅     | ✅      | ✅   | Full OTLP support in 8.0+                              |
+| Datadog                    | ✅     | ✅      | ✅   | Via Datadog Agent with OTLP receiver                   |
+| New Relic                  | ✅     | ✅      | ✅   | Native OTLP support                                    |
+| Honeycomb                  | ✅     | ✅      | ❌   | Native OTLP support                                    |
 
 ### 7.2 OpenTelemetry Collector
 
-For production deployments, use OpenTelemetry Collector as a proxy:
+For local development, an OpenTelemetry Collector can receive OTLP data (example configuration, not part of this repository):
 
 ```yaml
 # otel-collector-config.yaml
@@ -588,8 +682,8 @@ service:
 ### 8.1 Type Safety Validation
 
 ```bash
-# Compile TypeScript to verify type safety
-npm run type-check
+# Compile TypeScript to verify type safety (runs next typegen, then tsc --noEmit)
+npm run typecheck --workspace @arolariu/website
 
 # Run linter with strict rules
 npm run lint
@@ -601,36 +695,20 @@ npm run lint
 # Start local OpenTelemetry Collector
 docker run -p 4318:4318 otel/opentelemetry-collector:latest
 
-# Start development server
-npm run dev:website
+# Start development server with OTLP export enabled (there is no default endpoint)
+OTEL_EXPORTER_OTLP_ENDPOINT=http://localhost:4318 npm run dev:website
 
-# Make requests and verify telemetry data
-curl http://localhost:3000/api/user
+# Make requests and verify telemetry data (the dev server uses --experimental-https)
+curl -k https://localhost:3000/api/user
 ```
 
-### 8.3 Integration Tests
+### 8.3 Automated Tests
 
-```typescript
-// tests/telemetry.test.ts
-import {createHttpServerAttributes, createNextJsAttributes} from "@/instrumentation.server";
-
-describe("Telemetry Helpers", () => {
-  it("creates valid HTTP server attributes", () => {
-    const attrs = createHttpServerAttributes("GET", 200, {route: "/api/user"});
-
-    expect(attrs["http.method"]).toBe("GET");
-    expect(attrs["http.status_code"]).toBe(200);
-    expect(attrs["http.route"]).toBe("/api/user");
-  });
-
-  it("creates valid Next.js attributes", () => {
-    const attrs = createNextJsAttributes("api", {runtime: "nodejs"});
-
-    expect(attrs["next.render_context"]).toBe("api");
-    expect(attrs["next.runtime"]).toBe("nodejs");
-  });
-});
-```
+The SDK module is not unit-tested directly. `sites/arolariu.ro/vitest.config.ts` aliases `@/instrumentation.server` to
+`tests/stubs/instrumentation.server.ts`, where the helpers are `vi.fn` stubs, and excludes `instrumentation.server.ts` and
+`instrumentation.ts` from coverage. Health-probe suppression is covered by the colocated `src/lib/telemetry/healthPolicy.test.ts`.
+`src/workers/host/telemetryBridge.test.ts` covers the Web Worker telemetry bridge, which logs to the console and is not yet wired to
+OpenTelemetry.
 
 ---
 
@@ -674,19 +752,21 @@ await withSpan("api.user.get", async (span) => {
 
 ### 10.1 Current Limitations
 
-1. **Edge Runtime**: Limited auto-instrumentation support (Next.js constraint)
+1. **Edge Runtime**: Not instrumented — the SDK is started only for the Node.js runtime
 2. **Client-Side**: Requires separate browser SDK for client component instrumentation
-3. **Log Export**: Logs are console-based; structured log export requires additional configuration
-4. **Sampling**: No trace sampling configured (exports all traces)
+3. **Log Export**: OpenTelemetry log records are exported only when an exporter is configured (Azure Monitor in production, OTLP locally);
+   otherwise logs reach only the console as JSON, and debug logs are dropped in production
+4. **Sampling**: No sampler configured; all spans are exported when an exporter is configured, except health-probe requests, which are
+   ignored
 
 ### 10.2 Future Enhancements
 
 1. **Trace Sampling**: Implement tail-based sampling for high-traffic scenarios
 2. **Browser SDK**: Add `@opentelemetry/sdk-trace-web` for client-side tracing
-3. **Log Export**: Add OTLP log exporter for structured log shipping
-4. **Custom Samplers**: Implement business-logic-aware sampling strategies
-5. **Baggage Propagation**: Use W3C Baggage for cross-service context propagation
-6. **Exemplars**: Link metrics to traces for deeper correlation
+3. **Custom Samplers**: Implement business-logic-aware sampling strategies
+4. **Baggage Propagation**: Set W3C Baggage entries for cross-service context propagation (the default NodeSDK propagator already injects
+   the `baggage` header, but no code sets baggage entries)
+5. **Exemplars**: Link metrics to traces for deeper correlation
 
 ---
 
@@ -738,16 +818,16 @@ This implementation complies with:
 - [OpenTelemetry Specification 1.0](https://opentelemetry.io/docs/specs/otel/)
 - [OpenTelemetry Semantic Conventions](https://opentelemetry.io/docs/specs/semconv/)
 - [W3C Trace Context](https://www.w3.org/TR/trace-context/)
-- [W3C Baggage](https://www.w3.org/TR/baggage/)
+- [W3C Baggage](https://www.w3.org/TR/baggage/) (propagated by the default NodeSDK propagator; no code sets baggage entries)
 
 ### 12.2 Semantic Convention Alignment
 
-| Domain    | Convention                                                                               | Compliance                 |
-| --------- | ---------------------------------------------------------------------------------------- | -------------------------- |
-| HTTP      | [HTTP Semantic Conventions](https://opentelemetry.io/docs/specs/semconv/http/)           | ✅ Fully compliant         |
-| Database  | [Database Semantic Conventions](https://opentelemetry.io/docs/specs/semconv/database/)   | ✅ Fully compliant         |
-| RPC       | [RPC Semantic Conventions](https://opentelemetry.io/docs/specs/semconv/rpc/)             | ⚠️ Partial (internal APIs) |
-| Messaging | [Messaging Semantic Conventions](https://opentelemetry.io/docs/specs/semconv/messaging/) | ❌ Not applicable          |
+| Domain    | Convention                                                                               | Compliance                                                                                                          |
+| --------- | ---------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------- |
+| HTTP      | [HTTP Semantic Conventions](https://opentelemetry.io/docs/specs/semconv/http/)           | ⚠️ Partial (legacy attribute keys: `http.method`, `http.status_code`, `http.url`, `http.target`, `http.user_agent`) |
+| Database  | [Database Semantic Conventions](https://opentelemetry.io/docs/specs/semconv/database/)   | ⚠️ Partial (legacy attribute keys: `db.system`, `db.operation`, `db.name`, `db.collection`, `db.statement`)         |
+| RPC       | [RPC Semantic Conventions](https://opentelemetry.io/docs/specs/semconv/rpc/)             | ⚠️ Partial (internal APIs)                                                                                          |
+| Messaging | [Messaging Semantic Conventions](https://opentelemetry.io/docs/specs/semconv/messaging/) | ❌ Not applicable                                                                                                   |
 
 ---
 
@@ -780,10 +860,10 @@ instrumentation errors, and provides excellent developer experience through Inte
 **Key Achievements**:
 
 - ✅ Type-safe API with compile-time enforcement
-- ✅ Semantic convention compliance
+- ✅ Semantic-convention attribute interfaces and helpers (HTTP and database use legacy keys; see §12.2)
 - ✅ Next.js architecture awareness (SSR/CSR/Edge/API)
 - ✅ Minimal performance overhead (<1% CPU)
-- ✅ Standards-compliant OTLP exporters
+- ✅ Azure Monitor exporters in production; standards-compliant OTLP HTTP exporters for local collectors
 - ✅ Comprehensive helper functions
 - ✅ Production-ready configuration
 
@@ -798,6 +878,7 @@ The system is extensible, performant, and ready for immediate production deploym
 type LogLevel = "debug" | "info" | "warn" | "error";
 type RenderContext = "server" | "client" | "edge" | "api";
 type HttpMethod = "GET" | "POST" | "PUT" | "PATCH" | "DELETE" | "HEAD" | "OPTIONS";
+type HttpStatusCategory = "success" | "redirect" | "client_error" | "server_error";
 
 // Template literal types
 type SpanOperationType =
@@ -821,7 +902,9 @@ type MetricName =
   | `user.${string}`
   | `page.${string}`
   | `component.${string}`
-  | `business.${string}`;
+  | `business.${string}`
+  | `website.${string}`
+  | `arolariu.${string}`;
 
 // Semantic attribute interfaces
 interface HttpAttributes {
@@ -873,9 +956,34 @@ interface ErrorAttributes {
   "error.handled": boolean;
 }
 
-type SemanticAttributes = HttpAttributes | NextJsAttributes | DatabaseAttributes | CacheAttributes | AuthAttributes | ErrorAttributes;
+type SemanticAttributes = Partial<
+  HttpAttributes & NextJsAttributes & DatabaseAttributes & CacheAttributes & AuthAttributes & ErrorAttributes
+>;
 
-type TelemetryAttributes = Record<string, string | number | boolean | undefined>;
+type TelemetryAttributes = SemanticAttributes | Record<string, string | number | boolean>;
+
+// Option and log entry shapes
+interface SpanOptions {
+  name: SpanOperationType;
+  attributes?: TelemetryAttributes;
+  kind?: "internal" | "server" | "client" | "producer" | "consumer";
+}
+
+interface MetricOptions {
+  name: MetricName;
+  description?: string;
+  unit?: string;
+}
+
+interface LogEntry {
+  timestamp: string;
+  level: LogLevel;
+  message: string;
+  traceId?: string;
+  spanId?: string;
+  context?: RenderContext;
+  [key: string]: unknown;
+}
 ```
 
 ---
@@ -884,7 +992,7 @@ type TelemetryAttributes = Record<string, string | number | boolean | undefined>
 
 | Metric Type        | Naming Pattern           | Example                       | Unit |
 | ------------------ | ------------------------ | ----------------------------- | ---- |
-| Request Count      | `<component>.requests`   | `api.user.requests`           | `1`  |
+| Request Count      | `<component>.requests`   | `user.api.requests`           | `1`  |
 | Duration           | `<component>.duration`   | `db.query.duration`           | `ms` |
 | Active Connections | `<component>.active`     | `http.server.active`          | `1`  |
 | Cache Hits         | `cache.<system>.hits`    | `cache.redis.hits`            | `1`  |
@@ -892,6 +1000,10 @@ type TelemetryAttributes = Record<string, string | number | boolean | undefined>
 | Error Count        | `<component>.errors`     | `api.user.errors`             | `1`  |
 | Queue Size         | `<component>.queue_size` | `business.invoice.queue_size` | `1`  |
 
+Metrics emitted today: `src/app/api/user/route.ts` records the counters `user.api.requests`, `user.guest.requests`, and
+`user.authenticated.requests` and the histogram `api.user.duration` (`ms`); `src/app/api/health/route.ts` records the counter
+`arolariu.health.check.failures`. The other examples in the table are illustrative.
+
 ---
 
-**Document Version**: 1.0.0 **Last Updated**: 2025-10-11 **Reviewed By**: arolariu **Status**: ✅ Implemented and Production-Ready
+**Document Version**: 1.1.0 **Last Updated**: 2026-11-17 **Reviewed By**: arolariu **Status**: ✅ Implemented and Production-Ready

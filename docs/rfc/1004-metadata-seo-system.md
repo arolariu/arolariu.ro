@@ -136,6 +136,13 @@ Page-specific images, canonical URLs, or social fields must:
 - avoid user/private invoice content;
 - preserve the helper's merge shape.
 
+## Robots and sitemap files
+
+`robots.txt` and `sitemap.xml` are static, hand-maintained files in `sites/arolariu.ro/src/app/`; there is no `robots.ts` or `sitemap.ts`
+metadata route. `robots.txt` allows `/`, disallows `/private/`, and points crawlers to `https://arolariu.ro/sitemap.xml`. `sitemap.xml`
+lists its URLs explicitly, so adding or removing a public route requires a manual sitemap edit. Both files are separate from the `robots`
+field of the base metadata object, which renders the per-page robots `<meta>` directives.
+
 ## Route and boundary behavior
 
 Metadata is part of the route contract:
@@ -165,6 +172,8 @@ After message changes, regenerate i18n declarations and run the smallest website
 
 - `sites/arolariu.ro/src/metadata.ts`
 - `sites/arolariu.ro/src/metadata.test.ts`
+- `sites/arolariu.ro/src/app/robots.txt`
+- `sites/arolariu.ro/src/app/sitemap.xml`
 - current `generateMetadata` functions under `sites/arolariu.ro/src/app/`
 - `sites/arolariu.ro/messages/en.json`
 - [RFC 1003](./1003-internationalization-system.md)
