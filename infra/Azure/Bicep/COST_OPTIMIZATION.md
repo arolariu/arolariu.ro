@@ -4,15 +4,15 @@ A comprehensive guide for optimizing Azure infrastructure costs while maintainin
 
 ## 📋 **Table of Contents**
 
+- [🔄 Cost Flow Overview](#-cost-flow-overview)
 - [💡 Cost Overview](#-cost-overview)
 - [📊 Resource Cost Breakdown](#-resource-cost-breakdown)
-- [🎯 Optimization Strategies](#-optimization-strategies)
-- [📈 Monitoring & Alerts](#-monitoring--alerts)
 - [⚙️ Right-Sizing Guidelines](#️-right-sizing-guidelines)
-- [🔄 Automation & Scheduling](#-automation--scheduling)
 - [📅 Regular Review Process](#-regular-review-process)
+- [💡 Quick Wins Checklist](#-quick-wins-checklist)
+- [🎯 Target Architecture Costs](#-target-architecture-costs)
 
-## �️ **Cost Flow Overview**
+## 🔄 **Cost Flow Overview**
 
 ```mermaid
 flowchart TD
@@ -24,9 +24,9 @@ flowchart TD
     F --> B
 ```
 
-## �💡 **Cost Overview**
+## 💡 **Cost Overview**
 
-### **Estimated Monthly Costs (Sweden Central)**
+### **Estimated Monthly Costs**
 
 | Category       | Service                        | SKU/Tier      | Estimated Cost (EUR) |
 | -------------- | ------------------------------ | ------------- | -------------------- |
@@ -38,7 +38,20 @@ flowchart TD
 | **Networking** | Azure DNS (Global)             | Global        | ~€2                  |
 | **Total**      |                                |               | **~€77-82/month**    |
 
-_Estimates based on June 2025 pricing in Sweden Central region_
+_Estimates based on June 2025 pricing in the Sweden Central region. `main.bicepparam` deploys to France Central (only the AI Foundry account
+is fixed to Sweden Central), so actual prices may differ._
+
+These tables cover only the resources listed above. The templates also deploy these resources, which the estimates do not include:
+
+- Azure Container Registry (Basic)
+- Azure SQL: a Standard 10 DTU database and a serverless `GP_S_Gen5_2` database that uses the free offer limit and auto-pauses when the
+  limit is exhausted
+- Azure Cosmos DB (free tier, 1000 RU/s total throughput limit)
+- Azure AI Foundry account (S0, usage-based)
+- Key Vault (standard) and App Configuration (free)
+- Application Insights (90-day retention)
+- Two Static Web Apps, docs and cv (Free)
+- Front Door WAF policy (`Standard_AzureFrontDoor`)
 
 ### **Cost Factors**
 
@@ -81,7 +94,7 @@ pie title Monthly Cost Distribution
 | Response Time | <500ms       | Consider downgrade | Upgrade immediately      |
 | Error Rate    | <1%          | Monitor            | Investigate and scale    |
 
-## � **Regular Review Process**
+## 📅 **Regular Review Process**
 
 ### **Review Process Flow**
 
@@ -115,7 +128,7 @@ flowchart TD
 
 - [ ] **Performance vs. cost analysis**
 - [ ] **Consider reserved instances for stable workloads**
-- [ ] **Review and update auto-scaling policies**
+- [ ] **Evaluate upgrading to Standard (S1+) if autoscale is needed (Basic plans cannot autoscale)**
 - [ ] **Evaluate new Azure cost optimization features**
 - [ ] **Benchmark against industry standards**
 
@@ -135,19 +148,19 @@ flowchart TD
 ### **Immediate Actions (0-7 days)**
 
 - [ ] Enable development environment scheduling
-- [ ] Configure storage lifecycle policies
+- [x] Configure storage lifecycle policies (configured: cool after 30 days, archive after 90, delete after 365)
 - [ ] Set up cost alerts and budgets
-- [ ] Enable Azure Front Door caching
-- [ ] Review and optimize Log Analytics retention
+- [x] Enable Azure Front Door caching (configured on the production route)
+- [ ] Review Log Analytics retention (currently 30 days, 3 GB/day cap)
 
 **Estimated Savings**: €18-28/month
 
 ### **Short-term Actions (1-4 weeks)**
 
-- [ ] Implement auto-scaling for production
+- [ ] Evaluate upgrading to Standard (S1+) if autoscale is needed (Basic plans cannot autoscale)
 - [ ] Right-size App Service Plans based on metrics
 - [ ] Optimize monitoring data collection
-- [ ] Configure compression and caching policies
+- [ ] Re-evaluate Front Door compression (currently disabled)
 
 **Estimated Savings**: €14-23/month
 
@@ -179,5 +192,6 @@ flowchart TD
 
 ---
 
-**Last Updated**: July 2025 **Version**: 2.1.0\
+**Last Updated**: November 2026\
+**Version**: 2.1.0\
 **Maintainer**: Alexandru-Razvan Olariu
