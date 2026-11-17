@@ -26,7 +26,7 @@ Live contrast:
 
 - server page shell: `sites/arolariu.ro/src/app/about/page.tsx`;
 - route client component: `sites/arolariu.ro/src/app/domains/invoices/_components/classification/ClassificationPicker.tsx`;
-- server-compatible shared presentation: `packages/components/src/components/ui/empty.tsx`;
+- server-compatible shared presentation: `packages/components/src/components/ui/card.tsx`;
 - Base UI client primitive: `packages/components/src/components/ui/dialog.tsx`.
 
 Do not add a client directive because a parent happens to be client. A server-compatible component may still be consumed beneath a client
@@ -66,8 +66,9 @@ state just to keep them "in sync."
 2. Reuse an exported `@arolariu/components` primitive when interaction/focus semantics already exist.
 3. In explicitly requested library work, follow `.github/instructions/components.instructions.md` and the composition shapes in its catalog:
    `button.tsx` wraps the Base UI primitive, and `badge.tsx` uses `useRender` + `mergeProps`.
-4. Retain `asChild` only at website call sites whose installed `@arolariu/components` version still supports it; new composition uses
-   `render`.
+4. `@arolariu/components` removed every `asChild` API in 3.0.0 (`packages/components/MIGRATION.md`), and no website call site uses it.
+   Compose with `render` (set `nativeButton={false}` when a Button renders a non-button element), or style a native `Link`/`<a>` with
+   `buttonVariants()`.
 5. A public DOM ref is justified by consumer composition/focus needs, not as a blanket rule for route-local components.
 
 Changing the rendered element, keyboard contract, ref target, or public prop shape is a public behavior change and requires consumer

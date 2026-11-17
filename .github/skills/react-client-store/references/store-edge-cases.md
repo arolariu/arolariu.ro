@@ -29,7 +29,9 @@ Open for the matching state, persistence, or concurrency risk.
 ## Entity identity and selection
 
 - Upsert/update/remove compare stable `id` values. Test duplicate IDs, not-found IDs, and partial updates.
-- When an entity updates or is removed, selected copies must update or be removed too; the generic factory owns this invariant.
+- When an entity updates or is removed, selected copies must update or be removed too. In the generic factory
+  (`sites/arolariu.ro/src/stores/createEntityStore.ts`), `updateEntity` and `removeEntity` maintain selection and `setEntities` reconciles
+  it, but `upsertEntity` replaces only `entities`, so upserting a selected entity leaves a stale selected copy.
 - Bulk replacement can retain stale selection unless the store explicitly reconciles it. Inspect the live action rather than assuming.
 - Do not use array index or mutable label as entity identity.
 
