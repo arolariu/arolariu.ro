@@ -103,12 +103,19 @@ export const test = base.extend<A11yFixtures>({
 
       // Audit settled text, not a partially transparent entrance-transition frame.
       // Decorative infinite animations keep running; no duration-based sleep is needed.
+      // Re-check after frames: hydration applies the theme class later, starting new color transitions.
       await page.evaluate(async () => {
-        const finiteAnimations = document.getAnimations().filter((animation) => {
-          const endTime = animation.effect?.getComputedTiming().endTime;
-          return typeof endTime === "number" && Number.isFinite(endTime);
-        });
-        await Promise.all(finiteAnimations.map((animation) => animation.finished.catch(() => undefined)));
+        const nextFrame = () => new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
+        for (let pass = 0; pass < 10; pass++) {
+          await nextFrame();
+          await nextFrame();
+          const finiteAnimations = document.getAnimations().filter((animation) => {
+            const endTime = animation.effect?.getComputedTiming().endTime;
+            return typeof endTime === "number" && Number.isFinite(endTime);
+          });
+          if (finiteAnimations.length === 0) return;
+          await Promise.all(finiteAnimations.map((animation) => animation.finished.catch(() => undefined)));
+        }
       });
 
       // Run axe analysis
