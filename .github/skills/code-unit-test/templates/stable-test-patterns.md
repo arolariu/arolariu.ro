@@ -144,12 +144,16 @@ live `*.Exceptions.cs`.
 
 Select exactly one current shape; invalidate the template if the target method uses a different classifier.
 
-| Path                                                | Inject into the direct dependency                          | Required identity proof                                                                                                                    |
-| --------------------------------------------------- | ---------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------ |
-| Foundation `Classify`                               | A Broker exception such as `InvoiceFailedStorageException` | The outer `InnerException` is the same injected Broker exception.                                                                          |
-| Processing `Classify` used by CRUD/visibility paths | An Orchestration outer containing a raw cause              | The Processing outer `InnerException` is the same raw cause; it is not the injected Orchestration outer.                                   |
-| Processing `ClassifyAnalysis`                       | An Analysis Orchestration outer containing a raw cause     | The Processing outer `InnerException` is the same injected Orchestration outer, whose `InnerException` is the same raw cause.              |
-| Management `Classify`                               | A Processing outer whose chain contains the marker/cause   | The Management outer `InnerException` is the same injected Processing outer; the retained cause remains at the corresponding nested depth. |
+| Path                                                             | Inject into the direct dependency                          | Required identity proof                                                                                                                    |
+| ---------------------------------------------------------------- | ---------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------ |
+| Foundation `Classify`                                            | A Broker exception such as `InvoiceFailedStorageException` | The outer `InnerException` is the same injected Broker exception.                                                                          |
+| Processing `Classify` used by CRUD and merchant-visibility reads | An Orchestration outer containing a raw cause              | The Processing outer `InnerException` is the same raw cause; it is not the injected Orchestration outer.                                   |
+| Processing `ClassifyAnalysis`                                    | An Analysis Orchestration outer containing a raw cause     | The Processing outer `InnerException` is the same injected Orchestration outer, whose `InnerException` is the same raw cause.              |
+| Management `Classify`                                            | A Processing outer whose chain contains the marker/cause   | The Management outer `InnerException` is the same injected Processing outer; the retained cause remains at the corresponding nested depth. |
+
+Queue visibility renewal (`ExecuteWithVisibilityRenewalAsync`) matches none of these rows: it wraps the renewal failure directly in
+`InvoiceProcessingServiceDependencyException`, and `ClassifyAnalysis` returns that same-layer exception unchanged, so the injected exception
+is the immediate `InnerException`.
 
 Foundation direct-wrap:
 
@@ -178,6 +182,7 @@ var expectedRetainedCause = new TimeoutException("dependency timed out");
 var injectedDependencyException =
   new AnalysisOrchestrationDependencyException(expectedRetainedCause);
 
+Assert.IsNotNull(exception.InnerException);
 Assert.AreSame(injectedDependencyException, exception.InnerException);
 Assert.AreSame(expectedRetainedCause, exception.InnerException.InnerException);
 ```
@@ -190,6 +195,7 @@ var expectedRetainedCause =
 var injectedDependencyException =
   new InvoiceProcessingServiceException(expectedRetainedCause);
 
+Assert.IsNotNull(exception.InnerException);
 Assert.AreSame(injectedDependencyException, exception.InnerException);
 Assert.AreSame(expectedRetainedCause, exception.InnerException.InnerException);
 ```

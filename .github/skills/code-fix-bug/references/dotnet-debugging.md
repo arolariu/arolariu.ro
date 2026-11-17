@@ -100,8 +100,8 @@ above Foundation. Diagnose at the lowest boundary that still reproduces the issu
 - Do not add orchestration, retry policy, or domain decisions to a Broker as a “local” fix.
 
 `AzureStorageBrokerTests` demonstrates real queue-Broker mapping from `QueueMessage`/`UpdateReceipt`; `DocumentMappingTests` and
-`DocumentIntelligenceRecordContractTests` cover document-provider mapping; `InvoiceNoSqlBrokerExceptionTranslationTests` and
-`MerchantNoSqlBrokerExceptionTranslationTests` cover persistence translation.
+`DocumentIntelligenceRecordContractTests` cover document-provider mapping; `CosmosDatabaseBrokerExceptionTranslationTests` (in
+`InvoiceNoSqlBrokerExceptionTranslationTests.cs`) and `MerchantNoSqlBrokerExceptionTranslationTests` cover persistence translation.
 
 ## Queue, visibility, and ordering races
 

@@ -22,8 +22,9 @@ source; templates never override a changed contract.
 
 ### Live-derived values
 
-Derive namespace, class modifiers, layer/service names, direct dependency contract, result nullability, method name, parameter semantics,
-Activity source, exception docs, logger category, and DI lifetime from the target sibling.
+Derive namespace, class modifiers, layer/service names, direct dependency contract, result nullability, method name (including whether the
+sibling uses the `Async` suffix), parameter semantics, Activity source, exception docs, logger category, and DI lifetime from the target
+sibling.
 
 ### Invalidated when
 
@@ -38,7 +39,7 @@ public interface I{{Capability}}Service
   /// <param name="request">{{live request contract}}.</param>
   /// <param name="cancellationToken">The token used to cancel the operation.</param>
   /// <returns>{{live result contract}}.</returns>
-  Task<{{ResultType}}> {{MethodName}}Async(
+  Task<{{ResultType}}> {{MethodName}}(
     {{RequestType}} request,
     CancellationToken cancellationToken);
 }
@@ -47,14 +48,14 @@ public interface I{{Capability}}Service
 public partial class {{Capability}}Service : I{{Capability}}Service
 {
   /// <inheritdoc/>
-  public async Task<{{ResultType}}> {{MethodName}}Async(
+  public async Task<{{ResultType}}> {{MethodName}}(
     {{RequestType}} request,
     CancellationToken cancellationToken) =>
     await TryCatchAsync(async () =>
     {
-      using var activity = {{PackageTracing}}.StartActivity(nameof({{MethodName}}Async));
+      using var activity = {{PackageTracing}}.StartActivity(nameof({{MethodName}}));
       return await {{nextLayerDependency}}
-        .{{NextLayerMethod}}Async(request, cancellationToken)
+        .{{NextLayerMethod}}(request, cancellationToken)
         .ConfigureAwait(false);
     }).ConfigureAwait(false);
 }
@@ -187,7 +188,7 @@ await TryCatchAsync(async () =>
   {{optional live-established safe enrichment}}
 
   await {{nextLayerDependency}}
-    .{{NextLayerMethod}}Async({{arguments}}, cancellationToken)
+    .{{NextLayerMethod}}({{arguments}}, cancellationToken)
     .ConfigureAwait(false);
 }).ConfigureAwait(false);
 ```
