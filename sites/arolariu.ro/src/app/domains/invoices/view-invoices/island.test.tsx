@@ -114,21 +114,21 @@ describe("RenderViewInvoicesScreen", () => {
   });
 
   it("closes an export dialog opened against the cached invoices once the fetch fails", async () => {
-    let settleFetch: (response: BackendResponse) => void = () => {};
-    mockFetchWithTimeout.mockReturnValueOnce(
-      new Promise<BackendResponse>((resolve) => {
-        settleFetch = resolve;
-      }),
-    );
+    // Load the real dialog before timing the assertion, so chunk compilation cannot race the fetch-failure test.
+    await import("./_dialogs/ExportDialog");
+    const pending = Promise.withResolvers<BackendResponse>();
+    mockFetchWithTimeout.mockReturnValueOnce(pending.promise);
     const user = userEvent.setup();
 
     render(<RenderViewInvoicesScreen />);
-    await user.click(screen.getByRole("button", {name: EXPORT_BUTTON}));
-    expect(await screen.findByRole("dialog", {name: EXPORT_DIALOG_TITLE})).toBeInTheDocument();
-
-    await act(async () => {
-      settleFetch(serverErrorResponse());
-    });
+    try {
+      await user.click(screen.getByRole("button", {name: EXPORT_BUTTON}));
+      expect(await screen.findByRole("dialog", {name: EXPORT_DIALOG_TITLE})).toBeInTheDocument();
+    } finally {
+      await act(async () => {
+        pending.resolve(serverErrorResponse());
+      });
+    }
 
     await waitFor(() => expect(screen.queryByRole("dialog", {name: EXPORT_DIALOG_TITLE})).not.toBeInTheDocument());
     expect(await screen.findByRole("button", {name: RETRY_BUTTON})).toBeInTheDocument();

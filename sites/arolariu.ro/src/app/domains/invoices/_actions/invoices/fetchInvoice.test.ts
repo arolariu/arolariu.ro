@@ -3,50 +3,36 @@
  * @module app/domains/invoices/_actions/invoices/fetchInvoice.test
  */
 
-import {fetchBFFUserFromAuthService} from "@/lib/actions/user/fetchUser";
-import {fetchWithTimeout} from "@/lib/utils.server";
-import {beforeEach, describe, expect, it, vi} from "vitest";
-import {TestDataBuilder} from "../../../../../../tests/helpers";
-
-vi.mock("@/lib/actions/user/fetchUser");
-const {fetchInvoice} = await import("./fetchInvoice");
-const mockFetchUser = vi.mocked(fetchBFFUserFromAuthService);
-const mockFetchWithTimeout = vi.mocked(fetchWithTimeout);
+import {jwtVerify} from "jose";
+import {describe, expect, it} from "vitest";
+import {buildInvoice} from "../../../../../../tests/helpers/builders/domain";
+import {apiUrl, auth, fetchAtHttp, jwtSecret} from "../../../../../../tests/setup/server-http";
+import {fetchInvoice} from "./fetchInvoice";
 
 describe("fetchInvoice", () => {
   const invoiceId = "11111111-1111-4111-8111-111111111111";
 
-  beforeEach(() => {
-    vi.clearAllMocks();
-    mockFetchUser.mockResolvedValue(TestDataBuilder.build("userInformation", {userIdentifier: "user-1", userJwt: "jwt-1"}));
-    mockFetchWithTimeout.mockResolvedValue(
-      TestDataBuilder.jsonResponse(
-        TestDataBuilder.build("invoice", {
-          id: invoiceId,
-          userIdentifier: "22222222-2222-4222-8222-222222222222",
-          merchantReference: "33333333-3333-4333-8333-333333333333",
-        }),
-      ) as Awaited<ReturnType<typeof fetchWithTimeout>>,
-    );
-  });
-
   it("gets an invoice by id with bearer authorization", async () => {
+    const invoice = buildInvoice({
+      id: invoiceId,
+      userIdentifier: "22222222-2222-4222-8222-222222222222",
+      merchantReference: "33333333-3333-4333-8333-333333333333",
+    });
+    fetchAtHttp.mockResolvedValue(Response.json(invoice));
+
     const result = await fetchInvoice({invoiceId});
 
-    expect(result.success).toBe(true);
-    expect(mockFetchWithTimeout).toHaveBeenCalledWith(
-      `/rest/v1/invoices/${invoiceId}`,
-      expect.objectContaining({
-        headers: expect.objectContaining({
-          Authorization: "Bearer jwt-1",
-          "Content-Type": "application/json",
-        }),
-      }),
+    expect(result).toMatchObject({success: true, data: {id: invoiceId, merchantReference: invoice.merchantReference}});
+    expect(fetchAtHttp).toHaveBeenCalledExactlyOnceWith(
+      `${apiUrl}/rest/v1/invoices/${invoiceId}`,
+      expect.objectContaining({cache: "no-store"}),
     );
-
-    if (result.success) {
-      expect(result.data.id).toBe(invoiceId);
-    }
+    const headers = new Headers(fetchAtHttp.mock.calls[0]?.[1]?.headers);
+    expect(headers.get("content-type")).toBe("application/json");
+    const bearer = headers.get("authorization");
+    expect(bearer).toMatch(/^Bearer /u);
+    const {payload} = await jwtVerify(bearer?.slice(7) ?? "", new TextEncoder().encode(jwtSecret));
+    expect(payload).toMatchObject({role: "user", aud: "https://api.arolariu.ro"});
   });
 
   it("returns an error result for an invalid invoice id", async () => {
@@ -56,52 +42,28 @@ describe("fetchInvoice", () => {
     if (!result.success) {
       expect(result.error.message).toContain("invoiceId");
     }
+    expect(auth).not.toHaveBeenCalled();
+    expect(fetchAtHttp).not.toHaveBeenCalled();
   });
 
-  it("maps 404 to the not-found user message", async () => {
-    mockFetchWithTimeout.mockResolvedValue(
-      TestDataBuilder.textResponse("Not found", {status: 404, statusText: "Not Found"}) as Awaited<ReturnType<typeof fetchWithTimeout>>,
-    );
+  it.each([
+    [404, "Not Found"],
+    [403, "Forbidden"],
+    [400, "Bad Request"],
+  ] as const)("returns an error for upstream HTTP %i %s", async (status, statusText) => {
+    fetchAtHttp.mockResolvedValue(new Response("Invoice unavailable", {status, statusText}));
 
     const result = await fetchInvoice({invoiceId});
 
     expect(result.success).toBe(false);
     if (!result.success) {
-      expect(result.error.message).toContain("404");
-      expect(result.error.message).toContain("Not Found");
-    }
-  });
-
-  it("maps 403 to the forbidden user message", async () => {
-    mockFetchWithTimeout.mockResolvedValue(
-      TestDataBuilder.textResponse("Forbidden", {status: 403, statusText: "Forbidden"}) as Awaited<ReturnType<typeof fetchWithTimeout>>,
-    );
-
-    const result = await fetchInvoice({invoiceId});
-
-    expect(result.success).toBe(false);
-    if (!result.success) {
-      expect(result.error.message).toContain("403");
-      expect(result.error.message).toContain("Forbidden");
-    }
-  });
-
-  it("maps other non-OK responses to the fallback user message", async () => {
-    mockFetchWithTimeout.mockResolvedValue(
-      TestDataBuilder.textResponse("Bad request", {status: 400, statusText: "Bad Request"}) as Awaited<ReturnType<typeof fetchWithTimeout>>,
-    );
-
-    const result = await fetchInvoice({invoiceId});
-
-    expect(result.success).toBe(false);
-    if (!result.success) {
-      expect(result.error.message).toContain("400");
-      expect(result.error.message).toContain("Bad Request");
+      expect(result.error.message).toContain(`${status} ${statusText}`);
+      expect(result.error.message).toContain("Invoice unavailable");
     }
   });
 
   it("returns an error result when auth throws", async () => {
-    mockFetchUser.mockRejectedValue(new Error("Auth failed"));
+    auth.mockRejectedValue(new Error("Auth failed"));
 
     const result = await fetchInvoice({invoiceId});
 
@@ -109,10 +71,11 @@ describe("fetchInvoice", () => {
     if (!result.success) {
       expect(result.error.message).toContain("Auth failed");
     }
+    expect(fetchAtHttp).not.toHaveBeenCalled();
   });
 
   it("returns an error result when fetch throws", async () => {
-    mockFetchWithTimeout.mockRejectedValue(new Error("Network error"));
+    fetchAtHttp.mockRejectedValue(new Error("Network error"));
 
     const result = await fetchInvoice({invoiceId});
 
@@ -123,7 +86,7 @@ describe("fetchInvoice", () => {
   });
 
   it("returns a fallback error message when auth throws a non-Error", async () => {
-    mockFetchUser.mockRejectedValue({error: "UNAUTHORIZED"});
+    auth.mockRejectedValue({error: "UNAUTHORIZED"});
 
     const result = await fetchInvoice({invoiceId});
 
@@ -131,16 +94,21 @@ describe("fetchInvoice", () => {
     if (!result.success) {
       expect(result.error.message).toContain("An unexpected error occurred");
     }
+    expect(fetchAtHttp).not.toHaveBeenCalled();
   });
 
   it("returns a server failure when the API returns a malformed payload", async () => {
-    mockFetchWithTimeout.mockResolvedValue(TestDataBuilder.jsonResponse({}) as Awaited<ReturnType<typeof fetchWithTimeout>>);
+    fetchAtHttp.mockResolvedValue(Response.json({}));
 
     const result = await fetchInvoice({invoiceId});
 
-    expect(result.success).toBe(false);
-    if (!result.success) {
-      expect(result.error.code).toBe("SERVER_ERROR");
-    }
+    expect(result).toEqual({
+      success: false,
+      error: {code: "SERVER_ERROR", message: "The server returned unexpected data. Please try again later."},
+    });
+    expect(fetchAtHttp).toHaveBeenCalledExactlyOnceWith(
+      `${apiUrl}/rest/v1/invoices/${invoiceId}`,
+      expect.objectContaining({cache: "no-store"}),
+    );
   });
 });

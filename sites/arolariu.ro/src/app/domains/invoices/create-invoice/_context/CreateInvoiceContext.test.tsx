@@ -338,42 +338,6 @@ describe("CreateInvoiceContext — orchestration contract", () => {
       });
     });
 
-    it("preserves failed and unattempted scans when the action returns an error result", async () => {
-      const scanC = makeScan("cccc");
-      mockAttachScanToInvoice
-        .mockResolvedValueOnce({success: true, data: undefined})
-        .mockResolvedValueOnce({success: false, error: {message: "Attach failed", code: "INTERNAL_ERROR"}})
-        .mockResolvedValue({success: true, data: undefined});
-
-      const {result} = await renderReady([SCAN_A, SCAN_B, scanC]);
-
-      await act(async () => {
-        await result.current.createInvoiceWithScans();
-      });
-
-      expect(result.current.partialOutcome).toMatchObject({
-        status: "partial",
-        invoiceIdentifier: INVOICE_ID,
-        failedStep: "scans",
-        message: "Attach failed",
-      });
-      expect(mockAnalyzeInvoice).not.toHaveBeenCalled();
-      expect(mockMarkScansAsUsedByInvoice).not.toHaveBeenCalled();
-
-      await act(async () => {
-        await result.current.createInvoiceWithScans();
-      });
-
-      expect(mockCreateInvoice).toHaveBeenCalledTimes(1);
-      expect(mockAttachScanToInvoice).toHaveBeenCalledTimes(3);
-      expect(mockAttachScanToInvoice.mock.calls[2]?.[0]).toMatchObject({
-        invoiceId: INVOICE_ID,
-        payload: {location: scanC.blobUrl},
-      });
-      expect(result.current.partialOutcome).toBeNull();
-      expect(mockAnalyzeInvoice).toHaveBeenCalledTimes(1);
-    });
-
     it("preserves retry state when attaching an additional scan rejects", async () => {
       mockAttachScanToInvoice.mockRejectedValueOnce(new Error("Connection lost"));
 

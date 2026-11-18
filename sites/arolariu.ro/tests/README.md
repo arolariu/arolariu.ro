@@ -6,20 +6,32 @@
 
 | What             | Command                                                      |
 | ---------------- | ------------------------------------------------------------ |
-| Run all tests    | `npm run test:website`                                       |
+| Full unit suite  | `npm run test:unit`                                          |
 | Run one file     | `npx vitest run src/lib/utils.generic.test.ts`               |
 | Watch mode       | `npx vitest`                                                 |
 | Website coverage | `npx vitest run src emails --coverage.reporter=text-summary` |
 
-Run `npm run test:website` from the repository root and the `npx vitest` commands from `sites/arolariu.ro`. Coverage needs no flag: the root
-`vitest.config.ts` sets `coverage.enabled: true`.
+Run these commands from `sites/arolariu.ro`. Coverage needs no flag: the root `vitest.config.ts` sets `coverage.enabled: true`.
 
 **Test files are colocated with source code** — place `foo.test.ts` next to `foo.ts`. Use `.test.ts(x)` suffix for Vitest. `.spec.ts(x)` is
 reserved for Playwright E2E.
 
+`npm run test:unit` runs three disjoint Vitest projects. The `website-lean` project has no shared setup or legacy server aliases. Selected
+utilities, validators, parsers, and email rendering tests run in Node; export, navigation, and preferences tests opt into Happy DOM and
+supply only the boundaries they consume. The `server-http` project runs the real invoice actions, configuration, JWT signing, and transport.
+Its setup uses synthetic configuration, substitutes Clerk, and intercepts HTTP. The action tests run in Node; dialog and wizard tests select
+Happy DOM in the same project so they can exercise the real actions from the UI without legacy aliases. Tests that reach Next.js cache
+invalidation or routing substitute those framework boundaries. The `website` project still uses the legacy stubs for the remaining suites.
+
+The scan action suites in `server-http` use the real configuration and storage adapter. `tests/setup/blob-sdk.ts` supplies only the Azure
+SDK boundary and a test-only storage endpoint response; the repository still chooses the container, maps metadata, and sends decoded bytes.
+
+Prefer the real repository implementation for new tests. The legacy aliases below document existing migration debt, not seams to add to new
+tests.
+
 ---
 
-## Mock Architecture (3 Tiers)
+## Legacy DOM Test Stubs
 
 ```
 ┌─────────────────────────────────────────────────────────┐
@@ -107,7 +119,7 @@ beforeEach(() => {
 
 **Location**: `vitest.setup.ts`
 
-These apply to ALL test files automatically:
+These apply to the `website` (DOM) project only:
 
 | Module or setup             | Mock behavior                                                                                            |
 | --------------------------- | -------------------------------------------------------------------------------------------------------- |
@@ -151,10 +163,9 @@ beforeEach(() => {
 
 ## Tier 3: Per-Test Mocks
 
-Per-test mocks should isolate true boundaries only: network calls, Clerk/auth, Next runtime APIs, SDK clients, browser APIs, timers, and
-server-only modules that cannot load under happy-dom. Do not mock deterministic internal helpers such as `@/lib/utils.generic`; import them
-directly and assert their real outputs. If an internal server module imports runtime-only dependencies, prefer a shared stub in
-`tests/stubs/` over an inline test-specific fake.
+For new tests, isolate only external boundaries: network, Clerk, framework runtime APIs, SDK clients, or browser APIs. Import deterministic
+internal code directly and assert its real output. For server entry points that need Node runtime dependencies, use the `server-http`
+project instead of adding another server implementation stub.
 
 ### Pattern A: Simple auto-mock + vi.mocked()
 

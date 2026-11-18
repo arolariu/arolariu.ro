@@ -1,430 +1,100 @@
-/**
- * @fileoverview Unit tests for fetchScans server action.
- * @module app/domains/invoices/_actions/scans/fetchScans.test
- */
-
-import {addSpanEvent, logWithTrace, withSpan} from "@/instrumentation.server";
-import fetchConfigurationValue from "@/lib/actions/storage/fetchConfig";
-import {fetchBFFUserFromAuthService} from "@/lib/actions/user/fetchUser";
-import {listBlobObjects} from "@/lib/azure/storageClient";
+import {generateGuid} from "@/lib/utils.generic";
 import {ScanStatus} from "@/types/scans";
 import {beforeEach, describe, expect, it, vi} from "vitest";
-import {TestDataBuilder} from "../../../../../../tests/helpers";
+import {getContainerClientAtSdk, storageUrl, stubStorageConfig} from "../../../../../../tests/setup/blob-sdk";
+import {auth, fetchAtHttp} from "../../../../../../tests/setup/server-http";
 import {fetchScans} from "./fetchScans";
 
-vi.mock("@/instrumentation.server");
-vi.mock("@/lib/actions/storage/fetchConfig");
-vi.mock("@/lib/actions/user/fetchUser");
-vi.mock("@/lib/azure/storageClient");
+const owner = generateGuid("user-1");
 
-const mockFetchBFFUserFromAuthService = vi.mocked(fetchBFFUserFromAuthService);
-const mockFetchConfigurationValue = vi.mocked(fetchConfigurationValue);
-const mockListBlobObjects = vi.mocked(listBlobObjects);
-const mockWithSpan = vi.mocked(withSpan);
-const mockAddSpanEvent = vi.mocked(addSpanEvent);
-const mockLogWithTrace = vi.mocked(logWithTrace);
+function blob(id: string, metadata?: Record<string, string>) {
+  return {name: `scans/${owner}/${id}.jpg`, metadata, properties: {contentType: "image/jpeg", contentLength: 1024}};
+}
+
+function storedScan(id: string, status: ScanStatus, date: string, displayName?: string) {
+  return blob(id, {
+    scanId: id,
+    ownerId: owner,
+    uploadedBy: owner,
+    uploadedAt: date,
+    documentKind: "receipt",
+    documentRole: "primary",
+    status,
+    ...(displayName ? {displayName} : {}),
+  });
+}
+
+function arrangeStorage(blobs: readonly ReturnType<typeof blob>[] = []) {
+  const listBlobsFlat = vi.fn(async function* () {
+    yield* blobs;
+  });
+  const getBlockBlobClient = vi.fn((name: string) => ({url: `${storageUrl}/invoices/${name}`}));
+  getContainerClientAtSdk.mockReturnValue({listBlobsFlat, getBlockBlobClient});
+  return {listBlobsFlat, getBlockBlobClient};
+}
 
 describe("fetchScans", () => {
-  beforeEach(() => {
-    vi.clearAllMocks();
+  beforeEach(stubStorageConfig);
 
-    mockWithSpan.mockImplementation((_name, fn) => (fn as () => Promise<unknown>)());
-    mockAddSpanEvent.mockImplementation(() => undefined);
-    mockLogWithTrace.mockImplementation(() => undefined);
-    mockFetchBFFUserFromAuthService.mockResolvedValue(TestDataBuilder.build("userInformation", {userIdentifier: "user-123"}));
-    mockFetchConfigurationValue.mockResolvedValue("https://storage.test");
-  });
+  it.each([
+    [undefined, ["detached", "first"]],
+    [{includeArchived: true}, ["archived", "detached", "first"]],
+  ] as const)("returns sorted, visible scans and skips unusable metadata (%o)", async (options, expectedOrder) => {
+    const {listBlobsFlat} = arrangeStorage([
+      storedScan("first", ScanStatus.READY, "2024-01-01T00:00:00Z", "First receipt"),
+      blob("missing-metadata"),
+      storedScan("attached", ScanStatus.ATTACHED, "2024-01-04T00:00:00Z"),
+      blob("invalid-metadata", {scanId: "invalid-metadata"}),
+      storedScan("archived", ScanStatus.ARCHIVED, "2024-01-03T00:00:00Z"),
+      storedScan("detached", ScanStatus.DETACHED, "2024-01-02T00:00:00Z"),
+    ]);
 
-  it("should successfully fetch scans for authenticated user", async () => {
-    const mockBlobs = [
-      {
-        name: "scans/user-123/scan1_1609459200000.jpg",
-        url: "https://storage.test/invoices/scans/user-123/scan1_1609459200000.jpg",
-        metadata: {
-          scanId: "scan1",
-          ownerId: "user-123",
-          displayName: "receipt1.jpg",
-          documentKind: "receipt",
-          documentRole: "primary",
-          status: "ready",
-          uploadedAt: "2024-01-01T00:00:00.000Z",
-          uploadedBy: "user-123",
-        },
-        contentType: "image/jpeg",
-        contentLength: 1024,
-        createdOn: new Date("2024-01-01T00:00:00.000Z"),
-        etag: "etag1",
-      },
-      {
-        name: "scans/user-123/scan2_1609545600000.jpg",
-        url: "https://storage.test/invoices/scans/user-123/scan2_1609545600000.jpg",
-        metadata: {
-          scanId: "scan2",
-          ownerId: "user-123",
-          displayName: "receipt2.jpg",
-          documentKind: "receipt",
-          documentRole: "primary",
-          status: "ready",
-          uploadedAt: "2024-01-02T00:00:00.000Z",
-          uploadedBy: "user-123",
-        },
-        contentType: "image/jpeg",
-        contentLength: 2048,
-        createdOn: new Date("2024-01-02T00:00:00.000Z"),
-        etag: "etag2",
-      },
-    ];
+    const result = await fetchScans(options);
 
-    mockListBlobObjects.mockResolvedValue(mockBlobs);
-
-    const result = await fetchScans();
-
-    expect(result.success).toBe(true);
-    if (result.success) {
-      expect(result.data).toHaveLength(2);
-      expect(result.data[0]?.id).toBe("scan2"); // Newest first
-      expect(result.data[1]?.id).toBe("scan1");
-    }
-
-    // Verify listBlobObjects was called with correct parameters
-    expect(mockListBlobObjects).toHaveBeenCalledWith({
-      storageEndpoint: "https://storage.test",
-      containerName: "invoices",
-      prefix: "scans/user-123/",
-      includeMetadata: true,
+    expect(result).toMatchObject({success: true, data: expectedOrder.map((id) => ({id}))});
+    expect(result.success && result.data.find(({id}) => id === "detached")).toMatchObject({
+      name: "detached.jpg",
+      status: ScanStatus.DETACHED,
+      sizeInBytes: 1024,
+      uploadedAt: new Date("2024-01-02T00:00:00Z"),
+      blobUrl: `${storageUrl}/invoices/scans/${owner}/detached.jpg`,
     });
+    expect(result.success && result.data.find(({id}) => id === "first")).toMatchObject({name: "First receipt"});
+    expect(getContainerClientAtSdk).toHaveBeenCalledExactlyOnceWith("invoices");
+    expect(listBlobsFlat).toHaveBeenCalledExactlyOnceWith({prefix: `scans/${owner}/`, includeMetadata: true});
   });
 
-  it("should exclude attached scans by default", async () => {
-    const mockBlobs = [
-      {
-        name: "scans/user-123/scan1.jpg",
-        url: "https://storage.test/invoices/scans/user-123/scan1.jpg",
-        metadata: {
-          scanId: "scan1",
-          ownerId: "user-123",
-          displayName: "receipt1.jpg",
-          documentKind: "receipt",
-          documentRole: "primary",
-          status: "ready",
-          uploadedAt: "2024-01-01T00:00:00.000Z",
-          uploadedBy: "user-123",
-        },
-        contentType: "image/jpeg",
-        contentLength: 1024,
-        createdOn: new Date("2024-01-01T00:00:00.000Z"),
-        etag: "etag1",
-      },
-      {
-        name: "scans/user-123/scan2.jpg",
-        url: "https://storage.test/invoices/scans/user-123/scan2.jpg",
-        metadata: {
-          scanId: "scan2",
-          ownerId: "user-123",
-          displayName: "receipt2.jpg",
-          documentKind: "receipt",
-          documentRole: "primary",
-          status: "attached",
-          uploadedAt: "2024-01-02T00:00:00.000Z",
-          uploadedBy: "user-123",
-          attachedAt: "2024-01-02T01:00:00.000Z",
-          attachedBy: "user-123",
-          attachedTo: "invoice-123",
-        },
-        contentType: "image/jpeg",
-        contentLength: 2048,
-        createdOn: new Date("2024-01-02T00:00:00.000Z"),
-        etag: "etag2",
-      },
-    ];
-
-    mockListBlobObjects.mockResolvedValue(mockBlobs);
+  it("returns an empty result when the SDK yields no scans", async () => {
+    const {listBlobsFlat} = arrangeStorage();
 
     const result = await fetchScans();
 
-    expect(result.success).toBe(true);
-    if (result.success) {
-      expect(result.data).toHaveLength(1);
-      expect(result.data[0]?.id).toBe("scan1");
-    }
+    expect(result).toEqual({success: true, data: []});
+    expect(listBlobsFlat).toHaveBeenCalledOnce();
   });
 
-  it("should exclude archived scans by default", async () => {
-    const mockBlobs = [
-      {
-        name: "scans/user-123/scan1.jpg",
-        url: "https://storage.test/invoices/scans/user-123/scan1.jpg",
-        metadata: {
-          scanId: "scan1",
-          ownerId: "user-123",
-          displayName: "receipt1.jpg",
-          documentKind: "receipt",
-          documentRole: "primary",
-          status: "ready",
-          uploadedAt: "2024-01-01T00:00:00.000Z",
-          uploadedBy: "user-123",
-        },
-        contentType: "image/jpeg",
-        contentLength: 1024,
-        createdOn: new Date("2024-01-01T00:00:00.000Z"),
-        etag: "etag1",
-      },
-      {
-        name: "scans/user-123/scan2.jpg",
-        url: "https://storage.test/invoices/scans/user-123/scan2.jpg",
-        metadata: {
-          scanId: "scan2",
-          ownerId: "user-123",
-          displayName: "receipt2.jpg",
-          documentKind: "receipt",
-          documentRole: "primary",
-          status: "archived",
-          uploadedAt: "2024-01-02T00:00:00.000Z",
-          uploadedBy: "user-123",
-        },
-        contentType: "image/jpeg",
-        contentLength: 2048,
-        createdOn: new Date("2024-01-02T00:00:00.000Z"),
-        etag: "etag2",
-      },
-    ];
-
-    mockListBlobObjects.mockResolvedValue(mockBlobs);
-
-    const result = await fetchScans({includeArchived: false});
-
-    expect(result.success).toBe(true);
-    if (result.success) {
-      expect(result.data).toHaveLength(1);
-      expect(result.data[0]?.id).toBe("scan1");
-    }
-  });
-
-  it("should include archived scans when includeArchived is true", async () => {
-    const mockBlobs = [
-      {
-        name: "scans/user-123/scan1.jpg",
-        url: "https://storage.test/invoices/scans/user-123/scan1.jpg",
-        metadata: {
-          scanId: "scan1",
-          ownerId: "user-123",
-          displayName: "receipt1.jpg",
-          documentKind: "receipt",
-          documentRole: "primary",
-          status: "ready",
-          uploadedAt: "2024-01-01T00:00:00.000Z",
-          uploadedBy: "user-123",
-        },
-        contentType: "image/jpeg",
-        contentLength: 1024,
-        createdOn: new Date("2024-01-01T00:00:00.000Z"),
-        etag: "etag1",
-      },
-      {
-        name: "scans/user-123/scan2.jpg",
-        url: "https://storage.test/invoices/scans/user-123/scan2.jpg",
-        metadata: {
-          scanId: "scan2",
-          ownerId: "user-123",
-          displayName: "receipt2.jpg",
-          documentKind: "receipt",
-          documentRole: "primary",
-          status: "archived",
-          uploadedAt: "2024-01-02T00:00:00.000Z",
-          uploadedBy: "user-123",
-          archivedAt: "2024-01-03T00:00:00.000Z",
-          archivedBy: "user-123",
-        },
-        contentType: "image/jpeg",
-        contentLength: 2048,
-        createdOn: new Date("2024-01-02T00:00:00.000Z"),
-        etag: "etag2",
-      },
-    ];
-
-    mockListBlobObjects.mockResolvedValue(mockBlobs);
-
-    const result = await fetchScans({includeArchived: true});
-
-    expect(result.success).toBe(true);
-    if (result.success) {
-      expect(result.data).toHaveLength(2);
-      expect(result.data.some((s) => s.status === ScanStatus.ARCHIVED)).toBe(true);
-    }
-  });
-
-  it("should handle authentication failures", async () => {
-    mockFetchBFFUserFromAuthService.mockRejectedValue(new Error("Unauthorized"));
+  it("does not fetch configuration or open a container if authentication fails", async () => {
+    auth.mockRejectedValue(new Error("Unauthorized"));
 
     const result = await fetchScans();
 
-    expect(result.success).toBe(false);
-    if (!result.success) {
-      expect(result.error.message).toBe("Unauthorized");
-    }
+    expect(result).toEqual({success: false, error: {code: "NETWORK_ERROR", message: "Unauthorized"}});
+    expect(fetchAtHttp).not.toHaveBeenCalled();
+    expect(getContainerClientAtSdk).not.toHaveBeenCalled();
   });
 
-  it("should handle empty scan list", async () => {
-    mockListBlobObjects.mockResolvedValue([]);
+  it.each([
+    [new Error("Storage connection failed"), "Storage connection failed"],
+    ["SDK iterator failed", "An unexpected error occurred"],
+  ] as const)("returns an error when the SDK fails with %s", async (reason, message) => {
+    const {listBlobsFlat, getBlockBlobClient} = arrangeStorage();
+    listBlobsFlat.mockImplementation(() => {
+      throw reason;
+    });
 
     const result = await fetchScans();
 
-    expect(result.success).toBe(true);
-    if (result.success) {
-      expect(result.data).toHaveLength(0);
-    }
-  });
-
-  it("should skip scans with invalid metadata", async () => {
-    const mockBlobs = [
-      {
-        name: "scans/user-123/scan1.jpg",
-        url: "https://storage.test/invoices/scans/user-123/scan1.jpg",
-        metadata: {
-          scanId: "scan1",
-          ownerId: "user-123",
-          displayName: "receipt1.jpg",
-          documentKind: "receipt",
-          documentRole: "primary",
-          status: "ready",
-          uploadedAt: "2024-01-01T00:00:00.000Z",
-          uploadedBy: "user-123",
-        },
-        contentType: "image/jpeg",
-        contentLength: 1024,
-        createdOn: new Date("2024-01-01T00:00:00.000Z"),
-        etag: "etag1",
-      },
-      {
-        name: "scans/user-123/scan2.jpg",
-        url: "https://storage.test/invoices/scans/user-123/scan2.jpg",
-        metadata: {}, // Invalid metadata - missing required fields
-        contentType: "image/jpeg",
-        contentLength: 2048,
-        createdOn: new Date("2024-01-02T00:00:00.000Z"),
-        etag: "etag2",
-      },
-    ];
-
-    mockListBlobObjects.mockResolvedValue(mockBlobs);
-
-    const result = await fetchScans();
-
-    expect(result.success).toBe(true);
-    if (result.success) {
-      expect(result.data).toHaveLength(1); // Only valid scan returned
-      expect(result.data[0]?.id).toBe("scan1");
-    }
-  });
-
-  it("should handle detached scans", async () => {
-    const mockBlobs = [
-      {
-        name: "scans/user-123/scan1.jpg",
-        url: "https://storage.test/invoices/scans/user-123/scan1.jpg",
-        metadata: {
-          scanId: "scan1",
-          ownerId: "user-123",
-          displayName: "receipt1.jpg",
-          documentKind: "receipt",
-          documentRole: "primary",
-          status: "detached",
-          uploadedAt: "2024-01-01T00:00:00.000Z",
-          uploadedBy: "user-123",
-          detachedAt: "2024-01-03T00:00:00.000Z",
-          detachedBy: "user-123",
-          detachedFrom: "invoice-456",
-        },
-        contentType: "image/jpeg",
-        contentLength: 1024,
-        createdOn: new Date("2024-01-01T00:00:00.000Z"),
-        etag: "etag1",
-      },
-    ];
-
-    mockListBlobObjects.mockResolvedValue(mockBlobs);
-
-    const result = await fetchScans();
-
-    expect(result.success).toBe(true);
-    if (result.success) {
-      expect(result.data).toHaveLength(1);
-      expect(result.data[0]?.status).toBe(ScanStatus.DETACHED);
-    }
-  });
-
-  it("should name the scan after the blob file when metadata has no displayName", async () => {
-    mockListBlobObjects.mockResolvedValue([
-      {
-        name: "scans/user-123/scan1.jpg",
-        url: "https://storage.test/invoices/scans/user-123/scan1.jpg",
-        metadata: {
-          scanId: "scan1",
-          ownerId: "user-123",
-          documentKind: "receipt",
-          documentRole: "primary",
-          status: "ready",
-          uploadedAt: "2024-01-01T00:00:00.000Z",
-          uploadedBy: "user-123",
-        },
-        contentType: "image/jpeg",
-        contentLength: 1024,
-        createdOn: new Date("2024-01-01T00:00:00.000Z"),
-        etag: "etag1",
-      },
-    ]);
-
-    const result = await fetchScans();
-
-    expect(result.success).toBe(true);
-    if (result.success) {
-      expect(result.data[0]?.name).toBe("scan1.jpg");
-    }
-  });
-
-  it("defensive invariant: should skip blobs whose metadata is undefined", async () => {
-    mockListBlobObjects.mockResolvedValue([
-      {
-        name: "scans/user-123/nometa.jpg",
-        url: "https://storage.test/invoices/scans/user-123/nometa.jpg",
-        // The type requires metadata; the runtime guard `?? {}` exists for storage responses that omit it.
-        metadata: undefined as unknown as Record<string, string>,
-        contentType: "image/jpeg",
-        contentLength: 1,
-        createdOn: new Date(),
-        etag: "etag",
-      },
-    ]);
-
-    const result = await fetchScans();
-
-    expect(result.success).toBe(true);
-    if (result.success) {
-      expect(result.data).toHaveLength(0);
-    }
-  });
-
-  it("should return a generic message when a non-Error value is thrown", async () => {
-    const consoleSpy = vi.spyOn(console, "error").mockImplementation(() => undefined);
-    mockListBlobObjects.mockRejectedValue("boom");
-
-    const result = await fetchScans();
-
-    expect(result.success).toBe(false);
-    if (!result.success) {
-      expect(result.error.message).toBe("An unexpected error occurred");
-    }
-    expect(consoleSpy).toHaveBeenCalled();
-  });
-
-  it("should handle Azure storage failures", async () => {
-    mockListBlobObjects.mockRejectedValue(new Error("Storage connection failed"));
-
-    const result = await fetchScans();
-
-    expect(result.success).toBe(false);
-    if (!result.success) {
-      expect(result.error.message).toContain("Storage connection failed");
-    }
+    expect(result).toEqual({success: false, error: {code: "NETWORK_ERROR", message}});
+    expect(getBlockBlobClient).not.toHaveBeenCalled();
   });
 });

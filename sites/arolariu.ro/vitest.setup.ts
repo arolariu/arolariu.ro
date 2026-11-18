@@ -1,22 +1,9 @@
 /**
- * @fileoverview Global Vitest setup for the arolariu.ro website.
+ * @fileoverview Vitest setup for the website's DOM test project.
  * @module sites/arolariu.ro/vitest.setup
  *
  * @remarks
- * ## Mock Architecture (3 tiers)
- *
- * 1. **Stubs** (`tests/stubs/`): Module aliases resolved via `vitest.config.ts`.
- *    Replace server-only modules that crash in happy-dom. These use `vi.fn(impl)`
- *    so the original implementation survives `restoreMocks: true`.
- *    Modules: `server-only`, `instrumentation.server`, `configProxy`, `utils.server`,
- *    `storageClient`, `fetchConfig`, `fetchUser`.
- *
- * 2. **Global mocks** (this file): Browser APIs and SDK shims that every test needs.
- *    Modules: `next/navigation`, `next-intl`, `@clerk/nextjs`, `@opentelemetry/*`,
- *    `@azure/*` SDKs.
- *
- * 3. **Per-test mocks**: Inline `vi.mock()` + `vi.hoisted()` in individual test files
- *    for module-specific behavior (e.g., Resend class, specific server actions).
+ * The server-http project runs real server modules in Node and does not load this file.
  *
  * @see tests/README.md for full documentation.
  */

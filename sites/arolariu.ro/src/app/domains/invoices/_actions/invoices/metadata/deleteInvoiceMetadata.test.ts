@@ -1,111 +1,64 @@
-/**
- * @fileoverview Unit tests for deleteInvoiceMetadata server action.
- * @module app/domains/invoices/_actions/invoices/metadata/deleteInvoiceMetadata.test
- */
-
-import {fetchBFFUserFromAuthService} from "@/lib/actions/user/fetchUser";
-import {fetchWithTimeout} from "@/lib/utils.server";
-import {beforeEach, describe, expect, it, vi} from "vitest";
-import {TestDataBuilder} from "../../../../../../../tests/helpers";
-
-vi.mock("@/lib/actions/user/fetchUser");
-const {deleteInvoiceMetadata} = await import("./deleteInvoiceMetadata");
-const mockFetchUser = vi.mocked(fetchBFFUserFromAuthService);
-const mockFetchWithTimeout = vi.mocked(fetchWithTimeout);
+import {describe, expect, it} from "vitest";
+import {apiUrl, auth, fetchAtHttp} from "../../../../../../../tests/setup/server-http";
+import {deleteInvoiceMetadata} from "./deleteInvoiceMetadata";
 
 describe("deleteInvoiceMetadata", () => {
-  beforeEach(() => {
-    vi.clearAllMocks();
-    mockFetchUser.mockResolvedValue(TestDataBuilder.build("userInformation", {userIdentifier: "user-1", userJwt: "jwt-1"}));
-    mockFetchWithTimeout.mockResolvedValue(
-      TestDataBuilder.jsonResponse(undefined, {status: 200}) as Awaited<ReturnType<typeof fetchWithTimeout>>,
-    );
-  });
+  const invoiceId = "11111111-1111-4111-8111-111111111111";
+  const key = "user.note";
 
-  it("deletes one metadata key using the backend keys array DTO", async () => {
-    const invoiceId = "11111111-1111-4111-8111-111111111111";
-    const key = "category";
+  it("deletes only the requested key using the backend's keys-array contract", async () => {
+    fetchAtHttp.mockResolvedValueOnce(new Response(null, {status: 204}));
 
     const result = await deleteInvoiceMetadata({invoiceId, key});
 
-    expect(result.success).toBe(true);
-    expect(mockFetchWithTimeout).toHaveBeenCalledWith(
-      `/rest/v1/invoices/${invoiceId}/metadata`,
-      expect.objectContaining({
-        method: "DELETE",
-        headers: expect.objectContaining({
-          Authorization: "Bearer jwt-1",
-          "Content-Type": "application/json",
-        }),
-      }),
+    expect(result).toEqual({success: true, data: undefined});
+    expect(fetchAtHttp).toHaveBeenCalledExactlyOnceWith(
+      `${apiUrl}/rest/v1/invoices/${invoiceId}/metadata`,
+      expect.objectContaining({method: "DELETE", cache: "no-store"}),
     );
-
-    const callArgs = mockFetchWithTimeout.mock.calls[0];
-    const body = JSON.parse(callArgs?.[1]?.body as string);
-    expect(body).toEqual({keys: ["category"]});
+    const [, options] = fetchAtHttp.mock.calls[0] ?? [];
+    const headers = new Headers(options?.headers);
+    expect(headers.get("authorization")).toMatch(/^Bearer \S+$/u);
+    expect(headers.get("content-type")).toBe("application/json");
+    expect(JSON.parse(String(options?.body))).toEqual({keys: [key]});
   });
 
-  it("returns an error result for an invalid invoice id", async () => {
-    const invalidId = "not-a-guid";
-    const key = "category";
+  it("rejects a malformed identifier before authentication or HTTP", async () => {
+    const result = await deleteInvoiceMetadata({invoiceId: "not-a-guid", key});
 
-    const result = await deleteInvoiceMetadata({invoiceId: invalidId, key});
-
-    expect(result.success).toBe(false);
-    expect(mockFetchWithTimeout).not.toHaveBeenCalled();
+    expect(result).toMatchObject({success: false, error: {message: expect.stringContaining("invoiceId")}});
+    expect(auth).not.toHaveBeenCalled();
+    expect(fetchAtHttp).not.toHaveBeenCalled();
   });
 
-  it("maps 5xx and non-5xx failures", async () => {
-    mockFetchWithTimeout.mockResolvedValue(
-      TestDataBuilder.textResponse("Internal Server Error", {status: 500, statusText: "Internal Server Error"}) as Awaited<
-        ReturnType<typeof fetchWithTimeout>
-      >,
-    );
-
-    const invoiceId = "11111111-1111-4111-8111-111111111111";
-    const key = "category";
+  it.each([
+    [400, "Bad Request"],
+    [500, "Internal Server Error"],
+  ] as const)("returns a failed result when the backend responds with %i", async (status, statusText) => {
+    fetchAtHttp.mockResolvedValueOnce(new Response("Metadata rejected", {status, statusText}));
 
     const result = await deleteInvoiceMetadata({invoiceId, key});
 
-    expect(result.success).toBe(false);
-    if (!result.success) {
-      expect(result.error.message).toContain("500");
-      expect(result.error.message).toContain("Failed to delete invoice metadata");
-    }
-
-    mockFetchWithTimeout.mockResolvedValue(
-      TestDataBuilder.textResponse("Bad Request", {status: 400, statusText: "Bad Request"}) as Awaited<ReturnType<typeof fetchWithTimeout>>,
-    );
-
-    const result2 = await deleteInvoiceMetadata({invoiceId, key});
-
-    expect(result2.success).toBe(false);
-    if (!result2.success) {
-      expect(result2.error.message).toContain("400");
-      expect(result2.error.message).toContain("Failed to delete invoice metadata");
-    }
+    expect(result).toEqual({
+      success: false,
+      error: {code: "NETWORK_ERROR", message: `Failed to delete invoice metadata: ${status} ${statusText}`},
+    });
   });
 
-  it("returns an error result when auth or fetch throws", async () => {
-    mockFetchUser.mockRejectedValue(new Error("Auth service unavailable"));
-
-    const invoiceId = "11111111-1111-4111-8111-111111111111";
-    const key = "category";
+  it("does not delete metadata when Clerk fails", async () => {
+    auth.mockRejectedValueOnce(new Error("Auth service unavailable"));
 
     const result = await deleteInvoiceMetadata({invoiceId, key});
 
-    expect(result.success).toBe(false);
-    expect(mockFetchWithTimeout).not.toHaveBeenCalled();
+    expect(result).toEqual({success: false, error: {code: "NETWORK_ERROR", message: "Auth service unavailable"}});
+    expect(fetchAtHttp).not.toHaveBeenCalled();
   });
 
-  it("handles fetch throwing a non-Error object", async () => {
-    mockFetchWithTimeout.mockRejectedValue("String error");
-
-    const invoiceId = "11111111-1111-4111-8111-111111111111";
-    const key = "category";
+  it("returns an error when HTTP rejects with a non-Error reason", async () => {
+    fetchAtHttp.mockRejectedValueOnce("Connection closed");
 
     const result = await deleteInvoiceMetadata({invoiceId, key});
 
-    expect(result.success).toBe(false);
+    expect(result).toEqual({success: false, error: {code: "NETWORK_ERROR", message: "An unexpected error occurred"}});
   });
 });

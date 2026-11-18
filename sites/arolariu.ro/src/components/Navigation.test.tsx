@@ -1,487 +1,123 @@
-/**
- * @fileoverview Tests for Navigation components.
- * @module components/Navigation.test
- */
+// @vitest-environment happy-dom
 
+import "@testing-library/jest-dom/vitest";
 import {fireEvent, render, screen, within} from "@testing-library/react";
-import type {ReactNode} from "react";
-import {afterEach, beforeEach, describe, expect, it, vi} from "vitest";
+import {NextIntlClientProvider} from "next-intl";
+import {describe, expect, it, vi} from "vitest";
+import messages from "../../messages/en.json";
 import {DesktopNavigation, MobileNavigation} from "./Navigation";
 
-// Mock @arolariu/components
-vi.mock("@arolariu/components", () => ({
-  Button: ({
-    children,
-    onClick,
-    className,
-    variant,
-    ...props
-  }: {
-    children: ReactNode;
-    onClick?: () => void;
-    className?: string;
-    variant?: string;
-    "aria-expanded"?: boolean;
-    "aria-label"?: string;
-    "aria-controls"?: string;
-  }) => (
-    <button
-      onClick={onClick}
-      className={className}
-      data-variant={variant}
-      {...props}>
-      {children}
-    </button>
-  ),
-}));
+const useAuth = vi.hoisted(() => vi.fn());
+vi.mock("@clerk/nextjs", () => ({useAuth}));
 
-// Mock Clerk's useAuth hook
-const mockUseAuth = vi.fn();
-vi.mock("@clerk/nextjs", () => ({
-  useAuth: () => mockUseAuth(),
-}));
+const invoiceLinks = [
+  ["Invoices", "/domains/invoices"],
+  ["Upload Scans", "/domains/invoices/upload-scans"],
+  ["View Scans", "/domains/invoices/view-scans"],
+  ["My Invoices", "/domains/invoices/view-invoices"],
+] as const;
+const aboutLinks = [
+  ["The Platform", "/about/the-platform"],
+  ["The Author", "/about/the-author"],
+] as const;
 
-// Mock next-intl's useTranslations hook
-vi.mock("next-intl", () => ({
-  useTranslations: (namespace: string) => {
-    const translations: Record<string, Record<string, string>> = {
-      Navigation: {
-        domains: "Domains",
-        invoices: "Invoices",
-        uploadScans: "Upload Scans",
-        viewScans: "View Scans",
-        myInvoices: "My Invoices",
-        about: "About",
-        thePlatform: "The Platform",
-        theAuthor: "The Author",
-        myProfile: "My Profile",
-      },
-      "Navigation.mobile": {
-        openNavigation: "Open navigation",
-        closeNavigation: "Close navigation",
-        title: "Navigation",
-      },
-    };
-    return (key: string) => translations[namespace]?.[key] ?? key;
-  },
-}));
+function renderNavigation(view: React.JSX.Element, signedIn: boolean | undefined): void {
+  useAuth.mockReturnValue({isLoaded: signedIn !== undefined, isSignedIn: signedIn});
+  render(
+    <NextIntlClientProvider
+      locale='en'
+      messages={{app: {navigation: messages.app.navigation}}}>
+      {view}
+    </NextIntlClientProvider>,
+  );
+}
 
-vi.mock("next-intl-selector", async (importOriginal) => {
-  const actual = await importOriginal<typeof import("next-intl-selector")>();
-  const translations: Record<string, string> = {
-    "app.navigation.domains": "Domains",
-    "app.navigation.invoices": "Invoices",
-    "app.navigation.uploadScans": "Upload Scans",
-    "app.navigation.viewScans": "View Scans",
-    "app.navigation.myInvoices": "My Invoices",
-    "app.navigation.about": "About",
-    "app.navigation.thePlatform": "The Platform",
-    "app.navigation.theAuthor": "The Author",
-    "app.navigation.myProfile": "My Profile",
-    "app.navigation.mobile.openNavigation": "Open navigation",
-    "app.navigation.mobile.closeNavigation": "Close navigation",
-    "app.navigation.mobile.title": "Navigation",
-  };
+function openMobile(): HTMLElement {
+  const trigger = screen.getByRole("button", {name: "Open navigation", expanded: false});
+  expect(trigger).toHaveAttribute("aria-controls", "mobile-navigation");
 
-  return {
-    ...actual,
-    useTranslations: () => (selector: import("next-intl-selector").MessageSelector) => {
-      const path = actual.pathFromSelector(selector);
-      return translations[path] ?? path;
-    },
-  };
+  fireEvent.click(trigger);
+
+  expect(trigger).toHaveAttribute("aria-expanded", "true");
+  const dialog = screen.getByRole("dialog", {name: "Navigation"});
+  expect(dialog).toHaveAttribute("aria-modal", "true");
+  expect(dialog).toHaveAttribute("id", "mobile-navigation");
+  return dialog;
+}
+
+function expandButton(dialog: HTMLElement, label: string): HTMLElement {
+  const item = within(dialog).getByRole("link", {name: label}).closest("li");
+  if (!item) throw new Error(`Missing navigation item for ${label}`);
+  return within(item).getByRole("button", {expanded: false});
+}
+
+describe("desktop navigation", () => {
+  it("renders real links for each translated destination and hides decorative arrows from assistive technology", () => {
+    renderNavigation(<DesktopNavigation />, false);
+
+    expect(screen.getByRole("link", {name: "Domains"})).toHaveAttribute("href", "/domains");
+    expect(screen.getByRole("link", {name: "About"})).toHaveAttribute("href", "/about");
+    for (const [label, href] of [...invoiceLinks, ...aboutLinks]) {
+      expect(screen.getByRole("link", {name: label})).toHaveAttribute("href", href);
+    }
+    for (const arrow of screen.getAllByText("→")) expect(arrow).toHaveAttribute("aria-hidden", "true");
+    expect(screen.queryByRole("link", {name: "My Profile"})).not.toBeInTheDocument();
+  });
+
+  it("does not offer a profile destination before Clerk has loaded", () => {
+    renderNavigation(<DesktopNavigation />, undefined);
+
+    expect(screen.getByRole("link", {name: "Domains"})).toBeInTheDocument();
+    expect(screen.queryByRole("link", {name: "My Profile"})).not.toBeInTheDocument();
+  });
+
+  it("includes the profile destination for a signed-in user", () => {
+    renderNavigation(<DesktopNavigation />, true);
+
+    expect(screen.getByRole("link", {name: "My Profile"})).toHaveAttribute("href", "/my-profile");
+  });
 });
 
-// Mock next/link
-vi.mock("next/link", () => ({
-  default: ({children, href, className}: {children: ReactNode; href: string; className?: string}) => (
-    <a
-      href={href}
-      className={className}>
-      {children}
-    </a>
-  ),
-}));
+describe("mobile navigation", () => {
+  it.each(["header", "backdrop"])("closes from the %s and restores the trigger state", (control) => {
+    renderNavigation(<MobileNavigation />, false);
+    const dialog = openMobile();
+    const header = within(dialog).getByRole("button", {name: "Close navigation"});
+    const backdrop = screen.getAllByRole("button", {name: "Close navigation"}).find((button) => !dialog.contains(button));
+    if (!backdrop) throw new Error("Missing mobile backdrop control");
+    expect(within(dialog).getByRole("link", {name: "Domains"})).toHaveAttribute("href", "/domains");
+    expect(within(dialog).getByRole("link", {name: "About"})).toHaveAttribute("href", "/about");
+    expect(within(dialog).queryByRole("link", {name: "My Profile"})).not.toBeInTheDocument();
 
-// Mock react-icons
-vi.mock("react-icons/tb", () => ({
-  TbChevronDown: ({className}: {className?: string}) => <span className={className}>ChevronDown</span>,
-  TbMenu: ({className}: {className?: string}) => <span className={className}>Menu</span>,
-}));
+    fireEvent.click(control === "header" ? header : backdrop);
 
-describe("Navigation", () => {
-  beforeEach(() => {
-    vi.clearAllMocks();
-    // Default to signed out
-    mockUseAuth.mockReturnValue({isSignedIn: false});
+    expect(screen.queryByRole("dialog", {name: "Navigation"})).not.toBeInTheDocument();
+    expect(screen.getByRole("button", {name: "Open navigation", expanded: false})).toBeInTheDocument();
   });
 
-  afterEach(() => {
-    vi.clearAllMocks();
-  });
-
-  describe("DesktopNavigation", () => {
-    it("should render without crashing", () => {
-      const {container} = render(<DesktopNavigation />);
-      expect(container.querySelector("ul")).toBeInTheDocument();
-    });
-
-    it("should display Domains link", () => {
-      render(<DesktopNavigation />);
-      const domainsLink = screen.getByRole("link", {name: "Domains"});
-      expect(domainsLink).toBeInTheDocument();
-    });
-
-    it("should display About link", () => {
-      render(<DesktopNavigation />);
-      const aboutLink = screen.getByRole("link", {name: "About"});
-      expect(aboutLink).toBeInTheDocument();
-    });
-
-    it("should not display My Profile when user is not signed in", () => {
-      mockUseAuth.mockReturnValue({isSignedIn: false});
-      render(<DesktopNavigation />);
-      expect(screen.queryByRole("link", {name: "My Profile"})).not.toBeInTheDocument();
-    });
-
-    it("should display My Profile when user is signed in", () => {
-      mockUseAuth.mockReturnValue({isSignedIn: true});
-      render(<DesktopNavigation />);
-      expect(screen.getByRole("link", {name: "My Profile"})).toBeInTheDocument();
-    });
-
-    it("should have correct href for Domains link", () => {
-      render(<DesktopNavigation />);
-      const domainsLink = screen.getByRole("link", {name: "Domains"});
-      expect(domainsLink).toHaveAttribute("href", "/domains");
-    });
-
-    it("should have correct href for About link", () => {
-      render(<DesktopNavigation />);
-      const aboutLink = screen.getByRole("link", {name: "About"});
-      expect(aboutLink).toHaveAttribute("href", "/about");
-    });
-
-    it("should have correct href for My Profile link when signed in", () => {
-      mockUseAuth.mockReturnValue({isSignedIn: true});
-      render(<DesktopNavigation />);
-      const profileLink = screen.getByRole("link", {name: "My Profile"});
-      expect(profileLink).toHaveAttribute("href", "/my-profile");
-    });
-
-    it("should render navigation items as list items", () => {
-      mockUseAuth.mockReturnValue({isSignedIn: true});
-      const {container} = render(<DesktopNavigation />);
-      // Get direct children list items (not nested ones)
-      const mainList = container.querySelector("ul.desktop-nav__list");
-      const directListItems = mainList?.querySelectorAll(":scope > li");
-      expect(directListItems?.length).toBe(3); // Domains, About, My Profile
-    });
-
-    it("should be memoized", () => {
-      expect(DesktopNavigation.displayName).toBe("DesktopNavigation");
-    });
-
-    it("should render child menu items for Domains", () => {
-      render(<DesktopNavigation />);
-      expect(screen.getByRole("link", {name: "Invoices"})).toBeInTheDocument();
-    });
-
-    it("should render grandchild items for Invoices", () => {
-      render(<DesktopNavigation />);
-      expect(screen.getByRole("link", {name: "Upload Scans"})).toBeInTheDocument();
-      expect(screen.getByRole("link", {name: "View Scans"})).toBeInTheDocument();
-      expect(screen.getByRole("link", {name: "My Invoices"})).toBeInTheDocument();
-    });
-
-    it("should render child menu items for About", () => {
-      render(<DesktopNavigation />);
-      expect(screen.getByRole("link", {name: "The Platform"})).toBeInTheDocument();
-      expect(screen.getByRole("link", {name: "The Author"})).toBeInTheDocument();
-    });
-  });
-
-  describe("MobileNavigation", () => {
-    it("should render hamburger menu button", () => {
-      render(<MobileNavigation />);
-      const buttons = screen.getAllByRole("button");
-      // Find the button that contains "Open navigation" text
-      const hamburgerButton = buttons.find((btn) => btn.textContent?.includes("Open navigation"));
-      expect(hamburgerButton).toBeInTheDocument();
-    });
-
-    it("should have correct aria-expanded initially", () => {
-      render(<MobileNavigation />);
-      const button = screen.getByRole("button", {expanded: false});
-      expect(button).toHaveAttribute("aria-expanded", "false");
-    });
-
-    it("should open mobile menu when hamburger button is clicked", () => {
-      render(<MobileNavigation />);
-      const button = screen.getByRole("button", {expanded: false});
-
-      fireEvent.click(button);
-
-      expect(screen.getByRole("dialog")).toBeInTheDocument();
-    });
-
-    it("should display Navigation title when menu is open", () => {
-      render(<MobileNavigation />);
-      const button = screen.getByRole("button", {expanded: false});
-
-      fireEvent.click(button);
-
-      expect(screen.getByText("Navigation")).toBeInTheDocument();
-    });
-
-    it("should close mobile menu when close button is clicked", () => {
-      render(<MobileNavigation />);
-      const openButton = screen.getByRole("button", {expanded: false});
-
-      fireEvent.click(openButton);
-      const dialog = screen.getByRole("dialog");
-      expect(dialog).toBeInTheDocument();
-
-      // Find the close button inside the dialog header.
-      const closeButton = within(dialog).getByRole("button", {name: /close navigation/i});
-      fireEvent.click(closeButton);
-
-      expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
-    });
-
-    it("should close mobile menu when overlay is clicked", () => {
-      render(<MobileNavigation />);
-      const openButton = screen.getByRole("button", {expanded: false});
-
-      fireEvent.click(openButton);
-      expect(screen.getByRole("dialog")).toBeInTheDocument();
-
-      // Click the overlay
-      const overlay = document.querySelector(".mobile-nav__backdrop");
-      expect(overlay).toBeInTheDocument();
-      if (overlay) {
-        fireEvent.click(overlay);
-      }
-
-      expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
-    });
-
-    it("should display Domains and About links when menu is open", () => {
-      render(<MobileNavigation />);
-      const button = screen.getByRole("button", {expanded: false});
-
-      fireEvent.click(button);
-
-      const dialog = screen.getByRole("dialog");
-      expect(within(dialog).getByRole("link", {name: "Domains"})).toBeInTheDocument();
-      expect(within(dialog).getByRole("link", {name: "About"})).toBeInTheDocument();
-    });
-
-    it("should not display My Profile when user is not signed in", () => {
-      mockUseAuth.mockReturnValue({isSignedIn: false});
-      render(<MobileNavigation />);
-      const button = screen.getByRole("button", {expanded: false});
-
-      fireEvent.click(button);
-
-      const dialog = screen.getByRole("dialog");
-      expect(within(dialog).queryByRole("link", {name: "My Profile"})).not.toBeInTheDocument();
-    });
-
-    it("should display My Profile when user is signed in", () => {
-      mockUseAuth.mockReturnValue({isSignedIn: true});
-      render(<MobileNavigation />);
-      const button = screen.getByRole("button", {expanded: false});
-
-      fireEvent.click(button);
-
-      const dialog = screen.getByRole("dialog");
-      expect(within(dialog).getByRole("link", {name: "My Profile"})).toBeInTheDocument();
-    });
-
-    it("should expand child items when chevron is clicked", () => {
-      render(<MobileNavigation />);
-      const menuButton = screen.getByRole("button", {expanded: false});
-
-      fireEvent.click(menuButton);
-
-      const dialog = screen.getByRole("dialog");
-      // Find expand button for Domains
-      const expandButtons = within(dialog).getAllByRole("button", {expanded: false});
-      const domainExpandButton = expandButtons[0];
-
-      if (domainExpandButton) {
-        fireEvent.click(domainExpandButton);
-        expect(domainExpandButton).toHaveAttribute("aria-expanded", "true");
-      }
-    });
-
-    it("should toggle child items open and closed", () => {
-      render(<MobileNavigation />);
-      const menuButton = screen.getByRole("button", {expanded: false});
-
-      fireEvent.click(menuButton);
-
-      const dialog = screen.getByRole("dialog");
-      const expandButtons = within(dialog).getAllByRole("button", {expanded: false});
-      const expandButton = expandButtons[0];
-
-      if (expandButton) {
-        // Open
-        fireEvent.click(expandButton);
-        expect(expandButton).toHaveAttribute("aria-expanded", "true");
-
-        // Close
-        fireEvent.click(expandButton);
-        expect(expandButton).toHaveAttribute("aria-expanded", "false");
-      }
-    });
-
-    it("should have correct aria-modal on dialog", () => {
-      render(<MobileNavigation />);
-      const button = screen.getByRole("button", {expanded: false});
-
-      fireEvent.click(button);
-
-      const dialog = screen.getByRole("dialog");
-      expect(dialog).toHaveAttribute("aria-modal", "true");
-    });
-
-    it("should have correct id on mobile navigation", () => {
-      render(<MobileNavigation />);
-      const button = screen.getByRole("button", {expanded: false});
-
-      fireEvent.click(button);
-
-      const dialog = screen.getByRole("dialog");
-      expect(dialog).toHaveAttribute("id", "mobile-navigation");
-    });
-
-    it("should have aria-controls pointing to mobile-navigation", () => {
-      render(<MobileNavigation />);
-      const button = screen.getByRole("button", {expanded: false});
-      expect(button).toHaveAttribute("aria-controls", "mobile-navigation");
-    });
-
-    it("should be memoized", () => {
-      expect(MobileNavigation.displayName).toBe("MobileNavigation");
-    });
-
-    it("should render screen reader only text for hamburger button", () => {
-      render(<MobileNavigation />);
-      const srText = screen.getByText("Open navigation");
-      expect(srText).toBeInTheDocument();
-      // The text should be visually hidden (SCSS module applies @include visually-hidden)
-      expect(srText.tagName.toLowerCase()).toBe("span");
-    });
-
-    it("should show Invoice children when Domains is expanded", () => {
-      render(<MobileNavigation />);
-      const menuButton = screen.getByRole("button", {expanded: false});
-
-      fireEvent.click(menuButton);
-
-      const dialog = screen.getByRole("dialog");
-      const expandButtons = within(dialog).getAllByRole("button", {expanded: false});
-
-      if (expandButtons[0]) {
-        fireEvent.click(expandButtons[0]);
-        expect(within(dialog).getByRole("link", {name: "Invoices"})).toBeInTheDocument();
-      }
-    });
-
-    it("should show grandchild links when Domains is expanded", () => {
-      render(<MobileNavigation />);
-      const menuButton = screen.getByRole("button", {expanded: false});
-
-      fireEvent.click(menuButton);
-
-      const dialog = screen.getByRole("dialog");
-      const expandButtons = within(dialog).getAllByRole("button", {expanded: false});
-
-      if (expandButtons[0]) {
-        fireEvent.click(expandButtons[0]);
-        expect(within(dialog).getByRole("link", {name: "Upload Scans"})).toBeInTheDocument();
-        expect(within(dialog).getByRole("link", {name: "View Scans"})).toBeInTheDocument();
-        expect(within(dialog).getByRole("link", {name: "My Invoices"})).toBeInTheDocument();
-      }
-    });
-
-    it("should show About children when About is expanded", () => {
-      render(<MobileNavigation />);
-      const menuButton = screen.getByRole("button", {expanded: false});
-
-      fireEvent.click(menuButton);
-
-      const dialog = screen.getByRole("dialog");
-      const expandButtons = within(dialog).getAllByRole("button", {expanded: false});
-
-      // About is the second expand button
-      if (expandButtons[1]) {
-        fireEvent.click(expandButtons[1]);
-        expect(within(dialog).getByRole("link", {name: "The Platform"})).toBeInTheDocument();
-        expect(within(dialog).getByRole("link", {name: "The Author"})).toBeInTheDocument();
-      }
-    });
-  });
-
-  describe("useNavigationItems hook (tested through components)", () => {
-    it("should show My Profile when signed in and hide when signed out", () => {
-      // Test signed out state
-      mockUseAuth.mockReturnValue({isSignedIn: false});
-      const {unmount: unmount1} = render(<DesktopNavigation />);
-      expect(screen.queryByRole("link", {name: "My Profile"})).not.toBeInTheDocument();
-      unmount1();
-
-      // Test signed in state (requires new mount since component is memoized)
-      mockUseAuth.mockReturnValue({isSignedIn: true});
-      render(<DesktopNavigation />);
-      expect(screen.getByRole("link", {name: "My Profile"})).toBeInTheDocument();
-    });
-
-    it("should include correct nested structure for Domains", () => {
-      render(<DesktopNavigation />);
-
-      // Domains has Invoices child
-      const invoicesLink = screen.getByRole("link", {name: "Invoices"});
-      expect(invoicesLink).toHaveAttribute("href", "/domains/invoices");
-
-      // Invoices has children
-      expect(screen.getByRole("link", {name: "Upload Scans"})).toHaveAttribute("href", "/domains/invoices/upload-scans");
-    });
-
-    it("should include correct nested structure for About", () => {
-      render(<DesktopNavigation />);
-
-      expect(screen.getByRole("link", {name: "The Platform"})).toHaveAttribute("href", "/about/the-platform");
-      expect(screen.getByRole("link", {name: "The Author"})).toHaveAttribute("href", "/about/the-author");
-    });
-  });
-
-  describe("Edge cases", () => {
-    it("should handle undefined isSignedIn (falsy)", () => {
-      mockUseAuth.mockReturnValue({isSignedIn: undefined});
-      render(<DesktopNavigation />);
-      expect(screen.queryByRole("link", {name: "My Profile"})).not.toBeInTheDocument();
-    });
-
-    it("should handle null isSignedIn (falsy)", () => {
-      mockUseAuth.mockReturnValue({isSignedIn: null});
-      render(<DesktopNavigation />);
-      expect(screen.queryByRole("link", {name: "My Profile"})).not.toBeInTheDocument();
-    });
-
-    it("should render with correct container classes", () => {
-      const {container} = render(<DesktopNavigation />);
-      const navContainer = container.querySelector("div");
-      expect(navContainer).toHaveClass("desktop-nav");
-    });
-
-    it("should render arrow icons in desktop dropdown", () => {
-      render(<DesktopNavigation />);
-      // Check for arrow spans
-      const arrows = screen.getAllByText("→");
-      expect(arrows.length).toBeGreaterThan(0);
-    });
+  it("toggles nested destinations independently and preserves their real links", () => {
+    renderNavigation(<MobileNavigation />, true);
+    const dialog = openMobile();
+    const links = within(dialog);
+    const domains = expandButton(dialog, "Domains");
+    const about = expandButton(dialog, "About");
+    expect(links.queryByRole("link", {name: "Upload Scans"})).not.toBeInTheDocument();
+    expect(links.queryByRole("link", {name: "The Platform"})).not.toBeInTheDocument();
+
+    fireEvent.click(domains);
+    fireEvent.click(about);
+
+    expect(domains).toHaveAttribute("aria-expanded", "true");
+    expect(about).toHaveAttribute("aria-expanded", "true");
+    for (const [label, href] of [...invoiceLinks, ...aboutLinks]) {
+      expect(links.getByRole("link", {name: label})).toHaveAttribute("href", href);
+    }
+    expect(links.getByRole("link", {name: "My Profile"})).toHaveAttribute("href", "/my-profile");
+
+    fireEvent.click(domains);
+
+    expect(domains).toHaveAttribute("aria-expanded", "false");
+    expect(links.queryByRole("link", {name: "Invoices"})).not.toBeInTheDocument();
+    expect(links.getByRole("link", {name: "The Platform"})).toBeInTheDocument();
   });
 });
