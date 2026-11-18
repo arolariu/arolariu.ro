@@ -4,7 +4,7 @@
  * @module scripts/inspection/frontend.test
  */
 
-import {mkdir, mkdtemp, rm, writeFile} from "node:fs/promises";
+import {mkdir, mkdtemp, readFile, rm, writeFile} from "node:fs/promises";
 import {tmpdir} from "node:os";
 import {join, resolve} from "node:path";
 import {Effect} from "effect";
@@ -763,6 +763,25 @@ describe("createSvelteProvider", () => {
     const facts = (outcome as Extract<typeof outcome, {kind: "available"}>).value as SvelteFacts;
     expect(facts.id).toBe("status");
     expect(facts.packageIssues).toEqual([]);
+  });
+
+  it.each([
+    ["present", []],
+    ["missing", ["package.json#scripts.test does not resolve to a vitest invocation."]],
+    ["unrelated", ["package.json#scripts.test does not resolve to a vitest invocation."]],
+  ] as const)("inspects the Status test command with its programmatic runner %s", async (runner, expectedIssues) => {
+    const statusRoot = new URL("../../sites/status.arolariu.ro/", import.meta.url);
+    const packageJsonContents = await readFile(new URL("package.json", statusRoot), "utf8");
+    const fixture = await createFrontendFixture({status: {packageJsonContents}});
+    if (runner !== "missing") {
+      const runnerPath = "tests/unit-coverage/run-unit.ts";
+      const runnerSource = runner === "present" ? await readFile(new URL(runnerPath, statusRoot), "utf8") : "export {};\n";
+      await writeFixtureFile(resolve(fixture.paths.statusRoot, runnerPath), runnerSource);
+    }
+
+    const outcome = await fixture.invoke(createSvelteProvider("status", fixture.input));
+
+    expect(outcome).toMatchObject({kind: "available", value: {scriptIssues: expectedIssues}});
   });
 
   it("propagates an unavailable package inventory outcome", async () => {

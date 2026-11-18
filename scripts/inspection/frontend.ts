@@ -132,6 +132,7 @@ const VITE_CONFIG_FILE_NAMES = ["vite.config.ts", "vite.config.js"] as const;
 const SITE_ENGINE_PATTERN = /^>=(0|[1-9]\d*)(?:\.(0|[1-9]\d*))?$/u;
 const ADAPTER_CALL_PATTERN = /adapter\s*:\s*([A-Za-z_$][\w$]*)\s*\(/u;
 const REQUIRED_SCRIPTS = ["prepare", "check", "test", "build"] as const;
+const STATUS_UNIT_RUNNER = "tests/unit-coverage/run-unit.ts";
 
 function isRecord(value: unknown): value is UnknownRecord {
   return typeof value === "object" && value !== null && !Array.isArray(value);
@@ -647,6 +648,19 @@ function expandScriptIntent(scripts: UnknownRecord, name: string, depth = 0, vis
   });
 }
 
+function inspectStatusVitestRunner(root: string, expandedTest: string): Effect.Effect<boolean, never, ReadOnlyFiles> {
+  const invokesRunner = expandedTest.split(/[&();]/u).some((command) => command.trim() === `node ${STATUS_UNIT_RUNNER}`);
+  if (!invokesRunner) return Effect.succeed(false);
+
+  return readText(resolve(root, STATUS_UNIT_RUNNER)).pipe(
+    Effect.map(
+      (source) =>
+        /\bimport\s*\{[^}]*\bcreateVitest\b[^}]*\}\s*from\s*["']vitest\/node["']/u.test(source) && /\bcreateVitest\s*\(/u.test(source),
+    ),
+    Effect.orElseSucceed(() => false),
+  );
+}
+
 function getTargetOptions(targets: UnknownRecord, targetName: string): UnknownRecord | null {
   const target = targets[targetName];
   if (!isRecord(target)) {
@@ -703,8 +717,14 @@ function inspectSvelteScripts(
             issues.push("package.json#scripts.check does not run svelte-check.");
           }
         }
-        if (typeof scripts["test"] === "string" && !/vitest/u.test(expandScriptIntent(scripts, "test"))) {
-          issues.push("package.json#scripts.test does not resolve to a vitest invocation.");
+        if (typeof scripts["test"] === "string") {
+          const expandedTest = expandScriptIntent(scripts, "test");
+          const runsVitest =
+            /vitest/u.test(expandedTest)
+            || (siteRelativeRoot === "sites/status.arolariu.ro" && (yield* inspectStatusVitestRunner(root, expandedTest)));
+          if (!runsVitest) {
+            issues.push("package.json#scripts.test does not resolve to a vitest invocation.");
+          }
         }
         if (typeof scripts["build"] === "string" && !/vite build/u.test(expandScriptIntent(scripts, "build"))) {
           issues.push("package.json#scripts.build does not run vite build.");
