@@ -9,21 +9,11 @@
  */
 
 import {render} from "@testing-library/svelte";
-import {beforeEach, describe, expect, it, vi} from "vitest";
+import {describe, expect, it} from "vitest";
 
 import About from "./About.svelte";
 
 describe("About", () => {
-  beforeEach(() => {
-    global.IntersectionObserver = vi.fn(function (this: IntersectionObserver) {
-      this.observe = vi.fn();
-      this.unobserve = vi.fn();
-      this.disconnect = vi.fn();
-      this.takeRecords = vi.fn(() => []);
-      return this;
-    }) as unknown as typeof IntersectionObserver;
-  });
-
   it("renders an About heading", () => {
     const {getByRole} = render(About);
     const heading = getByRole("heading", {name: /about/i});

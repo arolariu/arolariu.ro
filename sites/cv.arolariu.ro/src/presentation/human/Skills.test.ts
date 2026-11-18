@@ -1,22 +1,9 @@
 import {render} from "@testing-library/svelte";
-import {beforeEach, describe, expect, it, vi} from "vitest";
+import {describe, expect, it} from "vitest";
 
 import Skills from "./Skills.svelte";
 
 describe("Skills section (Bento mosaic)", () => {
-  beforeEach(() => {
-    // The setup-file mock uses an arrow function and cannot be `new`-invoked,
-    // which breaks AnimatedSection's IntersectionObserver wiring. Use a real
-    // function so it is constructor-callable.
-    global.IntersectionObserver = vi.fn(function (this: IntersectionObserver) {
-      this.observe = vi.fn();
-      this.unobserve = vi.fn();
-      this.disconnect = vi.fn();
-      this.takeRecords = vi.fn(() => []);
-      return this;
-    }) as unknown as typeof IntersectionObserver;
-  });
-
   it("renders heading 'What I Build With'", () => {
     const {getByRole} = render(Skills);
     const heading = getByRole("heading", {name: /what i build with/i, level: 2});

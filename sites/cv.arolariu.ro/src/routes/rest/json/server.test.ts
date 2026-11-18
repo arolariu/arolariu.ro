@@ -1,36 +1,26 @@
+// @vitest-environment node
+
 /**
  * Unit tests for the CV JSON API endpoint
  * Tests the GET handler that returns CV data in JSON Resume format
  */
 
+import {jsonCVData} from "@/data/json";
 import type {RequestEvent} from "@sveltejs/kit";
 import {describe, expect, it, vi} from "vitest";
 import {GET, OPTIONS} from "./+server";
 
-// Mock the data import
-vi.mock("@/data/json", () => ({
-  jsonCVData: {
-    $schema: "https://raw.githubusercontent.com/jsonresume/resume-schema/v1.0.0/schema.json",
-    basics: {
-      name: "Test User",
-      email: "test@example.com",
-    },
-    work: [],
-    education: [],
-  },
-}));
-
 /**
  * Creates a mock RequestEvent with proper url and request objects.
  */
-function createMockEvent(queryParams: Record<string, string> = {}): RequestEvent {
+function createMockEvent(queryParams: Record<string, string> = {}, headers: HeadersInit = {}): RequestEvent {
   const url = new URL("http://localhost/rest/json");
   for (const [key, value] of Object.entries(queryParams)) {
     url.searchParams.set(key, value);
   }
 
   return {
-    request: new Request(url.toString()),
+    request: new Request(url, {headers}),
     url,
   } as RequestEvent;
 }
@@ -117,15 +107,25 @@ describe("CV JSON API Endpoint", () => {
   });
 
   describe("GET /rest/json?format=resume", () => {
-    it("should return raw resume data when format=resume", async () => {
-      const event = createMockEvent({format: "resume"});
+    it("returns the unwrapped real resume and honors a matching If-None-Match", async () => {
+      const query = {format: "resume"};
+      const event = createMockEvent(query);
+
       const response = await GET(event);
-      const data = await response.json();
 
       expect(response.status).toBe(200);
-      expect(data).toHaveProperty("$schema");
-      expect(data).toHaveProperty("basics");
-      expect(data).not.toHaveProperty("meta");
+      const data: unknown = await response.json();
+      expect(data).toEqual(JSON.parse(JSON.stringify(jsonCVData)));
+      expect(data).toHaveProperty("meta", jsonCVData.meta);
+      expect(data).not.toHaveProperty("resume");
+      const etag = response.headers.get("ETag");
+      expect(etag).toMatch(/^"cv-[a-z0-9]+"$/u);
+
+      const unchanged = await GET(createMockEvent(query, {"If-None-Match": etag ?? ""}));
+
+      expect(unchanged.status).toBe(304);
+      expect(unchanged.headers.get("ETag")).toBe(etag);
+      await expect(unchanged.text()).resolves.toBe("");
     });
   });
 
@@ -159,7 +159,7 @@ describe("CV JSON API Endpoint", () => {
 
       expect(response.status).toBe(200);
       expect(data).toHaveProperty("section", "basics");
-      expect(data).toHaveProperty("data");
+      expect(data).toHaveProperty("data", jsonCVData.basics);
       expect(data).toHaveProperty("meta");
     });
 

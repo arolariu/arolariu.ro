@@ -1,15 +1,7 @@
-/**
- * @fileoverview Render-smoke tests for the global +error.svelte boundary.
- *
- * Asserts:
- *  - The default 404 mapping renders the "Page Not Found" title.
- *  - The Try-Again button is hidden for 4xx errors but shown for 5xx.
- */
-
-import {render} from "@testing-library/svelte";
-import {beforeEach, describe, expect, it} from "vitest";
-
+import * as navigation from "$app/navigation";
 import {page} from "$app/state";
+import {fireEvent, render, screen} from "@testing-library/svelte";
+import {beforeEach, describe, expect, it, vi} from "vitest";
 
 import ErrorPage from "./+error.svelte";
 
@@ -20,25 +12,47 @@ describe("+error.svelte", () => {
     page.url = new URL("https://cv.arolariu.ro/");
   });
 
-  it("renders the 404 title for a 404 status", () => {
+  it("provides a way home instead of a retry for an unavailable route", async () => {
+    const goto = vi.spyOn(navigation, "goto");
+    const invalidate = vi.spyOn(navigation, "invalidateAll");
     page.status = 404;
-    page.error = {message: "test"};
-    const {getByRole} = render(ErrorPage);
-    expect(getByRole("heading", {name: /page not found/i, level: 1})).toBeTruthy();
+    page.error = {message: "Missing route"};
+    render(ErrorPage);
+    expect(screen.getByRole("heading", {name: "Page Not Found"})).toBeInTheDocument();
+    expect(screen.queryByRole("button", {name: "Try Again"})).not.toBeInTheDocument();
+    expect(screen.queryByText("Technical Details")).not.toBeInTheDocument();
+
+    await fireEvent.click(screen.getByRole("button", {name: "Go Home"}));
+
+    expect(goto).toHaveBeenCalledExactlyOnceWith("/");
+    expect(invalidate).not.toHaveBeenCalled();
   });
 
-  it("shows only Go Home for a 4xx error", () => {
-    page.status = 404;
-    page.error = {message: "test"};
-    const {getByRole, queryByRole} = render(ErrorPage);
-    expect(getByRole("button", {name: /go home/i})).toBeTruthy();
-    expect(queryByRole("button", {name: /try again/i})).toBeNull();
-  });
-
-  it("shows the retry button on 5xx errors", () => {
+  it("retries the current route without navigating away for a service outage", async () => {
+    const goto = vi.spyOn(navigation, "goto");
+    const invalidate = vi.spyOn(navigation, "invalidateAll");
     page.status = 503;
-    page.error = {message: "boom"};
-    const {getByRole} = render(ErrorPage);
-    expect(getByRole("button", {name: /try again/i})).toBeTruthy();
+    page.error = {message: "Service temporarily unavailable"};
+    render(ErrorPage);
+    expect(screen.getByRole("heading", {name: "Service Unavailable"})).toBeInTheDocument();
+
+    await fireEvent.click(screen.getByRole("button", {name: "Try Again"}));
+
+    expect(invalidate).toHaveBeenCalledOnce();
+    expect(goto).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    [{message: "Temporary gateway failure"}, "Temporary gateway failure"],
+    [null, "An unexpected error occurred."],
+  ] as const)("shows a useful fallback description for an unmapped gateway error (%s)", (error, description) => {
+    page.status = 502;
+    page.error = error;
+
+    render(ErrorPage);
+
+    expect(screen.getByRole("heading", {name: "Something Went Wrong"})).toBeInTheDocument();
+    expect(screen.getByText(description, {selector: "p"})).toBeInTheDocument();
+    expect(screen.getByRole("button", {name: "Try Again"})).toBeEnabled();
   });
 });
