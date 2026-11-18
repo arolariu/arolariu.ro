@@ -127,6 +127,39 @@ describe("Popover", () => {
     expect(ref.current).not.toHaveAttribute("keepMounted");
   });
 
+  it("composes caller classes with the live trigger state, semantic labels, and callback-ref cleanup", async () => {
+    const user = userEvent.setup();
+    const releaseTrigger = vi.fn<() => void>();
+    const captureTrigger = vi.fn<React.RefCallback<HTMLElement>>((element) => (element ? releaseTrigger : undefined));
+    const {unmount} = render(
+      <Popover>
+        <PopoverTrigger
+          ref={captureTrigger}
+          className={(state) => (state.open ? "settings-open" : "settings-closed")}>
+          Open settings
+        </PopoverTrigger>
+        <PopoverContent>
+          <PopoverTitle className={() => "settings-title"}>Settings</PopoverTitle>
+          <PopoverDescription className={() => "settings-description"}>Changes apply to this workspace</PopoverDescription>
+        </PopoverContent>
+      </Popover>,
+    );
+    const trigger = screen.getByRole("button", {name: "Open settings"});
+    expect(captureTrigger).toHaveBeenCalledWith(trigger);
+    expect(trigger).toHaveClass("settings-closed");
+
+    await user.click(trigger);
+
+    expect(trigger).toHaveClass("settings-open");
+    const dialog = await screen.findByRole("dialog", {name: "Settings"});
+    expect(dialog).toHaveAccessibleDescription("Changes apply to this workspace");
+    expect(screen.getByRole("heading", {name: "Settings"})).toHaveClass("settings-title");
+    expect(screen.getByText("Changes apply to this workspace")).toHaveClass("settings-description");
+
+    unmount();
+    expect(releaseTrigger).toHaveBeenCalled();
+  });
+
   it("positions against an explicit measured anchor with logical RTL side and function offsets", async () => {
     const sideOffset = vi.fn<Exclude<PopoverContent.Props["sideOffset"], number | undefined>>(() => 12);
     const alignOffset = vi.fn<Exclude<PopoverContent.Props["alignOffset"], number | undefined>>(() => 6);

@@ -73,7 +73,15 @@ deadlines. This accommodates the full TypeScript graph without changing compiler
 For source-only iteration, use `npm run test:unit -- <selectors> --coverage.enabled=false`. To run the real archive gate with Vitest
 reporter arguments, use `npm run test:packed -- <arguments>`. Source-only runs skip the archive contracts when no extraction is supplied;
 they are not a substitute for the default package/release gate. The ordinary suite also checks the complete source/test/story TypeScript
-graph, including negative API assertions.
+graph, including negative API assertions. Vitest runs the compiler-only files in Node and runs the public-surface contracts separately from
+the parallel DOM tests, so those TypeScript programs do not compete with each other or the DOM tests in the same run. DOM tests use Happy
+DOM's separate `localStorage` and `sessionStorage` instances. The setup clears them between tests rather than replacing their
+implementations.
+
+The complete source unit run requires 95% each for lines, functions, branches, and statements across authored runtime code in `src/`,
+including unimported modules and interactive canvas components. Nonbehavioral declarations, fixtures, tests, stories, configuration,
+generated files, re-export-only modules, and static motion tokens are excluded. The packed run retains its separate import-discovered
+coverage policy (80% branches and 95% for the other three metrics) and verifies the actual archive.
 
 ### Caller attribute escape hatch
 

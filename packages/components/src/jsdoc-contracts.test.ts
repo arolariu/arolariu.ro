@@ -118,7 +118,7 @@ describe("public API JSDoc contracts", () => {
   it("gives every public component an @example", () => {
     // Dependency re-exports (`export const {AreaChart} = RechartsPrimitive`) link to the upstream API instead.
     const missing = publicSymbols
-      .filter(([name, symbol]) => isComponentName(name) && callSignatures(symbol).length > 0 && !reexportDeclarationOf(symbol))
+      .filter(([name, symbol]) => isComponentName(name) && !reexportDeclarationOf(symbol) && callSignatures(symbol).length > 0)
       .filter(([, symbol]) => !tagsOf(symbol).some((tag) => tag.name === "example"))
       .map(([name, symbol]) => `${locate(packageDeclarations(symbol)[0]!)} ${name}`);
     expect(missing).toEqual([]);

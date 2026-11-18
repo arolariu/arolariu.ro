@@ -100,6 +100,21 @@ describe("HighlightText", () => {
     "settles a real ten-second reveal and stops updates on %s even when the destination is unchanged",
     async (reason) => {
       reduced = false;
+      let expire: (() => void) | undefined;
+      if (reason === "five-second settle") {
+        // Happy DOM schedules frames with timers too; control only the policy deadline.
+        const schedule = globalThis.setTimeout;
+        vi.spyOn(globalThis, "setTimeout").mockImplementation((callback, delay, ...args) => {
+          const timer = schedule(callback, delay, ...args);
+          if (delay === 5000) {
+            expire = () => {
+              clearTimeout(timer);
+              callback(...args);
+            };
+          }
+          return timer;
+        });
+      }
       const updates: string[] = [];
       const onUpdate = (latest: Record<string, unknown>): void => {
         if (typeof latest["backgroundSize"] === "string") updates.push(latest["backgroundSize"]);
@@ -131,15 +146,21 @@ describe("HighlightText", () => {
           media.dispatchEvent(new Event("change"));
         });
       } else {
-        await act(async () => {
-          await new Promise((resolve) => window.setTimeout(resolve, 5050));
-        });
+        expect(text).toHaveAttribute("data-motion", "running");
+        if (!expire) throw new Error("Expected the five-second motion deadline to be scheduled");
+        act(expire);
       }
       expect(text).toHaveAttribute("data-motion", "paused");
       await waitFor(() => expect(text).toHaveStyle({backgroundSize: "100% 100%"}));
       const settledUpdates = updates.length;
       await act(async () => {
-        await new Promise((resolve) => window.setTimeout(resolve, 100));
+        if (reason === "five-second settle") {
+          for (let frame = 0; frame < 4; frame++) {
+            await new Promise(requestAnimationFrame);
+          }
+        } else {
+          await new Promise((resolve) => window.setTimeout(resolve, 100));
+        }
       });
       expect(updates).toHaveLength(settledUpdates);
       expect(text).toHaveStyle({backgroundSize: "100% 100%"});

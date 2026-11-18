@@ -260,6 +260,28 @@ describe("Resizable v4 contracts", () => {
     },
   );
 
+  it.each(["em", "rem", "vh", "vw"] as const)("respects the minimum click size in %s", (unit) => {
+    const stylesheet = document.createElement("style");
+    stylesheet.textContent = "html { font-size: 10px; } #first { font-size: 20px; }";
+    const minimum = {em: "15em", rem: "30rem", vh: `${30_000 / window.innerHeight}vh`, vw: `${30_000 / window.innerWidth}vw`}[unit];
+    document.head.append(stylesheet);
+    try {
+      const groupRef = createRef<GroupImperativeHandle>();
+      renderResizable({group: {groupRef}, panel: {minSize: minimum}, handle: {resizeStep: 25}});
+      notifyResize();
+      const decrease = screen.getByRole("button", {name: "Decrease previous panel"});
+      expect(decrease).toBeEnabled();
+
+      fireEvent.click(decrease);
+
+      expect(groupRef.current?.getLayout()).toEqual({first: 30, second: 70});
+      expect(decrease).toBeDisabled();
+      expect(screen.getByRole("button", {name: "Increase previous panel"})).toBeEnabled();
+    } finally {
+      stylesheet.remove();
+    }
+  });
+
   it("does not let an adjacent-pair operation redistribute a distant locked panel", () => {
     const groupRef = createRef<GroupImperativeHandle>();
     render(
@@ -323,6 +345,30 @@ describe("Resizable v4 contracts", () => {
     expect(increase).toBeEnabled();
     fireEvent.click(increase);
     expect(screen.getByRole("separator")).toHaveAttribute("aria-valuenow", "70");
+  });
+
+  it("disables resize buttons while the group has no width and restores them when it is measurable", () => {
+    const groupRef = createRef<GroupImperativeHandle>();
+    renderResizable({group: {groupRef}, panel: {minSize: "200px"}});
+    notifyResize();
+    const increase = screen.getByRole("button", {name: "Increase previous panel"});
+    const decrease = screen.getByRole("button", {name: "Decrease previous panel"});
+    expect(increase).toBeEnabled();
+
+    fixtureWidth = 0;
+    notifyResize();
+    fireEvent.click(increase);
+
+    expect(increase).toBeDisabled();
+    expect(decrease).toBeDisabled();
+    expect(groupRef.current?.getLayout()).toEqual({first: 50, second: 50});
+
+    fixtureWidth = 1000;
+    notifyResize();
+    fireEvent.click(increase);
+
+    expect(decrease).toBeEnabled();
+    expect(groupRef.current?.getLayout()).toEqual({first: 60, second: 40});
   });
 
   it("disables click alternatives with the group and accepts localized names", () => {

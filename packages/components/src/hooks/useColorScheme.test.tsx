@@ -1,39 +1,19 @@
 import {renderHook} from "@testing-library/react";
-import {afterEach, describe, expect, it, vi} from "vitest";
-
-vi.mock("./useMediaQuery", () => ({
-  useMediaQuery: vi.fn(),
-}));
+import {describe, expect, it} from "vitest";
 
 import {useColorScheme} from "./useColorScheme";
-import {useMediaQuery} from "./useMediaQuery";
 
 describe("useColorScheme", () => {
-  afterEach(() => {
-    vi.clearAllMocks();
-  });
+  it.each(["light", "dark"] as const)("returns %s when the system prefers it", (scheme) => {
+    const {device} = window.happyDOM.settings;
+    const original = device.prefersColorScheme;
+    device.prefersColorScheme = scheme;
+    try {
+      const {result} = renderHook(useColorScheme);
 
-  it("returns 'light' when prefers-color-scheme is not dark", () => {
-    vi.mocked(useMediaQuery).mockReturnValue(false);
-
-    const {result} = renderHook(() => useColorScheme());
-
-    expect(result.current).toBe("light");
-  });
-
-  it("returns 'dark' when dark mode is preferred", () => {
-    vi.mocked(useMediaQuery).mockReturnValue(true);
-
-    const {result} = renderHook(() => useColorScheme());
-
-    expect(result.current).toBe("dark");
-  });
-
-  it("passes the exact dark mode query to useMediaQuery", () => {
-    vi.mocked(useMediaQuery).mockReturnValue(false);
-
-    renderHook(() => useColorScheme());
-
-    expect(useMediaQuery).toHaveBeenCalledWith("(prefers-color-scheme: dark)");
+      expect(result.current).toBe(scheme);
+    } finally {
+      device.prefersColorScheme = original;
+    }
   });
 });

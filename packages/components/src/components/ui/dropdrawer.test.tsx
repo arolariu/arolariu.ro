@@ -473,6 +473,48 @@ describe("DropDrawer SDK restoration review 03fdddba", () => {
 });
 
 describe("DropDrawer real responsive owners", () => {
+  it("reports missing root, submenu, and mobile panel owners at the composed part", () => {
+    expect(() => renderToString(<DropDrawerItem>Save</DropDrawerItem>)).toThrow(/within DropDrawer\./u);
+    expect(() =>
+      renderToString(
+        <DropDrawer presentation='drawer'>
+          <DropDrawerSubTrigger>Security</DropDrawerSubTrigger>
+        </DropDrawer>,
+      ),
+    ).toThrow(/require DropDrawerSub/u);
+    expect(() =>
+      renderToString(
+        <DropDrawer presentation='drawer'>
+          <DropDrawerSub>
+            <DropDrawerSubContent>Passkeys</DropDrawerSubContent>
+          </DropDrawerSub>
+        </DropDrawer>,
+      ),
+    ).toThrow(/within DropDrawerContent/u);
+  });
+
+  it("rejects duplicate mobile submenu identifiers rather than navigating to the wrong panel", () => {
+    expect(() =>
+      render(
+        <DropDrawer
+          defaultOpen
+          presentation='drawer'
+          mobileTitle='Actions'>
+          <DropDrawerContent>
+            <DropDrawerSub id='duplicate'>
+              <DropDrawerSubTrigger>Security</DropDrawerSubTrigger>
+              <DropDrawerSubContent>Passkeys</DropDrawerSubContent>
+            </DropDrawerSub>
+            <DropDrawerSub id='duplicate'>
+              <DropDrawerSubTrigger>Storage</DropDrawerSubTrigger>
+              <DropDrawerSubContent>Files</DropDrawerSubContent>
+            </DropDrawerSub>
+          </DropDrawerContent>
+        </DropDrawer>,
+      ),
+    ).toThrow("Duplicate DropDrawerSub id: duplicate");
+  });
+
   it.each(["click", "Enter", "Space"] as const)(
     "suppresses disabled mobile submenu %s before navigation and callbacks",
     async (activation) => {
@@ -538,6 +580,54 @@ describe("DropDrawer real responsive owners", () => {
     expect(within(dialog).queryByRole("separator")).not.toBeInTheDocument();
     expect(dialog.closest('[data-slot="drawer-viewport"]')).not.toBeNull();
     expect(within(dialog).getByText("Session actions")).toBeVisible();
+  });
+
+  it("preserves caller presentation callbacks as the mobile submenu opens and closes", async () => {
+    const user = userEvent.setup();
+    const panelRef = React.createRef<HTMLElement>();
+    render(
+      <DropDrawer
+        defaultOpen
+        presentation='drawer'
+        mobileTitle='Actions'>
+        <DropDrawerContent>
+          <DropDrawerGroup className={() => "caller-group"}>
+            <DropDrawerLabel className={() => "caller-label"}>Account</DropDrawerLabel>
+            <DropDrawerItem className={() => "caller-item"}>Profile</DropDrawerItem>
+            <DropDrawerSub>
+              <DropDrawerSubTrigger className={() => "caller-sub-trigger"}>Security</DropDrawerSubTrigger>
+              <DropDrawerSubContent
+                ref={panelRef}
+                className={({open}: {open: boolean}) => (open ? "caller-open" : "caller-closed")}
+                style={({open}: {open: boolean}): React.CSSProperties => ({opacity: open ? 1 : 0})}>
+                <DropDrawerItem>Passkeys</DropDrawerItem>
+              </DropDrawerSubContent>
+            </DropDrawerSub>
+          </DropDrawerGroup>
+        </DropDrawerContent>
+      </DropDrawer>,
+    );
+    const dialog = await screen.findByRole("dialog", {name: "Actions"});
+    const group = within(dialog).getByRole("group", {name: "Account"});
+    const security = within(group).getByRole("button", {name: "Security"});
+    expect(group).toHaveClass("caller-group");
+    expect(within(group).getByText("Account")).toHaveClass("caller-label");
+    expect(within(group).getByRole("button", {name: "Profile"})).toHaveClass("caller-item");
+    expect(security).toHaveClass("caller-sub-trigger");
+    expect(panelRef.current).toHaveClass("caller-closed");
+    expect(panelRef.current).toHaveAttribute("hidden");
+
+    await user.click(security);
+
+    expect(panelRef.current).toHaveClass("caller-open");
+    expect(panelRef.current).toHaveStyle({opacity: "1"});
+    expect(within(dialog).getByRole("button", {name: "Passkeys"})).toBeVisible();
+
+    await user.click(within(dialog).getByRole("button", {name: /back/i}));
+
+    expect(panelRef.current).toHaveClass("caller-closed");
+    expect(panelRef.current).toHaveStyle({opacity: "0"});
+    expect(within(dialog).queryByRole("button", {name: "Passkeys"})).not.toBeInTheDocument();
   });
 
   it.each([false, true])("preserves %s uncontrolled opening across both breakpoint directions", async (defaultOpen) => {

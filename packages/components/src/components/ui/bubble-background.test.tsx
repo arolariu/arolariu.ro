@@ -108,6 +108,19 @@ describe("BubbleBackground", () => {
     expect(css).toMatch(/rgb\(var\(--ac-bubble-first-color\) \/ 0\.8\)/u);
   });
 
+  it("keeps percentage channels when normalizing an RGB palette", () => {
+    const ref = React.createRef<HTMLDivElement>();
+
+    render(
+      <BubbleBackground
+        ref={ref}
+        colors={{...colors, first: "100%, 50%, 0%"}}
+      />,
+    );
+
+    expect(ref.current?.style.getPropertyValue("--ac-bubble-first-color")).toBe("100% 50% 0%");
+  });
+
   it("merges ordinary style with the palette and honors normalized caller custom-property overrides", () => {
     const ref = React.createRef<HTMLDivElement>();
     const callerStyle: React.CSSProperties & {"--ac-bubble-first-color": string} = {
@@ -128,9 +141,12 @@ describe("BubbleBackground", () => {
     expect(screen.getByText("Content")).toBeInTheDocument();
   });
 
-  it.each(["1,2", "NaN,2,3", "256,2,3", "1,,2,3", "rgb(1,2,3)", "1 2 3 / .8"])("explicitly rejects invalid channel input %s", (first) => {
-    expect(() => render(<BubbleBackground colors={{...colors, first}} />)).toThrow(/RGB/u);
-  });
+  it.each(["1,2", "NaN,2,3", "256,2,3", "101% 0% 50%", "1,,2,3", "rgb(1,2,3)", "1 2 3 / .8"])(
+    "explicitly rejects invalid channel input %s",
+    (first) => {
+      expect(() => render(<BubbleBackground colors={{...colors, first}} />)).toThrow(/RGB/u);
+    },
+  );
 
   it("scopes the goo filter and its CSS reference per instance", () => {
     const first = React.createRef<HTMLDivElement>();

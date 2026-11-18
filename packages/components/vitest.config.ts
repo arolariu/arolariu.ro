@@ -5,62 +5,79 @@
  * @see https://vitest.dev/config/
  */
 
-import react from "@vitejs/plugin-react";
 import {resolve} from "node:path";
 import {defineConfig, mergeConfig} from "vitest/config";
 import baseConfig from "../../vitest.config.ts";
 
-export default mergeConfig(
-  baseConfig,
-  defineConfig({
-    plugins: [react()],
-    test: {
-      coverage: {
-        exclude: [
-          // ── Base config exclusions (mergeConfig replaces arrays) ──
-          "**/node_modules/**",
-          "**/dist/**",
-          "**/.next/**",
-          "**/.rslib/**",
-          "**/build/**",
-          "**/out/**",
-          "**/coverage/**",
-          "**/storybook-static/**",
-          "**/*.stories.{ts,tsx,js,jsx}",
-          "**/.storybook/**",
-          "**/*.d.ts",
-          "**/types/**/*.ts",
-          "**/{generated,__generated__}/**",
-          "**/*.generated.{ts,tsx,js,jsx}",
-          "**/*.test.{ts,tsx,js,jsx}",
-          "**/*.spec.{ts,tsx,js,jsx}",
-          "**/*.config.{js,ts,mjs,mts}",
-          "**/*.setup.{js,ts,mjs,mts}",
-          "**/telemetry.ts",
-          "**/instrumentation.ts",
-          "**/proxy.ts",
+const compilerFiles = ["src/jsdoc-contracts.test.ts", "src/type-contracts.test.ts"];
+const surfaceFiles = ["src/index.test.ts"];
+const domSetup = ["./vitest.setup.ts"];
+const packed = Boolean(process.env["AROLARIU_COMPONENTS_PACKED_ROOT"]);
 
-          // ── Component library specific ──
-          // CSS Modules — not instrumentable via v8
-          "**/*.css",
-          // Barrel re-export files — no logic to cover
-          "**/index.ts",
-          // Build scripts — not runtime code
-          "**/scripts/**",
-          // Pure re-export hooks — no local logic
-          "**/useReducedMotion.tsx",
-          // Canvas/animation-heavy decorative components — untestable in happy-dom
-          "**/fireworks-background.tsx",
-          "**/hole-background.tsx",
-          "**/scratcher.tsx",
-        ],
-        thresholds: {
-          branches: 80,
-          functions: 95,
-          lines: 95,
-          statements: 95,
+export default mergeConfig(
+  {
+    ...baseConfig,
+    test: {
+      ...baseConfig.test,
+      include: [],
+      setupFiles: [],
+      coverage: {...baseConfig.test?.coverage, exclude: packed ? baseConfig.test?.coverage?.exclude : []},
+    },
+  },
+  defineConfig({
+    test: {
+      // Compiler programs contend for memory and CPU if they overlap with one another or the DOM suite.
+      projects: [
+        {
+          extends: true,
+          test: {name: "compiler", include: compilerFiles, environment: "node", fileParallelism: false, sequence: {groupOrder: 1}},
         },
-      },
+        {
+          extends: true,
+          test: {name: "public-surface", include: surfaceFiles, setupFiles: domSetup, sequence: {groupOrder: 2}},
+        },
+        {
+          extends: true,
+          test: {
+            name: "runtime",
+            include: baseConfig.test?.include,
+            exclude: [...compilerFiles, ...surfaceFiles],
+            setupFiles: domSetup,
+            sequence: {groupOrder: 3},
+          },
+        },
+      ],
+      coverage: packed
+        ? {
+            exclude: [
+              "**/index.ts",
+              "**/scripts/**",
+              "**/useReducedMotion.tsx",
+              "**/fireworks-background.tsx",
+              "**/hole-background.tsx",
+              "**/scratcher.tsx",
+            ],
+            thresholds: {branches: 80, functions: 95, lines: 95, statements: 95},
+          }
+        : {
+            include: ["src/**/*.{js,jsx,ts,tsx}"],
+            exclude: [
+              "**/node_modules/**",
+              "**/{generated,__generated__}/**",
+              "**/*.generated.{ts,tsx,js,jsx}",
+              "**/*.d.ts",
+              "**/*.{test,spec,stories,config,setup}.{ts,tsx,js,jsx}",
+              "**/__mocks__/**",
+              // Export-only entry points and static motion tokens.
+              "src/components/ui/direction.tsx",
+              "src/hooks/useReducedMotion.tsx",
+              "src/index.ts",
+              "src/lib/calendar-locales.ts",
+              "src/motion/index.ts",
+              "src/motion/tokens.ts",
+            ],
+            thresholds: {branches: 95, functions: 95, lines: 95, statements: 95},
+          },
     },
     resolve: {
       alias: {
