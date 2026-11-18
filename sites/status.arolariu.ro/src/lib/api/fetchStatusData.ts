@@ -74,8 +74,6 @@ function isHardReload(): boolean {
   if (browserWindow === undefined) return false;
   const entries = globalThis.performance.getEntriesByType?.("navigation") ?? [];
   const entry = entries[0] as PerformanceNavigationTiming | undefined;
-  // eslint-disable-next-line capitalized-comments -- v8 ignore directive is case-sensitive.
-  /* v8 ignore next 2 */
   if (!entry || entry.type !== "reload") return false;
   const fromCache = (entry as PerformanceNavigationTiming & {deliveryType?: string}).deliveryType === "cache" || entry.transferSize === 0;
   return !fromCache;
@@ -112,8 +110,6 @@ export async function fetchAggregate(granularity: Granularity): Promise<Aggregat
   // Local dev / preview shortcut: synthesize data relative to Date.now() so
   // The UI always shows "recent" timestamps without hitting the network.
   // The production Azure SWA hostname never matches isLocalHost().
-  // eslint-disable-next-line capitalized-comments -- v8 ignore directive is case-sensitive.
-  /* v8 ignore next */
   if (isLocalHost()) return generateMockAggregate(granularity);
 
   const mem = memory.get(granularity);
@@ -159,8 +155,6 @@ export async function fetchAggregate(granularity: Granularity): Promise<Aggregat
  * HTTP failure or schema mismatch.
  */
 export async function fetchIncidents(): Promise<IncidentsFile> {
-  // eslint-disable-next-line capitalized-comments -- v8 ignore directive is case-sensitive.
-  /* v8 ignore next */
   if (isLocalHost()) return generateMockIncidents();
 
   if (incidentsMemory && Date.now() - incidentsMemory.fetchedAt < CACHE_TTL_MS) {
