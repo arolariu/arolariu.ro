@@ -32,16 +32,16 @@ describe("deleteInvoiceMetadata", () => {
   });
 
   it.each([
-    [400, "Bad Request"],
-    [500, "Internal Server Error"],
-  ] as const)("returns a failed result when the backend responds with %i", async (status, statusText) => {
-    fetchAtHttp.mockResolvedValueOnce(new Response("Metadata rejected", {status, statusText}));
+    [400, "VALIDATION_ERROR", "Failed to delete the invoice metadata. Please try again."],
+    [500, "SERVER_ERROR", "A server error occurred while deleting the invoice metadata. Please try again later."],
+  ] as const)("returns a public error when the backend responds with %i", async (status, code, message) => {
+    fetchAtHttp.mockResolvedValueOnce(new Response("Metadata rejected", {status, statusText: "Internal reason"}));
 
     const result = await deleteInvoiceMetadata({invoiceId, key});
 
     expect(result).toEqual({
       success: false,
-      error: {code: "NETWORK_ERROR", message: `Failed to delete invoice metadata: ${status} ${statusText}`},
+      error: {code, message, status},
     });
   });
 
