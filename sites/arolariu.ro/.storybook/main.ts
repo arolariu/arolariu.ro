@@ -33,6 +33,7 @@ const config: StorybookConfig = {
           // `server-only` throws when imported outside a `react-server` condition,
           // which Storybook's browser bundle never sets.
           {find: /^server-only$/, replacement: resolve(import.meta.dirname, "./mocks/server-only.ts")},
+          {find: /^client-only$/, replacement: resolve(import.meta.dirname, "../tests/stubs/client-only.ts")},
           // `@/instrumentation.server` imports Node-only OpenTelemetry/Azure SDKs.
           // Client Components that transitively import a `"use server"` action
           // (e.g. ClassificationPicker -> searchClassifications) would otherwise

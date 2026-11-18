@@ -30,7 +30,12 @@ tooling. SDK declarations have their own resolution boundary.
 2. Read the exact NuGet package page, maintainer release/migration notes, API reference, target-framework support, dependencies, and
    advisories.
 3. Compare the package's target frameworks with the live owner: API `Directory.Build.props` or the tooling root build file. Check
-   SDK/runtime support without copying its current value into this resource.
+   SDK/runtime support without copying its current value into this resource. For packages that may duplicate assemblies supplied by the
+   deployed shared framework, also inspect the exact runtime image and the resolved/published app-local graph. A newer
+   `Microsoft.Extensions.*` or ASP.NET implementation can be copied beside the app and bypass servicing from its matching
+   `aspnet:<runtime-major>` image; keep such implementations on the runtime's servicing cohort unless a separate app-local servicing plan is
+   approved and documented. Apply this to actual implementations, not mechanically to independent packages such as
+   `Microsoft.Extensions.AI`; inspect each package's role and resolved graph.
 4. Inspect analyzer and compiler diagnostic changes because repository warnings fail builds.
 5. For Azure/service SDKs, verify constructor/method/model/serialization and lifecycle changes against official API docs and current broker
    boundary.
@@ -65,6 +70,21 @@ Representative contract locations include:
 - [`InvoiceResponseTransportContractTests.cs`](../../../../sites/api.arolariu.ro/tests/arolariu.Backend.Domain.Tests/Invoices/DTOs/InvoiceResponseTransportContractTests.cs)
 
 Inspect whether the target package actually affects these surfaces; do not run or update unrelated suites mechanically.
+
+## Retiring Security Workarounds
+
+After upgrading a parent package, revisit direct references and central pins added only to mitigate a transitive advisory:
+
+1. Identify the advisory, affected and fixed ranges, original dependency path, and whether application code genuinely consumes the package.
+   A central version entry alone does not prove a direct dependency or transitive override; inspect references and pinning configuration.
+2. With mutation approval, remove only the workaround in an isolated restore and inspect every affected project/target-framework graph.
+   Check actual resolved versions and upstream minimum constraints, not just the parent's release number or an advisory-free old assets
+   file.
+3. If all affected paths disappear or resolve outside the vulnerable ranges without the workaround, remove its unused central declaration,
+   workaround-only references, and stale explanatory comments together. Regenerate existing locks natively and verify consuming
+   builds/tests.
+4. Otherwise retain the smallest necessary mitigation and record the still-vulnerable path. Preserve genuine direct API dependencies even
+   when their original advisory is fixed. Report the reproducibility limit for lockless owners.
 
 ## Stop Conditions
 

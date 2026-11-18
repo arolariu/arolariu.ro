@@ -7,6 +7,7 @@
  * Emits one FileFinding per unformatted file.
  */
 
+import {stripVTControlCharacters} from "node:util";
 import * as exec from "../../../helpers/sdk/exec.ts";
 import {CommandExecutionError} from "../../../helpers/exec/index.ts";
 import {filesForPrettier, filterExistingFiles} from "../domain/changedFiles.ts";
@@ -24,7 +25,9 @@ export type {FormatPayload} from "../../../lib/hygiene/payloads.ts";
 export function parsePrettierCheckOutput(output: string): string[] {
   const files: string[] = [];
   for (const line of output.split("\n")) {
-    const m = line.match(/^\[warn\]\s+(.+)$/);
+    const m = stripVTControlCharacters(line)
+      .trim()
+      .match(/^\[warn\]\s+(.+)$/);
     if (!m || !m[1]) continue;
     const candidate = m[1].trim();
     // Skip summary line.

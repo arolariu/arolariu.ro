@@ -24,3 +24,26 @@ phases.
 
 Never “fix” a migration by skipping tests, hand-editing a generated lockfile, weakening compiler/analyzer rules, or hiding peer/transitive
 conflicts.
+
+## Misleading Success and Failure Signals
+
+- **Tests pass but coverage collapses:** compare per-file/function coverage and changed dependency execution paths before blaming the test
+  runner. A library may stop invoking selector/callback functions while preserving UI output. Use a supported compatibility path or document
+  a hold; do not lower thresholds or add exclusions to conceal the change.
+- **Build/test timeouts:** reproduce the narrow failure without competing heavy jobs, compare baseline behavior, and inspect documented new
+  defaults. Expensive compiler/JSDoc contracts can run separately from runtime tests, provided the combined selections cover the entire
+  suite and the runtime coverage gate is unchanged. Keep runtime cases in mixed test files covered; passing all assertions in a
+  coverage-disabled partition does not prove the combined coverage gate. Repeated full runs and speculative timeout inflation do not
+  identify the cause.
+- **Filtered tests fail full-project coverage:** distinguish a targeted diagnostic run from the complete coverage gate. Do not attribute
+  partial-run coverage to a dependency regression or lower persisted thresholds to make it pass.
+- **Resolver or `pip check` succeeds but imports fail:** run the real package/application import boundary. Metadata compatibility does not
+  prove runtime symbol compatibility, especially for framework and telemetry integrations.
+- **Registry metadata works but artifact TLS fails:** retain certificate verification. Check official feed alternatives or a bounded,
+  TLS-verifying download with registry-provided integrity/hash verification. Do not switch to a stale mirror and call it latest, disable
+  TLS, or persist an incidental source-policy change.
+- **SDK package updated but bundled tool unchanged:** inspect the executing compiler/test runner/SDK version separately. A package bump does
+  not service an independently installed runtime or prove that tool's advisory is fixed.
+- **Documentation build lacks generated references:** inspect the preparation command, extractor requirements, and exact mode flag before
+  retrying. An authored-content preview is not a full reference build; use the documented mode and disclose that scope instead of adding
+  placeholder reference files or changing production configuration.

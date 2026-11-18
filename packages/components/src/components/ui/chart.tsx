@@ -885,8 +885,14 @@ export const {Polygon} = RechartsPrimitive;
 export const {Rectangle} = RechartsPrimitive;
 /** SVG annular-sector shape primitive. */
 export const {Sector} = RechartsPrimitive;
-/** SVG symbol (circle, cross, diamond, star, …) shape primitive. */
-export const {Symbols} = RechartsPrimitive;
+/**
+ * SVG symbol (circle, cross, diamond, star, …) shape primitive.
+ * @example
+ * ```tsx
+ * <Symbols cx={50} cy={50} size={80} type="circle" />
+ * ```
+ */
+export {Symbols} from "recharts";
 /** SVG trapezoid shape primitive. */
 export const {Trapezoid} = RechartsPrimitive;
 

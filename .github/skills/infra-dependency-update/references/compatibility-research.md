@@ -19,17 +19,17 @@ target. Community posts, generated summaries, and “latest” documentation are
 
 Record evidence for every row:
 
-| Question                    | Required evidence                                                                                                                                                                 |
-| --------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| What is current?            | Exact direct declaration, owning domain, resolved version evidence, lock entry when one exists, explicit no-lock status, and runtime/toolchain from live files                    |
-| What is target?             | Exact target identifier/version or pattern and its official release/migration documentation                                                                                       |
-| Is the path supported?      | Official supported source-to-target path, intermediate releases/codemods, and end-of-support/deprecation notes                                                                    |
-| What constrains it?         | Engine/runtime/target-framework, language, operating-system, peer, plugin, analyzer, and SDK constraints                                                                          |
-| What breaks?                | Removed/renamed APIs, changed defaults, serialization, lifecycle, rendering, errors, auth, generated output, and config format                                                    |
-| What resolves transitively? | Added/removed/changed transitive packages, duplicate majors, advisories, native/optional packages, and owning lock/snapshot impact or lockless evidence limit                     |
-| Where is it used?           | Imports, reflection/config names, adapters, tests, mocks, generated files, docs, AI guidance, containers, and deployment inputs                                                   |
-| How is it proven?           | Baseline and post-change targeted compile/type, tests, build, runtime boundary, and package-health checks                                                                         |
-| How is it reversed?         | Exact prior declarations, lock regeneration owner when present, lockless graph guarantee and required snapshot, source/config reversal order, and runtime/environment restoration |
+| Question                    | Required evidence                                                                                                                                                                  |
+| --------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| What is current?            | Immutable original declaration/channel, owning domain, resolved version evidence, lock entry when one exists, explicit no-lock status, and live runtime/toolchain                  |
+| What is target?             | Newest supported stable, selected exact version under the skill's release policy, reason for any difference, registry retrieval time, and official release/migration documentation |
+| Is the path supported?      | Official supported source-to-target path, intermediate releases/codemods, and end-of-support/deprecation notes                                                                     |
+| What constrains it?         | Engine/runtime/target-framework, language, operating-system, peer, plugin, analyzer, and SDK constraints                                                                           |
+| What breaks?                | Removed/renamed APIs, changed defaults, serialization, lifecycle, rendering, errors, auth, generated output, and config format                                                     |
+| What resolves transitively? | Added/removed/changed transitive packages, duplicate majors, advisories, native/optional packages, and owning lock/snapshot impact or lockless evidence limit                      |
+| Where is it used?           | Imports, reflection/config names, adapters, tests, mocks, generated files, docs, AI guidance, containers, and deployment inputs                                                    |
+| How is it proven?           | Baseline and post-change targeted compile/type, tests, build, runtime boundary, and package-health checks                                                                          |
+| How is it reversed?         | Exact prior declarations, lock regeneration owner when present, lockless graph guarantee and required snapshot, source/config reversal order, and runtime/environment restoration  |
 
 ## Official Source Boundaries
 
@@ -44,6 +44,17 @@ Use these indexes to find the exact target page; do not copy whatever version th
 | GitHub Actions                  | The action's GitHub repository, release notes/tags, `action.yml`, [workflow syntax](https://docs.github.com/en/actions/reference/workflows-and-actions/workflow-syntax), and runner/runtime deprecation notices                                                                                                 |
 
 Follow links to release-specific material for the proposed target and record the retrieval source in the approval packet.
+
+For a broad bump, fetch each package's authoritative version metadata once and evaluate all owning declarations against that record. Use
+SemVer, NuGet version semantics, or PEP 440 as appropriate. Check listing/yank/deprecation status and runtime constraints before expensive
+changelog or consumer research. A stale dist-tag, accidental higher major, or placeholder stable release is not a supported target. Preserve
+evidence for unchanged and held packages so the final freshness check covers the entire request.
+
+Floating tools and ranges need separate declared-versus-observed fields. An admissible latest version is not proof that an existing
+environment resolved it, and refreshing a minimum version does not create a reproducible lock.
+
+Versioned tarball URLs and aliases still have package versions. Check their registry metadata and resolved artifacts rather than omitting
+declarations that are not plain version strings.
 
 ## Approval Packet Gate
 

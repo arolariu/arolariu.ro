@@ -7,6 +7,8 @@ unnecessary phases.
 
 - [ ] Exact current/target state, official migration path, affected inventory, behavior contracts, validation, and rollback are complete.
 - [ ] Coupled packages/framework plugins and required intermediate steps are explicit.
+- [ ] Release channels are evaluated against immutable original declarations; stable, existing-preview, placeholder, and held cases follow
+      the skill's selection policy.
 - [ ] Generated migration/codemod scope is previewed where the tool supports it.
 - [ ] Dependency mutation and all generated/source scopes are explicitly approved.
 
@@ -25,6 +27,8 @@ unnecessary phases.
 
 - [ ] Approved declarations change at the actual owner with the native package manager.
 - [ ] Manifest plus owning lockfile or recorded resolution-evidence deltas are reviewed before source edits.
+- [ ] Clean installation/restore and the resulting dependency tree pass before expensive consumer validation; optional-peer problems are not
+      hidden by installer exit status.
 - [ ] Approved official migration tooling runs as a separate reviewed step.
 - [ ] Tool/config/compiler/analyzer changes pass their smallest checks.
 
@@ -53,6 +57,8 @@ the recorded artifact enforces it, even if application cohorts still use tempora
 - [ ] Old imports, config keys, pins/references, shims, generated output, docs, and tests are removed only after all consumers migrate.
 - [ ] Final resolution has no unexplained duplicate major, peer, downgrade, advisory, source, or integrity drift.
 - [ ] Affected checks and scoped diff review pass.
+- [ ] Final authoritative freshness checks include unchanged declarations and holds; recorded results apply to the final graph, not an
+      abandoned target. Obsolete adaptations from earlier selections are removed.
 - [ ] Rollback is updated to match the final phase boundaries.
 
 Stop between phases if target/scope changes, protected behavior is implicated, or rollback cannot restore the last green phase within its
