@@ -258,4 +258,20 @@ describe("CommandPalette", () => {
     expect(await navigator.clipboard.readText()).toBe("previous text");
     expect(screen.getByRole("dialog", {name: "Command palette"})).toBeVisible();
   });
+
+  it.each([
+    ["LinkedIn", "https://www.linkedin.com/in/olariu-alexandru/"],
+    ["GitHub", "https://github.com/arolariu"],
+  ] as const)("opens %s in a new tab without changing the CV route", async (label, destination) => {
+    const open = vi.spyOn(window, "open").mockReturnValue(null);
+    const goto = vi.spyOn(navigation, "goto");
+    render(CommandPalette);
+    await fireEvent.keyDown(document, {ctrlKey: true, key: "k"});
+
+    await fireEvent.click(screen.getByRole("button", {name: new RegExp(`Open ${label}`, "u")}));
+
+    expect(open).toHaveBeenCalledExactlyOnceWith(destination, "_blank");
+    expect(goto).not.toHaveBeenCalled();
+    expect(screen.queryByRole("dialog", {name: "Command palette"})).not.toBeInTheDocument();
+  });
 });

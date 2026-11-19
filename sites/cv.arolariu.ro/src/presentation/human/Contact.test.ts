@@ -1,33 +1,31 @@
-/**
- * @fileoverview Render-smoke tests for the Contact section.
- *
- * Verifies the section heading + the three contact-info card titles
- * (Location / Email / Website) + the contact form is present.
- */
+// @vitest-environment-options {"settings":{"device":{"prefersReducedMotion":"reduce"}}}
 
 import {fireEvent, render, screen} from "@testing-library/svelte";
 import {describe, expect, it, vi} from "vitest";
 
 import Contact from "./Contact.svelte";
+import styles from "./Contact.module.scss";
 
 describe("Contact", () => {
-  it("renders the 'Get In Touch' level-2 heading", () => {
-    const {getByRole} = render(Contact);
-    const heading = getByRole("heading", {name: /get\s+in\s+touch/i, level: 2});
-    expect(heading).toBeTruthy();
-  });
+  it("identifies each required field and highlights only its focused label", async () => {
+    render(Contact);
+    expect(screen.getByRole("heading", {name: /get\s+in\s+touch/iu, level: 2})).toBeVisible();
+    for (const name of ["Location", "Email", "Website"]) {
+      expect(screen.getByRole("heading", {name, level: 4})).toBeVisible();
+    }
 
-  it("renders the three contact-info card titles", () => {
-    const {getAllByText} = render(Contact);
-    expect(getAllByText(/^Location$/i).length).toBeGreaterThan(0);
-    expect(getAllByText(/^Email$/i).length).toBeGreaterThan(0);
-    expect(getAllByText(/^Website$/i).length).toBeGreaterThan(0);
-  });
+    for (const name of ["Name", "Email", "Message"]) {
+      const field = screen.getByRole("textbox", {name});
+      const label = screen.getByText(name, {selector: "label"});
+      expect(field).toBeRequired();
+      expect(label).not.toHaveClass(styles.labelFocused);
 
-  it("renders the message form (name + email + message inputs)", () => {
-    const {container} = render(Contact);
-    const inputs = container.querySelectorAll("input, textarea");
-    expect(inputs.length).toBeGreaterThanOrEqual(3);
+      await fireEvent.focus(field);
+      expect(label).toHaveClass(styles.labelFocused);
+
+      await fireEvent.blur(field);
+      expect(label).not.toHaveClass(styles.labelFocused);
+    }
   });
 
   it("opens the visitor's email client with the entered contact details and encodes reserved characters", async () => {

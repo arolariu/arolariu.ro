@@ -149,6 +149,20 @@ describe("CV service worker", () => {
     expect(event.lifetime).toBeUndefined();
   });
 
+  it("preserves the cached page when its background refresh returns an error", async () => {
+    const event = new WorkerFetchEvent(new Request(`${origin}/human`));
+    match.mockResolvedValueOnce(new Response("last known good page"));
+    fetchResponse.mockResolvedValueOnce(new Response("Unavailable", {status: 503}));
+
+    worker.dispatchEvent(event);
+    const response = await event.response;
+    await event.lifetime;
+
+    await expect(response?.text()).resolves.toBe("last known good page");
+    expect(fetchResponse).toHaveBeenCalledExactlyOnceWith(event.request);
+    expect(put).not.toHaveBeenCalled();
+  });
+
   it("serves the cached shell on offline HTML navigation but not for a missing asset", async () => {
     const navigation = new WorkerFetchEvent(new Request(`${origin}/human`, {headers: {Accept: "text/html"}}));
     const asset = new WorkerFetchEvent(new Request(`${origin}/missing.css`));
@@ -160,6 +174,19 @@ describe("CV service worker", () => {
 
     await expect(page?.text()).resolves.toBe("offline shell");
     expect(missing?.status).toBe(503);
+    expect(put).not.toHaveBeenCalled();
+  });
+
+  it("returns an offline response when neither the requested page nor the HTML shell is cached", async () => {
+    const event = new WorkerFetchEvent(new Request(`${origin}/human`, {headers: {Accept: "text/html"}}));
+    match.mockResolvedValue(undefined);
+
+    worker.dispatchEvent(event);
+    const response = await event.response;
+
+    expect(response?.status).toBe(503);
+    await expect(response?.text()).resolves.toBe("Offline");
+    expect(match.mock.calls).toEqual([[event.request], ["/"]]);
     expect(put).not.toHaveBeenCalled();
   });
 

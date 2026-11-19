@@ -1,36 +1,23 @@
-/**
- * @fileoverview Render tests for the HelpDialog component.
- *
- * Asserts the migration to the native <dialog> element:
- *  - The element is `<dialog>`, not `<div role="dialog">`.
- *  - It carries an accessible name.
- *  - Initially closed.
- */
-
 import {fireEvent, render, screen, within} from "@testing-library/svelte";
 import {describe, expect, it} from "vitest";
 
 import HelpDialog from "./HelpDialog.svelte";
 
 describe("HelpDialog", () => {
-  it("uses the native <dialog> element", () => {
-    const {container} = render(HelpDialog);
+  it("keeps the native dialog in sync when its parent opens and closes it", async () => {
+    const {container, rerender} = render(HelpDialog);
     const dialog = container.querySelector("dialog");
     expect(dialog).not.toBeNull();
-  });
+    expect(dialog).not.toHaveAttribute("open");
 
-  it("dialog has an accessible name", () => {
-    const {container} = render(HelpDialog);
-    const dialog = container.querySelector("dialog");
-    const ariaLabel = dialog?.getAttribute("aria-label");
-    const labelledBy = dialog?.getAttribute("aria-labelledby");
-    expect(ariaLabel ?? labelledBy).toBeTruthy();
-  });
+    await rerender({open: true});
 
-  it("dialog starts closed", () => {
-    const {container} = render(HelpDialog);
-    const dialog = container.querySelector("dialog");
-    expect(dialog?.hasAttribute("open")).toBe(false);
+    expect(screen.getByRole("dialog", {name: "Technical Information"})).toBe(dialog);
+
+    await rerender({open: false});
+
+    expect(dialog).not.toHaveAttribute("open");
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
   });
 
   it("switches help sections without closing and gives initial focus to Close", async () => {
