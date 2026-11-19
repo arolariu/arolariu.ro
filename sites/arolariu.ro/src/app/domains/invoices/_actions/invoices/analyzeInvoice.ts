@@ -16,7 +16,7 @@
 import {addSpanEvent, logWithTrace, withSpan} from "@/instrumentation.server";
 import {fetchBFFUserFromAuthService} from "@/lib/actions/user/fetchUser";
 import {validateStringIsGuidType} from "@/lib/utils.generic";
-import {createErrorResult, fetchWithTimeout, type ServerActionResult} from "@/lib/utils.server";
+import {createErrorResult, createHttpErrorResult, fetchWithTimeout, type ServerActionResult} from "@/lib/utils.server";
 import {buildAnalysisRequest, type AnalysisProfile, type InvoiceAnalysisCapabilities} from "@/types/invoices/Analysis";
 import {parseAnalysisAcceptedResponse, tryParse} from "@/types/invoices/transport";
 
@@ -90,7 +90,7 @@ export async function analyzeInvoice({invoiceIdentifier, profile, overrides}: Se
         response.status >= 500
           ? "A server error occurred during analysis. Please try again later."
           : "Failed to analyze the invoice. Please try again.";
-      return createErrorResult(new Error(internalMessage), userMessage);
+      return createHttpErrorResult(response.status, userMessage);
     } catch (error: unknown) {
       addSpanEvent("bff.invoice.analyze.error");
       const errorMessage = error instanceof Error ? error.message : "Unknown analysis error";

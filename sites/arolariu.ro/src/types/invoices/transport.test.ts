@@ -314,6 +314,46 @@ describe("parseInvoiceResponse", () => {
     expect(invoice.numberOfUpdates).toBe(2);
   });
 
+  it("defaults omitted or null transitional amounts without changing the recorded payment totals", () => {
+    const {subtotalAmount: _omittedSubtotal, ...payment} = validPaymentInfoJson;
+    const payload = {...validInvoiceJson, paymentInformation: {...payment, tipAmount: null}};
+
+    const invoice = parseInvoiceResponse(payload);
+
+    expect(invoice.paymentInformation).toEqual({
+      ...validPaymentInfoJson,
+      transactionDate: new Date(validPaymentInfoJson.transactionDate),
+      subtotalAmount: 0,
+      tipAmount: 0,
+    });
+  });
+
+  it.each([
+    ["transactionDate", {transactionDate: "not-a-date"}, '"not-a-date" is not a valid date'],
+    ["paymentType", {paymentType: 987}, "unrecognised payment type: 987"],
+    ["currency.code", {currency: {name: "Romanian Leu", symbol: "lei"}}, "expected string"],
+    ["totalCostAmount", {totalCostAmount: "100"}, "expected finite number"],
+    ["totalTaxAmount", {totalTaxAmount: null}, "expected finite number"],
+    ["subtotalAmount", {subtotalAmount: false}, "expected finite number"],
+    ["tipAmount", {tipAmount: "0"}, "expected finite number"],
+  ] as const)("identifies a malformed payment field at %s", (path, invalid, detail) => {
+    const payload = {...validInvoiceJson, paymentInformation: {...validPaymentInfoJson, ...invalid}};
+
+    expect(() => parseInvoiceResponse(payload)).toThrow(new TransportValidationError(`invoice.paymentInformation.${path}`, detail));
+  });
+
+  it("preserves string and structured metadata on an invoice scan", () => {
+    const scan = {
+      type: 0,
+      location: "https://example.test/scan.jpg",
+      metadata: {filename: "receipt.jpg", crop: {rotation: 90}},
+    };
+
+    const invoice = parseInvoiceResponse({...validInvoiceJson, scans: [scan]});
+
+    expect(invoice.scans).toEqual([scan]);
+  });
+
   it("rejects malformed scan metadata values instead of deleting them", () => {
     expect(() =>
       parseInvoiceResponse({

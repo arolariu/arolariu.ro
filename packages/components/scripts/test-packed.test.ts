@@ -5,8 +5,9 @@ import os from "node:os";
 import path from "node:path";
 import {pathToFileURL} from "node:url";
 import {afterEach, describe, expect, it} from "vitest";
+import {parseCLI} from "vitest/node";
 
-import {isEntryModule, PackedGateInterruptedError, parsePackedFilename, runPackedGate} from "./test-packed";
+import {isEntryModule, PackedGateInterruptedError, packedVitestArgs, parsePackedFilename, runPackedGate} from "./test-packed";
 
 const gateScript = path.resolve(import.meta.dirname, "test-packed.ts");
 const scratchDirectories: string[] = [];
@@ -47,6 +48,17 @@ describe("required packed verification", () => {
 
   it("accepts the single local npm archive filename", () => {
     expect(parsePackedFilename('[{"filename":"arolariu-components-3.0.0.tgz"}]')).toBe("arolariu-components-3.0.0.tgz");
+  });
+
+  it.each([
+    [[], 2],
+    [["--maxWorkers=4"], 4],
+    [["--max-workers", "4"], 4],
+  ] as const)("forwards Vitest arguments with exactly one worker limit for %j", (args, workers) => {
+    const {filter, options} = parseCLI(["vitest", ...packedVitestArgs([...args, "src/index.test.ts"])]);
+
+    expect(options.maxWorkers).toBe(workers);
+    expect(filter).toEqual(["src/index.test.ts"]);
   });
 
   it.each([

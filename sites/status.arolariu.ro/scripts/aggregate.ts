@@ -85,11 +85,9 @@ function pruneRawFiles(dataDir: string, now: Date): void {
   if (!existsSync(rawDir)) return;
   const cutoffMs = now.getTime() - 14 * MS_PER_DAY;
   for (const f of readdirSync(rawDir)) {
-    /* v8 ignore next 2 */
     if (!f.endsWith(".jsonl")) continue;
     const day = f.slice(0, 10);
     const dayMs = Date.parse(`${day}T00:00:00Z`);
-    /* v8 ignore next */
     if (Number.isFinite(dayMs) && dayMs < cutoffMs) {
       unlinkSync(join(rawDir, f));
     }

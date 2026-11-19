@@ -21,7 +21,11 @@ import {afterEach, describe, expect, it} from "vitest";
 
 import {createRepositoryPaths} from "../../../common/repository-paths.ts";
 import type {RepositoryRequirements} from "../../../common/requirements.ts";
-import {getExpectedTaxonomyArtifactPaths} from "../../../common/taxonomy-artifacts.ts";
+import {
+  getExpectedTaxonomyArtifactPaths,
+  taxonomyArtifactFileNames,
+  taxonomyArtifactIdentities,
+} from "../../../common/taxonomy-artifacts.ts";
 import {Inspection} from "../../../inspection/Inspection.ts";
 import {inspectionProbeRunner, type ProbeOutcome} from "../../../inspection/probes.ts";
 import type {RepositoryInspectionSession} from "../../../inspection/repository.ts";
@@ -215,15 +219,23 @@ function healthyAggregateFacts(): AggregateFacts {
   };
 }
 
-function taxonomyArtifactContents(path: string, generatedAt = "2026-08-29T00:00:00.000Z"): string {
+function taxonomyArtifactContents(path: string, generatedAt = "2026-08-29T00:00:00.000Z", empty = false): string {
   const fileName = basename(path);
-  const version =
-    /^ecoicop-v(?<version>.+)\.min\.json$/u.exec(fileName)?.groups?.["version"]
-    ?? /^(?:gpc|nace)-(?<version>.+)\.min\.json$/u.exec(fileName)?.groups?.["version"];
-  if (version === undefined) {
+  const key = (["gpc", "ecoicop", "nace"] as const).find((candidate) => taxonomyArtifactFileNames[candidate] === fileName);
+  if (key === undefined) {
     throw new Error(`Unsupported taxonomy fixture path: ${path}`);
   }
-  return `${JSON.stringify({version, generatedAt, nodes: []})}\n`;
+  const node = {
+    code: "01",
+    officialLabel: "Food",
+    level: "division",
+    parentCode: null,
+    hierarchyCodes: ["01"],
+    hierarchyLabels: ["Food"],
+    definition: null,
+    searchText: "food",
+  };
+  return `${JSON.stringify({...taxonomyArtifactIdentities[key], generatedAt, nodes: empty ? [] : [node]})}\n`;
 }
 
 async function writeFixtureFile(path: string, contents = "{}\n"): Promise<void> {
@@ -851,6 +863,17 @@ describe("workspaceDoctorModule", () => {
     const artifacts = resultById(results, "workspace.generated-artifacts");
     expect(artifacts.status).toBe("fail");
     expect(artifacts.evidence).toContain("Mirrored taxonomy bytes differ: nace-2.1.min.json");
+  });
+
+  it("rejects identical taxonomy mirrors without a valid node graph", async () => {
+    const fixture = await createWorkspaceFixture();
+    for (const path of getExpectedTaxonomyArtifactPaths(fixture.root).filter((path) => basename(path) === "nace-2.1.min.json")) {
+      await writeFixtureFile(path, taxonomyArtifactContents(path, undefined, true));
+    }
+
+    const results = await fixture.run();
+
+    expect(resultById(results, "workspace.generated-artifacts").status).toBe("fail");
   });
 
   it("reads facts through the shared session and probes through the opaque probe runner", async () => {

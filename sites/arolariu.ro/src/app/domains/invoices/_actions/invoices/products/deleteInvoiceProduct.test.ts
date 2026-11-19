@@ -60,35 +60,18 @@ describe("deleteInvoiceProduct", () => {
     expect(mockFetchWithTimeout).not.toHaveBeenCalled();
   });
 
-  it("maps 5xx and non-5xx failures", async () => {
-    mockFetchWithTimeout.mockResolvedValue(
-      TestDataBuilder.textResponse("Internal Server Error", {status: 500, statusText: "Internal Server Error"}) as Awaited<
-        ReturnType<typeof fetchWithTimeout>
-      >,
-    );
-
+  it.each([
+    [404, "NOT_FOUND", "Failed to delete the product. Please check your input and try again."],
+    [500, "SERVER_ERROR", "A server error occurred. Please try again later."],
+  ])("returns a public HTTP %i failure without revalidating", async (status, code, message) => {
     const invoiceId = "11111111-1111-4111-8111-111111111111";
     const productName = "Coffee";
+    mockFetchWithTimeout.mockResolvedValue(new Response("Internal response details", {status, statusText: "Internal status text"}));
 
     const result = await deleteInvoiceProduct({invoiceId, productName});
 
-    expect(result.success).toBe(false);
-    if (!result.success) {
-      expect(result.error.message).toContain("500");
-      expect(result.error.message).toContain("Failed to delete product");
-    }
-
-    mockFetchWithTimeout.mockResolvedValue(
-      TestDataBuilder.textResponse("Not Found", {status: 404, statusText: "Not Found"}) as Awaited<ReturnType<typeof fetchWithTimeout>>,
-    );
-
-    const result2 = await deleteInvoiceProduct({invoiceId, productName});
-
-    expect(result2.success).toBe(false);
-    if (!result2.success) {
-      expect(result2.error.message).toContain("404");
-      expect(result2.error.message).toContain("Failed to delete product");
-    }
+    expect(result).toEqual({success: false, error: {code, message, status}});
+    expect(mockRevalidatePath).not.toHaveBeenCalled();
   });
 
   it("returns an error result when auth or fetch throws", async () => {

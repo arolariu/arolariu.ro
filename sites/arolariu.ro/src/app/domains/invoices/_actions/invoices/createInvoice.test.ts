@@ -3,191 +3,112 @@
  * @module app/domains/invoices/_actions/invoices/createInvoice.test
  */
 
-import {fetchBFFUserFromAuthService} from "@/lib/actions/user/fetchUser";
-import {fetchWithTimeout} from "@/lib/utils.server";
-import {beforeEach, describe, expect, it, vi} from "vitest";
-import {TestDataBuilder} from "../../../../../../tests/helpers";
-
-vi.mock("@/lib/actions/user/fetchUser");
-const {createInvoice} = await import("./createInvoice");
-const mockFetchUser = vi.mocked(fetchBFFUserFromAuthService);
-const mockFetchWithTimeout = vi.mocked(fetchWithTimeout);
+import {jwtVerify} from "jose";
+import {beforeEach, describe, expect, it} from "vitest";
+import {buildCreateInvoicePayload, buildInvoice, buildInvoiceScan} from "../../../../../../tests/helpers/builders/domain";
+import {apiUrl, auth, fetchAtHttp, jwtSecret} from "../../../../../../tests/setup/server-http";
+import {createInvoice} from "./createInvoice";
 
 describe("createInvoice", () => {
+  const sessionUserId = "d35a2a2a-d1d1-55ed-90a7-348c3da59deb";
+  const invoiceId = "11111111-1111-4111-8111-111111111111";
+  const emptyMerchantId = "00000000-0000-0000-0000-000000000000";
+
   beforeEach(() => {
-    vi.clearAllMocks();
-    mockFetchUser.mockResolvedValue(TestDataBuilder.build("userInformation", {userIdentifier: "user-1", userJwt: "jwt-1"}));
-    mockFetchWithTimeout.mockResolvedValue(
-      TestDataBuilder.jsonResponse(
-        TestDataBuilder.build("invoice", {
-          id: "11111111-1111-4111-8111-111111111111",
-          userIdentifier: "22222222-2222-4222-8222-222222222222",
-          merchantReference: "33333333-3333-4333-8333-333333333333",
-        }),
-      ) as Awaited<ReturnType<typeof fetchWithTimeout>>,
+    fetchAtHttp.mockResolvedValue(
+      Response.json(buildInvoice({id: invoiceId, userIdentifier: sessionUserId, merchantReference: emptyMerchantId})),
     );
   });
 
-  it("posts a creation payload with authenticated userIdentifier when missing", async () => {
+  it("posts the scan and metadata with the authenticated identifier and bearer token", async () => {
     const payload = {
-      initialScan: TestDataBuilder.build("invoiceScan", {
-        location: "https://storage.test/scan.jpg",
-      }),
+      initialScan: buildInvoiceScan({location: "https://storage.example.test/scan.jpg"}),
       additionalMetadata: {isImportant: "false", requiresAnalysis: "true"},
+      metadata: {legacy: "unused"},
+      classification: null,
+      items: [],
+      possibleRecipes: [],
+      category: 1,
     };
 
     const result = await createInvoice(payload);
 
-    expect(result.success).toBe(true);
-    expect(mockFetchWithTimeout).toHaveBeenCalledWith(
-      "/rest/v1/invoices",
-      expect.objectContaining({
-        method: "POST",
-        headers: expect.objectContaining({
-          Authorization: "Bearer jwt-1",
-          "Content-Type": "application/json",
-        }),
-      }),
+    expect(result).toMatchObject({success: true, data: {id: invoiceId, userIdentifier: sessionUserId, createdAt: expect.any(Date)}});
+    expect(fetchAtHttp).toHaveBeenCalledExactlyOnceWith(
+      `${apiUrl}/rest/v1/invoices`,
+      expect.objectContaining({method: "POST", cache: "no-store"}),
     );
-
-    const callArgs = mockFetchWithTimeout.mock.calls[0];
-    const body = JSON.parse(callArgs?.[1]?.body as string);
-    expect(body.userIdentifier).toBe("user-1");
+    const request = fetchAtHttp.mock.calls[0]?.[1];
+    const body: unknown = JSON.parse(String(request?.body));
+    expect(body).toEqual({userIdentifier: sessionUserId, initialScan: payload.initialScan, additionalMetadata: payload.additionalMetadata});
+    const headers = new Headers(request?.headers);
+    expect(headers.get("content-type")).toBe("application/json");
+    const bearer = headers.get("authorization");
+    expect(bearer).toMatch(/^Bearer /u);
+    const token = await jwtVerify(bearer?.slice(7) ?? "", new TextEncoder().encode(jwtSecret));
+    expect(token.payload).toMatchObject({userIdentifier: sessionUserId, role: "user"});
   });
 
-  it("preserves an explicit userIdentifier in the payload", async () => {
-    const payload = TestDataBuilder.build("createInvoicePayload", {
-      userIdentifier: "custom-user-id",
-      initialScan: TestDataBuilder.build("invoiceScan", {
-        location: "https://storage.test/scan.jpg",
-      }),
-      additionalMetadata: {isImportant: "false", requiresAnalysis: "true"},
-    });
+  it("preserves an explicit userIdentifier on the wire", async () => {
+    const payload = buildCreateInvoicePayload({userIdentifier: "22222222-2222-4222-8222-222222222222"});
 
-    await createInvoice(payload);
+    const result = await createInvoice(payload);
 
-    const callArgs = mockFetchWithTimeout.mock.calls[0];
-    const body = JSON.parse(callArgs?.[1]?.body as string);
-    expect(body.userIdentifier).toBe("custom-user-id");
+    expect(result.success).toBe(true);
+    const body: unknown = JSON.parse(String(fetchAtHttp.mock.calls[0]?.[1]?.body));
+    expect(body).toEqual(payload);
   });
 
-  it("returns a server-error user message for 5xx responses", async () => {
-    mockFetchWithTimeout.mockResolvedValue({
-      ok: false,
-      status: 500,
-      statusText: "Internal Server Error",
-      text: async () => "Server error",
-    } as Response);
+  it.each([
+    [500, "SERVER_ERROR", "A server error occurred. Please try again later."],
+    [400, "VALIDATION_ERROR", "Failed to create the invoice. Please check your input and try again."],
+  ] as const)("returns a public creation failure for HTTP %i", async (status, code, message) => {
+    fetchAtHttp.mockResolvedValue(new Response("Invoice unavailable", {status, statusText: "Internal reason"}));
 
     const result = await createInvoice({});
 
-    expect(result.success).toBe(false);
-    if (!result.success) {
-      expect(result.error.message).toContain("500");
-      expect(result.error.message).toContain("Failed to create invoice");
-    }
+    expect(result).toEqual({success: false, error: {code, message, status}});
+    expect(fetchAtHttp).toHaveBeenCalledOnce();
   });
 
-  it("returns a validation user message for non-5xx responses", async () => {
-    mockFetchWithTimeout.mockResolvedValue({
-      ok: false,
-      status: 400,
-      statusText: "Bad Request",
-      text: async () => "Validation failed",
-    } as Response);
+  it("does not post the invoice when authentication fails", async () => {
+    auth.mockRejectedValue(new Error("Auth failed"));
 
     const result = await createInvoice({});
 
-    expect(result.success).toBe(false);
-    if (!result.success) {
-      expect(result.error.message).toContain("Failed to create invoice");
-    }
+    expect(result).toEqual({success: false, error: {code: "NETWORK_ERROR", message: "Auth failed"}});
+    expect(fetchAtHttp).not.toHaveBeenCalled();
   });
 
-  it("returns an error result when auth throws", async () => {
-    mockFetchUser.mockRejectedValue(new Error("Auth failed"));
+  it.each([
+    [new Error("Network error"), "Network error"],
+    [{code: "TIMEOUT"}, "An unexpected error occurred"],
+  ] as const)("returns a creation failure when the network rejects with %s", async (reason, message) => {
+    fetchAtHttp.mockRejectedValue(reason);
 
     const result = await createInvoice({});
 
-    expect(result.success).toBe(false);
-    if (!result.success) {
-      expect(result.error.message).toContain("Auth failed");
-    }
-  });
-
-  it("returns an error result when fetch throws", async () => {
-    mockFetchWithTimeout.mockRejectedValue(new Error("Network error"));
-
-    const result = await createInvoice({});
-
-    expect(result.success).toBe(false);
-    if (!result.success) {
-      expect(result.error.message).toContain("Network error");
-    }
-  });
-
-  it("returns a fallback error message when fetch throws a non-Error", async () => {
-    mockFetchWithTimeout.mockRejectedValue({code: "TIMEOUT"});
-
-    const result = await createInvoice({});
-
-    expect(result.success).toBe(false);
-    if (!result.success) {
-      expect(result.error.message).toContain("An unexpected error occurred");
-    }
-  });
-
-  it("sends additionalMetadata instead of metadata on the wire", async () => {
-    const payload = {
-      initialScan: TestDataBuilder.build("invoiceScan", {location: "https://storage.test/scan.jpg"}),
-      additionalMetadata: {isImportant: "false", requiresAnalysis: "true"},
-    };
-
-    await createInvoice(payload);
-
-    const callArgs = mockFetchWithTimeout.mock.calls[0];
-    const body: unknown = JSON.parse(String(callArgs?.[1]?.body));
-    expect(body).toHaveProperty("additionalMetadata");
-    expect(body).not.toHaveProperty("metadata");
-  });
-
-  it("does not carry client-only fields the backend ignores", async () => {
-    const payload = TestDataBuilder.build("createInvoicePayload");
-    await createInvoice(payload);
-
-    const callArgs = mockFetchWithTimeout.mock.calls[0];
-    const body: unknown = JSON.parse(String(callArgs?.[1]?.body));
-    expect(body).not.toHaveProperty("category");
-    expect(body).not.toHaveProperty("items");
-    expect(body).not.toHaveProperty("possibleRecipes");
-    expect(body).not.toHaveProperty("classification");
+    expect(result).toEqual({success: false, error: {code: "NETWORK_ERROR", message}});
   });
 
   it("returns a server failure when the API returns a malformed payload", async () => {
-    mockFetchWithTimeout.mockResolvedValue(TestDataBuilder.jsonResponse({}) as Awaited<ReturnType<typeof fetchWithTimeout>>);
+    fetchAtHttp.mockResolvedValue(Response.json({}));
 
     const result = await createInvoice({});
 
-    expect(result.success).toBe(false);
-    if (!result.success) {
-      expect(result.error.code).toBe("SERVER_ERROR");
-    }
+    expect(result).toEqual({
+      success: false,
+      error: {code: "SERVER_ERROR", message: "The server returned unexpected data. Please try again later."},
+    });
   });
 
   it("accepts the backend's unenriched creation response with an empty name", async () => {
-    mockFetchWithTimeout.mockResolvedValue(
-      TestDataBuilder.jsonResponse(
-        TestDataBuilder.build("invoice", {
-          id: "11111111-1111-4111-8111-111111111111",
-          userIdentifier: "22222222-2222-4222-8222-222222222222",
-          merchantReference: "00000000-0000-0000-0000-000000000000",
-          name: "",
-        }),
-      ) as Awaited<ReturnType<typeof fetchWithTimeout>>,
+    fetchAtHttp.mockResolvedValue(
+      Response.json(buildInvoice({id: invoiceId, userIdentifier: sessionUserId, merchantReference: emptyMerchantId, name: ""})),
     );
 
     const result = await createInvoice({});
 
-    expect(result).toMatchObject({success: true, data: {name: ""}});
+    expect(result).toMatchObject({success: true, data: {name: "", merchantReference: emptyMerchantId}});
   });
 });

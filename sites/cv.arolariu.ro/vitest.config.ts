@@ -11,10 +11,10 @@
 import {svelte} from "@sveltejs/vite-plugin-svelte";
 import path from "node:path";
 import {defineConfig, mergeConfig} from "vitest/config";
-import baseConfig from "../../vitest.config";
+import baseConfig from "../../vitest.config.ts";
 
 export default mergeConfig(
-  baseConfig,
+  {...baseConfig, plugins: [], test: {...baseConfig.test, setupFiles: []}},
   defineConfig({
     plugins: [
       svelte({
@@ -26,12 +26,12 @@ export default mergeConfig(
     ],
     resolve: {
       alias: {
-        "@": path.resolve(__dirname, "./src"),
-        $lib: path.resolve(__dirname, "./src/lib"),
-        "$app/environment": path.resolve(__dirname, "./src/__mocks__/$app/environment.ts"),
-        "$app/navigation": path.resolve(__dirname, "./src/__mocks__/$app/navigation.ts"),
-        "$app/state": path.resolve(__dirname, "./src/__mocks__/$app/state.ts"),
-        "$app/stores": path.resolve(__dirname, "./src/__mocks__/$app/stores.ts"),
+        "@": path.resolve(import.meta.dirname, "./src"),
+        $lib: path.resolve(import.meta.dirname, "./src/lib"),
+        "$app/environment": path.resolve(import.meta.dirname, "./src/__mocks__/$app/environment.ts"),
+        "$app/navigation": path.resolve(import.meta.dirname, "./src/__mocks__/$app/navigation.ts"),
+        "$app/state": path.resolve(import.meta.dirname, "./src/__mocks__/$app/state.ts"),
+        "$service-worker": path.resolve(import.meta.dirname, "./src/__mocks__/$service-worker.ts"),
       },
       conditions: ["browser"],
     },

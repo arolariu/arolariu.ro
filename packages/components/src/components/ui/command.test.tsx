@@ -1090,6 +1090,31 @@ describe("Command", () => {
     expect(screen.getByRole("combobox", {name})).not.toHaveAttribute("aria-label");
   });
 
+  it("preserves external list and group names independently of the visible group heading", () => {
+    render(
+      <>
+        <h2 id='external-list-name'>Available commands</h2>
+        <span id='external-group-name'>Workspace navigation</span>
+        <Command label='Command palette'>
+          <CommandInput />
+          <CommandList aria-labelledby='external-list-name'>
+            <CommandGroup
+              aria-labelledby='external-group-name'
+              heading='Navigation'>
+              <CommandItem>Open workspace</CommandItem>
+            </CommandGroup>
+          </CommandList>
+        </Command>
+      </>,
+    );
+
+    const list = screen.getByRole("listbox", {name: "Available commands"});
+    const group = within(list).getByRole("group", {name: "Workspace navigation"});
+    expect(list).not.toHaveAttribute("aria-label");
+    expect(within(group).getByText("Navigation")).toBeVisible();
+    expect(within(group).getByRole("option", {name: "Open workspace"})).toBeVisible();
+  });
+
   it("keeps a placeholder-only CommandInput named by its placeholder instead of the English fallback", () => {
     render(
       <Command>

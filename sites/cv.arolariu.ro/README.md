@@ -82,8 +82,12 @@ From the repository root:
 
 Inside sites/cv.arolariu.ro:
 
+- npm run test:unit — complete Vitest run; PDF state, experience data, and service worker tests run in Node, while UI tests use Happy DOM
 - npm run preview — preview production build locally
 - npm run test:e2e:a11y — Playwright accessibility suite against npm run preview on http://localhost:4173 (build first)
+
+The `Command palette keeps page controls inert until Escape restores focus` Playwright case checks native dialog behavior that the Happy DOM
+interaction tests cannot establish.
 
 ## E2E Testing (Newman)
 

@@ -1,56 +1,88 @@
-import {render} from "@testing-library/svelte";
-import {beforeEach, describe, expect, it, vi} from "vitest";
+import {act, fireEvent, render, screen, within} from "@testing-library/svelte";
+import {afterEach, describe, expect, it, vi} from "vitest";
 
+import {PDF_ASSET_URL, PDF_DOWNLOAD_FILENAME, PDF_NATIVE_ASSISTANCE_DELAY_MS} from "../pdf/pdfViewerState";
 import PdfView from "./PdfView.svelte";
 
 describe("PdfView (editorial frame)", () => {
-  beforeEach(() => {
-    // The setup-file mock uses an arrow function and cannot be `new`-invoked,
-    // which breaks any IntersectionObserver wiring. Use a real function so it
-    // is constructor-callable.
-    global.IntersectionObserver = vi.fn(function (this: IntersectionObserver) {
-      this.observe = vi.fn();
-      this.unobserve = vi.fn();
-      this.disconnect = vi.fn();
-      this.takeRecords = vi.fn(() => []);
-      return this;
-    }) as unknown as typeof IntersectionObserver;
-  });
+  afterEach(() => vi.useRealTimers());
 
-  it("renders the editorial hero with title 'Printable CV'", () => {
-    const {getByRole} = render(PdfView);
-    const heading = getByRole("heading", {name: /printable\s+cv/i, level: 1});
-    expect(heading).toBeTruthy();
-  });
-
-  it("renders the eyebrow pill with PDF format metadata", () => {
-    const {getByText} = render(PdfView);
-    expect(getByText(/PDF.*A4.*ONE\s*PAGE/i)).toBeTruthy();
-  });
-
-  it("renders the metadata sidebar with all 5 keyed rows", () => {
+  it("identifies the printable CV and displays its five metadata rows", () => {
     const {container} = render(PdfView);
+
+    expect(screen.getByRole("heading", {name: /printable\s+cv/i, level: 1})).toBeInTheDocument();
+    expect(screen.getByText(/PDF.*A4.*ONE\s*PAGE/i)).toBeInTheDocument();
     const dt = container.querySelectorAll("aside dl dt");
     const dd = container.querySelectorAll("aside dl dd");
     expect(dt).toHaveLength(5);
     expect(dd).toHaveLength(5);
     const labels = Array.from(dt, (el) => el.textContent?.trim().toLowerCase());
     expect(labels).toEqual(expect.arrayContaining(["size", "pages", "updated", "format", "ats"]));
+    expect(container.querySelector("[data-pdf-ats]")).toHaveTextContent(/ats/i);
   });
 
-  it("marks the ATS row with a data attribute for visual emphasis", () => {
-    const {container} = render(PdfView);
-    const atsRow = container.querySelector("[data-pdf-ats]");
-    expect(atsRow).toBeTruthy();
+  it("sends download, open, and print actions to the browser with the same PDF", async () => {
+    const open = vi.spyOn(window, "open").mockReturnValue(null);
+    const click = vi.spyOn(HTMLAnchorElement.prototype, "click").mockImplementation(() => {});
+    render(PdfView);
+    const actions = within(screen.getByRole("complementary"));
+
+    await fireEvent.click(actions.getByRole("button", {name: "Download"}));
+    await fireEvent.click(actions.getByRole("button", {name: "Open in tab"}));
+    await fireEvent.click(actions.getByRole("button", {name: "Print"}));
+
+    expect(click).toHaveBeenCalledOnce();
+    const download = click.mock.contexts[0];
+    expect(download).toBeInstanceOf(HTMLAnchorElement);
+    expect(download).toHaveAttribute("href", PDF_ASSET_URL);
+    expect(download).toHaveAttribute("download", PDF_DOWNLOAD_FILENAME);
+    expect(open.mock.calls).toEqual([
+      [PDF_ASSET_URL, "_blank", "noopener,noreferrer"],
+      [PDF_ASSET_URL, "_blank", "noopener,noreferrer"],
+    ]);
   });
 
-  it("renders the 3 sidebar action buttons (Download / Open / Print)", () => {
+  it("offers help after a slow load, retries a failed viewer, and clears help on success", async () => {
+    vi.useFakeTimers({toFake: ["setTimeout", "clearTimeout"]});
     const {container} = render(PdfView);
-    // Sidebar action buttons live inside the <aside>, not the assistance panel.
-    const sidebarButtons = container.querySelectorAll("aside button");
-    const labels = Array.from(sidebarButtons, (b) => b.textContent?.trim() ?? "");
-    expect(labels.some((l) => /download/i.test(l))).toBe(true);
-    expect(labels.some((l) => /open/i.test(l))).toBe(true);
-    expect(labels.some((l) => /print/i.test(l))).toBe(true);
+    const original = container.querySelector("object");
+    if (!original) throw new Error("Missing native PDF preview");
+    expect(screen.getByRole("status", {busy: true})).toHaveTextContent("Loading native PDF preview");
+
+    await act(() => vi.advanceTimersByTimeAsync(PDF_NATIVE_ASSISTANCE_DELAY_MS));
+
+    expect(screen.getByRole("status")).toHaveTextContent("Still loading the PDF preview?");
+
+    await fireEvent.error(original);
+
+    expect(screen.getByRole("status")).toHaveTextContent("Native PDF preview unavailable");
+
+    await fireEvent.click(screen.getByRole("button", {name: "Retry Preview"}));
+
+    const retry = container.querySelector("object");
+    if (!retry) throw new Error("Missing retry PDF preview");
+    expect(retry).not.toBe(original);
+    expect(screen.getByRole("status", {busy: true})).toBeInTheDocument();
+
+    await fireEvent.load(retry);
+    await act(() => vi.advanceTimersByTimeAsync(PDF_NATIVE_ASSISTANCE_DELAY_MS));
+
+    expect(screen.queryByRole("status")).not.toBeInTheDocument();
+    expect(retry).toHaveAttribute("data", PDF_ASSET_URL);
+  });
+
+  it("updates native viewer guidance on a touch-device resize without reloading the document", async () => {
+    const width = vi.spyOn(window, "innerWidth", "get").mockReturnValue(1024);
+    vi.spyOn(navigator, "maxTouchPoints", "get").mockReturnValue(1);
+    const {container} = render(PdfView);
+    const original = container.querySelector("object");
+    expect(original).toHaveAttribute("data", PDF_ASSET_URL);
+    expect(screen.getByText("A traditional resume optimized for printing and ATS pipelines.")).toBeVisible();
+    width.mockReturnValue(390);
+
+    await fireEvent.resize(window);
+
+    expect(screen.getByText("Trying your browser's native PDF viewer first.")).toBeVisible();
+    expect(container.querySelector("object")).toBe(original);
   });
 });

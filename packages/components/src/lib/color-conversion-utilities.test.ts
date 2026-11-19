@@ -17,6 +17,19 @@ describe("color-conversion-utilities", () => {
     expect(convertHexToHslString("ffffff")).toBe("0 0% 100%");
   });
 
+  it.each([
+    [60, "#ffff00"],
+    [120, "#00ff00"],
+    [180, "#00ffff"],
+    [240, "#0000ff"],
+    [300, "#ff00ff"],
+  ] as const)("preserves the color at the %i-degree hue boundary", (hue, hex) => {
+    const converted = convertHslToHexString(hue, 100, 50);
+
+    expect(converted).toBe(hex);
+    expect(convertHexToHslString(converted)).toBe(`${hue} 100% 50%`);
+  });
+
   it("convertHslToHexString handles known conversions", () => {
     expect(convertHslToHexString(0, 100, 50)).toBe("#ff0000");
     expect(convertHslToHexString(120, 100, 50)).toBe("#00ff00");

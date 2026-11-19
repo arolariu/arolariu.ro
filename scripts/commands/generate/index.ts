@@ -33,7 +33,7 @@ export interface GenerateInput {
   readonly i18n: boolean;
   /** Selects the GraphQL type generator. */
   readonly gql: boolean;
-  /** Selects the taxonomy and license artifact generator. */
+  /** Verifies pinned taxonomies and prepares Website license attribution. */
   readonly artifacts: boolean;
 }
 
@@ -91,7 +91,7 @@ const GENERATE_TASKS: readonly GenerateTask[] = [
   },
   {
     name: "artifacts",
-    label: "taxonomy and license artifact generator",
+    label: "pinned taxonomy and Website license preparation",
     run: (verbose) => Effect.map(generateArtifacts({verbose}), ({summary}) => ({summary, negative: false})),
   },
 ];

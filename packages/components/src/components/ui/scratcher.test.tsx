@@ -283,6 +283,38 @@ describe("Scratcher", () => {
     expect(context.globalCompositeOperation).toBe("destination-out");
   });
 
+  it("ignores secondary presses and prevented moves without losing an active primary gesture", () => {
+    render(
+      <Scratcher
+        width={200}
+        height={100}>
+        Prize
+      </Scratcher>,
+    );
+    const surface = canvas();
+    const press = {clientX: 150, clientY: 70, pointerId: 1};
+
+    fireEvent.pointerDown(surface, {...press, button: 2});
+    fireEvent.pointerUp(document, {pointerId: 1});
+
+    expect(context.arc).not.toHaveBeenCalled();
+    expect(context.getImageData).not.toHaveBeenCalled();
+
+    fireEvent.pointerDown(surface, {...press, button: 0});
+    const blockedMove = new PointerEvent("pointermove", {...press, clientX: 180, cancelable: true});
+    blockedMove.preventDefault();
+    fireEvent(document, blockedMove);
+
+    expect(context.arc).toHaveBeenCalledTimes(1);
+
+    fireEvent.pointerMove(document, {...press, clientX: 190});
+    fireEvent.pointerUp(document, {pointerId: 1});
+
+    expect(context.arc).toHaveBeenLastCalledWith(180, 40, 60, 0, Math.PI * 2);
+    expect(context.getImageData).toHaveBeenCalledOnce();
+    expect(screen.getByRole("button", {name: "Reveal content"})).not.toHaveAttribute("aria-disabled", "true");
+  });
+
   it("resets dimensions/gradient and source-over paints the newly cleared bitmap", () => {
     const {rerender} = render(
       <Scratcher

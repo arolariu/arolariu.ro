@@ -8,21 +8,11 @@
  */
 
 import {render} from "@testing-library/svelte";
-import {beforeEach, describe, expect, it, vi} from "vitest";
+import {describe, expect, it} from "vitest";
 
 import Page from "./+page.svelte";
 
 describe("/json route", () => {
-  beforeEach(() => {
-    global.IntersectionObserver = vi.fn(function (this: IntersectionObserver) {
-      this.observe = vi.fn();
-      this.unobserve = vi.fn();
-      this.disconnect = vi.fn();
-      this.takeRecords = vi.fn(() => []);
-      return this;
-    }) as unknown as typeof IntersectionObserver;
-  });
-
   it("mounts without throwing", () => {
     const {container} = render(Page);
     expect(container.firstChild).not.toBeNull();

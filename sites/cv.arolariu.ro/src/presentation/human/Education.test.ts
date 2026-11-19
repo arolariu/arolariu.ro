@@ -7,21 +7,11 @@
  */
 
 import {render} from "@testing-library/svelte";
-import {beforeEach, describe, expect, it, vi} from "vitest";
+import {describe, expect, it} from "vitest";
 
 import Education from "./Education.svelte";
 
 describe("Education", () => {
-  beforeEach(() => {
-    global.IntersectionObserver = vi.fn(function (this: IntersectionObserver) {
-      this.observe = vi.fn();
-      this.unobserve = vi.fn();
-      this.disconnect = vi.fn();
-      this.takeRecords = vi.fn(() => []);
-      return this;
-    }) as unknown as typeof IntersectionObserver;
-  });
-
   it("renders the Education & Certifications level-2 heading", () => {
     const {getByRole} = render(Education);
     const heading = getByRole("heading", {name: /education.*certifications/i, level: 2});

@@ -70,6 +70,10 @@ Use [`setup-tooling`](../setup-tooling/readme.md) directly when a job needs only
 | `generate-args`        | `env artifacts gql i18n` | —                                  |
 | `run-build-components` | `false`                  | `npm run build:components`         |
 
+`artifacts` validates the Git-tracked API and Website taxonomy mirrors and prepares Website `licenses.json` from installed packages. It
+never refreshes taxonomies. See [taxonomy snapshot maintenance](../../../DEVELOPMENT.md#taxonomy-snapshot-maintenance) for the separate
+refresh and review process.
+
 ### Input validation
 
 The action fails fast, before installing anything, when a dependent task is requested while its toolchain is disabled:

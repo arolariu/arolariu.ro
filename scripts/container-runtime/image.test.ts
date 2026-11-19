@@ -5,23 +5,20 @@
  *
  * @remarks
  * Every case runs on `makeTestLayer`: an in-memory filesystem seeded with the workspace manifests,
- * scripted preflight and engine processes, scripted taxonomy HTTP responses with a scripted
- * `unzip` that materializes the GS1 archive entry, and a recording sink. The frontend/backend
- * builds run the real `generateArtifacts`, so the `unzip` call and the taxonomy HTTP requests are
- * the evidence that artifact generation ran after preflight and before the build. The
+ * scripted preflight and engine processes, pinned taxonomy fixtures, and a recording sink.
+ * Frontend/backend builds run the real pinned snapshot verifier, not the publisher clients. The
  * characterization cases drive the real `containers build` CLI path (`runCli`); no module is mocked.
  */
 
 import {join} from "node:path";
 
-import {Duration, Effect, Exit, Fiber, FileSystem} from "effect";
-import type {HttpClientRequest} from "effect/http";
-import {TestClock} from "effect/testing";
+import {Effect, Exit, Fiber, FileSystem} from "effect";
 import {describe, expect, it} from "vitest";
 
 import {makeRootCommand, runCli} from "../cli.ts";
 import {makeContainersCommand} from "../commands/containers/cli.ts";
 import {getExpectedTaxonomyArtifactPaths} from "../commands/generate/artifacts.ts";
+import {pinnedTaxonomyFixtureFiles} from "../common/taxonomy-fixtures.testing.ts";
 import type {ProbeOutcome} from "../inspection/probes.ts";
 import {Environment} from "../platform/Environment.ts";
 import {exitCodeFor} from "../platform/exit.ts";
@@ -30,7 +27,6 @@ import {
   makeTestLayer,
   repositoryFixtureRoot,
   scriptedOutcomes,
-  type ScriptedHttp,
   type ScriptedProcess,
   type TestHarness,
 } from "../platform/testing.ts";
@@ -44,9 +40,6 @@ const WORKSPACE_FILES: Readonly<Record<string, string>> = {
   "sites/arolariu.ro/.env": "NEXT_PUBLIC_SERVICE_KEY=public-fixture\nRUNTIME_API_KEY=private-runtime-only\n",
   "sites/exp.arolariu.ro/config.docker.json": "{}",
 };
-
-/** Pinned GS1 archive URL. */
-const GPC_URL = "https://ref.gs1.org/standards/gpc/2026-05/";
 
 /** Exact archive entry the GPC generator extracts. */
 const GPC_ENTRY = "GPC as of May 2026 (2026-05-20) EN.json";
@@ -67,42 +60,6 @@ const GPC_DOCUMENT = {
     },
   ],
 } as const;
-
-/**
- * Builds a SPARQL JSON response body.
- *
- * @param bindings - Raw SPARQL bindings.
- * @returns The response status and body.
- */
-function sparql(bindings: readonly unknown[]): ScriptedHttp["respond"] {
-  return {status: 200, body: JSON.stringify({results: {bindings}})};
-}
-
-/**
- * Reads the SPARQL query text of a request.
- *
- * @param request - The HTTP request.
- * @returns The `query` URL parameter, or `""`.
- */
-function sparqlQuery(request: HttpClientRequest.HttpClientRequest): string {
-  return new URL(request.url).searchParams.get("query") ?? "";
-}
-
-/** Successful GPC, ECOICOP, and NACE responses. */
-const TAXONOMY_SOURCES: readonly ScriptedHttp[] = [
-  {match: (request) => request.url === GPC_URL, respond: {status: 200, body: "zip-archive"}},
-  {
-    match: (request) => sparqlQuery(request).includes("ecoicop2"),
-    respond: sparql([{concept: {value: "eco:01"}, notation: {value: "01"}, label: {value: "01 Food"}}]),
-  },
-  {
-    match: (request) => sparqlQuery(request).includes("nace2.1"),
-    respond: sparql([{concept: {value: "nace:A"}, notation: {value: "A"}, label: {value: "A Agriculture"}}]),
-  },
-];
-
-/** Every taxonomy source answers 503. */
-const UNAVAILABLE_SOURCES: readonly ScriptedHttp[] = [{match: () => true, respond: {status: 503, body: "Unavailable"}}];
 
 function succeeded(stdout = ""): ProbeOutcome {
   return {kind: "succeeded", exitCode: 0, stdout, stderr: "", durationMs: 0};
@@ -152,17 +109,16 @@ interface ImageFixture {
  * Builds a harness for one image run.
  *
  * @param outcomes - Scripted preflight and engine outcomes in call order (`unzip` is answered separately).
- * @param http - Scripted taxonomy HTTP responses; defaults to the successful sources.
+ * @param withPinnedTaxonomies - Whether to seed both tracked mirrors.
  * @returns The harness and its extraction state.
  */
-function imageFixture(outcomes: readonly ProbeOutcome[] = [], http: readonly ScriptedHttp[] = TAXONOMY_SOURCES): ImageFixture {
+function imageFixture(outcomes: readonly ProbeOutcome[] = [], withPinnedTaxonomies = true): ImageFixture {
   const extraction: ExtractionState = {};
   const queue = [...outcomes];
   const harness = makeTestLayer({
     context: "image",
     environment: {platform: "linux"},
-    files: WORKSPACE_FILES,
-    http,
+    files: {...WORKSPACE_FILES, ...(withPinnedTaxonomies ? pinnedTaxonomyFixtureFiles(repositoryFixtureRoot) : {})},
     processes: [archiveExtraction(extraction), scriptedOutcomes(() => queue.shift() ?? succeeded())],
   });
   return {harness, extraction};
@@ -179,24 +135,6 @@ function bound<A, E, R>(extraction: ExtractionState, effect: Effect.Effect<A, E,
   return Effect.gen(function* () {
     extraction.fs = yield* FileSystem.FileSystem;
     return yield* effect;
-  });
-}
-
-/**
- * Runs an effect while advancing the test clock until it completes, so retry backoff elapses.
- *
- * @param effect - The effect to run.
- * @returns The effect, completed under an advancing test clock.
- */
-function advancingClock<A, E, R>(effect: Effect.Effect<A, E, R>): Effect.Effect<A, E, R | TestClock.TestClock> {
-  return Effect.gen(function* () {
-    const fiber = yield* Effect.forkChild(effect);
-    while (fiber.pollUnsafe() === undefined) {
-      yield* TestClock.adjust(Duration.millis(500));
-      // Lets promise-based response body reads settle between clock steps.
-      yield* Effect.promise(() => new Promise<void>((settle) => setTimeout(settle, 0)));
-    }
-    return yield* Fiber.join(fiber);
   });
 }
 
@@ -426,13 +364,13 @@ describe("runImage", () => {
     );
   }
 
-  for (const [target, shouldGenerate] of [
+  for (const [target, hasLicenses] of [
     ["frontend", true],
-    ["backend", true],
+    ["backend", false],
     ["cv", false],
     ["exp", false],
   ] as const) {
-    const {harness, extraction} = imageFixture();
+    const {harness, extraction} = imageFixture([], target === "frontend" || target === "backend");
     effectTest(
       `gates the artifact prerequisite for ${target} builds`,
       () =>
@@ -444,8 +382,10 @@ describe("runImage", () => {
 
             // Assert
             expect(result).toEqual({engine: "podman", action: "build", target});
-            expect(harness.processCalls().some((call) => call.request.command === "unzip")).toBe(shouldGenerate);
-            expect(harness.httpCalls().length > 0).toBe(shouldGenerate);
+            expect(harness.processCalls().some((call) => call.request.command === "unzip")).toBe(false);
+            expect(harness.httpCalls()).toEqual([]);
+            const fs = yield* FileSystem.FileSystem;
+            expect(yield* fs.exists(join(repositoryFixtureRoot, "sites", "arolariu.ro", "licenses.json"))).toBe(hasLicenses);
             expect(harness.processCalls().at(-1)?.request.args.slice(0, 3)).toEqual([
               "build",
               "-f",
@@ -460,7 +400,7 @@ describe("runImage", () => {
   {
     const {harness, extraction} = imageFixture([...podmanPreflightOutcomes, succeeded("built\n")]);
     effectTest(
-      "generates the artifacts silently after preflight and before the build",
+      "validates the pinned snapshots silently after preflight and before the backend build",
       () =>
         bound(
           extraction,
@@ -477,7 +417,6 @@ describe("runImage", () => {
               "podman compose",
               "podman compose",
               "podman ps",
-              "unzip -qq",
               "podman build",
             ]);
             const fs = yield* FileSystem.FileSystem;
@@ -574,18 +513,20 @@ describe("runImage", () => {
   }
 
   {
-    const {harness, extraction} = imageFixture([], UNAVAILABLE_SOURCES);
+    const {harness, extraction} = imageFixture([], false);
     effectTest(
-      "does not build when artifact generation fails",
+      "does not build or write licenses when a pinned snapshot is missing",
       () =>
         bound(
           extraction,
           Effect.gen(function* () {
             // Act
-            const error = yield* Effect.flip(advancingClock(runImage({action: "build", target: "frontend", engine: "podman"})));
+            const error = yield* Effect.flip(runImage({action: "build", target: "frontend", engine: "podman"}));
 
             // Assert
-            expect(error._tag).toBe("TaxonomySourceUnavailable");
+            expect(error._tag).toBe("ArtifactGenerationFailed");
+            const fs = yield* FileSystem.FileSystem;
+            expect(yield* fs.exists(join(repositoryFixtureRoot, "sites", "arolariu.ro", "licenses.json"))).toBe(false);
             const engineCalls = harness
               .processCalls()
               .filter((call) => call.request.command === "podman" && call.request.args[0] === "build");
@@ -598,7 +539,7 @@ describe("runImage", () => {
               "podman",
               "podman",
             ]);
-            expect(harness.httpCalls().length).toBeGreaterThan(0);
+            expect(harness.httpCalls()).toEqual([]);
           }),
         ),
       harness.layer,
@@ -679,7 +620,6 @@ const PROBE = {failureOutput: "full"} as const;
 const TEE = {output: "tee", echo: false} as const;
 
 /** The artifact generation's archive extraction, recorded between preflight and the build. */
-const EXTRACTION = {command: "unzip", args: ["-qq", "<archive>", "-d", "<directory>"], options: {output: "capture"}};
 
 describe("containers build characterization", () => {
   it("--target cv (rancher): no artifact generation, then the exact build args", async () => {
@@ -717,7 +657,7 @@ describe("containers build characterization", () => {
       ]),
     ).toEqual({
       exitCode: 0,
-      taxonomyRequests: 3,
+      taxonomyRequests: 0,
       calls: [
         {command: "podman", args: ["--version"], options: PROBE},
         {command: "docker", args: ["version"], options: PROBE},
@@ -725,7 +665,6 @@ describe("containers build characterization", () => {
         {command: "podman", args: ["compose", "version"], options: PROBE},
         {command: "podman", args: ["compose", "version"], options: PROBE},
         {command: "podman", args: ["ps", "-a", "--format", "{{.Names}}"], options: {}},
-        EXTRACTION,
         {
           command: "podman",
           args: [
@@ -761,13 +700,12 @@ describe("containers build characterization", () => {
   it("--target frontend (json): artifacts and the build run, then the result is the single JSON document and the exit code is 0", async () => {
     expect(await characterizeImageBuild("rancher", "frontend", [], true)).toEqual({
       exitCode: 0,
-      taxonomyRequests: 3,
+      taxonomyRequests: 0,
       calls: [
         {command: "docker", args: ["--version"], options: PROBE},
         {command: "docker", args: ["version"], options: PROBE},
         {command: "docker", args: ["compose", "version"], options: PROBE},
         {command: "docker", args: ["ps", "-a", "--format", "{{.Names}}"], options: {}},
-        EXTRACTION,
         {
           command: "docker",
           args: [

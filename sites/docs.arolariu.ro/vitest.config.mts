@@ -7,8 +7,9 @@ export default mergeConfig(
   baseConfig,
   defineConfig({
     root: resolve(import.meta.dirname),
+    oxc: {jsx: {runtime: "automatic"}},
     test: {
-      include: ["src/lib/**/*.test.ts", "scripts/**/*.test.ts"],
+      include: ["src/lib/**/*.test.ts", "src/components/**/*.test.tsx", "scripts/**/*.test.ts"],
       coverage: {
         include: ["src/lib/siteMode.ts", "src/lib/navigation.ts"],
       },

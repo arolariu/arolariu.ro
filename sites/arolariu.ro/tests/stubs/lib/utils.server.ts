@@ -15,6 +15,8 @@
 
 import {vi} from "vitest";
 
+export {createHttpErrorResult, mapHttpStatusToErrorCode} from "../../../src/lib/utils.server";
+
 // #region Type re-exports
 
 export type JwtVerificationResult = {valid: true; payload: Record<string, unknown>} | {valid: false; error: string};
@@ -56,14 +58,6 @@ export const createJWT = createJwtToken;
 export const verifyJWT = verifyJwtToken;
 
 export const fetchWithTimeout = vi.fn();
-
-export function mapHttpStatusToErrorCode(status: number): ServerActionErrorCode {
-  if (status === 401 || status === 403) return "AUTH_ERROR";
-  if (status === 404) return "NOT_FOUND";
-  if (status === 400 || status === 422) return "VALIDATION_ERROR";
-  if (status >= 500) return "SERVER_ERROR";
-  return "UNKNOWN_ERROR";
-}
 
 export function parseBackendError(status: number, body: string): string {
   switch (status) {

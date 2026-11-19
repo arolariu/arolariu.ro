@@ -1,156 +1,118 @@
-/**
- * @fileoverview Unit tests for analyzeInvoice server action.
- * @module app/domains/invoices/_actions/invoices/analyzeInvoice.test
- */
+import {describe, expect, it, vi} from "vitest";
+import {apiUrl, auth, fetchAtHttp} from "../../../../../../tests/setup/server-http";
+import {analyzeInvoice} from "./analyzeInvoice";
 
-import {fetchBFFUserFromAuthService} from "@/lib/actions/user/fetchUser";
-import {fetchWithTimeout} from "@/lib/utils.server";
-import {beforeEach, describe, expect, it, vi} from "vitest";
-import {TestDataBuilder} from "../../../../../../tests/helpers";
-
-vi.mock("@/lib/actions/user/fetchUser");
-const {analyzeInvoice} = await import("./analyzeInvoice");
-const mockFetchUser = vi.mocked(fetchBFFUserFromAuthService);
-const fetchMock = vi.mocked(fetchWithTimeout);
+const invoiceIdentifier = "11111111-1111-4111-8111-111111111111";
+const endpoint = `${apiUrl}/rest/v1/invoices/${invoiceIdentifier}/analyze`;
 
 describe("analyzeInvoice", () => {
-  const invoiceId = "11111111-1111-4111-8111-111111111111";
+  it("posts the flat capability request and returns the accepted queue identifier", async () => {
+    fetchAtHttp.mockResolvedValue(Response.json("queue-message-42", {status: 202}));
 
-  beforeEach(() => {
-    vi.clearAllMocks();
-    mockFetchUser.mockResolvedValue(TestDataBuilder.build("userInformation", {userIdentifier: "user-1", userJwt: "jwt-1"}));
-    fetchMock.mockResolvedValue({
-      ok: true,
-      status: 202,
-      statusText: "Accepted",
-      json: async () => "queue-message-42",
-      text: async () => "",
-    } as Response);
-  });
+    const result = await analyzeInvoice({invoiceIdentifier, profile: "balanced"});
 
-  it("sends a flat capability request without a user identifier", async () => {
-    await analyzeInvoice({invoiceIdentifier: invoiceId, profile: "balanced"});
-    const [, init] = fetchMock.mock.calls[0]!;
-    const body: unknown = JSON.parse(String(init?.body));
-    expect(body).toStrictEqual({profile: "balanced"});
-    expect(body).not.toHaveProperty("userIdentifier");
-    expect(body).not.toHaveProperty("analysisOptions");
-  });
-
-  it("returns the queue message identifier from the 202 body", async () => {
-    const result = await analyzeInvoice({invoiceIdentifier: invoiceId, profile: "comprehensive"});
-    expect(result.success).toBe(true);
-    if (result.success) {
-      expect(result.data).toBe("queue-message-42");
-    }
-  });
-
-  it("returns a failure when the 202 body is an object rather than a string", async () => {
-    fetchMock.mockResolvedValue({
-      ok: true,
-      status: 202,
-      json: async () => ({messageId: "x"}),
-      text: async () => "",
-    } as Response);
-    const result = await analyzeInvoice({invoiceIdentifier: invoiceId, profile: "balanced"});
-    expect(result.success).toBe(false);
-    if (!result.success) {
-      expect(result.error.code).toBe("SERVER_ERROR");
-    }
-  });
-
-  it("never requests the custom profile", async () => {
-    await analyzeInvoice({invoiceIdentifier: invoiceId, profile: "comprehensive", overrides: {invoiceSummary: false}});
-    const [, init] = fetchMock.mock.calls[0]!;
-    const body = JSON.parse(String(init?.body)) as {profile: string};
-    expect(["fast", "balanced", "comprehensive"]).toContain(body.profile);
-  });
-
-  it("posts an analysis request with a sixty-second timeout", async () => {
-    const result = await analyzeInvoice({invoiceIdentifier: invoiceId, profile: "comprehensive"});
-
-    expect(result.success).toBe(true);
-    expect(fetchMock).toHaveBeenCalledWith(
-      expect.stringContaining(invoiceId),
-      expect.objectContaining({
-        method: "POST",
-        headers: expect.objectContaining({
-          Authorization: "Bearer jwt-1",
-          "Content-Type": "application/json",
-        }),
-      }),
-      60_000,
+    expect(result).toEqual({success: true, data: "queue-message-42"});
+    expect(fetchAtHttp).toHaveBeenCalledExactlyOnceWith(
+      endpoint,
+      expect.objectContaining({method: "POST", cache: "no-store", body: '{"profile":"balanced"}'}),
     );
+    const headers = new Headers(fetchAtHttp.mock.calls[0]?.[1]?.headers);
+    expect(headers.get("authorization")).toMatch(/^Bearer \S+$/u);
+    expect(headers.get("content-type")).toBe("application/json");
   });
 
-  it("returns an error result for an invalid invoice id", async () => {
+  it("keeps the preset on the wire when an individual capability changes", async () => {
+    fetchAtHttp.mockResolvedValue(Response.json("queue-message-42", {status: 202}));
+
+    const result = await analyzeInvoice({invoiceIdentifier, profile: "fast", overrides: {invoiceSummary: true}});
+
+    expect(result).toEqual({success: true, data: "queue-message-42"});
+    expect(JSON.parse(String(fetchAtHttp.mock.calls[0]?.[1]?.body))).toEqual({profile: "fast", invoiceSummary: true});
+  });
+
+  it("rejects a malformed accepted response from the real parser", async () => {
+    fetchAtHttp.mockResolvedValue(Response.json({messageId: "queue-message-42"}, {status: 202}));
+
+    const result = await analyzeInvoice({invoiceIdentifier, profile: "balanced"});
+
+    expect(result).toEqual({
+      success: false,
+      error: {code: "SERVER_ERROR", message: "The server returned an unexpected response. Please try again later."},
+    });
+  });
+
+  it("rejects an invalid invoice identifier before reaching authentication or HTTP", async () => {
     const result = await analyzeInvoice({invoiceIdentifier: "not-a-guid", profile: "balanced"});
 
-    expect(result.success).toBe(false);
-    if (!result.success) {
-      expect(result.error.message).toContain("invoiceIdentifier");
-    }
+    expect(result).toMatchObject({success: false, error: {message: expect.stringContaining("invoiceIdentifier")}});
+    expect(auth).not.toHaveBeenCalled();
+    expect(fetchAtHttp).not.toHaveBeenCalled();
   });
 
-  it("returns the server-error user message for 5xx responses", async () => {
-    fetchMock.mockResolvedValue(
-      TestDataBuilder.textResponse("Server error", {status: 500, statusText: "Internal Server Error"}) as Awaited<
-        ReturnType<typeof fetchWithTimeout>
-      >,
-    );
+  it.each([
+    [500, "SERVER_ERROR", "A server error occurred during analysis. Please try again later."],
+    [400, "VALIDATION_ERROR", "Failed to analyze the invoice. Please try again."],
+  ] as const)("returns an error when the analysis endpoint responds with HTTP %i", async (status, code, message) => {
+    fetchAtHttp.mockResolvedValue(new Response("Analysis refused", {status, statusText: "Internal reason"}));
 
-    const result = await analyzeInvoice({invoiceIdentifier: invoiceId, profile: "balanced"});
+    const result = await analyzeInvoice({invoiceIdentifier, profile: "balanced"});
 
-    expect(result.success).toBe(false);
-    if (!result.success) {
-      expect(result.error.message).toContain("500");
-      expect(result.error.message).toContain("Failed to analyze invoice");
-    }
+    expect(result).toEqual({success: false, error: {code, message, status}});
+    expect(fetchAtHttp).toHaveBeenCalledOnce();
   });
 
-  it("returns the retry user message for non-5xx responses", async () => {
-    fetchMock.mockResolvedValue(
-      TestDataBuilder.textResponse("Bad request", {status: 400, statusText: "Bad Request"}) as Awaited<ReturnType<typeof fetchWithTimeout>>,
-    );
+  it.each([
+    [new Error("Auth failed"), "Auth failed"],
+    ["Auth string error", "Unknown analysis error"],
+  ] as const)("does not submit analysis when the identity provider rejects with %s", async (reason, message) => {
+    auth.mockRejectedValue(reason);
 
-    const result = await analyzeInvoice({invoiceIdentifier: invoiceId, profile: "balanced"});
+    const result = await analyzeInvoice({invoiceIdentifier, profile: "balanced"});
 
-    expect(result.success).toBe(false);
-    if (!result.success) {
-      expect(result.error.message).toContain("Failed to analyze");
-    }
+    expect(result).toEqual({success: false, error: {code: "NETWORK_ERROR", message}});
+    expect(fetchAtHttp).not.toHaveBeenCalled();
   });
 
-  it("returns an error result when auth throws", async () => {
-    mockFetchUser.mockRejectedValue(new Error("Auth failed"));
+  it("returns a network rejection as an error result", async () => {
+    fetchAtHttp.mockRejectedValue(new Error("Network error"));
 
-    const result = await analyzeInvoice({invoiceIdentifier: invoiceId, profile: "balanced"});
+    const result = await analyzeInvoice({invoiceIdentifier, profile: "balanced"});
 
-    expect(result.success).toBe(false);
-    if (!result.success) {
-      expect(result.error.message).toContain("Auth failed");
-    }
+    expect(result).toEqual({success: false, error: {code: "NETWORK_ERROR", message: "Network error"}});
   });
 
-  it("returns an error result when fetch throws", async () => {
-    fetchMock.mockRejectedValue(new Error("Network error"));
+  it("aborts an in-flight analysis request at sixty seconds, not before", async () => {
+    const started = Promise.withResolvers<AbortSignal>();
+    const request = Promise.withResolvers<Response>();
+    fetchAtHttp.mockImplementation((_url, options) => {
+      const {signal} = options ?? {};
+      if (!signal) throw new Error("Missing HTTP signal");
+      started.resolve(signal);
+      signal.addEventListener("abort", () => request.reject(signal.reason), {once: true});
+      return request.promise;
+    });
+    vi.useFakeTimers({toFake: ["setTimeout", "clearTimeout"]});
+    const pending = analyzeInvoice({invoiceIdentifier, profile: "comprehensive"});
 
-    const result = await analyzeInvoice({invoiceIdentifier: invoiceId, profile: "balanced"});
+    try {
+      const signal = await Promise.race([started.promise, pending.then(() => null)]);
+      await vi.advanceTimersByTimeAsync(59_999);
+      expect(signal?.aborted).toBe(false);
 
-    expect(result.success).toBe(false);
-    if (!result.success) {
-      expect(result.error.message).toContain("Network error");
-    }
-  });
+      await vi.advanceTimersByTimeAsync(1);
 
-  it("returns a fallback error message when auth throws a non-Error", async () => {
-    mockFetchUser.mockRejectedValue("Auth string error");
-
-    const result = await analyzeInvoice({invoiceIdentifier: invoiceId, profile: "balanced"});
-
-    expect(result.success).toBe(false);
-    if (!result.success) {
-      expect(result.error.message).toContain("Unknown analysis error");
+      expect(signal?.aborted).toBe(true);
+      await expect(pending).resolves.toEqual({
+        success: false,
+        error: {code: "TIMEOUT_ERROR", message: "Request timed out after 60000ms"},
+      });
+    } finally {
+      try {
+        request.resolve(new Response(null, {status: 503, statusText: "Service Unavailable"}));
+        await pending;
+      } finally {
+        vi.useRealTimers();
+      }
     }
   });
 });

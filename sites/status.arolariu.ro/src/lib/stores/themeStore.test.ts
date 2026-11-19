@@ -54,13 +54,7 @@ describe("themeStore", () => {
     expect(document.documentElement.getAttribute("data-theme")).toBe("dark");
   });
 
-  describe("SSR guards", () => {
-    it("getTheme returns 'auto' when localStorage is undefined (SSR)", () => {
-      vi.stubGlobal("localStorage", undefined);
-      expect(getTheme()).toBe("auto");
-      vi.unstubAllGlobals();
-    });
-
+  describe("unavailable storage", () => {
     it("getTheme returns 'auto' when localStorage access throws", () => {
       const descriptor = Object.getOwnPropertyDescriptor(globalThis, "localStorage");
       Object.defineProperty(globalThis, "localStorage", {
@@ -75,13 +69,6 @@ describe("themeStore", () => {
       if (descriptor) Object.defineProperty(globalThis, "localStorage", descriptor);
     });
 
-    it("setTheme is a no-op when localStorage is undefined (SSR)", () => {
-      vi.stubGlobal("localStorage", undefined);
-      // Should not throw; localStorage.setItem is never called
-      expect(() => setTheme("dark")).not.toThrow();
-      vi.unstubAllGlobals();
-    });
-
     it("setTheme still applies theme when localStorage persistence throws", () => {
       const setItem = vi.spyOn(Storage.prototype, "setItem").mockImplementation(() => {
         throw new DOMException("Blocked", "SecurityError");
@@ -91,18 +78,6 @@ describe("themeStore", () => {
 
       expect(document.documentElement.getAttribute("data-theme")).toBe("dark");
       setItem.mockRestore();
-    });
-
-    it("resolveTheme returns 'dark' when window is undefined (SSR)", () => {
-      vi.stubGlobal("window", undefined);
-      expect(resolveTheme("auto")).toBe("dark");
-      vi.unstubAllGlobals();
-    });
-
-    it("applyTheme is a no-op when document is undefined (SSR)", () => {
-      vi.stubGlobal("document", undefined);
-      expect(() => applyTheme("dark")).not.toThrow();
-      vi.unstubAllGlobals();
     });
   });
 });

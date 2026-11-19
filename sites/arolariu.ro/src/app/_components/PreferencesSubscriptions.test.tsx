@@ -1,122 +1,166 @@
-import {usePreferencesStore} from "@/stores/preferencesStore";
-import {render} from "@testing-library/react";
+// @vitest-environment happy-dom
+
+import "fake-indexeddb/auto";
+import {THEME_CSS_PROPS, toPersistedPreferencesState, usePreferencesStore, type PreferencesPersistedState} from "@/stores/preferencesStore";
+import {createSharedStorage} from "@/stores/storage/indexedDBStorage";
+import {act, cleanup, fireEvent, render, waitFor} from "@testing-library/react";
 import {afterEach, beforeEach, describe, expect, it, vi} from "vitest";
 import PreferencesSubscriptions from "./PreferencesSubscriptions";
 
-// Top-level mock so Vitest intercepts the dynamic import("@/lib/actions/cookies") inside the
-// component's subscription callback. The factory returns a spy we can reprogram per test.
-const setCookieMock = vi.fn().mockResolvedValue(undefined);
-vi.mock("@/lib/actions/cookies", () => ({setCookie: setCookieMock}));
+const next = vi.hoisted(() => ({cookies: vi.fn(), set: vi.fn(), router: {refresh: vi.fn()}}));
+vi.mock("next/headers", () => ({cookies: next.cookies}));
+vi.mock("next/navigation", () => ({useRouter: () => next.router}));
+
+const preferences = usePreferencesStore;
+const storage = createSharedStorage<PreferencesPersistedState>();
+const storageKey = "account-preferences";
 
 describe("PreferencesSubscriptions", () => {
-  beforeEach(() => {
-    usePreferencesStore.setState({hasHydrated: true, locale: "en", themePreset: "default"});
-    setCookieMock.mockResolvedValue(undefined); // reset to success default before each test
+  beforeEach(async () => {
+    await preferences.persist.rehydrate();
+    preferences.setState({...preferences.getInitialState(), hasHydrated: true});
+    next.cookies.mockResolvedValue({set: next.set});
   });
 
-  afterEach(() => {
-    vi.restoreAllMocks();
-    setCookieMock.mockClear();
+  afterEach(async () => {
+    cleanup();
+    vi.unstubAllGlobals();
+    vi.useRealTimers();
+    await storage.removeItem(storageKey);
+    Reflect.deleteProperty(document.documentElement.dataset, "themePreset");
+    for (const property of THEME_CSS_PROPS) document.documentElement.style.removeProperty(property);
   });
 
-  it("renders nothing (null)", () => {
+  it("uses the first hydrated locale as a baseline and writes only a later change before refreshing", async () => {
+    preferences.setState({hasHydrated: false});
+    render(<PreferencesSubscriptions />);
+
+    await act(async () => {
+      preferences.setState({locale: "ro"});
+      preferences.setState({locale: "fr", hasHydrated: true});
+    });
+
+    expect(next.cookies).not.toHaveBeenCalled();
+    expect(next.router.refresh).not.toHaveBeenCalled();
+
+    await act(async () => preferences.getState().setLocale("ro"));
+
+    await waitFor(() => expect(next.router.refresh).toHaveBeenCalledOnce());
+    expect(next.set).toHaveBeenCalledExactlyOnceWith("locale", "ro", {path: "/"});
+    expect(next.set).toHaveBeenCalledBefore(next.router.refresh);
+
+    await act(async () => preferences.getState().setLocale("ro"));
+
+    expect(next.set).toHaveBeenCalledOnce();
+    expect(next.router.refresh).toHaveBeenCalledOnce();
+  });
+
+  it.each([true, false])("writes the first hydrated locale change with BroadcastChannel available: %s", async (hasChannel) => {
+    if (!hasChannel) vi.stubGlobal("BroadcastChannel", undefined);
+    render(<PreferencesSubscriptions />);
+
+    await act(async () => preferences.getState().setLocale("fr"));
+
+    await waitFor(() => expect(next.router.refresh).toHaveBeenCalledOnce());
+    expect(next.set).toHaveBeenCalledExactlyOnceWith("locale", "fr", {path: "/"});
+  });
+
+  it("does not refresh when Next cannot write the locale cookie", async () => {
+    const error = new Error("Cookies are unavailable");
+    next.set.mockImplementation(() => {
+      throw error;
+    });
+    const log = vi.spyOn(console, "error").mockImplementation(() => {});
+    render(<PreferencesSubscriptions />);
+
+    await act(async () => preferences.getState().setLocale("fr"));
+
+    await waitFor(() => expect(log).toHaveBeenCalledWith("[PreferencesSubscriptions] locale sync failed", error));
+    expect(next.router.refresh).not.toHaveBeenCalled();
+  });
+
+  it("rehydrates stored preferences when the tab becomes visible and removes its listener on unmount", async () => {
+    const add = vi.spyOn(document, "addEventListener");
+    const remove = vi.spyOn(document, "removeEventListener");
+    const visibility = vi.spyOn(document, "visibilityState", "get").mockReturnValue("hidden");
+    const view = render(<PreferencesSubscriptions />);
+    const listener = add.mock.calls.find(([type]) => type === "visibilitychange")?.[1];
+    expect(listener).toEqual(expect.any(Function));
+    await storage.setItem(storageKey, {
+      state: {...toPersistedPreferencesState(preferences.getState()), themePreset: "ocean"},
+      version: 0,
+    });
+
+    fireEvent(document, new Event("visibilitychange"));
+
+    expect(document.documentElement.dataset["themePreset"]).toBe("default");
+
+    visibility.mockReturnValue("visible");
+    fireEvent(document, new Event("visibilitychange"));
+
+    await waitFor(() => expect(document.documentElement.dataset["themePreset"]).toBe("ocean"));
+    view.unmount();
+    expect(remove).toHaveBeenCalledWith("visibilitychange", listener);
+  });
+
+  it("clears custom theme overrides when switching back to a named preset", async () => {
+    preferences.setState({
+      themePreset: "custom",
+      customThemeColors: {
+        gradientFrom: "187 94% 43%",
+        gradientVia: "193 32% 50%",
+        gradientTo: "205 79% 49%",
+        primary: "187 94% 43%",
+        primaryForeground: "0 0% 100%",
+        footerBg: "210 10% 12%",
+      },
+    });
     const {container} = render(<PreferencesSubscriptions />);
+    const root = document.documentElement;
     expect(container.firstChild).toBeNull();
+    expect(root.dataset["themePreset"]).toBe("custom");
+    expect(root.style.getPropertyValue("--gradient-from")).toBe("187 94% 43%");
+
+    await act(() => preferences.setState({themePreset: "ocean", customThemeColors: null}));
+
+    expect(root.dataset["themePreset"]).toBe("ocean");
+    expect(root.style.getPropertyValue("--gradient-from")).toBe("");
   });
 
-  it("attaches a visibilitychange listener on mount and removes it on unmount", () => {
-    const addSpy = vi.spyOn(document, "addEventListener");
-    const removeSpy = vi.spyOn(document, "removeEventListener");
-
-    const {unmount} = render(<PreferencesSubscriptions />);
-    expect(addSpy).toHaveBeenCalledWith("visibilitychange", expect.any(Function));
-
-    const added = addSpy.mock.calls.find(([type]) => type === "visibilitychange")?.[1];
-    unmount();
-    expect(removeSpy).toHaveBeenCalledWith("visibilitychange", added);
-  });
-
-  it("applies the data-theme-preset attribute on mount", () => {
-    usePreferencesStore.setState({themePreset: "ocean", hasHydrated: true});
+  it("synchronizes incoming tab preferences through the real store and cookie action", async () => {
     render(<PreferencesSubscriptions />);
-    expect(document.documentElement.dataset["themePreset"]).toBe("ocean");
+    const peer = new BroadcastChannel("zustand-preferences-sync");
+    try {
+      peer.postMessage({...toPersistedPreferencesState(preferences.getState()), locale: "fr", themePreset: "ocean", theme: "dark"});
+
+      await waitFor(() => expect(preferences.getState()).toMatchObject({locale: "fr", themePreset: "ocean", theme: "dark"}));
+
+      await waitFor(() => expect(next.router.refresh).toHaveBeenCalledOnce());
+      expect(document.documentElement.dataset["themePreset"]).toBe("ocean");
+      expect(next.set).toHaveBeenCalledExactlyOnceWith("locale", "fr", {path: "/"});
+    } finally {
+      peer.close();
+    }
   });
 
-  it("seeds prevLocale from the store state when already hydrated, so the first locale change syncs", async () => {
-    // Store is hydrated BEFORE mount — prevLocale must be seeded from "en" at mount time.
-    usePreferencesStore.setState({hasHydrated: true, locale: "en"});
-
+  it("does not echo incoming preferences and resumes sending local changes after settling", async () => {
+    const peer = new BroadcastChannel("zustand-preferences-sync");
+    const received = vi.fn<(event: MessageEvent<PreferencesPersistedState>) => void>();
+    peer.addEventListener("message", received);
     render(<PreferencesSubscriptions />);
-    await new Promise((resolve) => setTimeout(resolve, 0)); // flush microtasks
+    vi.useFakeTimers({toFake: ["setTimeout", "clearTimeout"]});
 
-    // First locale change after mount MUST trigger the cookie write (would be swallowed
-    // by the old null-init branch that didn't seed from getState()).
-    usePreferencesStore.setState({locale: "ro"});
-    await new Promise((resolve) => setTimeout(resolve, 10));
+    try {
+      peer.postMessage({...toPersistedPreferencesState(preferences.getState()), theme: "dark"});
+      await vi.waitFor(() => expect(preferences.getState().theme).toBe("dark"));
+      await vi.advanceTimersByTimeAsync(100);
 
-    expect(setCookieMock).toHaveBeenCalledWith("locale", "ro");
-  });
+      await act(() => preferences.getState().setTheme("light"));
 
-  it("does not write the cookie when locale does not change", async () => {
-    usePreferencesStore.setState({hasHydrated: true, locale: "en"});
-    render(<PreferencesSubscriptions />);
-    await new Promise((resolve) => setTimeout(resolve, 0));
-
-    // Set same locale again — should be a no-op.
-    usePreferencesStore.setState({locale: "en"});
-    await new Promise((resolve) => setTimeout(resolve, 10));
-
-    expect(setCookieMock).not.toHaveBeenCalled();
-  });
-
-  it("catches locale sync failures without unhandled rejection", async () => {
-    const consoleErrorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
-    setCookieMock.mockRejectedValue(new Error("server down"));
-
-    usePreferencesStore.setState({hasHydrated: true, locale: "en"});
-    render(<PreferencesSubscriptions />);
-    await new Promise((resolve) => setTimeout(resolve, 0));
-
-    usePreferencesStore.setState({locale: "fr"});
-    await new Promise((resolve) => setTimeout(resolve, 20));
-
-    // The error should be logged (not thrown as unhandled rejection).
-    expect(consoleErrorSpy).toHaveBeenCalledWith("[PreferencesSubscriptions] locale sync failed", expect.any(Error));
-
-    consoleErrorSpy.mockRestore();
-  });
-
-  it("applies incoming cross-tab BroadcastChannel messages to store state", async () => {
-    if (typeof BroadcastChannel === "undefined") return; // skip in environments without BroadcastChannel
-
-    usePreferencesStore.setState({hasHydrated: true, locale: "en", themePreset: "default"});
-
-    render(<PreferencesSubscriptions />);
-
-    // Simulate an incoming message from another tab.
-    const channel = new BroadcastChannel("zustand-preferences-sync");
-    const payload = {
-      primaryColor: "#06b6d4",
-      secondaryColor: "#ec4899",
-      tertiaryColor: "#8b5cf6",
-      theme: "dark" as const,
-      fontType: "normal" as const,
-      locale: "fr" as const,
-      compactMode: false,
-      animationsEnabled: true,
-      themePreset: "ocean" as const,
-      customThemeColors: null,
-    };
-    // eslint-disable-next-line unicorn/require-post-message-target-origin -- BroadcastChannel has no targetOrigin.
-    channel.postMessage(payload);
-    channel.close();
-
-    // Allow the message event to propagate.
-    await new Promise((resolve) => setTimeout(resolve, 50));
-
-    const state = usePreferencesStore.getState();
-    expect(state.locale).toBe("fr");
-    expect(state.themePreset).toBe("ocean");
-    expect(state.theme).toBe("dark");
+      await vi.waitFor(() => expect(received).toHaveBeenCalledOnce());
+      expect(received.mock.calls[0]?.[0].data).toMatchObject({theme: "light"});
+    } finally {
+      peer.close();
+    }
   });
 });

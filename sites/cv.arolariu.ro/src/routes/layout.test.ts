@@ -6,9 +6,10 @@
  *  - Sibling chrome (ScrollProgress, CommandPalette) mounts alongside content.
  */
 
+import * as navigation from "$app/navigation";
 import {render} from "@testing-library/svelte";
 import {createRawSnippet} from "svelte";
-import {describe, expect, it} from "vitest";
+import {describe, expect, it, vi} from "vitest";
 
 import Layout from "./+layout.svelte";
 
@@ -45,5 +46,44 @@ describe("root layout", () => {
     const skipLink = container.querySelector("a[href='#main-content']");
     expect(skipLink).not.toBeNull();
     expect(skipLink?.textContent?.trim()).toMatch(/skip to main content/i);
+  });
+
+  it("allows navigation to update the document while keeping its view transition pending until navigation completes", async () => {
+    const registered = vi.spyOn(navigation, "onNavigate");
+    render(Layout);
+    const onNavigate = registered.mock.calls[0]?.[0];
+    if (!onNavigate) throw new Error("Missing SvelteKit navigation callback");
+    const navigationComplete = Promise.withResolvers<void>();
+    const change = {type: "goto", willUnload: false, from: null, to: null, complete: navigationComplete.promise} as const;
+    const original = Object.getOwnPropertyDescriptor(document, "startViewTransition");
+    const startViewTransition = vi.fn<(update: () => Promise<void>) => void>();
+    Object.defineProperty(document, "startViewTransition", {configurable: true, value: undefined});
+    try {
+      expect(onNavigate(change)).toBeUndefined();
+      Object.defineProperty(document, "startViewTransition", {configurable: true, value: startViewTransition});
+
+      const resumed = vi.fn();
+      const canNavigate = Promise.resolve(onNavigate(change)).then(resumed);
+
+      expect(startViewTransition).toHaveBeenCalledOnce();
+      const update = startViewTransition.mock.calls[0]?.[0];
+      if (!update) throw new Error("Missing browser view transition callback");
+      await Promise.resolve();
+      expect(resumed).not.toHaveBeenCalled();
+      const finished = vi.fn();
+      const updating = update().then(finished);
+      await canNavigate;
+      expect(resumed).toHaveBeenCalledOnce();
+      expect(finished).not.toHaveBeenCalled();
+
+      navigationComplete.resolve();
+      await updating;
+
+      expect(finished).toHaveBeenCalledOnce();
+    } finally {
+      navigationComplete.resolve();
+      if (original) Object.defineProperty(document, "startViewTransition", original);
+      else Reflect.deleteProperty(document, "startViewTransition");
+    }
   });
 });

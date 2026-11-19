@@ -1,159 +1,78 @@
-/**
- * @fileoverview Unit tests for fetchInvoices server action.
- * @module app/domains/invoices/_actions/invoices/fetchInvoices.test
- */
-
-import {fetchBFFUserFromAuthService} from "@/lib/actions/user/fetchUser";
-import {fetchWithTimeout} from "@/lib/utils.server";
-import {beforeEach, describe, expect, it, vi} from "vitest";
-import {TestDataBuilder} from "../../../../../../tests/helpers";
-
-vi.mock("@/lib/actions/user/fetchUser");
-const {fetchInvoices} = await import("./fetchInvoices");
-const mockFetchUser = vi.mocked(fetchBFFUserFromAuthService);
-const mockFetchWithTimeout = vi.mocked(fetchWithTimeout);
+import {describe, expect, it} from "vitest";
+import {buildInvoice} from "../../../../../../tests/helpers/builders/domain";
+import {apiUrl, auth, fetchAtHttp} from "../../../../../../tests/setup/server-http";
+import {fetchInvoices} from "./fetchInvoices";
 
 describe("fetchInvoices", () => {
-  beforeEach(() => {
-    vi.clearAllMocks();
-    mockFetchUser.mockResolvedValue(TestDataBuilder.build("userInformation", {userIdentifier: "user-1", userJwt: "jwt-1"}));
-    mockFetchWithTimeout.mockResolvedValue(
-      TestDataBuilder.jsonResponse([
-        TestDataBuilder.build("invoice", {
-          id: "11111111-1111-4111-8111-111111111111",
-          userIdentifier: "44444444-4444-4444-8444-444444444444",
-          merchantReference: "55555555-5555-4555-8555-555555555555",
-        }),
-        TestDataBuilder.build("invoice", {
-          id: "22222222-2222-4222-8222-222222222222",
-          userIdentifier: "44444444-4444-4444-8444-444444444444",
-          merchantReference: "55555555-5555-4555-8555-555555555555",
-        }),
-      ]) as Awaited<ReturnType<typeof fetchWithTimeout>>,
-    );
-  });
+  const firstId = "11111111-1111-4111-8111-111111111111";
+  const secondId = "22222222-2222-4222-8222-222222222222";
+  const invoiceOwner = "44444444-4444-4444-8444-444444444444";
+  const merchantReference = "55555555-5555-4555-8555-555555555555";
 
-  it("gets all invoices with bearer authorization", async () => {
-    const result = await fetchInvoices();
-
-    expect(result.success).toBe(true);
-    expect(mockFetchWithTimeout).toHaveBeenCalledWith(
-      "/rest/v1/invoices/",
-      expect.objectContaining({
-        headers: expect.objectContaining({
-          Authorization: "Bearer jwt-1",
-          "Content-Type": "application/json",
-        }),
-      }),
-    );
-
-    if (result.success) {
-      expect(result.data).toHaveLength(2);
-    }
-  });
-
-  it("returns the server-error user message for 5xx responses", async () => {
-    mockFetchWithTimeout.mockResolvedValue(
-      TestDataBuilder.textResponse("Server error", {status: 500, statusText: "Internal Server Error"}) as Awaited<
-        ReturnType<typeof fetchWithTimeout>
-      >,
-    );
+  it("requests the invoice list with bearer authorization and returns invoices in API order", async () => {
+    const invoices = [
+      buildInvoice({id: firstId, userIdentifier: invoiceOwner, merchantReference}),
+      buildInvoice({id: secondId, userIdentifier: invoiceOwner, merchantReference, name: "", description: ""}),
+    ];
+    fetchAtHttp.mockResolvedValue(Response.json(invoices));
 
     const result = await fetchInvoices();
 
-    expect(result.success).toBe(false);
-    if (!result.success) {
-      expect(result.error.message).toContain("500");
-      expect(result.error.message).toContain("Failed to fetch invoices");
-    }
+    expect(result).toMatchObject({success: true, data: [{id: firstId}, {id: secondId, name: "", description: ""}]});
+    expect(fetchAtHttp).toHaveBeenCalledExactlyOnceWith(`${apiUrl}/rest/v1/invoices/`, expect.objectContaining({cache: "no-store"}));
+    const headers = new Headers(fetchAtHttp.mock.calls[0]?.[1]?.headers);
+    expect(headers.get("authorization")).toMatch(/^Bearer \S+$/u);
+    expect(headers.get("content-type")).toBe("application/json");
   });
 
-  it("returns the fallback user message for non-5xx responses", async () => {
-    mockFetchWithTimeout.mockResolvedValue(
-      TestDataBuilder.textResponse("Bad request", {status: 400, statusText: "Bad Request"}) as Awaited<ReturnType<typeof fetchWithTimeout>>,
-    );
+  it.each([
+    [500, "SERVER_ERROR", "A server error occurred. Please try again later."],
+    [400, "VALIDATION_ERROR", "Failed to fetch invoices. Please refresh the page or contact support."],
+  ] as const)("returns the upstream status in the HTTP %i failure", async (status, code, message) => {
+    fetchAtHttp.mockResolvedValue(new Response("Upstream error", {status, statusText: "Internal reason"}));
 
     const result = await fetchInvoices();
 
-    expect(result.success).toBe(false);
-    if (!result.success) {
-      expect(result.error.message).toContain("Failed to fetch invoices");
-    }
+    expect(result).toEqual({success: false, error: {code, message, status}});
   });
 
-  it("returns an error result when auth throws", async () => {
-    mockFetchUser.mockRejectedValue(new Error("Auth failed"));
+  it("does not make the request when Clerk rejects", async () => {
+    auth.mockRejectedValue(new Error("Auth failed"));
 
     const result = await fetchInvoices();
 
-    expect(result.success).toBe(false);
-    if (!result.success) {
-      expect(result.error.message).toContain("Auth failed");
-    }
+    expect(result).toEqual({success: false, error: {code: "NETWORK_ERROR", message: "Auth failed"}});
+    expect(fetchAtHttp).not.toHaveBeenCalled();
   });
 
-  it("returns an error result when fetch throws", async () => {
-    mockFetchWithTimeout.mockRejectedValue(new Error("Network error"));
+  it.each([
+    {label: "network error", reason: new Error("Network error"), code: "NETWORK_ERROR", message: "Network error"},
+    {label: "non-Error rejection", reason: null, code: "NETWORK_ERROR", message: "An unexpected error occurred"},
+    {
+      label: "aborted request",
+      reason: new DOMException("Request aborted", "AbortError"),
+      code: "TIMEOUT_ERROR",
+      message: expect.stringMatching(/^Request timed out after \d+ms$/u),
+    },
+  ])("returns a useful failure for $label", async ({reason, code, message}) => {
+    fetchAtHttp.mockRejectedValue(reason);
 
     const result = await fetchInvoices();
 
-    expect(result.success).toBe(false);
-    if (!result.success) {
-      expect(result.error.message).toContain("Network error");
-    }
+    expect(result).toEqual({success: false, error: {code, message}});
   });
 
-  it("returns a fallback error message when fetch throws a non-Error", async () => {
-    mockFetchWithTimeout.mockRejectedValue(null);
+  it.each([
+    {label: "non-array payload", payload: {}},
+    {label: "malformed invoice in an array", payload: [{}]},
+  ])("returns a server failure for a $label", async ({payload}) => {
+    fetchAtHttp.mockResolvedValue(Response.json(payload));
 
     const result = await fetchInvoices();
 
-    expect(result.success).toBe(false);
-    if (!result.success) {
-      expect(result.error.message).toContain("An unexpected error occurred");
-    }
-  });
-
-  it("returns invoices that have not been named by analysis yet", async () => {
-    mockFetchWithTimeout.mockResolvedValue(
-      TestDataBuilder.jsonResponse([
-        TestDataBuilder.build("invoice", {
-          id: "33333333-3333-4333-8333-333333333333",
-          userIdentifier: "44444444-4444-4444-8444-444444444444",
-          merchantReference: "00000000-0000-0000-0000-000000000000",
-          name: "",
-          description: "",
-        }),
-      ]) as Awaited<ReturnType<typeof fetchWithTimeout>>,
-    );
-
-    const result = await fetchInvoices();
-
-    expect(result.success).toBe(true);
-    if (result.success) {
-      expect(result.data.map((invoice) => [invoice.id, invoice.name])).toEqual([["33333333-3333-4333-8333-333333333333", ""]]);
-    }
-  });
-
-  it("returns a server failure when the API returns a malformed payload", async () => {
-    mockFetchWithTimeout.mockResolvedValue(TestDataBuilder.jsonResponse({}) as Awaited<ReturnType<typeof fetchWithTimeout>>);
-
-    const result = await fetchInvoices();
-
-    expect(result.success).toBe(false);
-    if (!result.success) {
-      expect(result.error.code).toBe("SERVER_ERROR");
-    }
-  });
-
-  it("returns a server failure when the API returns an array with a malformed element", async () => {
-    mockFetchWithTimeout.mockResolvedValue(TestDataBuilder.jsonResponse([{}]) as Awaited<ReturnType<typeof fetchWithTimeout>>);
-
-    const result = await fetchInvoices();
-
-    expect(result.success).toBe(false);
-    if (!result.success) {
-      expect(result.error.code).toBe("SERVER_ERROR");
-    }
+    expect(result).toEqual({
+      success: false,
+      error: {code: "SERVER_ERROR", message: "The server returned unexpected data. Please try again later."},
+    });
   });
 });

@@ -407,6 +407,10 @@ describe("Drawer", () => {
     expect(await screen.findByRole("dialog", {name: "Drawer title"})).toBeVisible();
   });
 
+  it("reports a missing Drawer root before attempting to open a popup", () => {
+    expect(() => render(<DrawerContent>Orphaned content</DrawerContent>)).toThrow("DrawerContent must be used within Drawer.");
+  });
+
   /** Only layout/hit testing, pointer capture and the animation clock are platform doubles. */
   function installGesturePlatform() {
     let hitTarget: Element | null = null;
@@ -1391,6 +1395,73 @@ describe("Drawer", () => {
         await waitFor(() => expect(snapOffset(popup)).toBe("0px"));
       },
     );
+
+    it("reveals the focused action using the tallest snap point even when mixed units are not in height order", async () => {
+      installSnapGeometry();
+      const onSnap = vi.fn<(value: Drawer.Props["snapPoint"]) => void>();
+      render(
+        <Drawer
+          defaultOpen
+          snapPoints={[0.25, 300, "25rem", "350px", 0.375]}
+          onSnapPointChange={onSnap}>
+          <DrawerContent>
+            <DrawerTitle>Mixed snap units</DrawerTitle>
+            <button type='button'>Top action</button>
+            <DrawerFooter>
+              <DrawerClose>Close mixed-unit drawer</DrawerClose>
+            </DrawerFooter>
+          </DrawerContent>
+        </Drawer>,
+      );
+      const popup = await screen.findByRole("dialog", {name: "Mixed snap units"});
+      await waitFor(() => expect(snapOffset(popup)).toBe("200px"));
+      const close = screen.getByRole("button", {name: "Close mixed-unit drawer"});
+
+      act(() => close.focus());
+
+      expect(close).toHaveFocus();
+      expect(onSnap).toHaveBeenCalledExactlyOnceWith("25rem", expect.objectContaining({reason: "none"}));
+      await waitFor(() => expect(snapOffset(popup)).toBe("0px"));
+    });
+
+    it("reconciles an uncontrolled snap point when the caller replaces the available heights", async () => {
+      installSnapGeometry();
+      const onSnap = vi.fn<(value: Drawer.Props["snapPoint"]) => void>();
+      const content = (
+        <DrawerContent>
+          <DrawerTitle>Changing snap points</DrawerTitle>
+          <DrawerFooter>
+            <DrawerClose>Close changing drawer</DrawerClose>
+          </DrawerFooter>
+        </DrawerContent>
+      );
+      const {rerender} = render(
+        <Drawer
+          defaultOpen
+          defaultSnapPoint={0.375}
+          snapPoints={[0.25, 0.375, 0.5]}
+          onSnapPointChange={onSnap}>
+          {content}
+        </Drawer>,
+      );
+      const popup = await screen.findByRole("dialog", {name: "Changing snap points"});
+      await waitFor(() => expect(snapOffset(popup)).toBe("100px"));
+
+      rerender(
+        <Drawer
+          defaultOpen
+          snapPoints={[0.25, 0.5]}
+          onSnapPointChange={onSnap}>
+          {content}
+        </Drawer>,
+      );
+
+      await waitFor(() => expect(snapOffset(popup)).toBe("200px"));
+      expect(onSnap).not.toHaveBeenCalled();
+      act(() => screen.getByRole("button", {name: "Close changing drawer"}).focus());
+      await waitFor(() => expect(snapOffset(popup)).toBe("0px"));
+      expect(onSnap).toHaveBeenCalledExactlyOnceWith(0.5, expect.objectContaining({reason: "none"}));
+    });
 
     it.each([
       {accept: false, offset: "200px"},

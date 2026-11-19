@@ -22,9 +22,7 @@ export default defineConfig({
     testTimeout: 10000, // 10 seconds for each test
     hookTimeout: 20000, // 20 seconds for before/after hooks
     teardownTimeout: 5000, // 5 seconds for teardown
-    bail: 0, // Do not stop after first failure
     mockReset: true, // Reset mocks between tests
-    clearMocks: true, // Clear mock history between tests
     restoreMocks: true, // Restore original implementations
     retry: weAreInCI ? 2 : 0, // Retry twice in CI, none locally
 
@@ -38,7 +36,6 @@ export default defineConfig({
 
     coverage: {
       enabled: true,
-      clean: true,
       provider: "v8",
       reporter: [
         "html", // Human-readable HTML reports
@@ -46,7 +43,7 @@ export default defineConfig({
         "text-summary", // Brief console summary
         "json", // Machine-readable JSON
         "json-summary", // Summary in JSON
-        "lcov", // Standard lcov format
+        "lcovonly", // Standard lcov data; the HTML report is already emitted above
         "clover", // Jenkins/CI integration
         "cobertura", // Azure DevOps integration
       ],

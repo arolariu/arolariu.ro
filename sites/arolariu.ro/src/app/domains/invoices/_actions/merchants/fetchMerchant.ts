@@ -41,7 +41,7 @@
 import {addSpanEvent, logWithTrace, withSpan} from "@/instrumentation.server";
 import {fetchBFFUserFromAuthService} from "@/lib/actions/user/fetchUser";
 import {validateStringIsGuidType} from "@/lib/utils.generic";
-import {createErrorResult, fetchWithTimeout, type ServerActionResult} from "@/lib/utils.server";
+import {createErrorResult, createHttpErrorResult, fetchWithTimeout, type ServerActionResult} from "@/lib/utils.server";
 import type {Merchant} from "@/types/invoices";
 import {parseMerchantResponse, tryParse} from "@/types/invoices/transport";
 
@@ -205,10 +205,9 @@ export async function fetchMerchant({merchantId}: ServerActionInputType): Server
 
       addSpanEvent("bff.request.fetch-merchant.error");
       const errorText = await response.text();
-      const internalMessage = `Failed to fetch merchant. Status: ${response.status}, Response: ${errorText}`;
       logWithTrace("error", "API error fetching merchant", {merchantId, status: response.status, errorText}, "server");
       const userMessage = response.status === 404 ? "Merchant not found" : "Failed to fetch merchant. Please try again.";
-      return createErrorResult(new Error(internalMessage), userMessage);
+      return createHttpErrorResult(response.status, userMessage);
     } catch (error: unknown) {
       addSpanEvent("bff.request.fetch-merchant.error");
       const errorMessage = error instanceof Error ? error.message : "An unexpected error occurred";

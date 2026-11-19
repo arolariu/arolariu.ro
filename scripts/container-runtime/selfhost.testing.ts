@@ -6,14 +6,12 @@
  * Builds one `makeTestLayer` harness for a selfhost run and records every side effect of that run,
  * in order, on one timeline: each process call (the SQL password replaced by `<sql-password>` in its
  * arguments and environment), the Traefik and certificate filesystem mutations, each Cosmos
- * request, each blob step, and each completed `Effect.sleep` (as `{delay: <ms>}`). The taxonomy
- * artifact generation runs for real over
- * scripted GS1/ECOICOP/NACE responses and a scripted `unzip`; its HTTP requests stay on the harness
- * client (`harness.httpCalls()`), while Cosmos requests are answered by the fixture. The Azure Blob SDK
+ * request, each blob step, and each completed `Effect.sleep` (as `{delay: <ms>}`). Taxonomy
+ * verification runs over seeded mirrors. Cosmos requests are answered by the fixture. The Azure Blob SDK
  * is replaced by a recording `LocalBlobStorage` layer. Nothing reaches a real external boundary.
  */
 
-import {dirname, join} from "node:path";
+import {dirname} from "node:path";
 
 import {Clock, Duration, Effect, Exit, Fiber, FileSystem, Layer, Redacted} from "effect";
 import {HttpClient, HttpClientError, HttpClientResponse, type HttpClientRequest} from "effect/http";
@@ -21,9 +19,10 @@ import {TestClock} from "effect/testing";
 
 import {makeRootCommand, runCli} from "../cli.ts";
 import {makeDevCommand} from "../commands/dev/cli.ts";
+import {pinnedTaxonomyFixtureFiles} from "../common/taxonomy-fixtures.testing.ts";
 import type {ProbeOutcome} from "../inspection/probes.ts";
 import type {ProcessOptions} from "../platform/Process.ts";
-import {makeTestLayer, processOutcomeEffect, runScoped, type ScriptedHttp, type TestHarness} from "../platform/testing.ts";
+import {makeTestLayer, processOutcomeEffect, repositoryFixtureRoot, runScoped, type TestHarness} from "../platform/testing.ts";
 import {LocalBlobStorage, localCosmosEndpoint} from "./selfhost.bootstrap.ts";
 import {selfhostTraefikConfigPath} from "./traefik.ts";
 import {ContainerRuntimeError} from "./types.ts";
@@ -52,62 +51,6 @@ export const SELFHOST_PRIVATE_CONFIGURATION: Readonly<Record<string, string>> = 
   "sites/arolariu.ro/.env": "SITE_ENV=DEVELOPMENT",
 };
 
-/** Pinned GS1 archive URL. */
-const GPC_URL = "https://ref.gs1.org/standards/gpc/2026-05/";
-
-/** Exact archive entry the GPC generator extracts. */
-const GPC_ENTRY = "GPC as of May 2026 (2026-05-20) EN.json";
-
-/** Valid English GPC source document. */
-const GPC_DOCUMENT = {
-  LanguageCode: "EN",
-  DateUtc: "2026-05-01",
-  Schema: [
-    {
-      Level: 1,
-      Code: 50000000,
-      Title: "Food",
-      Definition: null,
-      DefinitionExcludes: null,
-      Active: true,
-      Childs: [{Level: 4, Code: 10000266, Title: "Bread", Definition: null, DefinitionExcludes: null, Active: true, Childs: []}],
-    },
-  ],
-} as const;
-
-/**
- * Builds a SPARQL JSON response body.
- *
- * @param bindings - Raw SPARQL bindings.
- * @returns The response status and body.
- */
-function sparql(bindings: readonly unknown[]): ScriptedHttp["respond"] {
-  return {status: 200, body: JSON.stringify({results: {bindings}})};
-}
-
-/**
- * Reads the SPARQL query text of a request.
- *
- * @param request - The HTTP request.
- * @returns The `query` URL parameter, or `""`.
- */
-function sparqlQuery(request: HttpClientRequest.HttpClientRequest): string {
-  return new URL(request.url).searchParams.get("query") ?? "";
-}
-
-/** Successful GPC, ECOICOP, and NACE responses. */
-const TAXONOMY_SOURCES: readonly ScriptedHttp[] = [
-  {match: (request) => request.url === GPC_URL, respond: {status: 200, body: "zip-archive"}},
-  {
-    match: (request) => sparqlQuery(request).includes("ecoicop2"),
-    respond: sparql([{concept: {value: "eco:01"}, notation: {value: "01"}, label: {value: "01 Food"}}]),
-  },
-  {
-    match: (request) => sparqlQuery(request).includes("nace2.1"),
-    respond: sparql([{concept: {value: "nace:A"}, notation: {value: "A"}, label: {value: "A Agriculture"}}]),
-  },
-];
-
 /**
  * A Cosmos emulator answer, `"refused"` for a connection the emulator refuses (a transport failure),
  * or `"never"` for a request that never completes.
@@ -133,14 +76,14 @@ export interface SelfhostFixtureOptions {
   readonly files?: Readonly<Record<string, string>>;
   /** Private configuration seeded under {@link files}; defaults to {@link SELFHOST_PRIVATE_CONFIGURATION}. */
   readonly privateConfiguration?: Readonly<Record<string, string>>;
-  /** Answers every non-`unzip` process request; defaults to success with empty output. */
+  /** Answers each process request; defaults to success with empty output. */
   readonly process?: (command: string, args: readonly string[]) => ProcessAnswer;
   /** Answers every Cosmos request by path; defaults to `201 {}`. */
   readonly cosmos?: (path: string) => CosmosAnswer;
   /** Makes one blob step fail. */
   readonly blobFailure?: BlobFailure;
-  /** Whether the taxonomy sources answer (default) or every one answers `503`. */
-  readonly taxonomy?: "available" | "unavailable";
+  /** Omit pinned snapshot files for prerequisite failures. */
+  readonly missingTaxonomies?: boolean;
 }
 
 /** One selfhost harness and the recorders around it. */
@@ -154,8 +97,7 @@ export interface SelfhostFixture {
   /** The recording blob storage layer. */
   readonly blobStorage: Layer.Layer<LocalBlobStorage>;
   /**
-   * Provides the recording overrides (Cosmos HTTP, filesystem, blob storage, sleeps) and binds the
-   * scripted `unzip` to the harness filesystem.
+   * Provides the recording overrides (Cosmos HTTP, filesystem, blob storage, sleeps).
    */
   readonly instrument: <A, E, R>(
     effect: Effect.Effect<A, E, R>,
@@ -281,32 +223,16 @@ export function selfhostFixture(options: SelfhostFixtureOptions = {}): SelfhostF
             Object.entries(runOptions.env).map(([key, value]) => [key, value === undefined ? value : projectArg(value)]),
           ),
         };
-  let boundFileSystem: FileSystem.FileSystem | undefined;
-
   const harness = makeTestLayer({
     context: "selfhost",
     environment: {platform: "linux", variables},
     files: {
       ...WORKSPACE_FILES,
+      ...(options.missingTaxonomies ? {} : pinnedTaxonomyFixtureFiles(repositoryFixtureRoot)),
       ...(options.privateConfiguration ?? SELFHOST_PRIVATE_CONFIGURATION),
       ...(options.files ?? SELFHOST_CERTIFICATES),
     },
-    http: options.taxonomy === "unavailable" ? [{match: () => true, respond: {status: 503, body: "Unavailable"}}] : TAXONOMY_SOURCES,
     processes: [
-      {
-        match: (request) => request.command === "unzip",
-        respond: (request, runOptions) => {
-          record({process: "unzip", args: ["-qq", "<archive>", "-d", "<directory>"], options: runOptions});
-          const outputDirectory = request.args[request.args.indexOf("-d") + 1];
-          const fs = boundFileSystem;
-          if (outputDirectory === undefined || fs === undefined) {
-            return Effect.die(new Error("The archive extraction fixture is not bound."));
-          }
-          return Effect.orDie(fs.writeFileString(join(outputDirectory, GPC_ENTRY), JSON.stringify(GPC_DOCUMENT))).pipe(
-            Effect.as({stdout: "", stderr: "", durationMs: 0}),
-          );
-        },
-      },
       {
         match: () => true,
         respond: (request, runOptions) => {
@@ -412,7 +338,6 @@ export function selfhostFixture(options: SelfhostFixtureOptions = {}): SelfhostF
     Exclude<R, LocalBlobStorage | FileSystem.FileSystem | HttpClient.HttpClient> | FileSystem.FileSystem | HttpClient.HttpClient
   > =>
     Effect.gen(function* () {
-      boundFileSystem = yield* FileSystem.FileSystem;
       return yield* Clock.clockWith((inner) =>
         effect.pipe(Effect.provideService(Clock.Clock, recordingClock(inner, record)), Effect.provide(overrides)),
       );

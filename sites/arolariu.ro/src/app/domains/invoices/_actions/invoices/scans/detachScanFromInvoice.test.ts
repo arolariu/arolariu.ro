@@ -56,59 +56,20 @@ describe("detachScanFromInvoice", () => {
     expect(mockFetchWithTimeout).not.toHaveBeenCalled();
   });
 
-  it("maps 400, 403, 404, and fallback failures", async () => {
+  it.each([
+    [400, "VALIDATION_ERROR", "Cannot delete the scan. The request was invalid."],
+    [403, "AUTH_ERROR", "You do not have permission to delete this scan."],
+    [404, "NOT_FOUND", "The specified scan was not found."],
+    [500, "SERVER_ERROR", "Failed to delete the scan. Please try again."],
+  ])("returns a public HTTP %i failure without revalidating", async (status, code, message) => {
     const invoiceId = "11111111-1111-4111-8111-111111111111";
     const scanLocation = "https://storage.test/scan.jpg";
+    mockFetchWithTimeout.mockResolvedValue(new Response("Internal response details", {status, statusText: "Internal status text"}));
 
-    mockFetchWithTimeout.mockResolvedValue(
-      TestDataBuilder.textResponse("Bad Request", {status: 400, statusText: "Bad Request"}) as Awaited<ReturnType<typeof fetchWithTimeout>>,
-    );
+    const result = await detachScanFromInvoice({invoiceId, scanLocation});
 
-    const result400 = await detachScanFromInvoice({invoiceId, scanLocation});
-
-    expect(result400.success).toBe(false);
-    if (!result400.success) {
-      expect(result400.error.message).toContain("400");
-      expect(result400.error.message).toContain("Failed to delete invoice scan");
-    }
-
-    mockFetchWithTimeout.mockResolvedValue(
-      TestDataBuilder.textResponse("Forbidden", {status: 403, statusText: "Forbidden"}) as Awaited<ReturnType<typeof fetchWithTimeout>>,
-    );
-
-    const result403 = await detachScanFromInvoice({invoiceId, scanLocation});
-
-    expect(result403.success).toBe(false);
-    if (!result403.success) {
-      expect(result403.error.message).toContain("403");
-      expect(result403.error.message).toContain("Failed to delete invoice scan");
-    }
-
-    mockFetchWithTimeout.mockResolvedValue(
-      TestDataBuilder.textResponse("Not Found", {status: 404, statusText: "Not Found"}) as Awaited<ReturnType<typeof fetchWithTimeout>>,
-    );
-
-    const result404 = await detachScanFromInvoice({invoiceId, scanLocation});
-
-    expect(result404.success).toBe(false);
-    if (!result404.success) {
-      expect(result404.error.message).toContain("404");
-      expect(result404.error.message).toContain("Failed to delete invoice scan");
-    }
-
-    mockFetchWithTimeout.mockResolvedValue(
-      TestDataBuilder.textResponse("Internal Server Error", {status: 500, statusText: "Internal Server Error"}) as Awaited<
-        ReturnType<typeof fetchWithTimeout>
-      >,
-    );
-
-    const result500 = await detachScanFromInvoice({invoiceId, scanLocation});
-
-    expect(result500.success).toBe(false);
-    if (!result500.success) {
-      expect(result500.error.message).toContain("500");
-      expect(result500.error.message).toContain("Failed to delete invoice scan");
-    }
+    expect(result).toEqual({success: false, error: {code, message, status}});
+    expect(mockRevalidatePath).not.toHaveBeenCalled();
   });
 
   it("returns an error result when auth or fetch throws", async () => {

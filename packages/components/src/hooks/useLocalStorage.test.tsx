@@ -107,22 +107,22 @@ describe("useLocalStorage", () => {
     }
   });
 
-  it("syncs state across tabs via storage event", () => {
-    const {result} = renderHook(() => useLocalStorage("sync-key", "initial"));
+  it("restores the latest default when another tab removes the stored value", () => {
+    const key = "removed-preference";
+    localStorage.setItem(key, JSON.stringify("dark"));
+    const {result, rerender} = renderHook(({defaultTheme}) => useLocalStorage(key, defaultTheme), {
+      initialProps: {defaultTheme: "light"},
+    });
+    rerender({defaultTheme: "system"});
+    expect(result.current[0]).toBe("dark");
 
-    expect(result.current[0]).toBe("initial");
-
+    localStorage.removeItem(key);
     act(() => {
-      const storageEvent = new StorageEvent("storage", {
-        key: "sync-key",
-        newValue: JSON.stringify("synced-value"),
-        storageArea: globalThis.window.localStorage,
-      });
-
-      globalThis.window.dispatchEvent(storageEvent);
+      window.dispatchEvent(new StorageEvent("storage", {key, oldValue: '"dark"', newValue: null, storageArea: localStorage}));
     });
 
-    expect(result.current[0]).toBe("synced-value");
+    expect(result.current[0]).toBe("system");
+    expect(localStorage.getItem(key)).toBeNull();
   });
 
   it("ignores storage events for different keys", () => {
@@ -142,19 +142,25 @@ describe("useLocalStorage", () => {
   });
 
   it("ignores storage events from sessionStorage", () => {
-    const {result} = renderHook(() => useLocalStorage("my-key", "initial"));
+    const key = "separate-storage-areas";
+    localStorage.setItem(key, '"local-value"');
+    sessionStorage.setItem(key, '"session-value"');
+    const {result} = renderHook(() => useLocalStorage(key, "initial"));
+    expect(result.current[0]).toBe("local-value");
 
     act(() => {
       const storageEvent = new StorageEvent("storage", {
-        key: "my-key",
+        key,
         newValue: JSON.stringify("session-value"),
-        storageArea: globalThis.window.sessionStorage,
+        storageArea: sessionStorage,
       });
 
       globalThis.window.dispatchEvent(storageEvent);
     });
 
-    expect(result.current[0]).toBe("initial");
+    expect(result.current[0]).toBe("local-value");
+    expect(localStorage.getItem(key)).toBe('"local-value"');
+    expect(sessionStorage.getItem(key)).toBe('"session-value"');
   });
 
   it("supports functional updates", () => {
@@ -202,21 +208,22 @@ describe("useLocalStorage", () => {
     expect(write).toHaveBeenCalledExactlyOnceWith("strict-counter", "2");
   });
 
-  it("does not persist cross-tab state as a new local write", () => {
-    const {result} = renderHook(() => useLocalStorage("external-counter", 0));
+  it("accepts valid cross-tab updates without persisting again and ignores corrupted ones", () => {
+    const key = "external-counter";
+    const {result} = renderHook(() => useLocalStorage(key, 0));
+    expect(result.current[0]).toBe(0);
     act(() => result.current[1](1));
-    const write = vi.spyOn(globalThis.window.localStorage, "setItem");
+    const write = vi.spyOn(localStorage, "setItem");
+    const receive = (newValue: string): void => {
+      act(() => {
+        window.dispatchEvent(new StorageEvent("storage", {key, newValue, storageArea: localStorage}));
+      });
+    };
 
-    act(() => {
-      globalThis.window.dispatchEvent(
-        new StorageEvent("storage", {
-          key: "external-counter",
-          newValue: "7",
-          storageArea: globalThis.window.localStorage,
-        }),
-      );
-    });
+    receive("7");
+    expect(result.current[0]).toBe(7);
 
+    receive("{incomplete");
     expect(result.current[0]).toBe(7);
     expect(write).not.toHaveBeenCalled();
   });

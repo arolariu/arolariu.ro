@@ -1,16 +1,8 @@
-import {beforeEach, describe, expect, it, vi} from "vitest";
+import {afterEach, beforeEach, describe, expect, it, vi} from "vitest";
+import {isAggregateFile, isIncidentsFile} from "../types/guards";
 import type {AggregateFile} from "../types/status";
 
 const performanceNow = performance.now.bind(performance);
-
-// jsdom's default hostname is "localhost", which would otherwise route
-// every fetch through the mock generator. These tests exercise the real
-// network + cache code paths, so we pin isLocalHost() to false.
-vi.mock("./mockData", () => ({
-  isLocalHost: () => false,
-  generateMockAggregate: vi.fn(),
-  generateMockIncidents: vi.fn(),
-}));
 
 const validAggregate: AggregateFile = {
   generatedAt: "2026-04-19T14:00:00Z",
@@ -18,17 +10,46 @@ const validAggregate: AggregateFile = {
   windowDays: 14,
   services: [{service: "arolariu.ro", buckets: []}],
 };
+const aggregateCacheKey = "status.arolariu.ro/cache:fine";
+const fetchMock = vi.fn<typeof fetch>();
 
 function setupFetch(body: unknown, status = 200) {
-  globalThis.fetch = vi.fn(async () => new Response(JSON.stringify(body), {status})) as typeof fetch;
+  fetchMock.mockImplementation(async () => new Response(JSON.stringify(body), {status}));
 }
 
 beforeEach(() => {
   vi.resetModules();
   localStorage.clear();
+  // Use the site's existing opt-out from localhost sample data.
+  window.history.replaceState(null, "", "/?mocks=off");
+  fetchMock.mockRejectedValue(new Error("Unexpected status data request"));
+  vi.stubGlobal("fetch", fetchMock);
+});
+
+afterEach(() => {
+  vi.unstubAllGlobals();
+  window.history.replaceState(null, "", "/");
 });
 
 describe("fetchAggregate", () => {
+  it("uses local sample data until the URL opts out", async () => {
+    window.history.replaceState(null, "", "/");
+    setupFetch(validAggregate);
+    const {fetchAggregate} = await import("./fetchStatusData");
+
+    const sample = await fetchAggregate("fine");
+
+    expect(isAggregateFile(sample)).toBe(true);
+    expect(sample.services.some(({buckets}) => buckets.length > 0)).toBe(true);
+    expect(fetchMock).not.toHaveBeenCalled();
+
+    window.history.replaceState(null, "", "/?mocks=off");
+    await expect(fetchAggregate("fine")).resolves.toEqual(validAggregate);
+    expect(fetchMock).toHaveBeenCalledExactlyOnceWith("https://raw.githubusercontent.com/arolariu/arolariu.ro/status-data/data/fine.json", {
+      cache: "no-store",
+    });
+  });
+
   it("fetches from network on first call", async () => {
     setupFetch(validAggregate);
     const {fetchAggregate} = await import("./fetchStatusData");
@@ -53,7 +74,7 @@ describe("fetchAggregate", () => {
   });
 
   it("throws StatusDataError on non-ok HTTP", async () => {
-    globalThis.fetch = vi.fn(async () => new Response("", {status: 500})) as typeof fetch;
+    fetchMock.mockResolvedValue(new Response("", {status: 500}));
     const {fetchAggregate, StatusDataError} = await import("./fetchStatusData");
     await expect(fetchAggregate("fine")).rejects.toBeInstanceOf(StatusDataError);
   });
@@ -120,19 +141,44 @@ describe("fetchAggregate", () => {
     expect(globalThis.fetch).toHaveBeenCalledTimes(1); // fell through to network
   });
 
+  it("retries after corrupted storage and an HTTP failure, then caches the successful payload", async () => {
+    const now = Date.parse("2026-04-19T14:15:00Z");
+    vi.spyOn(Date, "now").mockReturnValue(now);
+    localStorage.setItem(aggregateCacheKey, "invalid JSON");
+    fetchMock.mockResolvedValueOnce(new Response("", {status: 503})).mockResolvedValueOnce(Response.json(validAggregate));
+    const {fetchAggregate} = await import("./fetchStatusData");
+
+    await expect(fetchAggregate("fine")).rejects.toThrow("HTTP 503");
+    expect(localStorage.getItem(aggregateCacheKey)).toBe("invalid JSON");
+
+    await expect(fetchAggregate("fine")).resolves.toEqual(validAggregate);
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+    expect(localStorage.getItem(aggregateCacheKey)).toBe(JSON.stringify({fetchedAt: now, data: validAggregate}));
+  });
+
   it("localStorage quota exceeded is silently tolerated", async () => {
     setupFetch(validAggregate);
-    const orig = localStorage.setItem;
-    localStorage.setItem = () => {
-      throw new Error("QuotaExceeded");
-    };
+    vi.spyOn(Storage.prototype, "setItem").mockImplementation(() => {
+      throw new DOMException("Cache is full", "QuotaExceededError");
+    });
     const {fetchAggregate} = await import("./fetchStatusData");
+
     await expect(fetchAggregate("fine")).resolves.toEqual(validAggregate);
-    localStorage.setItem = orig;
+    expect(localStorage.getItem(aggregateCacheKey)).toBeNull();
   });
 });
 
 describe("fetchIncidents", () => {
+  it("does not fetch incidents from the network while local sample data is active", async () => {
+    window.history.replaceState(null, "", "/");
+    const {fetchIncidents} = await import("./fetchStatusData");
+
+    const sample = await fetchIncidents();
+
+    expect(isIncidentsFile(sample)).toBe(true);
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
   it("fetches and validates incidents", async () => {
     setupFetch({generatedAt: "2026-04-19T14:00:00Z", incidents: []});
     const {fetchIncidents} = await import("./fetchStatusData");
@@ -149,7 +195,7 @@ describe("fetchIncidents", () => {
   });
 
   it("throws StatusDataError on non-ok HTTP for incidents", async () => {
-    globalThis.fetch = vi.fn(async () => new Response("", {status: 503})) as typeof fetch;
+    fetchMock.mockResolvedValue(new Response("", {status: 503}));
     const {fetchIncidents, StatusDataError} = await import("./fetchStatusData");
     await expect(fetchIncidents()).rejects.toBeInstanceOf(StatusDataError);
   });
@@ -186,6 +232,21 @@ describe("localStorage cache from previous session", () => {
 });
 
 describe("isHardReload branches (module-load side effect)", () => {
+  it("preserves the cache when a reload is served from disk", async () => {
+    const cached = JSON.stringify({fetchedAt: Date.now(), data: validAggregate});
+    localStorage.setItem(aggregateCacheKey, cached);
+    const navigation = {type: "reload", transferSize: 0};
+    vi.stubGlobal("performance", {
+      now: performanceNow,
+      getEntriesByType: (type: string) => (type === "navigation" ? [navigation] : []),
+    });
+
+    await import("./fetchStatusData");
+
+    expect(localStorage.getItem(aggregateCacheKey)).toBe(cached);
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
   it("clears localStorage cache keys when navigation type is reload (hard reload path)", async () => {
     // Seed a cache entry so the clear loop has something to remove
     localStorage.setItem("status.arolariu.ro/cache:fine", JSON.stringify({fetchedAt: Date.now(), data: validAggregate}));
@@ -229,20 +290,21 @@ describe("isHardReload branches (module-load side effect)", () => {
   it("does not throw during module-load cache clearing when localStorage access throws", async () => {
     const descriptor = Object.getOwnPropertyDescriptor(globalThis, "localStorage");
     const reloadEntry = {type: "reload", transferSize: 1024};
+    const blockedStorage = vi.fn(() => {
+      throw new DOMException("Blocked", "SecurityError");
+    });
     vi.stubGlobal("performance", {
       now: performanceNow,
       getEntriesByType: (type: string) => (type === "navigation" ? [reloadEntry] : []),
     });
-    Object.defineProperty(globalThis, "localStorage", {
-      configurable: true,
-      get() {
-        throw new DOMException("Blocked", "SecurityError");
-      },
-    });
 
-    await expect(import("./fetchStatusData")).resolves.toBeDefined();
-
-    if (descriptor) Object.defineProperty(globalThis, "localStorage", descriptor);
-    vi.unstubAllGlobals();
+    Object.defineProperty(globalThis, "localStorage", {configurable: true, get: blockedStorage});
+    try {
+      await expect(import("./fetchStatusData")).resolves.toHaveProperty("fetchAggregate");
+      expect(blockedStorage).toHaveBeenCalled();
+    } finally {
+      if (descriptor) Object.defineProperty(globalThis, "localStorage", descriptor);
+      else Reflect.deleteProperty(globalThis, "localStorage");
+    }
   });
 });

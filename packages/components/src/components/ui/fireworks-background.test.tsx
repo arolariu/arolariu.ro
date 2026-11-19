@@ -348,25 +348,30 @@ describe("FireworksBackground", () => {
     expect(liveObserver?.disconnect).toHaveBeenCalledOnce();
   });
 
-  it("paints a deterministic static frame: the first palette color at the mid-range particle size, on every repaint", () => {
+  it.each([
+    {particleSize: {min: 1, max: 5}, radius: 3},
+    {particleSize: 2, radius: 2},
+  ])("paints the same reduced-motion frame on repaint with particle radius $radius", ({particleSize, radius}) => {
     reduced = true;
     const random = vi.mocked(Math.random);
     random.mockReturnValue(0.1);
     render(
       <FireworksBackground
         color={["#ff0080", "#00ff80", "#0080ff"]}
-        particleSize={{min: 1, max: 5}}
+        particleSize={particleSize}
       />,
     );
     const first = context.arc.mock.calls.slice(-24);
     expect(first).toHaveLength(24);
     expect(context.fillStyle).toBe("#ff0080");
-    expect(first.every((call) => call[2] === 3)).toBe(true);
+    expect(first.every((call) => call[2] === radius)).toBe(true);
     random.mockReturnValue(0.9);
     context.arc.mockClear();
+
     act(() => {
       observers[0]?.resize();
     });
+
     expect(context.arc.mock.calls).toEqual(first);
     expect(context.fillStyle).toBe("#ff0080");
   });

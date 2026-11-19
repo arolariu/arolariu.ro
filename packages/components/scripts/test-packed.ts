@@ -164,6 +164,12 @@ export function parsePackedFilename(output: string): string {
   return entry.filename;
 }
 
+/** Keeps the pack runner's two-worker default unless the caller supplies a Vitest worker limit. */
+export function packedVitestArgs(options: readonly string[]): readonly string[] {
+  const hasWorkerLimit = options.some((option) => /^--(?:maxWorkers|max-workers)(?:=|$)/u.test(option));
+  return ["run", ...(hasWorkerLimit ? [] : ["--maxWorkers=2"]), ...options];
+}
+
 /**
  * Builds and tests the real npm archive with the existing Vitest runner and peers.
  *
@@ -195,7 +201,7 @@ export async function verifyPackedArtifact(): Promise<void> {
     }
     const require = createRequire(import.meta.url);
     const vitest = path.join(path.dirname(require.resolve("vitest/package.json")), "vitest.mjs");
-    await run(process.execPath, [vitest, "run", "--maxWorkers=2", ...process.argv.slice(2)], {
+    await run(process.execPath, [vitest, ...packedVitestArgs(process.argv.slice(2))], {
       cwd: directory,
       stdio: "inherit",
       env: {...process.env, AROLARIU_COMPONENTS_PACKED_ROOT: packedRoot},
