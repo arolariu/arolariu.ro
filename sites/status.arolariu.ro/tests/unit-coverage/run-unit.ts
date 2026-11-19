@@ -6,8 +6,9 @@ import {statusCoverageScope} from "./scope.ts";
 
 const {
   filter,
-  options: {reporter, ...options},
+  options: {reporter, exclude, ...options},
 } = parseCLI(["vitest", "run", ...process.argv.slice(2)]);
+if (filter.some((selector) => selector.includes(":"))) options.includeTaskLocation ??= true;
 const complete =
   filter.length === 0
   && !options.testNamePattern
@@ -15,7 +16,7 @@ const complete =
   && !options.changed
   && !options.related?.length
   && !options.shard
-  && !options.exclude?.length
+  && !exclude?.length
   && options.coverage?.enabled !== false;
 const gate = complete
   ? createAuthoredBranchCheck(globSync(statusCoverageScope.include, {exclude: statusCoverageScope.exclude}))
@@ -27,6 +28,8 @@ const vitest = await createVitest(
   {
     ...(gate === undefined ? {} : {plugins: [gate.capture]}),
     test: {
+      // Vitest 5 does not forward the root CLI exclusion to inline projects.
+      ...(exclude === undefined ? {} : {cliExclude: exclude}),
       reporters: [
         ...(reporter ?? configDefaults.reporters),
         {
