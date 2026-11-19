@@ -7,7 +7,7 @@ import {statusCoverageScope} from "./tests/unit-coverage/scope.ts";
 const logicTests = [
   "src/lib/aggregation/**/*.test.{ts,js}",
   "src/lib/{api/mockData,types/guards}.test.ts",
-  "src/lib/stores/themeStore.ssr.test.ts",
+  "src/lib/stores/themeStoreServer.test.ts",
   "{scripts,tests/unit-coverage}/**/*.test.{ts,js}",
 ];
 

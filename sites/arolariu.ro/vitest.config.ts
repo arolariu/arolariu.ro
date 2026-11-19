@@ -13,19 +13,23 @@ import {defineConfig, mergeConfig} from "vitest/config";
 import baseConfig from "../../vitest.config.ts";
 
 const realHttpTests = [
-  "**/*.http.test.tsx",
   "src/app/domains/invoices/_actions/invoices/{analyzeInvoice,createInvoice,deleteInvoice,fetchInvoice,fetchInvoices,patchInvoice,updateInvoice}.test.ts",
   "src/app/domains/invoices/_actions/invoices/metadata/{addInvoiceMetadata,deleteInvoiceMetadata}.test.ts",
   "src/app/domains/invoices/_actions/invoices/scans/attachScanToInvoice.test.ts",
   "src/app/domains/invoices/_actions/scans/{createScan,deleteScan,fetchScans,updateScan}.test.ts",
+  "src/app/domains/invoices/create-invoice/_context/CreateInvoiceRetry.test.tsx",
+  "src/app/domains/invoices/edit-invoice/*/_dialogs/{AnalyzeDialog,RecipeDialogs}.test.tsx",
   "src/app/domains/invoices/view-scans/_actions/createInvoiceFromScans.test.ts",
 ];
 const leanTests = [
-  "**/*.lean.test.tsx",
   "emails/invoices/{alerts/SpendingThresholdAlertEmail,reminders/IncompleteInvoiceReminderEmail}.test.ts",
+  "src/app/_components/PreferencesSubscriptions.test.tsx",
   "src/app/domains/invoices/_utils/{labelUtilities,metadataUtilities,mimeTypeUtilities}.test.ts",
+  "src/app/domains/invoices/view-invoice/*/_components/cards/InvoiceHealthScore.test.tsx",
+  "src/app/domains/invoices/view-invoice/*/_dialogs/ExportDialog.test.tsx",
   "src/app/domains/invoices/view-invoice/*/_utils/{analytics,analytics.edge,healthScore}.test.ts",
   "src/app/domains/invoices/view-invoices/_utils/{datePresets,filterOptions,statistics,statistics.merchant}.test.ts",
+  "src/components/Navigation.test.tsx",
   "src/lib/{calendarLocale,concurrency.client,utils.generic}.test.ts",
   "src/lib/{actions/cookies/cookies.action,currency/converter,taxonomies/taxonomyCatalog.server,telemetry/healthPolicy}.test.ts",
   "src/types/{domainConstants,guards}.test.ts",
