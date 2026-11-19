@@ -10,25 +10,11 @@ import {afterEach, describe, expect, expectTypeOf, it, vi} from "vitest";
 import {Popover, PopoverContent, PopoverDescription, PopoverHeader, PopoverTitle, PopoverTrigger} from "./popover";
 
 interface PopoverTestHarnessProps {
-  className?: string;
-  defaultOpen?: boolean;
-  triggerAsChild?: boolean;
-  side?: "top" | "right" | "bottom" | "left";
-  align?: "start" | "center" | "end";
-  sideOffset?: number;
   onOpenChange?: (open: boolean) => void;
 }
 
-function PopoverTestHarness({
-  className,
-  defaultOpen = false,
-  triggerAsChild = false,
-  side,
-  align,
-  sideOffset,
-  onOpenChange,
-}: Readonly<PopoverTestHarnessProps>): React.JSX.Element {
-  const [open, setOpen] = React.useState(defaultOpen);
+function PopoverTestHarness({onOpenChange}: Readonly<PopoverTestHarnessProps>): React.JSX.Element {
+  const [open, setOpen] = React.useState(false);
 
   return (
     <Popover
@@ -37,15 +23,8 @@ function PopoverTestHarness({
         setOpen(nextOpen);
         onOpenChange?.(nextOpen);
       }}>
-      <PopoverTrigger render={triggerAsChild ? <button type='button'>Open popover</button> : undefined}>
-        {triggerAsChild ? undefined : "Open popover"}
-      </PopoverTrigger>
-      <PopoverContent
-        className={className}
-        data-testid='popover-content'
-        side={side}
-        align={align}
-        sideOffset={sideOffset}>
+      <PopoverTrigger>Open popover</PopoverTrigger>
+      <PopoverContent>
         <span>Popover body</span>
         <button
           type='button'
@@ -138,7 +117,7 @@ describe("Popover", () => {
           className={(state) => (state.open ? "settings-open" : "settings-closed")}>
           Open settings
         </PopoverTrigger>
-        <PopoverContent>
+        <PopoverContent className='settings-popup'>
           <PopoverTitle className={() => "settings-title"}>Settings</PopoverTitle>
           <PopoverDescription className={() => "settings-description"}>Changes apply to this workspace</PopoverDescription>
         </PopoverContent>
@@ -152,6 +131,7 @@ describe("Popover", () => {
 
     expect(trigger).toHaveClass("settings-open");
     const dialog = await screen.findByRole("dialog", {name: "Settings"});
+    expect(dialog).toHaveClass("settings-popup");
     expect(dialog).toHaveAccessibleDescription("Changes apply to this workspace");
     expect(screen.getByRole("heading", {name: "Settings"})).toHaveClass("settings-title");
     expect(screen.getByText("Changes apply to this workspace")).toHaveClass("settings-description");
@@ -409,82 +389,25 @@ describe("Popover", () => {
     await waitFor(() => expect(screen.getByRole("button", {name: "Return here"})).toHaveFocus());
   });
 
-  it("renders the root, trigger, and content without crashing", async () => {
-    // Arrange
-    render(<PopoverTestHarness defaultOpen />);
-
-    // Assert
-    expect(screen.getByRole("button", {name: "Open popover"})).toBeInTheDocument();
-    expect(await screen.findByRole("dialog")).toBeVisible();
-  });
-
-  it("opens the content when the trigger is clicked", async () => {
-    // Arrange
+  it("keeps a controlled popup and its trigger in sync when clicked open and closed", async () => {
     const user = userEvent.setup();
-    render(<PopoverTestHarness />);
+    const onOpenChange = vi.fn<(open: boolean) => void>();
+    render(<PopoverTestHarness onOpenChange={onOpenChange} />);
+    const trigger = screen.getByRole("button", {name: "Open popover"});
+    expect(trigger).toHaveAttribute("aria-haspopup", "dialog");
+    expect(trigger).toHaveAttribute("aria-expanded", "false");
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
 
-    // Act
-    await user.click(screen.getByRole("button", {name: "Open popover"}));
+    await user.click(trigger);
 
-    // Assert
+    expect(onOpenChange).toHaveBeenCalledExactlyOnceWith(true);
     expect(await screen.findByRole("dialog")).toBeVisible();
-  });
+    expect(trigger).toHaveAttribute("aria-expanded", "true");
 
-  it("closes when the close button is clicked", async () => {
-    // Arrange
-    const user = userEvent.setup();
-    render(<PopoverTestHarness />);
-    await user.click(screen.getByRole("button", {name: "Open popover"}));
-
-    // Act
     await user.click(await screen.findByRole("button", {name: "Close popover"}));
 
-    // Assert
-    await waitFor(() => {
-      expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
-    });
-  });
-
-  it("applies a custom className to the popup content", async () => {
-    // Arrange
-    render(
-      <PopoverTestHarness
-        className='custom-popover-content'
-        defaultOpen
-      />,
-    );
-
-    // Assert
-    expect(await screen.findByRole("dialog")).toHaveClass("custom-popover-content");
-  });
-
-  it("supports rendering the trigger as a child element", async () => {
-    // Arrange
-    const user = userEvent.setup();
-    render(<PopoverTestHarness triggerAsChild />);
-
-    // Act
-    await user.click(screen.getByRole("button", {name: "Open popover"}));
-
-    // Assert
-    expect(await screen.findByRole("dialog")).toBeVisible();
-  });
-
-  it("exposes popover accessibility semantics", async () => {
-    // Arrange
-    const user = userEvent.setup();
-    render(<PopoverTestHarness />);
-
-    // Act
-    await user.click(screen.getByRole("button", {name: "Open popover"}));
-
-    // Assert
-    const trigger = screen.getByRole("button", {name: "Open popover"});
-    const popover = await screen.findByRole("dialog");
-
-    expect(trigger).toHaveAttribute("aria-expanded", "true");
-    expect(trigger).toHaveAttribute("aria-haspopup", "dialog");
-    expect(popover).toBeVisible();
+    await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
+    expect(trigger).toHaveAttribute("aria-expanded", "false");
   });
 
   it("closes the popover when Escape is pressed", async () => {
@@ -504,65 +427,10 @@ describe("Popover", () => {
     });
   });
 
-  it("renders PopoverContent with different side prop", async () => {
-    // Arrange
-    const user = userEvent.setup();
-    render(<PopoverTestHarness side='top' />);
-
-    // Act
-    await user.click(screen.getByRole("button", {name: "Open popover"}));
-
-    // Assert
-    expect(await screen.findByRole("dialog")).toBeVisible();
-  });
-
-  it("renders PopoverContent with different align prop", async () => {
-    // Arrange
-    const user = userEvent.setup();
-    render(<PopoverTestHarness align='start' />);
-
-    // Act
-    await user.click(screen.getByRole("button", {name: "Open popover"}));
-
-    // Assert
-    expect(await screen.findByRole("dialog")).toBeVisible();
-  });
-
-  it("renders PopoverContent with custom sideOffset", async () => {
-    // Arrange
-    const user = userEvent.setup();
-    render(<PopoverTestHarness sideOffset={10} />);
-
-    // Act
-    await user.click(screen.getByRole("button", {name: "Open popover"}));
-
-    // Assert
-    expect(await screen.findByRole("dialog")).toBeVisible();
-  });
-
-  it("works in controlled mode", async () => {
-    // Arrange
-    const user = userEvent.setup();
-    const handleOpenChange = vi.fn<(open: boolean) => void>();
-
-    render(<PopoverTestHarness onOpenChange={handleOpenChange} />);
-
-    const trigger = screen.getByRole("button", {name: "Open popover"});
-
-    expect(trigger).toHaveAttribute("aria-expanded", "false");
-
-    // Act
-    await user.click(trigger);
-
-    // Assert
-    expect(handleOpenChange).toHaveBeenCalledWith(true);
-    expect(await screen.findByRole("dialog")).toBeVisible();
-    expect(trigger).toHaveAttribute("aria-expanded", "true");
-  });
-});
-
-describe("Popover final review L25: documented offset", () => {
-  it("places content 4px below its anchor by default", async () => {
+  it.each([
+    [undefined, undefined, "bottom", 124],
+    ["top", 10, "top", 90],
+  ] as const)("positions against the anchor (side %s, offset %s)", async (side, sideOffset, expectedSide, y) => {
     const anchor = {getBoundingClientRect: (): DOMRect => new DOMRect(200, 100, 80, 20)};
     render(
       <Popover defaultOpen>
@@ -571,13 +439,16 @@ describe("Popover final review L25: documented offset", () => {
           aria-label='Share settings'
           anchor={anchor}
           align='start'
+          side={side}
+          sideOffset={sideOffset}
           collisionAvoidance={{side: "none", align: "none"}}>
           Share settings
         </PopoverContent>
       </Popover>,
     );
     const popup = await screen.findByRole("dialog", {name: "Share settings"});
-    expect(popup).toHaveAttribute("data-side", "bottom");
-    await waitFor(() => expect(popup.parentElement).toHaveStyle({transform: "translate(200px, 124px)"}));
+    expect(popup).toHaveAttribute("data-side", expectedSide);
+    expect(popup).toHaveAttribute("data-align", "start");
+    await waitFor(() => expect(popup.parentElement).toHaveStyle({transform: `translate(200px, ${y}px)`}));
   });
 });

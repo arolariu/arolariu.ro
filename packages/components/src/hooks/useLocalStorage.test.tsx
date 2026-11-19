@@ -107,24 +107,6 @@ describe("useLocalStorage", () => {
     }
   });
 
-  it("syncs state across tabs via storage event", () => {
-    const {result} = renderHook(() => useLocalStorage("sync-key", "initial"));
-
-    expect(result.current[0]).toBe("initial");
-
-    act(() => {
-      const storageEvent = new StorageEvent("storage", {
-        key: "sync-key",
-        newValue: JSON.stringify("synced-value"),
-        storageArea: globalThis.window.localStorage,
-      });
-
-      globalThis.window.dispatchEvent(storageEvent);
-    });
-
-    expect(result.current[0]).toBe("synced-value");
-  });
-
   it("restores the latest default when another tab removes the stored value", () => {
     const key = "removed-preference";
     localStorage.setItem(key, JSON.stringify("dark"));
@@ -226,21 +208,22 @@ describe("useLocalStorage", () => {
     expect(write).toHaveBeenCalledExactlyOnceWith("strict-counter", "2");
   });
 
-  it("does not persist cross-tab state as a new local write", () => {
-    const {result} = renderHook(() => useLocalStorage("external-counter", 0));
+  it("accepts valid cross-tab updates without persisting again and ignores corrupted ones", () => {
+    const key = "external-counter";
+    const {result} = renderHook(() => useLocalStorage(key, 0));
+    expect(result.current[0]).toBe(0);
     act(() => result.current[1](1));
-    const write = vi.spyOn(globalThis.window.localStorage, "setItem");
+    const write = vi.spyOn(localStorage, "setItem");
+    const receive = (newValue: string): void => {
+      act(() => {
+        window.dispatchEvent(new StorageEvent("storage", {key, newValue, storageArea: localStorage}));
+      });
+    };
 
-    act(() => {
-      globalThis.window.dispatchEvent(
-        new StorageEvent("storage", {
-          key: "external-counter",
-          newValue: "7",
-          storageArea: globalThis.window.localStorage,
-        }),
-      );
-    });
+    receive("7");
+    expect(result.current[0]).toBe(7);
 
+    receive("{incomplete");
     expect(result.current[0]).toBe(7);
     expect(write).not.toHaveBeenCalled();
   });

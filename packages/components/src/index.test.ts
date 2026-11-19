@@ -7,6 +7,7 @@ import * as Recharts from "recharts";
 import * as ReactHookForm from "react-hook-form";
 import ts from "typescript";
 import {describe, expect, expectTypeOf, it} from "vitest";
+import {runCompilerCheck} from "../scripts/run-compiler-check.ts";
 import {AsyncBoundary, type AsyncBoundaryProps as LocalAsyncBoundaryProps} from "./components/ui/async-boundary";
 import badgeStyles from "./components/ui/badge.module.css";
 import buttonGroupStyles from "./components/ui/button-group.module.css";
@@ -218,76 +219,7 @@ const retainedChartAliases = [
   "useXAxisDomain",
   "useYAxisDomain",
 ] as const;
-const retainedFormTypes = [
-  "Control",
-  "ControllerFieldState",
-  "ControllerProps",
-  "ControllerRenderProps",
-  "DefaultValues",
-  "RHFFieldError",
-  "FieldErrors",
-  "FieldPath",
-  "FieldValues",
-  "Path",
-  "RegisterOptions",
-  "Resolver",
-  "SubmitHandler",
-  "UseControllerReturn",
-  "UseFieldArrayReturn",
-  "UseFormReturn",
-] as const;
-
-function assertCanonicalDeclarations(checker: ts.TypeChecker, symbols: ReadonlyMap<string, ts.Symbol>): void {
-  const getType = (name: string): ts.Type => {
-    const symbol = symbols.get(name);
-    if (!symbol) throw new Error(`Missing canonical declaration: ${name}`);
-    return checker.getDeclaredTypeOfSymbol(symbol.flags & ts.SymbolFlags.Alias ? checker.getAliasedSymbol(symbol) : symbol);
-  };
-  for (const [name, removed] of [
-    ["ButtonProps", ["asChild"]],
-    ["BreadcrumbProps", ["separator"]],
-    ["BreadcrumbLinkProps", ["asChild"]],
-    ["ItemProps", ["asChild"]],
-    ["AccordionProps", ["type", "orientation", "loopFocus"]],
-    ["TooltipProps", ["delayDuration"]],
-    ["TooltipProviderProps", ["delayDuration"]],
-    ["TooltipTriggerProps", ["asChild"]],
-    ["ContextMenuContentProps", ["positionMethod"]],
-    ["DropdownMenuTriggerProps", ["asChild"]],
-    ["DropDrawerProps", ["handle"]],
-    ["DropDrawerTriggerProps", ["handle"]],
-    ["DialogTriggerProps", ["asChild"]],
-    ["AlertDialogTriggerProps", ["asChild"]],
-    ["DrawerHeaderProps", ["asChild"]],
-    ["SheetHeaderProps", ["asChild"]],
-    ["PopoverTriggerProps", ["asChild"]],
-    ["SidebarMenuButtonProps", ["asChild"]],
-    ["SeparatorProps", ["decorative"]],
-    ["ChartLegendContentProps", ["align", "onMouseOver"]],
-  ] as const) {
-    for (const member of removed) expect(checker.getPropertyOfType(getType(name), member), `${name}.${member}`).toBeUndefined();
-  }
-  const direction = getType("FlipDirection");
-  expect(direction.isUnion()).toBe(true);
-  if (direction.isUnion()) {
-    expect(direction.types.some((type) => type.isStringLiteral() && type.value === "righ")).toBe(false);
-  }
-  for (const removed of [
-    "AccordionSingleProps",
-    "AccordionMultipleProps",
-    "AccordionArrayProps",
-    "DeprecatedFlipDirection",
-    "LegacyToastApi",
-    "LegacyToasterProps",
-    "LegacyCommandDialogProps",
-    "LegacyAlertDialogActionProps",
-    "NavigationMenuViewportProps",
-    "NavigationMenuIndicatorProps",
-    "PopoverAnchorProps",
-  ]) {
-    expect(symbols.has(removed), removed).toBe(false);
-  }
-}
+const publicTypesCheck = "check-public-types.ts";
 
 /**
  * Pure class helpers that the root re-exports from directive-free private modules, so Server Components can call them
@@ -464,48 +396,20 @@ describe("complete supported public surface", () => {
     }
   });
 
-  it("preserves every named public type and merged namespace without wildcard ambiguity", () => {
-    const packageDirectory = path.resolve(import.meta.dirname, "..");
-    const configPath = path.join(packageDirectory, "tsconfig.json");
-    const config = ts.readConfigFile(configPath, ts.sys.readFile);
-    expect(config.error).toBeUndefined();
-    const parsed = ts.parseJsonConfigFileContent(config.config, ts.sys, packageDirectory);
-    const files = [
-      ...supportedComponentModules.map((name) => path.join(import.meta.dirname, "components", "ui", `${name}.tsx`)),
-      ...supportedHookModules.map((name) => path.join(import.meta.dirname, "hooks", `${name}.tsx`)),
-      path.join(import.meta.dirname, "lib", "utilities.ts"),
-      path.join(import.meta.dirname, "lib", "color-conversion-utilities.ts"),
-      path.join(import.meta.dirname, "index.ts"),
-    ];
-    const program = ts.createProgram(files, {...parsed.options, noEmit: true, strict: true, strictNullChecks: true});
-    const checker = program.getTypeChecker();
-    const rootFile = program.getSourceFile(path.join(import.meta.dirname, "index.ts"));
-    if (!rootFile) throw new Error("The real package root was not loaded.");
-    const rootSymbol = checker.getSymbolAtLocation(rootFile);
-    if (!rootSymbol) throw new Error("The real package root has no module symbol.");
-    const rootExports = new Map(checker.getExportsOfModule(rootSymbol).map((symbol) => [symbol.name, symbol]));
-    assertCanonicalDeclarations(checker, rootExports);
-    for (const name of retainedFormTypes) expect(rootExports.has(name), name).toBe(true);
-    const missing: string[] = [];
-    for (const file of files.slice(0, -1)) {
-      const source = program.getSourceFile(file);
-      if (!source) throw new Error(`Public source was not loaded: ${file}`);
-      const symbol = checker.getSymbolAtLocation(source);
-      if (!symbol) throw new Error(`Public source has no module symbol: ${file}`);
-      for (const sourceExport of checker.getExportsOfModule(symbol)) {
-        const rootName = path.basename(file) === "form.tsx" && sourceExport.name === "FieldError" ? "RHFFieldError" : sourceExport.name;
-        const rootExport = rootExports.get(rootName);
-        if (!rootExport) {
-          missing.push(`${path.basename(file)}:${rootName}`);
-          continue;
-        }
-        const sourceTarget = sourceExport.flags & ts.SymbolFlags.Alias ? checker.getAliasedSymbol(sourceExport) : sourceExport;
-        const rootTarget = rootExport.flags & ts.SymbolFlags.Alias ? checker.getAliasedSymbol(rootExport) : rootExport;
-        expect(rootTarget, `${path.basename(file)}:${rootName} must retain its original type/namespace`).toBe(sourceTarget);
-      }
-    }
-    expect(missing).toEqual([]);
-  }, 30000);
+  it("preserves every named public type and merged namespace without wildcard ambiguity", async () => {
+    await runCompilerCheck(
+      publicTypesCheck,
+      [
+        "source",
+        import.meta.dirname,
+        ...supportedComponentModules.map((name) => `components/ui/${name}.tsx`),
+        ...supportedHookModules.map((name) => `hooks/${name}.tsx`),
+        "lib/utilities.ts",
+        "lib/color-conversion-utilities.ts",
+      ],
+      30_000,
+    );
+  }, 30_000);
 
   it("retains non-deprecated Recharts identities without colliding with the native Label", () => {
     const dependency: Readonly<Record<string, unknown>> = Recharts;
@@ -725,52 +629,20 @@ describe.skipIf(!packedRoot)("actual packed artifact contract (Phase Two)", () =
     }
   });
 
-  it("preserves named public declarations and namespace members through every packed subpath", () => {
-    const directory = getPackedRoot();
-    const files = supportedComponentModules.map((name) => path.join(directory, "dist", "components", "ui", `${name}.d.ts`));
-    files.push(...supportedHookModules.map((name) => path.join(directory, "dist", "hooks", `${name}.d.ts`)));
-    files.push(
-      path.join(directory, "dist", "lib", "utilities.d.ts"),
-      path.join(directory, "dist", "lib", "color-conversion-utilities.d.ts"),
+  it("preserves named public declarations and namespace members through every packed subpath", async () => {
+    await runCompilerCheck(
+      publicTypesCheck,
+      [
+        "packed",
+        path.join(getPackedRoot(), "dist"),
+        ...supportedComponentModules.map((name) => `components/ui/${name}.d.ts`),
+        ...supportedHookModules.map((name) => `hooks/${name}.d.ts`),
+        "lib/utilities.d.ts",
+        "lib/color-conversion-utilities.d.ts",
+      ],
+      120_000,
     );
-    const indexFile = path.join(directory, "dist", "index.d.ts");
-    const program = ts.createProgram([...files, indexFile], {
-      noEmit: true,
-      strict: true,
-      skipLibCheck: false,
-      module: ts.ModuleKind.ESNext,
-      moduleResolution: ts.ModuleResolutionKind.Bundler,
-      target: ts.ScriptTarget.ES2022,
-      jsx: ts.JsxEmit.ReactJSX,
-      esModuleInterop: true,
-      types: ["node", "react", "react-dom"],
-    });
-    expect(ts.getPreEmitDiagnostics(program).map((diagnostic) => ts.flattenDiagnosticMessageText(diagnostic.messageText, "\n"))).toEqual(
-      [],
-    );
-    const checker = program.getTypeChecker();
-    const source = program.getSourceFile(indexFile);
-    if (!source) throw new Error("Packed root declarations were not loaded.");
-    const rootSymbol = checker.getSymbolAtLocation(source);
-    if (!rootSymbol) throw new Error("Packed root declarations have no module symbol.");
-    const rootTypes = new Map(checker.getExportsOfModule(rootSymbol).map((symbol) => [symbol.name, symbol]));
-    assertCanonicalDeclarations(checker, rootTypes);
-    for (const name of retainedFormTypes) expect(rootTypes.has(name), name).toBe(true);
-    for (const file of files) {
-      const moduleFile = program.getSourceFile(file);
-      if (!moduleFile) throw new Error(`Packed declarations absent: ${file}`);
-      const moduleSymbol = checker.getSymbolAtLocation(moduleFile);
-      if (!moduleSymbol) throw new Error(`Packed declaration module absent: ${file}`);
-      for (const symbol of checker.getExportsOfModule(moduleSymbol)) {
-        const rootName = path.basename(file) === "form.d.ts" && symbol.name === "FieldError" ? "RHFFieldError" : symbol.name;
-        const rootType = rootTypes.get(rootName);
-        if (!rootType) throw new Error(`Packed root declaration omits ${rootName}.`);
-        const target = symbol.flags & ts.SymbolFlags.Alias ? checker.getAliasedSymbol(symbol) : symbol;
-        const rootTarget = rootType.flags & ts.SymbolFlags.Alias ? checker.getAliasedSymbol(rootType) : rootType;
-        expect(rootTarget, rootName).toBe(target);
-      }
-    }
-  }, 120000);
+  }, 120_000);
 
   it("keeps mounted Storybook styles out of shipped source and executable assets", () => {
     const directory = getPackedRoot();

@@ -71,17 +71,18 @@ The strict packed-declaration compiler check uses the same deadline as the compl
 deadlines. This accommodates the full TypeScript graph without changing compiler assertions or coverage requirements.
 
 For source-only iteration, use `npm run test:unit -- <selectors> --coverage.enabled=false`. To run the real archive gate with Vitest
-reporter arguments, use `npm run test:packed -- <arguments>`. Source-only runs skip the archive contracts when no extraction is supplied;
-they are not a substitute for the default package/release gate. The ordinary suite also checks the complete source/test/story TypeScript
-graph, including negative API assertions. Vitest runs the compiler-only files in Node and runs the public-surface contracts separately from
-the parallel DOM tests, so those TypeScript programs do not compete with each other or the DOM tests in the same run. DOM tests use Happy
-DOM's separate `localStorage` and `sessionStorage` instances. The setup clears them between tests rather than replacing their
-implementations.
+options, use `npm run test:packed -- <arguments>`; `--maxWorkers=4` overrides its two-worker default when benchmarking. Source-only runs
+skip the archive contracts when no extraction is supplied; they are not a substitute for the default package/release gate. The ordinary
+suite also checks the complete source/test/story TypeScript graph, including negative API assertions. Vitest runs the heavy compiler
+contracts in bounded Node subprocesses so V8 instruments runtime tests but not the compiler work. The JSDoc subprocess checks all seven
+documentation contracts and reports its diagnostics on failure. DOM tests use Happy DOM's separate `localStorage` and `sessionStorage`
+instances; setup clears both between tests.
 
-The complete source unit run requires 95% each for lines, functions, branches, and statements across authored runtime code in `src/`,
+The complete source unit run requires 99% lines and functions, 98% statements, and 95% branches across authored runtime code in `src/`,
 including unimported modules and interactive canvas components. Nonbehavioral declarations, fixtures, tests, stories, configuration,
 generated files, re-export-only modules, and static motion tokens are excluded. The packed run retains its separate import-discovered
-coverage policy (80% branches and 95% for the other three metrics) and verifies the actual archive.
+coverage policy (80% branches and 95% for the other three metrics) and verifies the actual archive. PR hygiene runs assertions without
+coverage; use the complete workspace unit command to check the source gate.
 
 ### Caller attribute escape hatch
 
