@@ -19,8 +19,8 @@ The live repository demonstrates two valid domains:
   a shared-package change reaches the website only after it is published and that URL is bumped. Change other versions at the root, and edit
   a member manifest only to add or remove usage or to change a peer range. The root `overrides` block in
   [`package.json`](../../../../package.json) also belongs to this domain: keep the `typescript` override equal to its root devDependency,
-  and re-check every override when its target, parent, or peer constraints change. The Docusaurus-scoped `css-loader` 7.1.5 override
-  satisfies the optional Rspack 2 peer; remove it only after a native resolution proves the updated Docusaurus graph satisfies that peer
+  and re-check every override when its target, parent, or peer constraints change. The Docusaurus-scoped `css-loader` override satisfies
+  Rspack's optional peer requirement; remove it only after a native resolution proves the updated Docusaurus graph satisfies that peer
   without the override. [`.npmrc`](../../../../.npmrc) and [`nx.json`](../../../../nx.json) affect this domain.
 - [`.github/scripts/package.json`](../../../../.github/scripts/package.json) is outside the root workspace membership and owns its adjacent
   [`.github/scripts/package-lock.json`](../../../../.github/scripts/package-lock.json). It is an independent install and resolution domain.
