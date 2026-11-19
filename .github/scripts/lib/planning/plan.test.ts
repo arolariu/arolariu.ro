@@ -45,6 +45,15 @@ describe("dependency-aware hygiene planning", () => {
     expect(result.providers.filter((provider) => provider.setup.dotnet || provider.setup.python)).toEqual([]);
     expect(toProviderMatrix(result).provider).toHaveLength(6);
   });
+  it.each(["affected", "full"] as const)("tests the checked-in .NET artifacts without regenerating them in %s mode", (mode) => {
+    const result = plan([{kind: "modified", path: "sites/api.arolariu.ro/Example.cs"}], {mode});
+
+    expect(toProviderMatrix(result).provider.find((provider) => provider.id === "test-dotnet")).toMatchObject({
+      selected: true,
+      "needs-dotnet": true,
+      "generate-artifacts": false,
+    });
+  });
   it("owns the docs test target without broadening scope or preparing reference toolchains", () => {
     const graph = workspace();
     if (graph.kind !== "available") throw new Error("Invalid fixture");

@@ -68,7 +68,8 @@ const descriptors: readonly ProviderDescriptor[] = [
     icon: "🟪",
     defaultGate: {kind: "blocking", blockOn: "error"},
     presentationKind: "test",
-    setup: {...NO_PROVIDER_SETUP, rootNodeDependencies: true, dotnet: true, generateArtifacts: true},
+    // The .NET seed fixtures and embedded taxonomies are versioned together in Git.
+    setup: {...NO_PROVIDER_SETUP, rootNodeDependencies: true, dotnet: true},
   },
   {
     id: "test-python",
