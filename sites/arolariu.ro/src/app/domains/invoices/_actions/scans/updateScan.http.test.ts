@@ -2,7 +2,7 @@ import {generateGuid} from "@/lib/utils.generic";
 import {ScanMetadataKey} from "@/types/scans";
 import {revalidatePath} from "next/cache";
 import {afterEach, beforeEach, describe, expect, it, vi} from "vitest";
-import {getContainerClientAtSdk, storageUrl, stubStorageConfig} from "../../../../../../tests/setup/blob-sdk";
+import {connectAtSdk, getContainerClientAtSdk, storageUrl, stubStorageConfig} from "../../../../../../tests/setup/blob-sdk";
 import {auth, fetchAtHttp} from "../../../../../../tests/setup/server-http";
 import {updateScan} from "./updateScan";
 
@@ -83,6 +83,7 @@ describe("updateScan", () => {
       success: true,
       data: {scan: {id: "selected", name: "renamed.jpg", uploadedAt: new Date(uploadedAt), metadata: {lastModifiedAt: modifiedAt}}},
     });
+    expect(new Set(connectAtSdk.mock.calls.flat())).toEqual(new Set([storageUrl]));
     expect(listBlobsFlat).toHaveBeenCalledExactlyOnceWith({prefix: `scans/${owner}/`, includeMetadata: true});
     expect(setMetadata).toHaveBeenCalledExactlyOnceWith(
       `scans/${owner}/target.jpg`,

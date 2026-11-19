@@ -1,7 +1,7 @@
 import {generateGuid} from "@/lib/utils.generic";
 import {ScanStatus} from "@/types/scans";
 import {beforeEach, describe, expect, it, vi} from "vitest";
-import {getContainerClientAtSdk, storageUrl, stubStorageConfig} from "../../../../../../tests/setup/blob-sdk";
+import {connectAtSdk, getContainerClientAtSdk, storageUrl, stubStorageConfig} from "../../../../../../tests/setup/blob-sdk";
 import {auth, fetchAtHttp} from "../../../../../../tests/setup/server-http";
 import {fetchScans} from "./fetchScans";
 
@@ -60,6 +60,7 @@ describe("fetchScans", () => {
       blobUrl: `${storageUrl}/invoices/scans/${owner}/detached.jpg`,
     });
     expect(result.success && result.data.find(({id}) => id === "first")).toMatchObject({name: "First receipt"});
+    expect(connectAtSdk).toHaveBeenCalledExactlyOnceWith(storageUrl);
     expect(getContainerClientAtSdk).toHaveBeenCalledExactlyOnceWith("invoices");
     expect(listBlobsFlat).toHaveBeenCalledExactlyOnceWith({prefix: `scans/${owner}/`, includeMetadata: true});
   });

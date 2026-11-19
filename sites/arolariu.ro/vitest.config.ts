@@ -12,28 +12,8 @@ import {resolve} from "node:path";
 import {defineConfig, mergeConfig} from "vitest/config";
 import baseConfig from "../../vitest.config.ts";
 
-const realHttpTests = [
-  "src/app/domains/invoices/_actions/invoices/{analyzeInvoice,createInvoice,deleteInvoice,fetchInvoice,fetchInvoices,patchInvoice,updateInvoice}.test.ts",
-  "src/app/domains/invoices/_actions/invoices/metadata/{addInvoiceMetadata,deleteInvoiceMetadata}.test.ts",
-  "src/app/domains/invoices/_actions/scans/{createScan,deleteScan,fetchScans,updateScan}.test.ts",
-  "src/app/domains/invoices/edit-invoice/*/_dialogs/{AnalyzeDialog,RecipeDialogs}.test.tsx",
-  "src/app/domains/invoices/view-scans/_actions/createInvoiceFromScans.test.ts",
-  "src/app/domains/invoices/create-invoice/_context/CreateInvoiceContext.http.test.tsx",
-];
-const leanTests = [
-  "emails/invoices/{alerts/SpendingThresholdAlertEmail,reminders/IncompleteInvoiceReminderEmail}.test.ts",
-  "src/app/_components/PreferencesSubscriptions.test.tsx",
-  "src/components/Navigation.test.tsx",
-  "src/lib/{calendarLocale,concurrency.client,utils.generic}.test.ts",
-  "src/lib/actions/cookies/cookies.action.test.ts",
-  "src/lib/{currency/converter,taxonomies/taxonomyCatalog.server,telemetry/healthPolicy}.test.ts",
-  "src/types/{domainConstants,guards}.test.ts",
-  "src/types/invoices/{Allergen,Analysis,Classification,Recipe,transport}.test.ts",
-  "src/app/domains/invoices/_utils/{labelUtilities,metadataUtilities,mimeTypeUtilities}.test.ts",
-  "src/app/domains/invoices/view-invoice/*/_utils/analytics{,.edge}.test.ts",
-  "src/app/domains/invoices/view-invoice/*/_dialogs/ExportDialog.test.tsx",
-  "src/app/domains/invoices/view-invoices/_utils/{datePresets,filterOptions,statistics,statistics.merchant}.test.ts",
-];
+const realHttpTests = "**/*.http.test.{ts,tsx}";
+const leanTests = "**/*.lean.test.{ts,tsx}";
 const sourceAlias = {find: "@", replacement: resolve(import.meta.dirname, "src")};
 const markerAliases = [
   {find: "server-only", replacement: resolve(import.meta.dirname, "tests/stubs/server-only.ts")},
@@ -66,16 +46,16 @@ export default mergeConfig(
           test: {
             name: "website",
             include: baseConfig.test?.include,
-            exclude: [...realHttpTests, ...leanTests],
+            exclude: [realHttpTests, leanTests],
             setupFiles: [resolve(import.meta.dirname, "vitest.setup.ts")],
           },
         },
-        {extends: true, test: {name: "website-lean", include: leanTests, environment: "node"}},
+        {extends: true, test: {name: "website-lean", include: [leanTests], environment: "node"}},
         {
           extends: true,
           test: {
             name: "server-http",
-            include: realHttpTests,
+            include: [realHttpTests],
             environment: "node",
             env: {APPLICATIONINSIGHTS_CONNECTION_STRING: "", OTEL_EXPORTER_OTLP_ENDPOINT: ""},
             setupFiles: [resolve(import.meta.dirname, "tests/setup/server-http.ts")],

@@ -114,8 +114,6 @@ describe("RenderViewInvoicesScreen", () => {
   });
 
   it("closes an export dialog opened against the cached invoices once the fetch fails", async () => {
-    // Load the real dialog before timing the assertion, so chunk compilation cannot race the fetch-failure test.
-    await import("./_dialogs/ExportDialog");
     const pending = Promise.withResolvers<BackendResponse>();
     mockFetchWithTimeout.mockReturnValueOnce(pending.promise);
     const user = userEvent.setup();
@@ -123,6 +121,7 @@ describe("RenderViewInvoicesScreen", () => {
     render(<RenderViewInvoicesScreen />);
     try {
       await user.click(screen.getByRole("button", {name: EXPORT_BUTTON}));
+      await act(() => vi.dynamicImportSettled());
       expect(await screen.findByRole("dialog", {name: EXPORT_DIALOG_TITLE})).toBeInTheDocument();
     } finally {
       await act(async () => {

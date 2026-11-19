@@ -7,7 +7,7 @@
 | What             | Command                                                      |
 | ---------------- | ------------------------------------------------------------ |
 | Full unit suite  | `npm run test:unit`                                          |
-| Run one file     | `npx vitest run src/lib/utils.generic.test.ts`               |
+| Run one file     | `npx vitest run src/lib/utils.generic.lean.test.ts`          |
 | Watch mode       | `npx vitest`                                                 |
 | Website coverage | `npx vitest run src emails --coverage.reporter=text-summary` |
 
@@ -16,12 +16,13 @@ Run these commands from `sites/arolariu.ro`. Coverage needs no flag: the root `v
 **Test files are colocated with source code** — place `foo.test.ts` next to `foo.ts`. Use `.test.ts(x)` suffix for Vitest. `.spec.ts(x)` is
 reserved for Playwright E2E.
 
-`npm run test:unit` runs three disjoint Vitest projects. The `website-lean` project has no shared setup or legacy server aliases. Selected
-utilities, validators, parsers, and email rendering tests run in Node; export, navigation, and preferences tests opt into Happy DOM and
-supply only the boundaries they consume. The `server-http` project runs the real invoice actions, configuration, JWT signing, and transport.
-Its setup uses synthetic configuration, substitutes Clerk, and intercepts HTTP. The action tests run in Node; dialog and wizard tests select
-Happy DOM in the same project so they can exercise the real actions from the UI without legacy aliases. Tests that reach Next.js cache
-invalidation or routing substitute those framework boundaries. The `website` project still uses the legacy stubs for the remaining suites.
+`npm run test:unit` runs three disjoint projects selected by filename. The `website-lean` project (`*.lean.test.ts(x)`) has no shared setup
+or legacy server aliases. Utilities, validators, parsers, and email rendering tests run in Node; export, navigation, and preferences tests
+opt into Happy DOM and supply only the boundaries they consume. The `server-http` project (`*.http.test.ts(x)`) runs the real invoice
+actions, configuration, JWT signing, and transport. Its setup uses synthetic configuration, substitutes Clerk, and intercepts HTTP. The
+action tests run in Node; dialog and wizard tests select Happy DOM in the same project so they can exercise the real actions from the UI
+without legacy aliases. Tests that reach Next.js cache invalidation or routing substitute those framework boundaries. The `website` project
+still uses the legacy stubs for the remaining suites.
 
 The scan action suites in `server-http` use the real configuration and storage adapter. `tests/setup/blob-sdk.ts` supplies only the Azure
 SDK boundary and a test-only storage endpoint response; the repository still chooses the container, maps metadata, and sends decoded bytes.

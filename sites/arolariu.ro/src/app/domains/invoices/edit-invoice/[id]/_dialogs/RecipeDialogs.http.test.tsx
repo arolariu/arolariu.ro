@@ -157,7 +157,7 @@ describe("invoice recipe dialogs", () => {
     fireEvent.change(description, {target: {value: "New description"}});
     await act(() => user.click(dialog.getByRole("button", {name: "Save"})));
 
-    expect(await screen.findByText("Failed to update invoice: 409 Conflict")).toBeInTheDocument();
+    expect(await screen.findByText("Failed to update the invoice. Please check your input and try again.")).toBeInTheDocument();
     expect(description).toHaveValue("New description");
     expect(useInvoicesStore.getState().getEntityById(invoice.id)?.possibleRecipes).toEqual([first, second]);
     expect(refresh).not.toHaveBeenCalled();

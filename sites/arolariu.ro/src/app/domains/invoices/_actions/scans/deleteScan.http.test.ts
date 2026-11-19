@@ -1,6 +1,6 @@
 import {generateGuid} from "@/lib/utils.generic";
 import {beforeEach, describe, expect, it, vi} from "vitest";
-import {getContainerClientAtSdk, storageUrl, stubStorageConfig} from "../../../../../../tests/setup/blob-sdk";
+import {connectAtSdk, getContainerClientAtSdk, storageUrl, stubStorageConfig} from "../../../../../../tests/setup/blob-sdk";
 import {auth, fetchAtHttp} from "../../../../../../tests/setup/server-http";
 import {deleteScan} from "./deleteScan";
 
@@ -47,6 +47,7 @@ describe("deleteScan", () => {
     const result = await deleteScan({scanId: "selected"});
 
     expect(result).toEqual({success: true, data: undefined});
+    expect(new Set(connectAtSdk.mock.calls.flat())).toEqual(new Set([storageUrl]));
     expect(listBlobsFlat).toHaveBeenCalledExactlyOnceWith({prefix: `scans/${owner}/`, includeMetadata: true});
     expect(deleteIfExists).toHaveBeenCalledExactlyOnceWith(`scans/${owner}/selected.jpg`);
   });

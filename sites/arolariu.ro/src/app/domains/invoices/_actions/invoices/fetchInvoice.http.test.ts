@@ -3,16 +3,19 @@
  * @module app/domains/invoices/_actions/invoices/fetchInvoice.test
  */
 
+import {generateGuid} from "@/lib/utils.generic";
 import {jwtVerify} from "jose";
 import {describe, expect, it} from "vitest";
 import {buildInvoice} from "../../../../../../tests/helpers/builders/domain";
-import {apiUrl, auth, fetchAtHttp, jwtSecret} from "../../../../../../tests/setup/server-http";
+import {apiUrl, auth, currentUser, fetchAtHttp, jwtSecret} from "../../../../../../tests/setup/server-http";
 import {fetchInvoice} from "./fetchInvoice";
 
 describe("fetchInvoice", () => {
   const invoiceId = "11111111-1111-4111-8111-111111111111";
 
   it("gets an invoice by id with bearer authorization", async () => {
+    const emailAddress = "reader@example.test";
+    currentUser.mockResolvedValueOnce({primaryEmailAddress: {emailAddress}});
     const invoice = buildInvoice({
       id: invoiceId,
       userIdentifier: "22222222-2222-4222-8222-222222222222",
@@ -32,7 +35,12 @@ describe("fetchInvoice", () => {
     const bearer = headers.get("authorization");
     expect(bearer).toMatch(/^Bearer /u);
     const {payload} = await jwtVerify(bearer?.slice(7) ?? "", new TextEncoder().encode(jwtSecret));
-    expect(payload).toMatchObject({role: "user", aud: "https://api.arolariu.ro"});
+    expect(payload).toMatchObject({
+      role: "user",
+      aud: "https://api.arolariu.ro",
+      sub: emailAddress,
+      userIdentifier: generateGuid(emailAddress),
+    });
   });
 
   it("returns an error result for an invalid invoice id", async () => {
@@ -47,19 +55,15 @@ describe("fetchInvoice", () => {
   });
 
   it.each([
-    [404, "Not Found"],
-    [403, "Forbidden"],
-    [400, "Bad Request"],
-  ] as const)("returns an error for upstream HTTP %i %s", async (status, statusText) => {
-    fetchAtHttp.mockResolvedValue(new Response("Invoice unavailable", {status, statusText}));
+    [404, "NOT_FOUND", "Invoice not found or you don't have access to it."],
+    [403, "AUTH_ERROR", "You are not authorized to view this invoice."],
+    [400, "VALIDATION_ERROR", "An error occurred while fetching the invoice. Please try again."],
+  ] as const)("returns a public error for upstream HTTP %i", async (status, code, message) => {
+    fetchAtHttp.mockResolvedValue(new Response("Invoice unavailable", {status, statusText: "Internal reason"}));
 
     const result = await fetchInvoice({invoiceId});
 
-    expect(result.success).toBe(false);
-    if (!result.success) {
-      expect(result.error.message).toContain(`${status} ${statusText}`);
-      expect(result.error.message).toContain("Invoice unavailable");
-    }
+    expect(result).toEqual({success: false, error: {code, message, status}});
   });
 
   it("returns an error result when auth throws", async () => {

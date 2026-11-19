@@ -1,7 +1,7 @@
 import {generateGuid} from "@/lib/utils.generic";
 import {ScanType} from "@/types/scans";
 import {afterEach, beforeEach, describe, expect, it, vi} from "vitest";
-import {getContainerClientAtSdk, storageUrl, stubStorageConfig} from "../../../../../../tests/setup/blob-sdk";
+import {connectAtSdk, getContainerClientAtSdk, storageUrl, stubStorageConfig} from "../../../../../../tests/setup/blob-sdk";
 import {auth, fetchAtHttp} from "../../../../../../tests/setup/server-http";
 import {createScan} from "./createScan";
 
@@ -43,6 +43,7 @@ describe("createScan", () => {
     const blobName = `scans/${owner}/${scan.id}_${uploadedAt.getTime()}.jpg`;
     expect(scan.blobUrl).toBe(`${storageUrl}/invoices/${blobName}`);
     expect(scan.uploadedAt).toEqual(uploadedAt);
+    expect(connectAtSdk).toHaveBeenCalledExactlyOnceWith(storageUrl);
     expect(getContainerClientAtSdk).toHaveBeenCalledExactlyOnceWith("invoices");
     expect(getBlockBlobClient).toHaveBeenCalledExactlyOnceWith(blobName);
     expect(uploadData).toHaveBeenCalledExactlyOnceWith(new TextEncoder().encode("test"), {

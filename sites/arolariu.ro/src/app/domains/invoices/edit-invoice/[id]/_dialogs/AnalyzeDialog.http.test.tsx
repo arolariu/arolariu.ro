@@ -79,7 +79,7 @@ describe("AnalyzeDialog", () => {
 
     await act(() => user.click(dialog.getByRole("button", {name: "Start Analysis"})));
 
-    expect(await dialog.findByRole("alert")).toHaveTextContent("Failed to analyze invoice: 503 Service Unavailable");
+    expect(await dialog.findByRole("alert")).toHaveTextContent("A server error occurred during analysis. Please try again later.");
     expect(dialog.queryByText("Analysis Queued")).not.toBeInTheDocument();
     expect(dialog.queryByRole("progressbar")).not.toBeInTheDocument();
     expect(router.refresh).not.toHaveBeenCalled();

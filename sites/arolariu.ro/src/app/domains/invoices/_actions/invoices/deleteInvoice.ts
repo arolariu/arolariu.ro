@@ -22,7 +22,7 @@
 import {addSpanEvent, logWithTrace, withSpan} from "@/instrumentation.server";
 import {fetchBFFUserFromAuthService} from "@/lib/actions/user/fetchUser";
 import {validateStringIsGuidType} from "@/lib/utils.generic";
-import {createErrorResult, fetchWithTimeout, type ServerActionResult} from "@/lib/utils.server";
+import {createErrorResult, fetchWithTimeout, mapHttpStatusToErrorCode, type ServerActionResult} from "@/lib/utils.server";
 import {revalidatePath} from "next/cache";
 
 /**
@@ -127,7 +127,10 @@ export async function deleteInvoice({invoiceId}: ServerActionInputType): ServerA
         }
         return "An unexpected error occurred while deleting the invoice.";
       })();
-      return createErrorResult(new Error(internalMessage), userMessage);
+      return {
+        success: false,
+        error: {code: mapHttpStatusToErrorCode(response.status), message: userMessage, status: response.status},
+      } as const;
     } catch (error: unknown) {
       addSpanEvent("bff.request.delete-invoice.error");
       const errorMessage = error instanceof Error ? error.message : "An unexpected error occurred";

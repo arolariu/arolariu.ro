@@ -1,18 +1,30 @@
-import {vi} from "vitest";
+import {invalidateConfigCache} from "@/lib/config/configProxy";
+import {beforeEach, vi} from "vitest";
 import {fetchAtHttp} from "./server-http";
 
 const storage = vi.hoisted(() => {
   vi.stubEnv("EXP_PROXY_URL", "https://config.example.test");
-  return {getContainerClient: vi.fn()};
+  return {getContainerClient: vi.fn(), connect: vi.fn<(endpoint: string | undefined) => void>()};
 });
 
 vi.mock("@azure/storage-blob", async (importOriginal) => ({
   ...(await importOriginal<typeof import("@azure/storage-blob")>()),
-  BlobServiceClient: {fromConnectionString: () => ({getContainerClient: storage.getContainerClient})},
+  BlobServiceClient: {
+    fromConnectionString(connectionString: string) {
+      storage.connect(/(?:^|;)BlobEndpoint=([^;]+)/u.exec(connectionString)?.[1]);
+      return {getContainerClient: storage.getContainerClient};
+    },
+  },
 }));
 
 export const getContainerClientAtSdk = storage.getContainerClient;
+export const connectAtSdk = storage.connect;
 export const storageUrl = "http://storage.example.test";
+
+beforeEach(() => {
+  invalidateConfigCache();
+  vi.stubEnv("AZURE_CLIENT_ID", "");
+});
 
 /** Provides the storage endpoint through the real configuration request path. */
 export function respondToStorageConfig(url: URL): Response | undefined {
@@ -34,7 +46,6 @@ export function respondToStorageConfig(url: URL): Response | undefined {
 
 /** Allows storage-only tests to resolve configuration without permitting other requests. */
 export function stubStorageConfig(): void {
-  vi.stubEnv("AZURE_CLIENT_ID", "");
   fetchAtHttp.mockImplementation(async (request) => {
     const response = respondToStorageConfig(new URL(String(request)));
     if (!response) throw new Error("Unexpected test HTTP request");

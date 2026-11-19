@@ -66,17 +66,14 @@ describe("updateInvoice", () => {
   });
 
   it.each([
-    [500, "Internal Server Error"],
-    [400, "Bad Request"],
-  ] as const)("returns the HTTP %i failure with the backend explanation", async (status, statusText) => {
-    fetchAtHttp.mockResolvedValue(new Response("Invoice could not be updated", {status, statusText}));
+    [500, "SERVER_ERROR", "A server error occurred. Please try again later."],
+    [400, "VALIDATION_ERROR", "Failed to update the invoice. Please check your input and try again."],
+  ] as const)("returns the HTTP %i failure without backend details", async (status, code, message) => {
+    fetchAtHttp.mockResolvedValue(new Response("Invoice could not be updated", {status, statusText: "Internal reason"}));
 
     const result = await updateInvoice({invoiceId, invoice});
 
-    expect(result).toEqual({
-      success: false,
-      error: {code: "NETWORK_ERROR", message: `Failed to update invoice: ${status} ${statusText} - Invoice could not be updated`},
-    });
+    expect(result).toEqual({success: false, error: {code, message, status}});
     expect(fetchAtHttp).toHaveBeenCalledOnce();
   });
 

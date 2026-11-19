@@ -52,15 +52,15 @@ describe("deleteInvoice", () => {
   });
 
   it.each([
-    [404, "Not Found"],
-    [403, "Forbidden"],
-    [500, "Internal Server Error"],
-  ] as const)("returns the HTTP %i failure without revalidating either page", async (status, statusText) => {
-    fetchAtHttp.mockResolvedValue(new Response("Invoice could not be deleted", {status, statusText}));
+    [404, "NOT_FOUND", "The invoice was not found. It may have already been deleted."],
+    [403, "AUTH_ERROR", "You do not have permission to delete this invoice."],
+    [500, "SERVER_ERROR", "An unexpected error occurred while deleting the invoice."],
+  ] as const)("returns the HTTP %i failure without revalidating either page", async (status, code, message) => {
+    fetchAtHttp.mockResolvedValue(new Response("Invoice could not be deleted", {status, statusText: "Internal reason"}));
 
     const result = await deleteInvoice({invoiceId});
 
-    expect(result).toEqual({success: false, error: {code: "NETWORK_ERROR", message: `Failed to delete invoice: ${status} ${statusText}`}});
+    expect(result).toEqual({success: false, error: {code, message, status}});
     expect(fetchAtHttp).toHaveBeenCalledOnce();
     expect(revalidatePath).not.toHaveBeenCalled();
   });

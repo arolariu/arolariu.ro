@@ -1,15 +1,15 @@
+// @vitest-environment happy-dom
+
 import type {Invoice} from "@/types/invoices";
 import type {StandardClassification} from "@/types/invoices/Classification";
+import "@testing-library/jest-dom/vitest";
 import {fireEvent, render, screen} from "@testing-library/react";
 import {NextIntlClientProvider} from "next-intl";
-import {describe, expect, it, vi} from "vitest";
+import {describe, expect, it} from "vitest";
 import messages from "../../../../../../../../messages/en.json";
 import {buildInvoice, buildMerchant, buildProduct, buildRecipeSuggestion} from "../../../../../../../../tests/helpers/builders/domain";
 import {InvoiceContextProvider} from "../../_context/InvoiceContext";
 import {InvoiceHealthScore} from "./InvoiceHealthScore";
-
-vi.unmock("next-intl-selector");
-vi.unmock("next-intl");
 
 const classification = {
   system: "ECOICOP_V2",

@@ -50,14 +50,14 @@ describe("analyzeInvoice", () => {
   });
 
   it.each([
-    [500, "Internal Server Error"],
-    [400, "Bad Request"],
-  ] as const)("returns an error when the analysis endpoint responds with HTTP %i", async (status, statusText) => {
-    fetchAtHttp.mockResolvedValue(new Response("Analysis refused", {status, statusText}));
+    [500, "SERVER_ERROR", "A server error occurred during analysis. Please try again later."],
+    [400, "VALIDATION_ERROR", "Failed to analyze the invoice. Please try again."],
+  ] as const)("returns an error when the analysis endpoint responds with HTTP %i", async (status, code, message) => {
+    fetchAtHttp.mockResolvedValue(new Response("Analysis refused", {status, statusText: "Internal reason"}));
 
     const result = await analyzeInvoice({invoiceIdentifier, profile: "balanced"});
 
-    expect(result).toEqual({success: false, error: {code: "NETWORK_ERROR", message: `Failed to analyze invoice: ${status} ${statusText}`}});
+    expect(result).toEqual({success: false, error: {code, message, status}});
     expect(fetchAtHttp).toHaveBeenCalledOnce();
   });
 

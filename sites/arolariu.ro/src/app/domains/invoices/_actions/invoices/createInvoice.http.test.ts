@@ -60,14 +60,14 @@ describe("createInvoice", () => {
   });
 
   it.each([
-    [500, "Internal Server Error"],
-    [400, "Bad Request"],
-  ] as const)("returns a creation failure for HTTP %i %s", async (status, statusText) => {
-    fetchAtHttp.mockResolvedValue(new Response("Invoice unavailable", {status, statusText}));
+    [500, "SERVER_ERROR", "A server error occurred. Please try again later."],
+    [400, "VALIDATION_ERROR", "Failed to create the invoice. Please check your input and try again."],
+  ] as const)("returns a public creation failure for HTTP %i", async (status, code, message) => {
+    fetchAtHttp.mockResolvedValue(new Response("Invoice unavailable", {status, statusText: "Internal reason"}));
 
     const result = await createInvoice({});
 
-    expect(result).toEqual({success: false, error: {code: "NETWORK_ERROR", message: `Failed to create invoice: ${status} ${statusText}`}});
+    expect(result).toEqual({success: false, error: {code, message, status}});
     expect(fetchAtHttp).toHaveBeenCalledOnce();
   });
 

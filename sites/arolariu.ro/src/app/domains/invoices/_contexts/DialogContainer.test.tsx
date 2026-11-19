@@ -1,5 +1,5 @@
 import {act, renderHook, screen, within} from "@testing-library/react";
-import {describe, expect, it, vi} from "vitest";
+import {describe, expect, expectTypeOf, it, vi} from "vitest";
 import DialogContainer from "./DialogContainer";
 import {DialogProvider, useDialogs} from "./DialogContext";
 
@@ -31,6 +31,7 @@ const routes = [
   ["EDIT_INVOICE__ALLERGENS", "edit", "edit-invoice/[id]/_dialogs/AllergenDialog"],
   ["EDIT_INVOICE__ADD_SCAN", "add", "edit-invoice/[id]/_dialogs/AddScanDialog"],
   ["EDIT_INVOICE__REMOVE_SCAN", "delete", "edit-invoice/[id]/_dialogs/RemoveScanDialog"],
+  ["VIEW_INVOICE__EXPORT", "view", "view-invoice/[id]/_dialogs/ExportDialog"],
   ["VIEW_INVOICE__SHARE_ANALYTICS", "share", "view-invoice/[id]/_dialogs/ShareAnalyticsDialog"],
   ["VIEW_INVOICES__IMPORT", "view", "view-invoices/_dialogs/ImportDialog"],
   ["VIEW_INVOICES__EXPORT", "view", "view-invoices/_dialogs/ExportDialog"],
@@ -40,6 +41,7 @@ const routes = [
   ["SHARED__SCAN_DELETE", "delete", "_dialogs/DeleteScanDialog"],
   ["SHARED__SCAN_PREVIEW", "view", "_dialogs/PreviewScanDialog"],
 ] as const satisfies readonly [DialogType, DialogMode, string][];
+expectTypeOf<(typeof routes)[number][0]>().toEqualTypeOf<DialogType>();
 
 function renderRegistry() {
   const {result} = renderHook(useDialogs, {

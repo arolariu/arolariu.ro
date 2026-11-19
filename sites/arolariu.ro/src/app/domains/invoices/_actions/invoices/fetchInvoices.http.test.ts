@@ -26,14 +26,14 @@ describe("fetchInvoices", () => {
   });
 
   it.each([
-    [500, "Internal Server Error"],
-    [400, "Bad Request"],
-  ] as const)("returns the upstream status in the HTTP %i failure", async (status, statusText) => {
-    fetchAtHttp.mockResolvedValue(new Response("Upstream error", {status, statusText}));
+    [500, "SERVER_ERROR", "A server error occurred. Please try again later."],
+    [400, "VALIDATION_ERROR", "Failed to fetch invoices. Please refresh the page or contact support."],
+  ] as const)("returns the upstream status in the HTTP %i failure", async (status, code, message) => {
+    fetchAtHttp.mockResolvedValue(new Response("Upstream error", {status, statusText: "Internal reason"}));
 
     const result = await fetchInvoices();
 
-    expect(result).toEqual({success: false, error: {code: "NETWORK_ERROR", message: `Failed to fetch invoices: ${status} ${statusText}`}});
+    expect(result).toEqual({success: false, error: {code, message, status}});
   });
 
   it("does not make the request when Clerk rejects", async () => {

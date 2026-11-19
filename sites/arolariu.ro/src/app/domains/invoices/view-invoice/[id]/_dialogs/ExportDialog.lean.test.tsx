@@ -4,15 +4,12 @@ import "@testing-library/jest-dom/vitest";
 import {DialogProvider, useDialogs} from "@/app/domains/invoices/_contexts/DialogContext";
 import DialogContainer from "@/app/domains/invoices/_contexts/DialogContainer";
 import {Toaster, toast} from "@arolariu/components";
-import {cleanup, fireEvent, render, screen, waitFor, within} from "@testing-library/react";
+import {act, cleanup, fireEvent, render, screen, waitFor, within} from "@testing-library/react";
 import {NextIntlClientProvider} from "next-intl";
 import {afterEach, describe, expect, it, vi} from "vitest";
 import messages from "../../../../../../../messages/en.json";
 import {buildInvoice, buildProduct} from "../../../../../../../tests/helpers/builders/domain";
 import {InvoiceContextProvider} from "../_context/InvoiceContext";
-
-// Load the real chunk during collection so the dialog assertion does not race its compilation under coverage.
-await import("./ExportDialog");
 
 const invoice = buildInvoice({
   id: "11111111-1111-4111-8111-111111111111",
@@ -41,6 +38,7 @@ async function openExportDialog(): Promise<HTMLElement> {
     </NextIntlClientProvider>,
   );
   fireEvent.click(screen.getByRole("button", {name: "Open invoice export"}));
+  await act(() => vi.dynamicImportSettled());
   return screen.findByRole("dialog", {name: "Export Invoice"});
 }
 

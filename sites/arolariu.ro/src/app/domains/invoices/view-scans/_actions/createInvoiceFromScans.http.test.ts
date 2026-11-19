@@ -2,7 +2,7 @@ import {writeBlobMetadata} from "@/app/domains/invoices/_utils/metadataUtilities
 import {generateGuid} from "@/lib/utils.generic";
 import {InvoiceScanType} from "@/types/invoices";
 import {ScanType, type Scan} from "@/types/scans";
-import {beforeEach, describe, expect, it, vi} from "vitest";
+import {describe, expect, it, vi} from "vitest";
 import {buildInvoice, buildScan} from "../../../../../../tests/helpers/builders/domain";
 import {getContainerClientAtSdk, respondToStorageConfig, storageUrl} from "../../../../../../tests/setup/blob-sdk";
 import {apiUrl, auth, fetchAtHttp} from "../../../../../../tests/setup/server-http";
@@ -143,10 +143,6 @@ function expectCreatedFrom(request: RequestRecord | undefined, source: Scan | un
 }
 
 describe("createInvoiceFromScans", () => {
-  beforeEach(() => {
-    vi.stubEnv("AZURE_CLIENT_ID", "");
-  });
-
   it.each([false, true])("creates one invoice per successful scan and keeps the original order (partial failure: %s)", async (partial) => {
     const scans = [scan("first", ScanType.JPEG), scan("second", ScanType.PNG), scan("third", ScanType.PDF)];
     const storage = arrangeStorage(scans);
@@ -168,7 +164,9 @@ describe("createInvoiceFromScans", () => {
       expectCreatedFrom(http.creation[index], scans[index], type);
     });
     expect(http.attachments).toEqual([]);
-    expect(http.analysis.map(({path}) => path).sort()).toEqual(expected.map((id) => `${invoicePath}/${id}/analyze`));
+    await vi.waitFor(() =>
+      expect(http.analysis.map(({path}) => path).sort()).toEqual(expected.map((id) => `${invoicePath}/${id}/analyze`)),
+    );
     expect(storage.list).toHaveBeenCalledWith({prefix: `scans/${owner}/`, includeMetadata: true});
     expectLinked(storage.stored, "first", invoiceIds[0]);
     expectLinked(storage.stored, "third", invoiceIds[2]);
@@ -223,7 +221,9 @@ describe("createInvoiceFromScans", () => {
         },
       });
     });
-    expect(http.analysis).toMatchObject([{path: `${invoicePath}/${invoiceIds[0]}/analyze`, body: {profile: "comprehensive"}}]);
+    await vi.waitFor(() =>
+      expect(http.analysis).toMatchObject([{path: `${invoicePath}/${invoiceIds[0]}/analyze`, body: {profile: "comprehensive"}}]),
+    );
     expect(storage.write.mock.calls.map(([name]) => name).sort()).toEqual(convertedIds.map(blobName).sort());
     for (const id of convertedIds) expectLinked(storage.stored, id, invoiceIds[0]);
     if (rejected) expect(storage.stored.get(blobName("second"))).toMatchObject({status: "ready", archivedBy: owner});

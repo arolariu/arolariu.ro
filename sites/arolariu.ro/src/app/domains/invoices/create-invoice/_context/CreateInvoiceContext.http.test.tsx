@@ -131,7 +131,7 @@ it("retries only the unfinished attachments and navigates to the already created
     status: "partial",
     invoiceIdentifier: invoiceId,
     failedStep: "scans",
-    message: "Failed to attach invoice scan: 409 Conflict",
+    message: "An unexpected error occurred while attaching the scan. Please try again.",
   });
   expect(attachments).toEqual(["attached", "failed"]);
   expect(write).not.toHaveBeenCalled();

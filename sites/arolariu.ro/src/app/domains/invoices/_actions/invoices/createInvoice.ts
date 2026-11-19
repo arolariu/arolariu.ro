@@ -23,7 +23,7 @@
 
 import {addSpanEvent, logWithTrace, withSpan} from "@/instrumentation.server";
 import {fetchBFFUserFromAuthService} from "@/lib/actions/user/fetchUser";
-import {createErrorResult, fetchWithTimeout, ServerActionResult} from "@/lib/utils.server";
+import {createErrorResult, fetchWithTimeout, mapHttpStatusToErrorCode, type ServerActionResult} from "@/lib/utils.server";
 import type {CreateInvoiceDtoPayload, Invoice} from "@/types/invoices";
 import {parseInvoiceCreationResponse, tryParse} from "@/types/invoices/transport";
 
@@ -136,7 +136,10 @@ export async function createInvoice(payload: ServerActionInputType): ServerActio
         response.status >= 500
           ? "A server error occurred. Please try again later."
           : "Failed to create the invoice. Please check your input and try again.";
-      return createErrorResult(new Error(internalMessage), userMessage);
+      return {
+        success: false,
+        error: {code: mapHttpStatusToErrorCode(response.status), message: userMessage, status: response.status},
+      } as const;
     } catch (error: unknown) {
       addSpanEvent("bff.invoice.create.error");
       const errorMessage = error instanceof Error ? error.message : "An unexpected error occurred";
