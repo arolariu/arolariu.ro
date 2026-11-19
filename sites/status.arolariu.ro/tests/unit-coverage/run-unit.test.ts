@@ -4,7 +4,7 @@ import {tmpdir} from "node:os";
 import {join, resolve} from "node:path";
 import {describe, expect, it} from "vitest";
 
-const root = resolve(import.meta.dirname, "..", "sites", "status.arolariu.ro");
+const root = resolve(import.meta.dirname, "..", "..");
 const latencyTest = "src/lib/aggregation/computeAvgLatency.test.ts";
 const subprocessTimeout = 15_000;
 
