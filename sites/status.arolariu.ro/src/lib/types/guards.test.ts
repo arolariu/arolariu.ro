@@ -35,6 +35,10 @@ describe("isServiceId", () => {
 });
 
 describe("isSubCheck", () => {
+  it("rejects a null sub-check before reading its fields", () => {
+    expect(isSubCheck(null)).toBe(false);
+  });
+
   it("accepts minimal valid", () => {
     expect(isSubCheck({name: "mssql", status: "Healthy", durationMs: 12})).toBe(true);
   });
@@ -72,6 +76,9 @@ describe("isProbeResult", () => {
   it("accepts valid", () => {
     expect(isProbeResult(valid)).toBe(true);
   });
+  it("rejects a null probe before reading its fields", () => {
+    expect(isProbeResult(null)).toBe(false);
+  });
   it("accepts with subChecks", () => {
     expect(isProbeResult({...valid, subChecks: [{name: "x", status: "Healthy", durationMs: 5}]})).toBe(true);
   });
@@ -105,14 +112,11 @@ describe("isBucket", () => {
     probes: {healthy: 2, total: 2},
     latency: {p50: 100, p99: 300},
   };
-  it("accepts valid", () => {
-    expect(isBucket(valid)).toBe(true);
-  });
   it("rejects missing latency fields", () => {
     expect(isBucket({...valid, latency: {p50: 100}})).toBe(false);
   });
   it("accepts legacy 2-percentile latency shape (p50, p99 only)", () => {
-    expect(isBucket({...valid, latency: {p50: 100, p99: 300}})).toBe(true);
+    expect(isBucket(valid)).toBe(true);
   });
   it("accepts new 4-percentile latency shape (p50, p75, p95, p99)", () => {
     expect(isBucket({...valid, latency: {p50: 100, p75: 180, p95: 250, p99: 300}})).toBe(true);

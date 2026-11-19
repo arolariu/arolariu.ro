@@ -4,8 +4,12 @@ import {defineConfig} from "vitest/config";
 import baseConfig from "../../vitest.config.ts";
 import {statusCoverageScope} from "./tests/unit-coverage/scope.ts";
 
-const appTests = ["src/**/*.test.{ts,js}", "scripts/**/*.test.{ts,js}"];
-const logicTests = ["src/lib/aggregation/**/*.test.{ts,js}", "src/lib/types/guards.test.ts"];
+const logicTests = [
+  "src/lib/aggregation/**/*.test.{ts,js}",
+  "src/lib/{api/mockData,types/guards}.test.ts",
+  "src/lib/stores/themeStore.ssr.test.ts",
+  "{scripts,tests/unit-coverage}/**/*.test.{ts,js}",
+];
 
 export default defineConfig({
   plugins: [svelte({compilerOptions: {dev: true}})],
@@ -29,7 +33,7 @@ export default defineConfig({
         extends: true,
         test: {
           name: "status-app",
-          include: appTests,
+          include: ["src/**/*.test.{ts,js}"],
           exclude: logicTests,
           environment: "jsdom",
           setupFiles: ["./vitest.setup.ts"],
@@ -39,7 +43,7 @@ export default defineConfig({
     coverage: {
       ...baseConfig.test?.coverage,
       ...statusCoverageScope,
-      thresholds: {lines: 95, functions: 95, statements: 95, branches: 90},
+      thresholds: {lines: 99, functions: 99, statements: 99, branches: 90},
     },
   },
 });

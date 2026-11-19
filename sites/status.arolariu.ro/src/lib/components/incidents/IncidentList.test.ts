@@ -61,6 +61,7 @@ describe("IncidentList", () => {
       screen.getByRole("button", {name: /^arolariu\.ro Ongoing/i}),
       recovered,
     ]);
+    expect(recovered).toHaveAccessibleName(/Started 22 days ago/u);
 
     await fireEvent.click(ongoing);
 

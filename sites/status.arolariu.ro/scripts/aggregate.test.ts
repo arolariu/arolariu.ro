@@ -1,5 +1,5 @@
 ﻿// @vitest-environment node
-import {mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync} from "node:fs";
+import {existsSync, mkdirSync, mkdtempDisposableSync, mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync} from "node:fs";
 import {tmpdir} from "node:os";
 import {join} from "node:path";
 import {afterEach, beforeEach, describe, expect, it} from "vitest";
@@ -448,16 +448,32 @@ describe("readPrevious error paths", () => {
 });
 
 describe("prune raw files older than 14 days", () => {
-  it("deletes raw JSONL files with date >14 days old", async () => {
-    const tempDir = mkdtempSync(join(tmpdir(), "status-prune-"));
-    mkdirSync(join(tempDir, "raw"), {recursive: true});
-    writeFileSync(join(tempDir, "raw", "2026-04-01.jsonl"), "");
-    writeFileSync(join(tempDir, "raw", "2026-04-10.jsonl"), "");
-    await runAggregate({dataDir: tempDir, now: new Date("2026-04-19T00:00:00Z")});
-    const remaining = readdirSync(join(tempDir, "raw"));
-    expect(remaining).not.toContain("2026-04-01.jsonl");
-    expect(remaining).toContain("2026-04-10.jsonl");
-    rmSync(tempDir, {recursive: true, force: true});
+  const now = new Date("2026-04-19T00:00:00Z");
+
+  it("removes only dated JSONL files strictly outside retention", async () => {
+    using directory = mkdtempDisposableSync(join(tmpdir(), "status-prune-"));
+    const raw = join(directory.path, "raw");
+    const keep = ["2026-04-01.txt", "2026-04-05.jsonl", "2026-04-10.jsonl", "undated.jsonl"];
+    mkdirSync(raw);
+    for (const name of ["2026-04-01.jsonl", ...keep]) writeFileSync(join(raw, name), "");
+
+    await runAggregate({dataDir: directory.path, now});
+
+    expect(readdirSync(raw).sort()).toEqual(keep);
+  });
+
+  it("initializes an empty history before the first raw probe exists", async () => {
+    using directory = mkdtempDisposableSync(join(tmpdir(), "status-empty-"));
+
+    await runAggregate({dataDir: directory.path, now});
+
+    expect(JSON.parse(readFileSync(join(directory.path, "fine.json"), "utf8"))).toEqual({
+      generatedAt: now.toISOString(),
+      bucketSize: "30m",
+      windowDays: 14,
+      services: [],
+    });
+    expect(existsSync(join(directory.path, "raw"))).toBe(false);
   });
 });
 

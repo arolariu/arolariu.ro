@@ -19,12 +19,13 @@ branch and is served via `raw.githubusercontent.com` — the SWA prerenders the 
 
 ## Testing
 
-Run `npm run test:unit` from this workspace. The `status-logic` project runs pure aggregation and schema guards in Node without DOM setup.
-The `status-app` project runs the remaining tests in jsdom, except scripts that opt into Node. Storage tests use jsdom's real `localStorage`
-and intercept HTTP rather than replacing the data module. To check the dashboard in a browser locally, run
+Run `npm run test:unit` (or `npm run test:coverage`) from this workspace. The `status-logic` project runs aggregation, guards, mock-data,
+probe scripts, and attribution tests in Node without DOM setup. The `status-app` project runs the remaining tests in jsdom. Storage tests
+use jsdom's real `localStorage` and intercept HTTP rather than replacing the data module. To check the dashboard in a browser locally, run
 `npm run test:e2e -- status-page.spec.ts`.
 
-The complete unit command requires 95% lines, functions, statements, and authored branches across Status runtime code, including Svelte
-templates and probe scripts. The authored check retains uncertain branches and only omits compiler-generated decisions it can identify from
-the same run's sources and transforms. Raw V8 reports remain in `code-cov/vitest` with a separate 90% branch floor. For a scoped test run
-without coverage, use `npm run test:unit -- <selector> --coverage.enabled=false`.
+The complete unit command requires 99% lines, functions, and statements, and 95% authored branches across Status runtime code, including
+Svelte templates and probe scripts. The authored check retains uncertain branches and only omits compiler-generated decisions it can
+identify from the same run's sources and transforms. Raw V8 reports remain in `code-cov/vitest` with a separate 90% branch floor. For a
+scoped test run without coverage, use `npm run test:unit -- <selector> --coverage.enabled=false`. PR hygiene runs assertions with coverage
+disabled; the Status deployment workflow runs the complete gate.

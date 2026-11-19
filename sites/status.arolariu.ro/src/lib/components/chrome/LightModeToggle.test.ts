@@ -9,6 +9,20 @@ describe("LightModeToggle", () => {
     document.documentElement.removeAttribute("data-theme");
   });
 
+  it("can change and persist a theme on hosts without a media-query listener", async () => {
+    vi.stubGlobal("matchMedia", () => ({matches: false}));
+    localStorage.setItem("status-theme", "dark");
+    render(LightModeToggle);
+    const button = screen.getByRole("button", {name: /currently dark/u});
+
+    await fireEvent.click(button);
+    await fireEvent.click(button);
+
+    expect(button).toHaveAccessibleName(/currently auto/u);
+    expect(document.documentElement).toHaveAttribute("data-theme", "light");
+    expect(localStorage.getItem("status-theme")).toBe("auto");
+  });
+
   it("cycles the persisted preference and follows system changes only while set to auto", async () => {
     const root = document.documentElement;
     const system = Object.assign(new EventTarget(), {matches: false});

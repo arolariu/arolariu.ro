@@ -14,7 +14,8 @@ describe("isLocalHost", () => {
   });
 
   it("returns true for localhost", () => {
-    // jsdom's location.hostname is 'localhost' by default
+    vi.stubGlobal("window", {location: new URL("http://localhost/")});
+
     expect(isLocalHost()).toBe(true);
   });
 
