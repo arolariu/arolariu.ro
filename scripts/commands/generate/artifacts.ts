@@ -418,8 +418,8 @@ export abstract class TaxonomyClassificationGenerator {
    * {@link TAXONOMY_SOURCE_RETRY_DELAYS_MS} backoff. Every attempt is bounded by
    * {@link TAXONOMY_SOURCE_TIMEOUT_MS} and {@link TAXONOMY_SOURCE_MAX_RESPONSE_BYTES}. Exhausting
    * the schedule fails with a {@link TaxonomySourceUnavailable}, the single failure a validated
-   * cached mirror may satisfy. An access-denied status (401/403) skips retries and fails the same
-   * way; any other non-transient status fails immediately.
+   * cached mirror may satisfy. An access-denied status (401/403) takes the same fallback path
+   * without reading the body or retrying; any other non-transient status fails immediately.
    *
    * @param requestName - Request label used in HTTP failure messages.
    * @param url - Source URL.
@@ -470,12 +470,14 @@ export abstract class TaxonomyClassificationGenerator {
     headers: Readonly<Record<string, string>>,
   ): Effect.Effect<SourceAttempt, ArtifactGenerationFailed, HttpClient.HttpClient> {
     return Effect.gen({self: this}, function* () {
-      const client = yield* HttpClient.HttpClient;
+      const client = HttpClient.withScope(yield* HttpClient.HttpClient);
       const exchange = Effect.gen(function* () {
         const response = yield* Effect.mapError(client.execute(HttpClientRequest.get(url.href, {headers})), transportMessage);
+        if (isAccessDeniedHttpStatus(response.status)) return response.status;
         const bytes = yield* Effect.mapError(readBoundedBytes(response, TAXONOMY_SOURCE_MAX_RESPONSE_BYTES), bodyReadMessage);
         return {status: response.status, bytes};
       }).pipe(
+        Effect.scoped,
         // Keep the legacy request headers exactly: no trace propagation headers to external sources.
         Effect.provideService(HttpClient.TracerPropagationEnabled, false),
         Effect.timeoutOption(Duration.millis(TAXONOMY_SOURCE_TIMEOUT_MS)),
@@ -487,8 +489,11 @@ export abstract class TaxonomyClassificationGenerator {
               kind: "transient",
               message: `${requestName} timed out after ${String(TAXONOMY_SOURCE_TIMEOUT_MS)}ms.`,
             }),
-            onSome: ({status, bytes}): SourceAttempt | number =>
-              status >= 200 && status <= 299 ? {kind: "response", response: {bytes, text: utf8Decoder.decode(bytes)}} : status,
+            onSome: (outcome): SourceAttempt | number => {
+              if (typeof outcome === "number") return outcome;
+              const {status, bytes} = outcome;
+              return status >= 200 && status <= 299 ? {kind: "response", response: {bytes, text: utf8Decoder.decode(bytes)}} : status;
+            },
           }),
         ),
         Effect.catch((message: string) => Effect.succeed<SourceAttempt>({kind: "transient", message})),
