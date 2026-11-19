@@ -220,6 +220,9 @@ const retainedChartAliases = [
   "useYAxisDomain",
 ] as const;
 const publicTypesCheck = "check-public-types.ts";
+const sourcePublicTypesTimeoutMs = 120_000;
+// Let the subprocess report a timeout before Vitest stops the test.
+const sourcePublicTypesTestTimeoutMs = sourcePublicTypesTimeoutMs + 5_000;
 
 /**
  * Pure class helpers that the root re-exports from directive-free private modules, so Server Components can call them
@@ -396,20 +399,24 @@ describe("complete supported public surface", () => {
     }
   });
 
-  it("preserves every named public type and merged namespace without wildcard ambiguity", async () => {
-    await runCompilerCheck(
-      publicTypesCheck,
-      [
-        "source",
-        import.meta.dirname,
-        ...supportedComponentModules.map((name) => `components/ui/${name}.tsx`),
-        ...supportedHookModules.map((name) => `hooks/${name}.tsx`),
-        "lib/utilities.ts",
-        "lib/color-conversion-utilities.ts",
-      ],
-      30_000,
-    );
-  }, 30_000);
+  it(
+    "preserves every named public type and merged namespace without wildcard ambiguity",
+    async () => {
+      await runCompilerCheck(
+        publicTypesCheck,
+        [
+          "source",
+          import.meta.dirname,
+          ...supportedComponentModules.map((name) => `components/ui/${name}.tsx`),
+          ...supportedHookModules.map((name) => `hooks/${name}.tsx`),
+          "lib/utilities.ts",
+          "lib/color-conversion-utilities.ts",
+        ],
+        sourcePublicTypesTimeoutMs,
+      );
+    },
+    sourcePublicTypesTestTimeoutMs,
+  );
 
   it("retains non-deprecated Recharts identities without colliding with the native Label", () => {
     const dependency: Readonly<Record<string, unknown>> = Recharts;

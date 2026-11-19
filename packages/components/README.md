@@ -67,8 +67,8 @@ dependency installation or publication, and removes only its own temporary extra
 root `.gitignore` ignores `packages/components/.packed-contract-*/`. Public declarations and story-only payload exclusion are checked
 against actual archive files, not source aliases.
 
-The strict packed-declaration compiler check uses the same deadline as the complete source compiler check, separate from runtime test
-deadlines. This accommodates the full TypeScript graph without changing compiler assertions or coverage requirements.
+The source public-type check, strict packed-declaration check, and complete source compiler check each have a 120-second subprocess budget,
+separate from runtime test deadlines. The source public-type test allows another five seconds for Vitest to report a subprocess failure.
 
 For source-only iteration, use `npm run test:unit -- <selectors> --coverage.enabled=false`. To run the real archive gate with Vitest
 options, use `npm run test:packed -- <arguments>`; `--maxWorkers=4` overrides its two-worker default when benchmarking. Source-only runs
