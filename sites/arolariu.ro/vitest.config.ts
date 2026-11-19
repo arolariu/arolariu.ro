@@ -16,6 +16,7 @@ const realHttpTests = [
   "src/app/domains/invoices/_actions/invoices/{analyzeInvoice,createInvoice,deleteInvoice,fetchInvoice,fetchInvoices,patchInvoice,updateInvoice}.test.ts",
   "src/app/domains/invoices/_actions/invoices/metadata/{addInvoiceMetadata,deleteInvoiceMetadata}.test.ts",
   "src/app/domains/invoices/_actions/invoices/scans/attachScanToInvoice.test.ts",
+  "src/app/domains/invoices/_actions/merchants/merchantHttpErrors.test.ts",
   "src/app/domains/invoices/_actions/scans/{createScan,deleteScan,fetchScans,updateScan}.test.ts",
   "src/app/domains/invoices/create-invoice/_context/CreateInvoiceRetry.test.tsx",
   "src/app/domains/invoices/edit-invoice/*/_dialogs/{AnalyzeDialog,RecipeDialogs}.test.tsx",

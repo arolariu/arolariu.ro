@@ -112,57 +112,6 @@ describe("fetchMerchant", () => {
     );
   });
 
-  it("returns 'Merchant not found' for HTTP 404 responses", async () => {
-    mockFetchWithTimeout.mockResolvedValue(TestDataBuilder.textResponse("Not found", {status: 404, statusText: "Not Found"}));
-
-    const result = await fetchMerchant({merchantId});
-
-    expect(result.success).toBe(false);
-    if (!result.success) {
-      expect(result.error.code).toBe("NETWORK_ERROR");
-      expect(result.error.message).toContain("404");
-      expect(result.error.message).toContain("Not found");
-    }
-  });
-
-  it("returns a generic error message for HTTP 500 responses", async () => {
-    mockFetchWithTimeout.mockResolvedValue(
-      TestDataBuilder.textResponse("Internal server error", {status: 500, statusText: "Internal Server Error"}),
-    );
-
-    const result = await fetchMerchant({merchantId});
-
-    expect(result.success).toBe(false);
-    if (!result.success) {
-      expect(result.error.code).toBe("NETWORK_ERROR");
-      expect(result.error.message).toContain("500");
-    }
-  });
-
-  it("returns a generic error message for HTTP 403 responses", async () => {
-    mockFetchWithTimeout.mockResolvedValue(TestDataBuilder.textResponse("Forbidden", {status: 403, statusText: "Forbidden"}));
-
-    const result = await fetchMerchant({merchantId});
-
-    expect(result.success).toBe(false);
-    if (!result.success) {
-      expect(result.error.code).toBe("NETWORK_ERROR");
-      expect(result.error.message).toContain("403");
-    }
-  });
-
-  it("returns a generic error message for HTTP 401 responses", async () => {
-    mockFetchWithTimeout.mockResolvedValue(TestDataBuilder.textResponse("Unauthorized", {status: 401, statusText: "Unauthorized"}));
-
-    const result = await fetchMerchant({merchantId});
-
-    expect(result.success).toBe(false);
-    if (!result.success) {
-      expect(result.error.code).toBe("NETWORK_ERROR");
-      expect(result.error.message).toContain("401");
-    }
-  });
-
   it("handles fetch failures with error result", async () => {
     const networkError = new Error("Network failure");
     mockFetchWithTimeout.mockRejectedValue(networkError);
