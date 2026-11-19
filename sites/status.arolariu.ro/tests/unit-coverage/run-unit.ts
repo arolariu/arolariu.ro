@@ -1,4 +1,5 @@
 import {globSync} from "node:fs";
+import {configDefaults} from "vitest/config";
 import {createVitest, parseCLI} from "vitest/node";
 import {createAuthoredBranchCheck} from "./authored-branches.ts";
 import {statusCoverageScope} from "./scope.ts";
@@ -27,7 +28,7 @@ const vitest = await createVitest(
     ...(gate === undefined ? {} : {plugins: [gate.capture]}),
     test: {
       reporters: [
-        ...(reporter ?? ["default"]),
+        ...(reporter ?? configDefaults.reporters),
         {
           onCoverage(coverage: unknown) {
             rawCoverage = coverage;
