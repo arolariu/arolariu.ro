@@ -26,6 +26,16 @@ describe("parsePrettierCheckOutput", () => {
     const out = "[warn] Code style issues found in 0 files. Run Prettier to fix.\n";
     expect(parsePrettierCheckOutput(out)).toEqual([]);
   });
+
+  it("parses CRLF warnings without treating the summary as a file", () => {
+    const out = "[warn] src/a.ts\r\n[warn] Code style issues found in the above file. Run Prettier with --write to fix.\r\n";
+    expect(parsePrettierCheckOutput(out)).toEqual(["src/a.ts"]);
+  });
+
+  it("parses colored warnings with terminal cursor controls", () => {
+    const out = "\u001b[2K\u001b[1G\u001b[33m[warn]\u001b[39m src/a.ts\n\u001b[33m[warn]\u001b[39m Code style issues found in 1 file.\n";
+    expect(parsePrettierCheckOutput(out)).toEqual(["src/a.ts"]);
+  });
 });
 
 describe("formatProvider metadata", () => {
@@ -119,7 +129,7 @@ describe("formatProvider.run", () => {
       getExecOutput: vi.fn().mockResolvedValue({
         exitCode: 1,
         stdout: "",
-        stderr: "[warn] src/a.ts\n[warn] src/b.ts\n[warn] Code style issues found in 2 files.\n",
+        stderr: "\u001b[33m[warn]\u001b[39m src/a.ts\r\n[warn] src/b.ts\r\n[warn] Code style issues found in 2 files.\r\n",
       }),
     }));
     const {formatProvider: provider} = await import("./formatProvider.ts");

@@ -46,25 +46,63 @@ Read-only compatibility research may begin without mutation approval.
 
 ## Core Procedure
 
-1. Inspect live manifests, existing lockfiles or resolution evidence, runtime/tool configuration, the matching `.github/dependabot.yml`
-   entry, direct imports, configuration, tests, and container/deployment use, including Dockerfile base images. Determine the ownership
-   domain rather than assuming the nearest manifest owns resolution.
-2. Record exact current and proposed target states from primary sources.
-3. Research the exact target and every crossed release using official package metadata, maintainer changelogs/releases, migration guides,
-   framework and runtime documentation. Identify breaking/deprecated APIs, changed defaults, peers/engines, advisories, transitive risk,
-   lock/snapshot impact, codemods, and required intermediate versions.
-4. Build the affected-file inventory and select the ecosystem-specific guidance. For major/framework/pattern migrations, define
-   independently reversible phases.
-5. Prepare an approval packet: proposed mutations, compatibility findings, affected surfaces, validation, rollout, and executable rollback.
-6. If explicit approval is absent, stop before any manifest, lockfile, source, generated-file, or migration-tool mutation and request
-   approval.
-7. After approval, establish the smallest passing affected baseline. Apply the dependency change at its actual owner: use the native package
-   manager for package manifests, or update only the approved `uses:` declarations for a GitHub Action.
-8. Apply source/config/test/documentation changes one coherent phase at a time and validate after each phase. Keep behavior changes out of
-   the migration unless separately approved.
-9. Verify direct and transitive resolution against each owner's available lock/snapshot evidence, plus peers, compile/types, tests,
-   generated artifacts, and runtime/container parity.
-10. Inspect the scoped diff and report exact old/new state, official evidence, validation, residual risk, and rollback.
+1. Capture the original declarations, lock/resolution evidence, runtime floors, and ownership boundaries before editing, including the
+   matching `.github/dependabot.yml` entry and container/deployment use such as Dockerfile base images. Keep this baseline immutable; an
+   intermediate prerelease edit must never become evidence of the original release channel.
+2. Build one target ledger using the release-selection policy below. Filter channels and compatibility before researching migrations or
+   installing. Include unchanged declarations and explicit holds, not only packages reported as outdated.
+3. Research selected source-to-target intervals using exact registry metadata and maintainer changelogs/migration guides. Group shared
+   releases by cohort; identify changed APIs/defaults, peers/engines, advisories, native assets, and required intermediate versions.
+4. Inspect affected consumers and select ecosystem guidance. Record mutations, validation, rollback, and independently reversible phases
+   where needed. Reuse the user's existing in-scope approval; request only missing approval or a newly crossed risk boundary.
+5. After approval, establish the smallest affected baseline and apply declarations with the owning native package manager; for a GitHub
+   Action, update only the approved `uses:` declarations.
+6. Prove the proposed graph early: inspect peers, engines, provenance, and transitive deltas, then perform a clean install/restore from the
+   generated lock where one exists. Do this before expensive application-wide validation or speculative source migrations.
+7. Apply only adaptations required by the selected targets, preserving behavior. If targets or channel policy change, remove this task's
+   obsolete adapters, configuration, tests, and workspace pins before proceeding. Reassess temporary security pins, overrides, and
+   workaround-only direct references against the upgraded parents and restored graph; do not blindly bump or retain them.
+8. Run focused regressions per changed cohort. Once targets and the graph are frozen, run the affected broad checks once; rerun only checks
+   invalidated by a later edit or unresolved failure. Separate baseline failures from migration regressions.
+9. Re-query authoritative metadata for every declaration before closing, including unchanged packages and holds. Compare final manifests,
+   locks, installed versions, and the ledger; investigate new drift and validate only the affected delta.
+10. Review the final diff, resolution, runtime boundaries, and rollback. Report selected versions versus newer held releases, official
+    evidence, final-graph validation, and material limitations. Use the repository template when a PR is requested.
+
+## Release Selection Policy
+
+- Originally stable dependencies stay on the latest supported, compatible stable release. Do not introduce canary, beta, alpha, RC, or
+  preview versions merely because their number or publication date is newer.
+- For an originally prerelease dependency, prefer a supported compatible stable release only when it does not downgrade the original
+  version. Otherwise select the latest compatible release in its existing preview channel. An older stable release is not an upgrade;
+  crossing back to it requires explicit downgrade approval, even when its API still compiles.
+- Compare complete published versions using ecosystem-aware ordering, not only a `latest` tag. Exclude yanked, unlisted, accidental,
+  deprecated-placeholder, and incompatible releases; record the reason rather than presenting a hold as latest.
+- Distinguish direct channel choices from prereleases pulled in by stable packages. Review that transitive graph explicitly instead of
+  claiming that stable direct pins imply a stable-only tree.
+- Runtime/SDK, installer-policy, public-contract, and deployment migrations are separate decisions. A newer package or compiler CLI does not
+  authorize changing those boundaries or replacing a required compiler API.
+
+## Efficient Execution
+
+- Keep one evidence ledger per owner/cohort: original declaration/channel, newest stable, selected version, hold reason, primary source,
+  retrieval time, graph fingerprint, and applicable check results. Reuse verified evidence for unchanged selections.
+- Batch/cache registry metadata with bounded concurrency. Reuse recent upgrade-session findings as leads, then verify them against live
+  metadata; never copy historical version holds as permanent policy.
+- Parallelize independent research or disjoint execution graphs, not installs and checks sharing dependencies or imported root
+  configuration. Separate lock owners can still share inputs, including tests that inspect another owner's installed package metadata.
+  Prepare those owners before collecting a baseline. Limit concurrent heavy builds/tests so resource contention does not masquerade as a
+  regression.
+- Protect shared running environments. When isolation is needed, use task-owned source/output directories containing only required tracked
+  files and safe generated inputs, not ignored credentials; copy back only reviewed source and native-generated locks.
+- After a concrete failure, use the matching troubleshooting probe and a controlled comparison. Do not repeatedly rebuild the same graph,
+  retry identical resolutions, weaken gates, or expand installation policy without evidence.
+- Keep resolution, import/compile, behavioral tests, runtime smoke, and live external-service acceptance separate. Passing one is not proof
+  of another; a known limitation does not justify rerunning unrelated successful suites.
+- Inspect compound scripts, argument forwarding, and default coverage before scheduling them. A packed gate may already run the full suite;
+  nested runners may swallow concurrency flags or reject duplicate scalar options. Do not repeat an equivalent successful gate.
+- Verify runner selectors/exclusions with test discovery before repeating a broad gate. Glob syntax is not necessarily native filesystem
+  path syntax; an accepted flag does not prove that the intended files were excluded.
 
 ## Resource Triggers
 

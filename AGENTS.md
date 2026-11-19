@@ -28,11 +28,11 @@ source changes; downstream instructions, agents, skills, and prompts reference t
 | .NET SDK   | 10.0                    | `sites/api.arolariu.ro/Directory.Build.props`                                        |
 | Aspire     | 13.6.5                  | `tooling/src/AppHost/AppHost.csproj` and `tooling/Directory.Packages.props`          |
 | C#         | 14                      | `<LangVersion>latest</LangVersion>` in `sites/api.arolariu.ro/Directory.Build.props` |
-| Next.js    | 16.4.3                  | `package.json`                                                                       |
+| Next.js    | 16.4.6                  | `package.json`                                                                       |
 | React      | 19.3.1                  | `package.json`                                                                       |
 | TypeScript | 6.0.3                   | `package.json`                                                                       |
-| SvelteKit  | 2.70.3                  | `package.json`                                                                       |
-| Nx         | 24.0.1                  | `package.json`                                                                       |
+| SvelteKit  | 2.70.4                  | `package.json`                                                                       |
+| Nx         | 24.0.6                  | `package.json`                                                                       |
 
 ## Commands
 

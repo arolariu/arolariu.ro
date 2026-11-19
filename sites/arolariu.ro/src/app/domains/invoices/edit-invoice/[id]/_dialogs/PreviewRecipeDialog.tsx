@@ -75,7 +75,7 @@ export default function PreviewRecipeDialog(): React.JSX.Element {
     currentDialog: {payload},
     isOpen,
     close,
-  } = useDialog("EDIT_INVOICE__RECIPE_PREVIEW", "view");
+  } = useDialog("EDIT_INVOICE__RECIPE_PREVIEW");
   const recipe: RecipeSuggestion | null = (payload as {recipe?: RecipeSuggestion})?.recipe ?? null;
 
   const handleOpenChange = useCallback(

@@ -24,13 +24,13 @@
     "@actions/http-client": "4.0.1",
     "@actions/io": "3.0.2",
     "@actions/tool-cache": "4.0.0",
-    "fast-xml-parser": "5.11.2",
+    "fast-xml-parser": "5.12.1",
     "pretty-bytes": "7.2.0"
   },
   "devDependencies": {
     "@types/node": "24.19.2",
-    "@vitest/ui": "5.0.5",
+    "@vitest/ui": "5.1.0",
     "typescript": "7.0.2",
-    "vitest": "5.0.5"
+    "vitest": "5.1.0"
   }
 }

@@ -85,7 +85,9 @@ interface SourceResponse {
 
 /** Outcome of one bounded source attempt that did not fail permanently. */
 type SourceAttempt =
-  {readonly kind: "response"; readonly response: SourceResponse} | {readonly kind: "transient"; readonly message: string};
+  | {readonly kind: "response"; readonly response: SourceResponse}
+  | {readonly kind: "transient"; readonly message: string}
+  | {readonly kind: "denied"; readonly message: string};
 
 /** One validated SPARQL binding. */
 interface SparqlBinding {
@@ -183,6 +185,16 @@ function bodyReadMessage(error: ResponseTooLarge | HttpClientError.HttpClientErr
  */
 function isTransientHttpStatus(status: number): boolean {
   return status === 408 || status === 425 || status === 429 || (status >= 500 && status <= 599);
+}
+
+/**
+ * Determines whether an HTTP status denies access to an anonymous public source.
+ *
+ * @param status - HTTP response status.
+ * @returns `true` for 401 and 403, which retries cannot resolve but a validated cache can satisfy.
+ */
+function isAccessDeniedHttpStatus(status: number): boolean {
+  return status === 401 || status === 403;
 }
 
 /**
@@ -406,7 +418,8 @@ export abstract class TaxonomyClassificationGenerator {
    * {@link TAXONOMY_SOURCE_RETRY_DELAYS_MS} backoff. Every attempt is bounded by
    * {@link TAXONOMY_SOURCE_TIMEOUT_MS} and {@link TAXONOMY_SOURCE_MAX_RESPONSE_BYTES}. Exhausting
    * the schedule fails with a {@link TaxonomySourceUnavailable}, the single failure a validated
-   * cached mirror may satisfy; a non-transient status fails immediately.
+   * cached mirror may satisfy. An access-denied status (401/403) takes the same fallback path
+   * without reading the body or retrying; any other non-transient status fails immediately.
    *
    * @param requestName - Request label used in HTTP failure messages.
    * @param url - Source URL.
@@ -425,6 +438,9 @@ export abstract class TaxonomyClassificationGenerator {
         const outcome = yield* this.requestSourceOnce(requestName, url, headers);
         if (outcome.kind === "response") {
           return outcome.response;
+        }
+        if (outcome.kind === "denied") {
+          return yield* new TaxonomySourceUnavailable({message: outcome.message, taxonomy: this.sourceName});
         }
 
         lastFailure = outcome.message;
@@ -446,7 +462,7 @@ export abstract class TaxonomyClassificationGenerator {
    * @param requestName - Request label used in HTTP failure messages.
    * @param url - Source URL.
    * @param headers - Request headers.
-   * @returns The response or a transient failure; fails for a non-transient HTTP status.
+   * @returns The response, a transient failure, or an access denial; fails for any other non-transient HTTP status.
    */
   private requestSourceOnce(
     requestName: string,
@@ -454,12 +470,14 @@ export abstract class TaxonomyClassificationGenerator {
     headers: Readonly<Record<string, string>>,
   ): Effect.Effect<SourceAttempt, ArtifactGenerationFailed, HttpClient.HttpClient> {
     return Effect.gen({self: this}, function* () {
-      const client = yield* HttpClient.HttpClient;
+      const client = HttpClient.withScope(yield* HttpClient.HttpClient);
       const exchange = Effect.gen(function* () {
         const response = yield* Effect.mapError(client.execute(HttpClientRequest.get(url.href, {headers})), transportMessage);
+        if (isAccessDeniedHttpStatus(response.status)) return response.status;
         const bytes = yield* Effect.mapError(readBoundedBytes(response, TAXONOMY_SOURCE_MAX_RESPONSE_BYTES), bodyReadMessage);
         return {status: response.status, bytes};
       }).pipe(
+        Effect.scoped,
         // Keep the legacy request headers exactly: no trace propagation headers to external sources.
         Effect.provideService(HttpClient.TracerPropagationEnabled, false),
         Effect.timeoutOption(Duration.millis(TAXONOMY_SOURCE_TIMEOUT_MS)),
@@ -471,8 +489,11 @@ export abstract class TaxonomyClassificationGenerator {
               kind: "transient",
               message: `${requestName} timed out after ${String(TAXONOMY_SOURCE_TIMEOUT_MS)}ms.`,
             }),
-            onSome: ({status, bytes}): SourceAttempt | number =>
-              status >= 200 && status <= 299 ? {kind: "response", response: {bytes, text: utf8Decoder.decode(bytes)}} : status,
+            onSome: (outcome): SourceAttempt | number => {
+              if (typeof outcome === "number") return outcome;
+              const {status, bytes} = outcome;
+              return status >= 200 && status <= 299 ? {kind: "response", response: {bytes, text: utf8Decoder.decode(bytes)}} : status;
+            },
           }),
         ),
         Effect.catch((message: string) => Effect.succeed<SourceAttempt>({kind: "transient", message})),
@@ -482,6 +503,9 @@ export abstract class TaxonomyClassificationGenerator {
       }
 
       const failure = `${requestName} failed with HTTP ${String(settled)}.`;
+      if (isAccessDeniedHttpStatus(settled)) {
+        return {kind: "denied", message: failure} satisfies SourceAttempt;
+      }
       if (!isTransientHttpStatus(settled)) {
         return yield* artifactFailure(this.sourceName, failure);
       }
@@ -548,7 +572,9 @@ export abstract class TaxonomyClassificationGenerator {
           ),
       });
 
-      yield* Effect.logWarning(`[${this.sourceName}] Source unavailable after retries; using validated cached artifact '${fileName}'.`);
+      yield* Effect.logWarning(
+        `[${this.sourceName}] Using validated cached artifact '${fileName}' after source failure: ${sourceError.message}`,
+      );
       return paths;
     });
   }

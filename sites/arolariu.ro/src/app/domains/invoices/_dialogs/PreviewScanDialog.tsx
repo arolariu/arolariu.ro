@@ -61,7 +61,7 @@ export default function PreviewScanDialog(): React.JSX.Element | null {
     isOpen,
     close,
     currentDialog: {payload},
-  } = useDialog("SHARED__SCAN_PREVIEW", "view");
+  } = useDialog("SHARED__SCAN_PREVIEW");
   const scan = payload?.scan ?? null;
 
   /**

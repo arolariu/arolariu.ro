@@ -11,7 +11,7 @@
  * is mocked; nothing reads the live taxonomy cache or the network.
  */
 
-import {join, relative} from "node:path";
+import {join, relative, resolve} from "node:path";
 
 import {Effect, Fiber, FileSystem, type Duration, type PlatformError, type Scope} from "effect";
 import {HttpClient, HttpClientError, HttpClientResponse, type HttpClientRequest} from "effect/http";
@@ -913,6 +913,50 @@ describe("EcoicopTaxonomyClassificationGenerator", () => {
       }),
   );
 
+  for (const status of [401, 403]) {
+    artifactTest(
+      `uses the validated cache without reading or retrying a broken HTTP ${String(status)} body`,
+      {
+        files: {
+          [join(TEST_ROOTS[0], "ecoicop-v2.min.json")]:
+            EXPECTED_ARTIFACT_BYTES["sites/api.arolariu.ro/src/Invoices/Resources/Taxonomies/ecoicop-v2.min.json"] ?? "",
+          [join(TEST_ROOTS[1], "ecoicop-v2.min.json")]:
+            EXPECTED_ARTIFACT_BYTES["sites/api.arolariu.ro/src/Invoices/Resources/Taxonomies/ecoicop-v2.min.json"] ?? "",
+        },
+      },
+      ({harness}) =>
+        Effect.gen(function* () {
+          const signals: AbortSignal[] = [];
+          let bodyReads = 0;
+          const client = HttpClient.make((request, _url, signal) => {
+            signals.push(signal);
+            const body = new ReadableStream<Uint8Array>(
+              {
+                pull(controller) {
+                  bodyReads += 1;
+                  controller.error(new Error("Publisher closed the denial body."));
+                },
+              },
+              {highWaterMark: 0},
+            );
+            return Effect.succeed(HttpClientResponse.fromWeb(request, new Response(body, {status})));
+          });
+
+          // Act
+          const paths = yield* withClient(new EcoicopTaxonomyClassificationGenerator(TEST_ROOTS).generate(), client);
+
+          // Assert
+          expect(paths).toEqual(TEST_ROOTS.map((root) => resolve(root, "ecoicop-v2.min.json")));
+          expect(signals).toHaveLength(1);
+          expect(bodyReads).toBe(0);
+          expect(signals[0]?.aborted).toBe(true);
+          expect(semanticLines(harness, "stderr")).toEqual([
+            `[arolariu::test::artifacts] ⚠️ [ECOICOP] Using validated cached artifact 'ecoicop-v2.min.json' after source failure: SPARQL request failed with HTTP ${String(status)}.`,
+          ]);
+        }),
+    );
+  }
+
   const validNode = PROBE_ARTIFACT.nodes[0];
   const invalidCaches: readonly (readonly [string, unknown, string])[] = [
     ["an unsupported system", {...PROBE_ARTIFACT, system: "OTHER"}, "Taxonomy artifact system 'OTHER' is unsupported."],
@@ -1454,9 +1498,9 @@ describe("generateArtifacts", () => {
         expect(harness.httpCalls()).toHaveLength(9);
         expect(semanticLines(harness, "stderr")).toEqual(
           expect.arrayContaining([
-            "[arolariu::test::artifacts] ⚠️ [GPC] Source unavailable after retries; using validated cached artifact 'gpc-2026-05.min.json'.",
-            "[arolariu::test::artifacts] ⚠️ [ECOICOP] Source unavailable after retries; using validated cached artifact 'ecoicop-v2.min.json'.",
-            "[arolariu::test::artifacts] ⚠️ [NACE] Source unavailable after retries; using validated cached artifact 'nace-2.1.min.json'.",
+            "[arolariu::test::artifacts] ⚠️ [GPC] Using validated cached artifact 'gpc-2026-05.min.json' after source failure: GPC download failed with HTTP 503.",
+            "[arolariu::test::artifacts] ⚠️ [ECOICOP] Using validated cached artifact 'ecoicop-v2.min.json' after source failure: SPARQL request failed with HTTP 503.",
+            "[arolariu::test::artifacts] ⚠️ [NACE] Using validated cached artifact 'nace-2.1.min.json' after source failure: SPARQL request failed with HTTP 503.",
           ]),
         );
       }),

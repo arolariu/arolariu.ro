@@ -13,6 +13,11 @@ Load after exact current and proposed target versions are known and before an ap
 Search tools may locate sources, but every breaking/default/security claim must link to a primary source. Do not summarize an unbounded
 “latest” page.
 
+Apply the skill's channel policy first. Cache evidence by repository, package, and exact interval, so a shared framework release is read
+once rather than once per addon. Prefer package-scoped tags or the package's tagged changelog in a monorepo; a date-filtered list of recent
+repository releases can omit the target or mix unrelated packages. Reuse unchanged target evidence after a correction and research only the
+new intervals. Record missing release narratives honestly rather than inferring "no breaking changes" from absent notes.
+
 ## Range analysis
 
 For a current version `A` and target `B`:
