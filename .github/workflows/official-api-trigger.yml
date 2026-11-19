@@ -115,6 +115,7 @@ jobs:
           install-dotnet-deps: "true"
 
       - name: Check pinned taxonomy integrity
+        working-directory: .
         run: node scripts/cli.ts generate --check-taxonomies --json
 
       - name: 🧪 Running unit tests...
@@ -195,6 +196,7 @@ jobs:
           install-node-deps: "true"
 
       - name: Check pinned taxonomy integrity
+        working-directory: .
         run: node scripts/cli.ts generate --check-taxonomies --json
 
       - name: 🔒 Performing auth against Azure Public Cloud...

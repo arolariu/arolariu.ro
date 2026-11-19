@@ -64,6 +64,17 @@ describe("plan-aware hygiene workflow contract", () => {
   });
 });
 
+describe("API taxonomy workflow contract", () => {
+  const workflow = readFileSync(resolve(ciRoot, "..", "workflows", "official-api-trigger.yml"), "utf8");
+
+  it.each(["test", "build"])("runs the %s integrity check from the checkout root", (jobName) => {
+    const job = new RegExp(`^  ${jobName}:\\r?\\n([\\s\\S]*?)(?=^  [a-z][a-z-]*:|$(?![\\s\\S]))`, "m").exec(workflow)?.[1];
+    expect(job).toMatch(
+      /^      - name: Check pinned taxonomy integrity\r?\n        working-directory: \.\r?\n        run: node scripts\/cli\.ts generate --check-taxonomies --json$/m,
+    );
+  });
+});
+
 interface BoundaryViolation {
   readonly specifier: string;
   readonly line: number;
