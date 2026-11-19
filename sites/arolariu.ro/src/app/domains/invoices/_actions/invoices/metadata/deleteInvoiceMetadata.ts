@@ -27,7 +27,7 @@
 import {addSpanEvent, logWithTrace, withSpan} from "@/instrumentation.server";
 import {fetchBFFUserFromAuthService} from "@/lib/actions/user/fetchUser";
 import {validateStringIsGuidType} from "@/lib/utils.generic";
-import {createErrorResult, fetchWithTimeout, mapHttpStatusToErrorCode, type ServerActionResult} from "@/lib/utils.server";
+import {createErrorResult, createHttpErrorResult, fetchWithTimeout, type ServerActionResult} from "@/lib/utils.server";
 
 /**
  * Input parameters for the deleteInvoiceMetadata server action.
@@ -154,10 +154,7 @@ export async function deleteInvoiceMetadata({invoiceId, key}: ServerActionInputT
         response.status >= 500
           ? "A server error occurred while deleting the invoice metadata. Please try again later."
           : "Failed to delete the invoice metadata. Please try again.";
-      return {
-        success: false,
-        error: {code: mapHttpStatusToErrorCode(response.status), message: userMessage, status: response.status},
-      } as const;
+      return createHttpErrorResult(response.status, userMessage);
     } catch (error: unknown) {
       addSpanEvent("bff.request.delete-invoice-metadata.error");
       const errorMessage = error instanceof Error ? error.message : "An unexpected error occurred";

@@ -163,14 +163,13 @@ export type ServerActionErrorCode = Readonly<
   "NETWORK_ERROR" | "TIMEOUT_ERROR" | "AUTH_ERROR" | "NOT_FOUND" | "VALIDATION_ERROR" | "SERVER_ERROR" | "UNKNOWN_ERROR"
 >;
 
+type ServerActionFailure = Readonly<{success: false; data?: never; error: {code: ServerActionErrorCode; message: string; status?: number}}>;
+
 /**
  * Standardized result type for server actions.
  * Use this for consistent error handling across all server actions.
  */
-export type ServerActionResult<T> = Promise<
-  | Readonly<{success: true; data: T; error?: never}>
-  | Readonly<{success: false; data?: never; error: {code: ServerActionErrorCode; message: string; status?: number}}>
->;
+export type ServerActionResult<T> = Promise<Readonly<{success: true; data: T; error?: never}> | ServerActionFailure>;
 
 /**
  * Default timeout for fetch requests in milliseconds (30 seconds).
@@ -276,6 +275,16 @@ export function mapHttpStatusToErrorCode(status: number): ServerActionErrorCode 
   if (status === 400 || status === 422) return "VALIDATION_ERROR";
   if (status >= 500) return "SERVER_ERROR";
   return "UNKNOWN_ERROR";
+}
+
+/**
+ * Converts a failed HTTP response into a public action result without copying backend diagnostics.
+ * @param status - Status of the failed response.
+ * @param publicMessage - Caller-selected message safe to return to the browser.
+ * @returns A failure with the mapped code and original HTTP status.
+ */
+export function createHttpErrorResult(status: number, publicMessage: string): ServerActionFailure {
+  return {success: false, error: {code: mapHttpStatusToErrorCode(status), message: publicMessage, status}};
 }
 
 /**

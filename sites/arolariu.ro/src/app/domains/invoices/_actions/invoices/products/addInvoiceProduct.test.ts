@@ -62,40 +62,18 @@ describe("addInvoiceProduct", () => {
     expect(mockFetchWithTimeout).not.toHaveBeenCalled();
   });
 
-  it("maps 5xx responses to a server-error user message", async () => {
-    mockFetchWithTimeout.mockResolvedValue(
-      TestDataBuilder.textResponse("Internal Server Error", {status: 500, statusText: "Internal Server Error"}) as Awaited<
-        ReturnType<typeof fetchWithTimeout>
-      >,
-    );
-
+  it.each([
+    [400, "VALIDATION_ERROR", "Failed to add the product. Please check your input and try again."],
+    [500, "SERVER_ERROR", "A server error occurred. Please try again later."],
+  ])("returns a public HTTP %i failure without revalidating", async (status, code, message) => {
     const invoiceId = "11111111-1111-4111-8111-111111111111";
     const product = TestDataBuilder.build("product");
+    mockFetchWithTimeout.mockResolvedValue(new Response("Internal response details", {status, statusText: "Internal status text"}));
 
     const result = await addInvoiceProduct({invoiceId, product});
 
-    expect(result.success).toBe(false);
-    if (!result.success) {
-      expect(result.error.message).toContain("500");
-      expect(result.error.message).toContain("Failed to add product");
-    }
-  });
-
-  it("maps non-5xx responses to the fallback user message", async () => {
-    mockFetchWithTimeout.mockResolvedValue(
-      TestDataBuilder.textResponse("Bad Request", {status: 400, statusText: "Bad Request"}) as Awaited<ReturnType<typeof fetchWithTimeout>>,
-    );
-
-    const invoiceId = "11111111-1111-4111-8111-111111111111";
-    const product = TestDataBuilder.build("product");
-
-    const result = await addInvoiceProduct({invoiceId, product});
-
-    expect(result.success).toBe(false);
-    if (!result.success) {
-      expect(result.error.message).toContain("400");
-      expect(result.error.message).toContain("Failed to add product");
-    }
+    expect(result).toEqual({success: false, error: {code, message, status}});
+    expect(mockRevalidatePath).not.toHaveBeenCalled();
   });
 
   it("returns an error result when auth or fetch throws", async () => {

@@ -84,38 +84,21 @@ describe("updateInvoiceProduct", () => {
     expect(mockFetchWithTimeout).not.toHaveBeenCalled();
   });
 
-  it("maps 5xx and non-5xx failures", async () => {
-    mockFetchWithTimeout.mockResolvedValue(
-      TestDataBuilder.textResponse("Internal Server Error", {status: 500, statusText: "Internal Server Error"}) as Awaited<
-        ReturnType<typeof fetchWithTimeout>
-      >,
-    );
-
+  it.each([
+    [422, "VALIDATION_ERROR", "Failed to update the product. Please check your input and try again."],
+    [500, "SERVER_ERROR", "A server error occurred. Please try again later."],
+  ])("returns a public HTTP %i failure without revalidating", async (status, code, message) => {
     const invoiceId = "11111111-1111-4111-8111-111111111111";
     const payload = {
       originalProductName: "Coffee",
       updatedProduct: TestDataBuilder.build("product"),
     };
+    mockFetchWithTimeout.mockResolvedValue(new Response("Internal response details", {status, statusText: "Internal status text"}));
 
     const result = await updateInvoiceProduct({invoiceId, payload});
 
-    expect(result.success).toBe(false);
-    if (!result.success) {
-      expect(result.error.message).toContain("500");
-      expect(result.error.message).toContain("Failed to update product");
-    }
-
-    mockFetchWithTimeout.mockResolvedValue(
-      TestDataBuilder.textResponse("Bad Request", {status: 400, statusText: "Bad Request"}) as Awaited<ReturnType<typeof fetchWithTimeout>>,
-    );
-
-    const result2 = await updateInvoiceProduct({invoiceId, payload});
-
-    expect(result2.success).toBe(false);
-    if (!result2.success) {
-      expect(result2.error.message).toContain("400");
-      expect(result2.error.message).toContain("Failed to update product");
-    }
+    expect(result).toEqual({success: false, error: {code, message, status}});
+    expect(mockRevalidatePath).not.toHaveBeenCalled();
   });
 
   it("returns an error result when auth or fetch throws", async () => {

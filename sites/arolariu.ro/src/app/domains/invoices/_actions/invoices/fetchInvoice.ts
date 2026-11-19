@@ -23,7 +23,7 @@
 import {addSpanEvent, logWithTrace, withSpan} from "@/instrumentation.server";
 import {fetchBFFUserFromAuthService} from "@/lib/actions/user/fetchUser";
 import {validateStringIsGuidType} from "@/lib/utils.generic";
-import {createErrorResult, fetchWithTimeout, mapHttpStatusToErrorCode, type ServerActionResult} from "@/lib/utils.server";
+import {createErrorResult, createHttpErrorResult, fetchWithTimeout, type ServerActionResult} from "@/lib/utils.server";
 import type {Invoice} from "@/types/invoices";
 import {parseInvoiceResponse, tryParse} from "@/types/invoices/transport";
 
@@ -131,10 +131,7 @@ export async function fetchInvoice({invoiceId}: ServerActionInputType): ServerAc
         }
         return "An error occurred while fetching the invoice. Please try again.";
       })();
-      return {
-        success: false,
-        error: {code: mapHttpStatusToErrorCode(response.status), message: userMessage, status: response.status},
-      } as const;
+      return createHttpErrorResult(response.status, userMessage);
     } catch (error: unknown) {
       addSpanEvent("bff.request.fetch-invoice.error");
       const errorMessage = error instanceof Error ? error.message : "An unexpected error occurred";
