@@ -21,7 +21,6 @@ import {
   satisfiesMinimum,
   type MinimumVersion,
 } from "../../../common/requirements.ts";
-import {getExpectedTaxonomyArtifactPaths} from "../../../common/taxonomy-artifacts.ts";
 import type {NpmTreeFacts} from "../../../inspection/packages.ts";
 import {Environment} from "../../../platform/Environment.ts";
 import {ReadOnlyFiles} from "../../../platform/Files.ts";
@@ -577,7 +576,7 @@ function makeRunGenerators(
     const submitted = yield* submitSetupAction({
       id: generatorActionId,
       scope: "repository",
-      summary: "Generate taxonomy, GraphQL, and internationalization checkout artifacts.",
+      summary: "Verify pinned taxonomies and prepare Website licenses, GraphQL, and internationalization artifacts.",
       execute: Effect.gen(function* () {
         const nxOutcome = yield* runPhaseCommand(context, NX_PROJECTS_COMMAND, {cwd: context.paths.root});
         const projects = parseNxProjects(nxOutcome);
@@ -643,7 +642,7 @@ function makeRunGenerators(
     }
 
     const expectedArtifacts = [
-      ...getExpectedTaxonomyArtifactPaths(context.paths.root),
+      resolve(context.paths.websiteRoot, "licenses.json"),
       resolve(context.paths.root, "scripts", "__generated__", "gql", "README.placeholder.txt"),
     ];
     const artifactChecks = yield* Effect.result(
@@ -672,7 +671,7 @@ function makeRunGenerators(
     return yield* phaseResult(startedAt, {
       id,
       status: "succeeded",
-      summary: "Nx metadata and required generated checkout artifacts are valid.",
+      summary: "Nx metadata, pinned taxonomies, and generated checkout artifacts are ready.",
       evidence: [
         `Nx reported ${projectCount} project(s).`,
         `Executed action: ${generatorActionId}`,

@@ -15,9 +15,10 @@ import {Effect} from "effect";
 import {describe, expect, it} from "vitest";
 
 import {makeRootCommand, runCli} from "../../cli.ts";
+import {pinnedTaxonomyFixtureFiles} from "../../common/taxonomy-fixtures.testing.ts";
 import {exitCodeFor, type CommandExitCode} from "../../platform/exit.ts";
 import type {SinkRecord} from "../../platform/Output.ts";
-import {makeTestLayer, repositoryFixtureRoot, type TestLayerOptions} from "../../platform/testing.ts";
+import {makeTestLayer, repositoryFixtureRoot, type TestHarness, type TestLayerOptions} from "../../platform/testing.ts";
 import {makeGenerateCommand} from "./cli.ts";
 
 /** Locale directory read by the i18n generator. */
@@ -35,6 +36,7 @@ interface GenerateRun {
   readonly code: CommandExitCode;
   readonly output: readonly SinkRecord[];
   readonly texts: readonly string[];
+  readonly files: TestHarness["files"];
 }
 
 /**
@@ -48,10 +50,52 @@ async function run(argv: readonly string[], options: TestLayerOptions = {}): Pro
   const harness = makeTestLayer({files: LOCALES, ...options});
   const exit = await Effect.runPromiseExit(runCli(argv, makeRootCommand([makeGenerateCommand()])).pipe(Effect.provide(harness.layer)));
   const output = harness.output();
-  return {code: exitCodeFor(exit, undefined), output, texts: output.map((record) => record.text.replace(/\n$/u, ""))};
+  return {code: exitCodeFor(exit, undefined), output, texts: output.map((record) => record.text.replace(/\n$/u, "")), files: harness.files};
 }
 
 describe("generate command", () => {
+  it.each([
+    ["--check-taxonomies", "--refresh-taxonomies", "--output-dir", "candidate"],
+    ["--check-taxonomies", "artifacts"],
+    ["--refresh-taxonomies", "--output-dir", "candidate", "--website-licenses-only"],
+    ["--refresh-taxonomies"],
+    ["--output-dir", "candidate"],
+  ])("rejects incompatible or incomplete taxonomy options (%j)", async (...options) => {
+    const result = await run(["generate", ...options]);
+
+    expect(result.code).toBe(2);
+    expect(result.texts.join("\n")).toMatch(/cannot be combined|requires|only valid with/u);
+  });
+
+  it.each([
+    ["1969-07-02T00:00:00.000Z", "Fresh", "", "🟢"],
+    ["1969-07-01T00:00:00.000Z", "Review due", "\u001b[33m", "🟡"],
+    ["1969-01-01T00:00:00.000Z", "Refresh overdue", "\u001b[31m", "🔴"],
+    ["1970-01-02T00:00:00.000Z", "Unknown age", "", "⚪"],
+  ] as const)("checks age %s without failing CI", async (generatedAt, label, color, marker) => {
+    const files = pinnedTaxonomyFixtureFiles(repositoryFixtureRoot, generatedAt);
+    const summary = join(repositoryFixtureRoot, "summary.md");
+
+    const result = await run(["generate", "--check-taxonomies"], {
+      files,
+      environment: {isCI: true, variables: {GITHUB_ACTIONS: "true", GITHUB_STEP_SUMMARY: summary}},
+    });
+
+    expect(result.code).toBe(0);
+    expect(result.texts.filter((line) => line.startsWith("::warning::"))).toHaveLength(label === "Fresh" ? 0 : 3);
+    expect(result.texts.join("\n")).toContain(`${color}${label}`);
+    const summaryFile = [...result.files()].find(([path]) => path.endsWith("summary.md"));
+    expect(summaryFile?.[1]).toContain(`| NACE_2_1 2.1 | ${generatedAt} | ${marker} ${label} |`);
+    if (label === "Refresh overdue") expect(result.texts.join("\n")).not.toContain("Review due");
+  });
+
+  it("fails integrity separately from age", async () => {
+    const result = await run(["generate", "--check-taxonomies"]);
+
+    expect(result.code).toBe(1);
+    expect(result.texts.join("\n")).toContain("Missing or unreadable taxonomy snapshot");
+  });
+
   it("rejects mixing website-only attribution with unrelated generators", async () => {
     const result = await run(["generate", "env", "--website-licenses-only"]);
 

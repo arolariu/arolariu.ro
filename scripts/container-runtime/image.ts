@@ -6,7 +6,7 @@
  * {@link runImage} resolves the container engine, runs the shared preflight, and builds or runs
  * the image through the Effect `Process` service with tee output, so tests script every process
  * instead of spawning Docker or Podman. The frontend/backend taxonomy artifact prerequisite runs
- * {@link generateArtifacts} directly and silently (as the legacy nested `presentation: "silent"`
+ * snapshot verification directly and silently (as the legacy nested `presentation: "silent"`
  * invocation did), after preflight and before the build. Cancellation is fiber interruption.
  */
 
@@ -15,8 +15,8 @@ import {parseEnv} from "node:util";
 
 import {Effect, FileSystem, type PlatformError} from "effect";
 
-import {generateArtifacts} from "../commands/generate/artifacts.ts";
-import type {ArtifactGenerationFailed, TaxonomySourceUnavailable} from "../commands/generate/errors.ts";
+import {generateArtifacts, verifyPinnedTaxonomies} from "../commands/generate/artifacts.ts";
+import type {ArtifactGenerationFailed} from "../commands/generate/errors.ts";
 import {silently} from "../commands/generate/index.ts";
 import {resolveRepositoryPaths, type RepositoryRootNotFound} from "../common/repository-paths.ts";
 import {Environment} from "../platform/Environment.ts";
@@ -66,7 +66,7 @@ const feedConfigsByTarget: Readonly<Record<ImageTarget, readonly [string, string
 };
 
 /**
- * Determines whether an image build consumes generated taxonomy artifacts.
+ * Determines whether an image build consumes pinned taxonomy snapshots.
  *
  * @param target - Image target.
  * @returns `true` for frontend and backend images.
@@ -108,9 +108,9 @@ export function buildImageRunCommand(adapter: ContainerRuntimeAdapter, options: 
  * Builds or runs a local image with the resolved local container engine.
  *
  * @remarks
- * Preflight runs first. A frontend or backend build then generates the taxonomy and license
- * artifacts with {@link generateArtifacts} (silently, `{verbose: false}`); a failed generation
- * stops before the engine CLI runs. Frontend builds forward only allowlisted public values from
+ * Preflight runs first. A frontend or backend build then validates pinned taxonomy snapshots;
+ * frontend also prepares licenses. A failed prerequisite stops before the engine CLI runs.
+ * Frontend builds forward only allowlisted public values from
  * the invocation environment or generated `.env`; private values never become build arguments.
  * Frontend runs parse `.env` and deliver values through the child environment by variable name;
  * exp runs mount its private configuration
@@ -120,19 +120,14 @@ export function buildImageRunCommand(adapter: ContainerRuntimeAdapter, options: 
  * @param input - Typed command input.
  * @returns The engine, action, and target this invocation ran with, failing with
  * {@link ContainerRuntimeError} when the engine cannot be resolved or preflight fails, with
- * `RepositoryRootNotFound` outside a repository, with {@link TaxonomySourceUnavailable} or {@link ArtifactGenerationFailed} when the artifact
+ * `RepositoryRootNotFound` outside a repository, with {@link ArtifactGenerationFailed} when the artifact
  * prerequisite fails, and with a {@link ProcessError} when the engine command fails.
  */
 export const runImage: (
   input: Readonly<ImageInput>,
 ) => Effect.Effect<
   ImageResult,
-  | ContainerRuntimeError
-  | RepositoryRootNotFound
-  | ProcessError
-  | TaxonomySourceUnavailable
-  | ArtifactGenerationFailed
-  | PlatformError.PlatformError,
+  ContainerRuntimeError | RepositoryRootNotFound | ProcessError | ArtifactGenerationFailed | PlatformError.PlatformError,
   PlatformServices
 > = Effect.fn("containers.image")(function* (input: Readonly<ImageInput>) {
   const adapter = yield* prepareContainerEngine(input, "image");
@@ -141,8 +136,10 @@ export const runImage: (
   const fs = yield* FileSystem.FileSystem;
 
   if (input.action === "build") {
-    if (shouldGenerateTaxonomyArtifacts(input.target)) {
-      yield* silently(generateArtifacts({verbose: false}));
+    if (input.target === "frontend") {
+      yield* silently(generateArtifacts({verbose: false, root: paths.root}));
+    } else if (input.target === "backend") {
+      yield* verifyPinnedTaxonomies(paths.root);
     }
 
     const buildArgs: Record<string, string> = {VERSION: "local"};

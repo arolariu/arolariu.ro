@@ -15,12 +15,24 @@
 
 import {basename, dirname, join, resolve} from "node:path";
 
-import {DateTime, Duration, Effect, FileSystem, Option, type Path, type PlatformError} from "effect";
+import {Clock, DateTime, Duration, Effect, FileSystem, Option, type Path, type PlatformError} from "effect";
 import {HttpClient, HttpClientRequest, type HttpClientError} from "effect/http";
 
-import {taxonomyArtifactFileNames, taxonomyArtifactOutputRoots} from "../../common/taxonomy-artifacts.ts";
+import {
+  matchesTaxonomyIdentity,
+  parseTaxonomyArtifact,
+  taxonomyHierarchy,
+  validateTaxonomyHierarchy,
+} from "../../common/taxonomy-artifact-validation.ts";
+import {
+  taxonomyArtifactFileNames,
+  taxonomyArtifactIdentities,
+  taxonomyArtifactOutputRoots,
+  type TaxonomyArtifactIdentity,
+} from "../../common/taxonomy-artifacts.ts";
+import {inspectTaxonomySnapshots, type TaxonomySnapshot} from "../../common/taxonomy-snapshots.ts";
 import {Environment} from "../../platform/Environment.ts";
-import {Glob, writeTextAtomic} from "../../platform/Files.ts";
+import {Glob, ReadOnlyFilesLive, writeTextAtomic} from "../../platform/Files.ts";
 import {readBoundedBytes, type ResponseTooLarge} from "../../platform/Http.ts";
 import {Presenter} from "../../platform/Output.ts";
 import {Process, type ProcessError, type ProcessRequest} from "../../platform/Process.ts";
@@ -56,14 +68,18 @@ const utf8Decoder = new TextDecoder("utf-8");
 export interface GenerateArtifactsInput {
   /** Enables diagnostic output. */
   readonly verbose: boolean;
+  /** Repository root when the caller can be launched from a subdirectory. */
+  readonly root?: string;
 }
 
 /** Typed business result produced by the artifact generator. */
 export interface ArtifactGenerationResult {
   /** Human-readable completion summary. */
   readonly summary: string;
-  /** Every artifact path written or preserved by this invocation, in generator declaration order. */
+  /** Paths written by this invocation; excludes checked-in taxonomy inputs. */
   readonly generatedFiles: readonly string[];
+  /** Pinned inputs validated without modification. */
+  readonly verifiedTaxonomies: readonly TaxonomySnapshot[];
 }
 
 /** Every failure an artifact generator may report. */
@@ -71,9 +87,6 @@ export type ArtifactGenerationError = TaxonomySourceUnavailable | ArtifactGenera
 
 /** Capabilities actually consumed by frontend attribution generation. */
 export type FrontendLicenseRequirements = FileSystem.FileSystem | Path.Path | Environment | Presenter;
-
-/** Stable fields that identify the exact taxonomy expected by one generator. */
-type TaxonomyArtifactIdentity = Readonly<Pick<TaxonomyArtifact, "system" | "version" | "sourceUrl" | "attribution">>;
 
 /** One successful taxonomy source response. */
 interface SourceResponse {
@@ -374,27 +387,9 @@ export abstract class TaxonomyClassificationGenerator {
    * @throws {Error} When the code is absent, a parent is missing, or a cycle exists.
    */
   protected buildHierarchy(nodesByCode: ReadonlyMap<string, TaxonomyArtifactNode>, code: string): TaxonomyArtifactNode {
-    const selected = nodesByCode.get(code);
+    const hierarchy = taxonomyHierarchy(nodesByCode, code);
+    const selected = hierarchy.at(-1);
     if (selected === undefined) throw new Error(`Taxonomy code '${code}' was not found.`);
-
-    const hierarchy: TaxonomyArtifactNode[] = [];
-    const visited = new Set<string>();
-    let current: TaxonomyArtifactNode | undefined = selected;
-
-    while (current !== undefined) {
-      if (visited.has(current.code)) {
-        throw new Error(`Taxonomy hierarchy cycle detected at '${current.code}'.`);
-      }
-      visited.add(current.code);
-      hierarchy.unshift(current);
-
-      if (current.parentCode === null) break;
-      const parent = nodesByCode.get(current.parentCode);
-      if (parent === undefined) {
-        throw new Error(`Taxonomy parent '${current.parentCode}' for '${current.code}' was not found.`);
-      }
-      current = parent;
-    }
 
     return {
       ...selected,
@@ -514,17 +509,19 @@ export abstract class TaxonomyClassificationGenerator {
    * @param fileName - Expected cached artifact file name.
    * @param identity - Exact taxonomy identity required from the cache.
    * @param produce - Source generation.
+   * @param enabled - Whether cached output is acceptable to this caller.
    * @returns The produced or cached paths in output-root order; every final failure is logged.
    */
   protected withCachedFallback<R>(
     fileName: string,
     identity: TaxonomyArtifactIdentity,
     produce: Effect.Effect<readonly string[], ArtifactGenerationError, R>,
+    enabled: boolean,
   ): Effect.Effect<readonly string[], ArtifactGenerationError, R | FileSystem.FileSystem | Environment> {
-    return produce.pipe(
-      Effect.catchTag("TaxonomySourceUnavailable", (sourceError) => this.useCachedArtifact(fileName, identity, sourceError)),
-      Effect.tapError((error) => Effect.logError(`[${this.sourceName}] ${error.message}`)),
-    );
+    const generation = enabled
+      ? produce.pipe(Effect.catchTag("TaxonomySourceUnavailable", (sourceError) => this.useCachedArtifact(fileName, identity, sourceError)))
+      : produce;
+    return generation.pipe(Effect.tapError((error) => Effect.logError(`[${this.sourceName}] ${error.message}`)));
   }
 
   /**
@@ -559,7 +556,11 @@ export abstract class TaxonomyClassificationGenerator {
       }
 
       yield* Effect.try({
-        try: () => this.validateArtifactIdentity(fileName, this.parseArtifact(firstContents), identity),
+        try: () => {
+          if (!matchesTaxonomyIdentity(parseTaxonomyArtifact(firstContents), identity)) {
+            throw new Error(`Cached taxonomy artifact '${fileName}' does not match ${identity.system} ${identity.version}.`);
+          }
+        },
         catch: (cacheError) =>
           artifactFailure(
             this.sourceName,
@@ -586,7 +587,7 @@ export abstract class TaxonomyClassificationGenerator {
     artifact: Readonly<TaxonomyArtifact>,
   ): Effect.Effect<readonly string[], ArtifactGenerationFailed, GenerateRequirements> {
     return Effect.gen({self: this}, function* () {
-      yield* this.validate(() => this.validateArtifact(artifact));
+      yield* this.validate(() => validateTaxonomyHierarchy(artifact));
       const fs = yield* FileSystem.FileSystem;
       const paths = (yield* this.resolveOutputRoots()).map((root) => resolve(root, fileName));
       const existingContents = yield* this.readExistingArtifactContents(paths);
@@ -652,7 +653,7 @@ export abstract class TaxonomyClassificationGenerator {
     }
 
     try {
-      const existingArtifact = this.parseArtifact(firstContents);
+      const existingArtifact = parseTaxonomyArtifact(firstContents);
       const stableCandidate = JSON.stringify({...artifact, generatedAt: existingArtifact.generatedAt});
       if (stableCandidate === firstContents) {
         return Effect.as(Effect.logDebug(`Artifact '${fileName}' is unchanged; preserving its tracked bytes.`), firstContents);
@@ -665,161 +666,6 @@ export abstract class TaxonomyClassificationGenerator {
     }
 
     return Effect.succeed(generatedContents);
-  }
-
-  /**
-   * Parses and validates an untrusted cached taxonomy artifact.
-   *
-   * @param contents - Cached JSON contents.
-   * @returns Fully validated artifact.
-   * @throws {Error} When JSON or any artifact field is invalid.
-   */
-  private parseArtifact(contents: string): TaxonomyArtifact {
-    const parsed: unknown = JSON.parse(contents);
-    const record = this.requireRecord(parsed, "Taxonomy artifact");
-    const system = this.requireString(record, "system", "Taxonomy artifact");
-    if (system !== "GS1_GPC" && system !== "ECOICOP_V2" && system !== "NACE_2_1") {
-      throw new TypeError(`Taxonomy artifact system '${system}' is unsupported.`);
-    }
-
-    const sourceUrl = this.requireString(record, "sourceUrl", "Taxonomy artifact");
-    new URL(sourceUrl);
-    const generatedAt = this.requireString(record, "generatedAt", "Taxonomy artifact");
-    if (Number.isNaN(Date.parse(generatedAt))) {
-      throw new TypeError("Taxonomy artifact generatedAt must be an ISO date.");
-    }
-
-    const rawNodes = record["nodes"];
-    if (!Array.isArray(rawNodes)) {
-      throw new TypeError("Taxonomy artifact nodes must be an array.");
-    }
-
-    const nodes = rawNodes.map((rawNode, index): TaxonomyArtifactNode => {
-      const context = `Taxonomy artifact node[${index}]`;
-      const node = this.requireRecord(rawNode, context);
-      const parentCode = node["parentCode"];
-      if (parentCode !== null && (typeof parentCode !== "string" || parentCode.trim().length === 0)) {
-        throw new TypeError(`${context} parentCode must be a non-empty string or null.`);
-      }
-      const definition = node["definition"];
-      if (definition !== null && typeof definition !== "string") {
-        throw new TypeError(`${context} definition must be a string or null.`);
-      }
-
-      return {
-        code: this.requireString(node, "code", context),
-        officialLabel: this.requireString(node, "officialLabel", context),
-        level: this.requireString(node, "level", context),
-        parentCode,
-        hierarchyCodes: this.requireStringArray(node, "hierarchyCodes", context),
-        hierarchyLabels: this.requireStringArray(node, "hierarchyLabels", context),
-        definition,
-        searchText: this.requireString(node, "searchText", context),
-      };
-    });
-
-    const artifact: TaxonomyArtifact = {
-      system,
-      version: this.requireString(record, "version", "Taxonomy artifact"),
-      sourceUrl,
-      generatedAt,
-      attribution: this.requireString(record, "attribution", "Taxonomy artifact"),
-      nodes,
-    };
-    this.validateArtifact(artifact);
-    return artifact;
-  }
-
-  /**
-   * Validates cached taxonomy identity fields against the owning generator.
-   *
-   * @param fileName - Cached artifact name used in failures.
-   * @param artifact - Parsed cached artifact.
-   * @param identity - Required generator identity.
-   * @throws {Error} When any identity field differs.
-   */
-  private validateArtifactIdentity(fileName: string, artifact: Readonly<TaxonomyArtifact>, identity: TaxonomyArtifactIdentity): void {
-    if (
-      artifact.system !== identity.system
-      || artifact.version !== identity.version
-      || artifact.sourceUrl !== identity.sourceUrl
-      || artifact.attribution !== identity.attribution
-    ) {
-      throw new Error(`Cached taxonomy artifact '${fileName}' does not match ${identity.system} ${identity.version}.`);
-    }
-  }
-
-  /**
-   * Reads a non-empty string array from an untrusted record.
-   *
-   * @param record - Source record.
-   * @param key - Array field name.
-   * @param context - Human-readable source location.
-   * @returns Validated strings.
-   * @throws {TypeError} When the field is not an array of non-empty strings.
-   */
-  private requireStringArray(record: Readonly<Record<string, unknown>>, key: string, context: string): readonly string[] {
-    const value = record[key];
-    if (!Array.isArray(value)) {
-      throw new TypeError(`${context} ${key} must be an array.`);
-    }
-    return value.map((item, index) => {
-      if (typeof item !== "string" || item.trim().length === 0) {
-        throw new TypeError(`${context} ${key}[${index}] must be a non-empty string.`);
-      }
-      return item;
-    });
-  }
-
-  /**
-   * Enforces structural invariants before artifact serialization.
-   *
-   * @param artifact - Artifact to validate.
-   * @throws {Error} When nodes are empty, duplicated, orphaned, or malformed.
-   */
-  private validateArtifact(artifact: Readonly<TaxonomyArtifact>): void {
-    if (artifact.nodes.length === 0) {
-      throw new Error(`${artifact.system} artifact contains no taxonomy nodes.`);
-    }
-
-    const nodesByCode = new Map<string, TaxonomyArtifactNode>();
-    for (const node of artifact.nodes) {
-      if (nodesByCode.has(node.code)) {
-        throw new Error(`${artifact.system} contains duplicate code '${node.code}'.`);
-      }
-      nodesByCode.set(node.code, node);
-    }
-
-    for (const node of artifact.nodes) {
-      if (node.parentCode !== null && !nodesByCode.has(node.parentCode)) {
-        throw new Error(`${artifact.system} parent '${node.parentCode}' for '${node.code}' was not found.`);
-      }
-      if (node.hierarchyCodes.at(-1) !== node.code) {
-        throw new Error(`${artifact.system} hierarchy for '${node.code}' does not end with the selected code.`);
-      }
-      if (node.hierarchyCodes.length !== node.hierarchyLabels.length) {
-        throw new Error(`${artifact.system} hierarchy for '${node.code}' has mismatched code and label lengths.`);
-      }
-
-      const rebuilt = this.buildHierarchy(nodesByCode, node.code);
-      if (
-        !this.arraysEqual(node.hierarchyCodes, rebuilt.hierarchyCodes)
-        || !this.arraysEqual(node.hierarchyLabels, rebuilt.hierarchyLabels)
-      ) {
-        throw new Error(`${artifact.system} hierarchy for '${node.code}' does not match its parent chain.`);
-      }
-    }
-  }
-
-  /**
-   * Compares two readonly string arrays by value and order.
-   *
-   * @param left - First array.
-   * @param right - Second array.
-   * @returns `true` when both arrays contain the same ordered values.
-   */
-  private arraysEqual(left: readonly string[], right: readonly string[]): boolean {
-    return left.length === right.length && left.every((value, index) => value === right[index]);
   }
 }
 
@@ -838,16 +684,10 @@ export abstract class TaxonomyClassificationGenerator {
  */
 export class Gs1GpcTaxonomyClassificationGenerator extends TaxonomyClassificationGenerator {
   /** Pinned GS1 release endpoint. */
-  static readonly #sourceUrl = "https://ref.gs1.org/standards/gpc/2026-05/";
-
-  /** Version encoded in the generated artifact. */
-  static readonly #version = "2026-05";
+  static readonly #sourceUrl = taxonomyArtifactIdentities.gpc.sourceUrl;
 
   /** Exact full-taxonomy JSON entry in the pinned GS1 archive. */
   static readonly #archiveEntryName = "GPC as of May 2026 (2026-05-20) EN.json";
-
-  /** Required GS1 attribution stored with the generated artifact. */
-  static readonly #attribution = "GS1 Global Product Classification (GPC), May 2026 release.";
 
   /** Supported GPC source levels and their normalized names. */
   static readonly #levels: Readonly<Record<number, string>> = {
@@ -878,18 +718,14 @@ export class Gs1GpcTaxonomyClassificationGenerator extends TaxonomyClassificatio
    *
    * @returns Every mirrored GPC artifact path.
    */
-  public override generate(): Effect.Effect<readonly string[], ArtifactGenerationError, GenerateRequirements> {
+  public override generate(allowCachedFallback = true): Effect.Effect<readonly string[], ArtifactGenerationError, GenerateRequirements> {
     return Effect.gen({self: this}, function* () {
       yield* Effect.logInfo("[GPC] Starting generation.");
       return yield* this.withCachedFallback(
         taxonomyArtifactFileNames.gpc,
-        {
-          system: "GS1_GPC",
-          version: Gs1GpcTaxonomyClassificationGenerator.#version,
-          sourceUrl: Gs1GpcTaxonomyClassificationGenerator.#sourceUrl,
-          attribution: Gs1GpcTaxonomyClassificationGenerator.#attribution,
-        },
+        taxonomyArtifactIdentities.gpc,
         this.generateFromSource(),
+        allowCachedFallback,
       );
     });
   }
@@ -913,11 +749,11 @@ export class Gs1GpcTaxonomyClassificationGenerator extends TaxonomyClassificatio
       yield* Effect.logInfo("[GPC] Writing mirrored taxonomy artifacts.");
 
       const outputs = yield* this.writeArtifact(taxonomyArtifactFileNames.gpc, {
-        system: "GS1_GPC",
-        version: Gs1GpcTaxonomyClassificationGenerator.#version,
-        sourceUrl: Gs1GpcTaxonomyClassificationGenerator.#sourceUrl,
+        system: taxonomyArtifactIdentities.gpc.system,
+        version: taxonomyArtifactIdentities.gpc.version,
+        sourceUrl: taxonomyArtifactIdentities.gpc.sourceUrl,
         generatedAt: DateTime.formatIso(yield* DateTime.now),
-        attribution: Gs1GpcTaxonomyClassificationGenerator.#attribution,
+        attribution: taxonomyArtifactIdentities.gpc.attribution,
         nodes,
       });
       yield* presenter.success(`[GPC] Generated ${outputs.length} artifact file(s).`);
@@ -1025,14 +861,8 @@ export class EcoicopTaxonomyClassificationGenerator extends TaxonomyClassificati
   static readonly #scheme = "http://data.europa.eu/ed1/ecoicop2/ecoicop2";
 
   /** Official taxonomy version encoded by the artifact. */
-  static readonly #version = "2";
-
   /** Maximum SPARQL bindings requested per page. */
   static readonly #pageSize = 5_000;
-
-  /** Required European Union source attribution. */
-  static readonly #attribution =
-    "European Union, Publications Office of the European Union, reused under the European Commission reuse policy.";
 
   /** Generator label used in log lines and failures. */
   protected override readonly sourceName = "ECOICOP";
@@ -1051,18 +881,14 @@ export class EcoicopTaxonomyClassificationGenerator extends TaxonomyClassificati
    *
    * @returns Every mirrored ECOICOP artifact path.
    */
-  public override generate(): Effect.Effect<readonly string[], ArtifactGenerationError, GenerateRequirements> {
+  public override generate(allowCachedFallback = true): Effect.Effect<readonly string[], ArtifactGenerationError, GenerateRequirements> {
     return Effect.gen({self: this}, function* () {
       yield* Effect.logInfo("[ECOICOP] Starting generation.");
       return yield* this.withCachedFallback(
         taxonomyArtifactFileNames.ecoicop,
-        {
-          system: "ECOICOP_V2",
-          version: EcoicopTaxonomyClassificationGenerator.#version,
-          sourceUrl: `${EcoicopTaxonomyClassificationGenerator.#endpoint}#${EcoicopTaxonomyClassificationGenerator.#scheme}`,
-          attribution: EcoicopTaxonomyClassificationGenerator.#attribution,
-        },
+        taxonomyArtifactIdentities.ecoicop,
         this.generateFromSource(),
+        allowCachedFallback,
       );
     });
   }
@@ -1082,11 +908,11 @@ export class EcoicopTaxonomyClassificationGenerator extends TaxonomyClassificati
       yield* Effect.logInfo("[ECOICOP] Writing mirrored taxonomy artifacts.");
 
       const outputs = yield* this.writeArtifact(taxonomyArtifactFileNames.ecoicop, {
-        system: "ECOICOP_V2",
-        version: EcoicopTaxonomyClassificationGenerator.#version,
-        sourceUrl: `${EcoicopTaxonomyClassificationGenerator.#endpoint}#${EcoicopTaxonomyClassificationGenerator.#scheme}`,
+        system: taxonomyArtifactIdentities.ecoicop.system,
+        version: taxonomyArtifactIdentities.ecoicop.version,
+        sourceUrl: taxonomyArtifactIdentities.ecoicop.sourceUrl,
         generatedAt: DateTime.formatIso(yield* DateTime.now),
-        attribution: EcoicopTaxonomyClassificationGenerator.#attribution,
+        attribution: taxonomyArtifactIdentities.ecoicop.attribution,
         nodes,
       });
       yield* presenter.success(`[ECOICOP] Generated ${outputs.length} artifact file(s).`);
@@ -1263,14 +1089,8 @@ export class NaceTaxonomyClassificationGenerator extends TaxonomyClassificationG
   static readonly #scheme = "http://data.europa.eu/ux2/nace2.1/nace2.1";
 
   /** Official taxonomy version encoded by the artifact. */
-  static readonly #version = "2.1";
-
   /** Maximum SPARQL bindings requested per page. */
   static readonly #pageSize = 5_000;
-
-  /** Required European Union source attribution. */
-  static readonly #attribution =
-    "European Union, Publications Office of the European Union, reused under the European Commission reuse policy.";
 
   /** Generator label used in log lines and failures. */
   protected override readonly sourceName = "NACE";
@@ -1289,18 +1109,14 @@ export class NaceTaxonomyClassificationGenerator extends TaxonomyClassificationG
    *
    * @returns Every mirrored NACE artifact path.
    */
-  public override generate(): Effect.Effect<readonly string[], ArtifactGenerationError, GenerateRequirements> {
+  public override generate(allowCachedFallback = true): Effect.Effect<readonly string[], ArtifactGenerationError, GenerateRequirements> {
     return Effect.gen({self: this}, function* () {
       yield* Effect.logInfo("[NACE] Starting generation.");
       return yield* this.withCachedFallback(
         taxonomyArtifactFileNames.nace,
-        {
-          system: "NACE_2_1",
-          version: NaceTaxonomyClassificationGenerator.#version,
-          sourceUrl: `${NaceTaxonomyClassificationGenerator.#endpoint}#${NaceTaxonomyClassificationGenerator.#scheme}`,
-          attribution: NaceTaxonomyClassificationGenerator.#attribution,
-        },
+        taxonomyArtifactIdentities.nace,
         this.generateFromSource(),
+        allowCachedFallback,
       );
     });
   }
@@ -1320,11 +1136,11 @@ export class NaceTaxonomyClassificationGenerator extends TaxonomyClassificationG
       yield* Effect.logInfo("[NACE] Writing mirrored taxonomy artifacts.");
 
       const outputs = yield* this.writeArtifact(taxonomyArtifactFileNames.nace, {
-        system: "NACE_2_1",
-        version: NaceTaxonomyClassificationGenerator.#version,
-        sourceUrl: `${NaceTaxonomyClassificationGenerator.#endpoint}#${NaceTaxonomyClassificationGenerator.#scheme}`,
+        system: taxonomyArtifactIdentities.nace.system,
+        version: taxonomyArtifactIdentities.nace.version,
+        sourceUrl: taxonomyArtifactIdentities.nace.sourceUrl,
         generatedAt: DateTime.formatIso(yield* DateTime.now),
-        attribution: NaceTaxonomyClassificationGenerator.#attribution,
+        attribution: taxonomyArtifactIdentities.nace.attribution,
         nodes,
       });
       yield* presenter.success(`[NACE] Generated ${outputs.length} artifact file(s).`);
@@ -2020,46 +1836,42 @@ class SystemArchiveExtractor {
   }
 }
 
-/**
- * Runs every taxonomy and license generator.
- *
- * @remarks
- * The five generators run concurrently and share the invocation logger, so interleaved messages
- * keep their generator label, while their outputs are flattened back into generator declaration
- * order. The first failure interrupts the remaining generators.
- *
- * @param input - Typed generator input.
- * @returns The completion summary and every artifact path this invocation produced.
- */
+/** Validates the local checkout without contacting publishers or inspecting snapshot age as a build gate. */
+export function verifyPinnedTaxonomies(
+  root: string,
+): Effect.Effect<readonly TaxonomySnapshot[], ArtifactGenerationFailed, FileSystem.FileSystem | Glob> {
+  return Effect.gen(function* () {
+    const now = new Date(yield* Clock.currentTimeMillis);
+    const {snapshots, issues} = yield* inspectTaxonomySnapshots(root, now);
+    if (issues.length > 0) {
+      return yield* artifactFailure(
+        "Pinned taxonomies",
+        `${issues.map(({message}) => message).join("\n")}\nRecover both approved copies from version control.`,
+      );
+    }
+    return snapshots;
+  }).pipe(Effect.provide(ReadOnlyFilesLive));
+}
+
+/** Verifies known taxonomy inputs and writes the local Website attribution document. */
 export const generateArtifacts: (
   input: Readonly<GenerateArtifactsInput>,
-) => Effect.Effect<ArtifactGenerationResult, ArtifactGenerationError, GenerateRequirements> = Effect.fn("generate.artifacts")(function* (
-  input: Readonly<GenerateArtifactsInput>,
-) {
+) => Effect.Effect<ArtifactGenerationResult, ArtifactGenerationFailed, FrontendLicenseRequirements | Glob> = Effect.fn(
+  "generate.artifacts",
+)(function* (input: Readonly<GenerateArtifactsInput>) {
   const environment = yield* Environment;
   const presenter = yield* Presenter;
+  const root = input.root ?? environment.cwd;
 
   if (input.verbose) {
-    yield* Effect.logDebug(`Generating artifacts from working directory: ${environment.cwd}`);
+    yield* Effect.logDebug(`Preparing artifacts for repository: ${root}`);
   }
 
-  yield* Effect.logInfo("Starting 5 artifact generator(s).");
-  const generators = [
-    new Gs1GpcTaxonomyClassificationGenerator(),
-    new EcoicopTaxonomyClassificationGenerator(),
-    new NaceTaxonomyClassificationGenerator(),
-    new FrontendLicenseGenerator(),
-    new BackendLicenseGenerator(),
-  ] as const;
+  const verifiedTaxonomies = yield* verifyPinnedTaxonomies(root);
+  const generatedFiles = yield* new FrontendLicenseGenerator(root).generate();
 
-  const outputs = yield* Effect.all(
-    generators.map((generator) => generator.generate()),
-    {concurrency: "unbounded"},
-  );
-  const generatedFiles = outputs.flat();
-
-  const summary = `Generated ${generatedFiles.length} artifact file(s).`;
+  const summary = `Verified ${verifiedTaxonomies.length} pinned taxonomy pairs; generated ${generatedFiles.length} Website license file(s).`;
   yield* presenter.success(summary);
   yield* Effect.logDebug(`Output paths: ${generatedFiles.join(", ")}`);
-  return {summary, generatedFiles};
+  return {summary, generatedFiles, verifiedTaxonomies};
 });

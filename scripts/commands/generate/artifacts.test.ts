@@ -16,7 +16,7 @@ import {join, relative, resolve} from "node:path";
 import {Effect, Fiber, FileSystem, type Duration, type PlatformError, type Scope} from "effect";
 import {HttpClient, HttpClientError, HttpClientResponse, type HttpClientRequest} from "effect/http";
 import {TestClock} from "effect/testing";
-import {describe, expect, vi} from "vitest";
+import {describe, expect} from "vitest";
 
 import {ProcessExited, ProcessSpawnFailed, type ProcessError} from "../../platform/Process.ts";
 import {
@@ -42,6 +42,8 @@ import {
 } from "./artifacts.ts";
 import type {GenerateRequirements} from "./env.ts";
 import {ArtifactGenerationFailed, TaxonomySourceUnavailable} from "./errors.ts";
+import {refreshTaxonomies} from "./taxonomy-refresh.ts";
+import {pinnedTaxonomyFixtureFiles} from "../../common/taxonomy-fixtures.testing.ts";
 
 /** Pinned GS1 archive URL. */
 const GPC_URL = "https://ref.gs1.org/standards/gpc/2026-05/";
@@ -944,7 +946,7 @@ describe("EcoicopTaxonomyClassificationGenerator", () => {
   const invalidCaches: readonly (readonly [string, unknown, string])[] = [
     ["an unsupported system", {...PROBE_ARTIFACT, system: "OTHER"}, "Taxonomy artifact system 'OTHER' is unsupported."],
     ["an invalid source URL", {...PROBE_ARTIFACT, sourceUrl: "not a url"}, "Invalid URL"],
-    ["a non-date timestamp", {...PROBE_ARTIFACT, generatedAt: "yesterday"}, "Taxonomy artifact generatedAt must be an ISO date."],
+    ["a non-date timestamp", {...PROBE_ARTIFACT, generatedAt: "yesterday"}, "Taxonomy artifact generatedAt must be an ISO UTC date."],
     ["non-array nodes", {...PROBE_ARTIFACT, nodes: {}}, "Taxonomy artifact nodes must be an array."],
     [
       "a blank parent code",
@@ -1369,6 +1371,31 @@ describe("BackendLicenseGenerator", () => {
 });
 
 describe("generateArtifacts", () => {
+  artifactTest(
+    "prepares licenses without contacting publishers or changing pinned mirrors",
+    {
+      http: UNIFIED_SOURCES,
+      files: {
+        ...WORKSPACE_FILES,
+        ...Object.fromEntries(
+          Object.entries(EXPECTED_ARTIFACT_BYTES)
+            .filter(([path]) => !path.endsWith("licenses.json"))
+            .map(([path, contents]) => [join(repositoryFixtureRoot, path), contents]),
+        ),
+      },
+    },
+    ({harness}) =>
+      Effect.gen(function* () {
+        const mirrors = getExpectedTaxonomyArtifactPaths(repositoryFixtureRoot);
+        const before = yield* readArtifactBytes(mirrors);
+
+        const result = yield* generateArtifacts({verbose: false});
+
+        expect(harness.httpCalls()).toEqual([]);
+        expect(yield* readArtifactBytes(mirrors)).toEqual(before);
+        expect(result.generatedFiles).toEqual([join(repositoryFixtureRoot, "sites", "arolariu.ro", "licenses.json")]);
+      }),
+  );
   effectTest(
     "exports the generators, the effect, and the canonical taxonomy artifact manifest",
     () =>
@@ -1388,117 +1415,20 @@ describe("generateArtifacts", () => {
           "generateArtifacts",
           "getExpectedTaxonomyArtifactPaths",
           "taxonomyArtifactFileNames",
+          "verifyPinnedTaxonomies",
         ]);
       }),
     makeTestLayer().layer,
   );
 
-  artifactTest(
-    "routes every message through the platform output without writing to the console",
-    {http: UNIFIED_SOURCES, files: WORKSPACE_FILES},
-    ({harness}) =>
-      Effect.gen(function* () {
-        // Arrange
-        const consoleSpies = ["debug", "info", "warn", "error", "log"].map((level) =>
-          vi.spyOn(console, level as "debug").mockImplementation(() => undefined),
-        );
-
-        // Act
-        const result = yield* generateArtifacts({verbose: false});
-
-        // Assert
-        expect(result.summary).toBe("Generated 7 artifact file(s).");
-        expect(result.generatedFiles).toHaveLength(7);
-        expect(consoleSpies.every((spy) => spy.mock.calls.length === 0)).toBe(true);
-        vi.restoreAllMocks();
-        const lines = semanticLines(harness);
-        expect(lines.every((line) => line.startsWith("[arolariu::test::artifacts]"))).toBe(true);
-        expect(lines).toEqual(
-          expect.arrayContaining([
-            "[arolariu::test::artifacts] ℹ️ Starting 5 artifact generator(s).",
-            "[arolariu::test::artifacts] ℹ️ [GPC] Fetching the GS1 GPC source.",
-            "[arolariu::test::artifacts] ℹ️ [ECOICOP] Fetching Publications Office taxonomy data.",
-            "[arolariu::test::artifacts] ℹ️ [NACE] Fetching Publications Office taxonomy data.",
-            "[arolariu::test::artifacts] ℹ️ [Frontend licenses] Reading the frontend dependency manifest.",
-            "[arolariu::test::artifacts] ⚠️ [Backend licenses] Generation is intentionally deferred; no artifact was written.",
-            "[arolariu::test::artifacts] ✅ [GPC] Generated 2 artifact file(s).",
-            "[arolariu::test::artifacts] ✅ [Frontend licenses] Generated 1 artifact file(s).",
-          ]),
-        );
-        expect(lines.at(-1)).toBe("[arolariu::test::artifacts] ✅ Generated 7 artifact file(s).");
-      }),
-  );
-
-  {
-    let offline = false;
-    artifactTest(
-      "characterizes the written artifact bytes online and preserves them offline when a validated cache exists",
-      {http: [{match: () => offline, respond: {status: 503, body: "Unavailable"}}, ...UNIFIED_SOURCES], files: WORKSPACE_FILES},
-      ({harness}) =>
-        Effect.gen(function* () {
-          // Act — online
-          const online = yield* generateArtifacts({verbose: false});
-          const onlineBytes = yield* readArtifactBytes(online.generatedFiles);
-          const sendsBeforeOutage = harness.httpCalls().length;
-
-          // Act — offline with the validated cache written by the online run
-          offline = true;
-          const offlineResult = yield* advancingClock(generateArtifacts({verbose: false}));
-          const offlineBytes = yield* readArtifactBytes(offlineResult.generatedFiles);
-
-          // Assert
-          expect(online.summary).toBe("Generated 7 artifact file(s).");
-          expect(onlineBytes).toEqual(EXPECTED_ARTIFACT_BYTES);
-          expect(Object.keys(onlineBytes)).toEqual(Object.keys(EXPECTED_ARTIFACT_BYTES));
-          expect(offlineResult.summary).toBe("Generated 7 artifact file(s).");
-          expect(offlineBytes).toEqual(EXPECTED_ARTIFACT_BYTES);
-          expect(harness.httpCalls().length - sendsBeforeOutage).toBe(9);
-        }),
-    );
-  }
-
-  artifactTest(
-    "reuses cached taxonomy when the source is unavailable",
-    {
-      http: unavailableSources(),
-      files: {
-        ...WORKSPACE_FILES,
-        ...Object.fromEntries(
-          Object.entries(EXPECTED_ARTIFACT_BYTES)
-            .filter(([path]) => !path.endsWith("licenses.json"))
-            .map(([path, contents]) => [join(repositoryFixtureRoot, path), contents]),
-        ),
-      },
-    },
-    ({harness}) =>
-      Effect.gen(function* () {
-        // Act
-        const result = yield* advancingClock(generateArtifacts({verbose: true}));
-
-        // Assert
-        expect(result.generatedFiles.slice(0, 6)).toEqual(getExpectedTaxonomyArtifactPaths(repositoryFixtureRoot));
-        expect(yield* readArtifactBytes(result.generatedFiles)).toEqual(EXPECTED_ARTIFACT_BYTES);
-        expect(harness.httpCalls()).toHaveLength(9);
-        expect(semanticLines(harness, "stderr")).toEqual(
-          expect.arrayContaining([
-            "[arolariu::test::artifacts] ⚠️ [GPC] Using validated cached artifact 'gpc-2026-05.min.json' after source failure: GPC download failed with HTTP 503.",
-            "[arolariu::test::artifacts] ⚠️ [ECOICOP] Using validated cached artifact 'ecoicop-v2.min.json' after source failure: SPARQL request failed with HTTP 503.",
-            "[arolariu::test::artifacts] ⚠️ [NACE] Using validated cached artifact 'nace-2.1.min.json' after source failure: SPARQL request failed with HTTP 503.",
-          ]),
-        );
-      }),
-  );
-
-  artifactTest("fails when the source and cache are both unavailable", {http: unavailableSources(), files: WORKSPACE_FILES}, () =>
+  artifactTest("fails on missing pinned mirrors before writing licenses or trying a publisher", {files: WORKSPACE_FILES}, ({harness}) =>
     Effect.gen(function* () {
-      // Act
-      const error = yield* Effect.flip(advancingClock(generateArtifacts({verbose: false})));
+      const error = yield* Effect.flip(generateArtifacts({verbose: false}));
 
-      // Assert
-      expect(error._tag).toBe("TaxonomySourceUnavailable");
+      expect(error.message).toContain("Recover both approved copies from version control.");
+      expect(harness.httpCalls()).toEqual([]);
       const fs = yield* FileSystem.FileSystem;
-      const taxonomyWritten = yield* Effect.forEach(getExpectedTaxonomyArtifactPaths(repositoryFixtureRoot), (path) => fs.exists(path));
-      expect(taxonomyWritten).toEqual([false, false, false, false, false, false]);
+      expect(yield* fs.exists(join(repositoryFixtureRoot, "sites", "arolariu.ro", "licenses.json"))).toBe(false);
     }),
   );
 
@@ -1518,5 +1448,64 @@ describe("generateArtifacts", () => {
       expect(taxonomyArtifactFileNames).toEqual({gpc: "gpc-2026-05.min.json", ecoicop: "ecoicop-v2.min.json", nace: "nace-2.1.min.json"});
       expect(outputs.flat()).toEqual(getExpectedTaxonomyArtifactPaths(repositoryFixtureRoot));
     }),
+  );
+});
+
+describe("explicit taxonomy refresh", () => {
+  const pinnedFiles = {...WORKSPACE_FILES, ...pinnedTaxonomyFixtureFiles(repositoryFixtureRoot)};
+  const output = join(repositoryFixtureRoot, "candidate");
+
+  artifactTest(
+    "stages complete reviewed candidates without touching pinned bytes or licenses",
+    {http: UNIFIED_SOURCES, files: pinnedFiles},
+    ({harness}) =>
+      Effect.gen(function* () {
+        const mirrors = getExpectedTaxonomyArtifactPaths(repositoryFixtureRoot);
+        const before = yield* readArtifactBytes(mirrors);
+
+        const result = yield* refreshTaxonomies(repositoryFixtureRoot, output);
+
+        expect(harness.httpCalls()).toHaveLength(3);
+        expect(yield* readArtifactBytes(mirrors)).toEqual(before);
+        const fs = yield* FileSystem.FileSystem;
+        expect(yield* fs.readDirectory(output)).toEqual([...Object.values(taxonomyArtifactFileNames), "taxonomy-review.json"].toSorted());
+        const saved: unknown = JSON.parse(yield* fs.readFileString(result.reportPath));
+        expect(saved).toEqual({taxonomies: result.taxonomies});
+        expect(result.taxonomies.every(({candidate, pinned}) => candidate.sha256 !== pinned.sha256)).toBe(true);
+        expect(yield* fs.exists(join(repositoryFixtureRoot, "sites", "arolariu.ro", "licenses.json"))).toBe(false);
+      }),
+  );
+
+  artifactTest(
+    "does not publish the two available results when the third publisher fails",
+    {
+      http: [
+        {match: (request) => new URL(request.url).search.includes("nace2.1"), respond: {status: 503, body: "Unavailable"}},
+        ...UNIFIED_SOURCES,
+      ],
+      files: pinnedFiles,
+    },
+    ({harness}) =>
+      Effect.gen(function* () {
+        const error = yield* Effect.flip(advancingClock(refreshTaxonomies(repositoryFixtureRoot, output)));
+
+        expect(error).toMatchObject({_tag: "TaxonomySourceUnavailable", taxonomy: "NACE"});
+        expect(harness.httpCalls()).toHaveLength(5);
+        const fs = yield* FileSystem.FileSystem;
+        expect(yield* fs.exists(output)).toBe(false);
+      }),
+  );
+
+  artifactTest(
+    "rejects a destination collision before contacting any publisher",
+    {files: {...pinnedFiles, [join(output, "keep.txt")]: "already here"}},
+    ({harness}) =>
+      Effect.gen(function* () {
+        const error = yield* Effect.flip(refreshTaxonomies(repositoryFixtureRoot, output));
+
+        expect(error.message).toContain("Output must be a new directory");
+        expect(harness.httpCalls()).toEqual([]);
+        expect(yield* readText(join(output, "keep.txt"))).toBe("already here");
+      }),
   );
 });

@@ -13,7 +13,7 @@
 
 import {readFile} from "node:fs/promises";
 
-import {Duration, Effect, Exit, Fiber, Redacted} from "effect";
+import {Duration, Effect, Exit, Fiber, FileSystem, Redacted} from "effect";
 import {TestClock} from "effect/testing";
 import {describe, expect, it} from "vitest";
 
@@ -350,27 +350,29 @@ describe("runSelfhost start", () => {
     }),
   );
 
-  selfhostTest("generates taxonomy artifacts silently, once, after preflight and before any stack command", {}, (fixture) =>
+  selfhostTest("uses pinned snapshots and prepares licenses silently without calling publishers", {}, (fixture) =>
     Effect.gen(function* () {
       // Act
       yield* runSelfhost({action: "start", engine: "podman"});
 
       // Assert
       const commands = fixture.harness.processCalls().map((call) => call.request.command);
-      expect(commands.filter((command) => command === "unzip")).toHaveLength(1);
-      expect(commands.indexOf("unzip")).toBe(podmanPreflightProbeCount + 1);
-      expect(fixture.harness.httpCalls()).toHaveLength(3);
+      expect(commands).not.toContain("unzip");
+      expect(fixture.harness.httpCalls()).toEqual([]);
+      const fs = yield* FileSystem.FileSystem;
+      expect(yield* fs.exists("sites/arolariu.ro/licenses.json")).toBe(true);
       expect(fixture.harness.output().some((record) => record.text.includes("artifact"))).toBe(false);
     }),
   );
 
-  selfhostTest("stops before any stack command when the artifact prerequisite fails", {taxonomy: "unavailable"}, (fixture) =>
+  selfhostTest("stops before any stack command when a pinned snapshot is missing", {missingTaxonomies: true}, (fixture) =>
     Effect.gen(function* () {
       // Act
       const error = yield* Effect.flip(runSelfhost({action: "start", engine: "podman"}));
 
       // Assert
-      expect(error._tag).toBe("TaxonomySourceUnavailable");
+      expect(error._tag).toBe("ArtifactGenerationFailed");
+      expect(fixture.harness.httpCalls()).toEqual([]);
       expect(formatCalls(fixture)).toHaveLength(podmanPreflightProbeCount + 1);
       expect(fixture.traefik()).toBeNull();
     }),
@@ -877,7 +879,6 @@ const RANCHER_PREFLIGHT = [
 const PERSISTENCE_CHECK = {process: "docker", args: ["ps", "-a", "--format", "{{.Names}}"], options: {}} as const;
 
 /** The artifact generation's archive extraction (the legacy nested artifacts invocation). */
-const ARTIFACTS = {process: "unzip", args: ["-qq", "<archive>", "-d", "<directory>"], options: {output: "capture"}} as const;
 
 /** The atomic Traefik write (the legacy `createDirectory` + `writeText`). */
 const TRAEFIK_WRITE = [
@@ -935,7 +936,6 @@ const COSMOS = [
 const START_TIMELINE = [
   ...RANCHER_PREFLIGHT,
   PERSISTENCE_CHECK,
-  ARTIFACTS,
   ...TRAEFIK_WRITE,
   {process: "docker", args: ["compose", "-f", "Management/docker-compose.yml", "up", "-d"], options: TEE},
   {delay: 3000},
@@ -991,7 +991,7 @@ describe("dev selfhost characterization", () => {
         {stream: "stdout", text: "[arolariu::selfhost] ✅ Selfhost start completed for engine 'rancher'."},
       ],
       timeline: START_TIMELINE,
-      taxonomyRequests: 3,
+      taxonomyRequests: 0,
       traefik: TRAEFIK_CONFIG,
       passwordArgs: PASSWORD_ARGS,
     });
@@ -1018,7 +1018,6 @@ describe("dev selfhost characterization", () => {
       timeline: [
         ...RANCHER_PREFLIGHT,
         PERSISTENCE_CHECK,
-        ARTIFACTS,
         ...TRAEFIK_WRITE,
         {process: "docker", args: ["compose", "-f", "Management/docker-compose.yml", "up", "-d"], options: TEE},
         {delay: 3000},
@@ -1027,7 +1026,7 @@ describe("dev selfhost characterization", () => {
         SQLCMD,
         COSMOS[0],
       ],
-      taxonomyRequests: 3,
+      taxonomyRequests: 0,
       traefik: TRAEFIK_CONFIG,
       passwordArgs: PASSWORD_ARGS,
     });
@@ -1071,8 +1070,8 @@ describe("dev selfhost characterization", () => {
           text: "[arolariu::cli] ⛔ MSSQL_SA_PASSWORD environment variable is required for selfhost SQL bootstrap. Set it in your shell/session environment only; do not commit it to .env files, launch profiles, or source control.",
         },
       ],
-      timeline: [...RANCHER_PREFLIGHT, PERSISTENCE_CHECK, ARTIFACTS],
-      taxonomyRequests: 3,
+      timeline: [...RANCHER_PREFLIGHT, PERSISTENCE_CHECK],
+      taxonomyRequests: 0,
       traefik: null,
       passwordArgs: [],
     });
@@ -1149,7 +1148,7 @@ describe("dev selfhost characterization", () => {
         },
       ],
       timeline: START_TIMELINE,
-      taxonomyRequests: 3,
+      taxonomyRequests: 0,
       traefik: TRAEFIK_CONFIG,
       passwordArgs: PASSWORD_ARGS,
     });

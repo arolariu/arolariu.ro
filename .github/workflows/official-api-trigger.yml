@@ -113,8 +113,9 @@ jobs:
           install-node-deps: "true"
           dotnet: "true"
           install-dotnet-deps: "true"
-          run-generate: "true"
-          generate-args: "artifacts"
+
+      - name: Check pinned taxonomy integrity
+        run: node scripts/cli.ts generate --check-taxonomies --json
 
       - name: 🧪 Running unit tests...
         working-directory: .
@@ -192,8 +193,9 @@ jobs:
         with:
           node: "true"
           install-node-deps: "true"
-          run-generate: "true"
-          generate-args: "artifacts"
+
+      - name: Check pinned taxonomy integrity
+        run: node scripts/cli.ts generate --check-taxonomies --json
 
       - name: 🔒 Performing auth against Azure Public Cloud...
         uses: Azure/login@v3
