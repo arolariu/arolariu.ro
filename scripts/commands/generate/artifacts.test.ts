@@ -915,9 +915,8 @@ describe("EcoicopTaxonomyClassificationGenerator", () => {
 
   for (const status of [401, 403]) {
     artifactTest(
-      `uses the validated cached artifact without retrying when the anonymous source denies access (HTTP ${String(status)})`,
+      `uses the validated cache without reading or retrying a broken HTTP ${String(status)} body`,
       {
-        http: unavailableSources(status),
         files: {
           [join(TEST_ROOTS[0], "ecoicop-v2.min.json")]:
             EXPECTED_ARTIFACT_BYTES["sites/api.arolariu.ro/src/Invoices/Resources/Taxonomies/ecoicop-v2.min.json"] ?? "",
@@ -927,12 +926,30 @@ describe("EcoicopTaxonomyClassificationGenerator", () => {
       },
       ({harness}) =>
         Effect.gen(function* () {
+          const signals: AbortSignal[] = [];
+          let bodyReads = 0;
+          const client = HttpClient.make((request, _url, signal) => {
+            signals.push(signal);
+            const body = new ReadableStream<Uint8Array>(
+              {
+                pull(controller) {
+                  bodyReads += 1;
+                  controller.error(new Error("Publisher closed the denial body."));
+                },
+              },
+              {highWaterMark: 0},
+            );
+            return Effect.succeed(HttpClientResponse.fromWeb(request, new Response(body, {status})));
+          });
+
           // Act
-          const paths = yield* new EcoicopTaxonomyClassificationGenerator(TEST_ROOTS).generate();
+          const paths = yield* withClient(new EcoicopTaxonomyClassificationGenerator(TEST_ROOTS).generate(), client);
 
           // Assert
           expect(paths).toEqual(TEST_ROOTS.map((root) => resolve(root, "ecoicop-v2.min.json")));
-          expect(harness.httpCalls()).toHaveLength(1);
+          expect(signals).toHaveLength(1);
+          expect(bodyReads).toBe(0);
+          expect(signals[0]?.aborted).toBe(true);
           expect(semanticLines(harness, "stderr")).toEqual([
             `[arolariu::test::artifacts] ⚠️ [ECOICOP] Using validated cached artifact 'ecoicop-v2.min.json' after source failure: SPARQL request failed with HTTP ${String(status)}.`,
           ]);
