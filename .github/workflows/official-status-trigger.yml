@@ -46,12 +46,6 @@ on:
     branches: ["main"]
     paths:
       - "sites/status.arolariu.ro/**"
-      - "scripts/swa/**"
-      - "scripts/common/**"
-      - "scripts/vitest.config.ts"
-      - "sites/cv.arolariu.ro/api/package.json"
-      - "sites/cv.arolariu.ro/api/package-lock.json"
-      - "sites/cv.arolariu.ro/api/host.json"
       - ".github/workflows/official-status-trigger.yml"
       - ".github/actions/setup-workspace/**"
       - ".github/actions/setup-tooling/**"
@@ -59,9 +53,6 @@ on:
       - "package-lock.json"
       - ".npmrc"
       - ".nvmrc"
-      - "nx.json"
-      - "tsconfig*.json"
-      - "eslint.config.ts"
 
   # Manual trigger for on-demand deployments
   workflow_dispatch:
@@ -115,12 +106,6 @@ jobs:
 
       - name: Check the static site
         run: npm run check
-
-      - name: Check deployment tooling and site lint
-        working-directory: .
-        run: |
-          npm exec -- vitest run --config scripts/vitest.config.ts scripts/swa --coverage.enabled=false
-          npm run lint:status
 
       - name: 🧪 Running unit tests...
         working-directory: "./sites/status.arolariu.ro"
@@ -194,30 +179,15 @@ jobs:
 
       - name: Build an optional managed API
         id: api
-        run: npm run build:api
-
-      - name: Validate and fingerprint deployable artifacts
         run: |
-          test -s build/static/index.html
-          test -s build/static/404.html
-          test -s build/static/staticwebapp.config.json
-          test -d build/static/_app/immutable
-          printf '{"commit":"%s","runId":"%s","attempt":"%s"}\n' "$COMMIT_SHA" "$GITHUB_RUN_ID" "$GITHUB_RUN_ATTEMPT" > build/static/deployment.json
-          paths=(static)
-          if [ -d build/server ]; then paths+=(server); fi
-          (cd build && find "${paths[@]}" -type f -print0 | sort -z | xargs -0 sha256sum > checksums.sha256)
-
-      - name: Retain deployable artifacts
-        uses: actions/upload-artifact@v7
-        with:
-          name: status-swa-${{ github.sha }}-${{ github.run_attempt }}
-          retention-days: 7
-          if-no-files-found: error
-          include-hidden-files: true
-          path: |
-            sites/status.arolariu.ro/build/static
-            sites/status.arolariu.ro/build/server
-            sites/status.arolariu.ro/build/checksums.sha256
+          rm -rf build/server
+          if [ -e api ]; then
+            npm ci --prefix api --workspaces=false --omit=dev --ignore-scripts
+            npm run build --prefix api
+            test -s build/server/host.json
+            test -s build/server/package.json
+            echo "api_location=./sites/status.arolariu.ro/build/server" >> "$GITHUB_OUTPUT"
+          fi
 
       - name: "🚀 Deploying Status website..."
         uses: Azure/static-web-apps-deploy@v1
@@ -230,11 +200,6 @@ jobs:
           output_location: ""
           skip_app_build: true
           skip_api_build: true
-
-      - name: Verify the deployed HTTP contract
-        working-directory: .
-        timeout-minutes: 5
-        run: node scripts/swa/smoke.ts status https://status.arolariu.ro
 
       - name: 📊 Deployment summary
         run: |

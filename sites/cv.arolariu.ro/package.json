@@ -9,7 +9,6 @@
   "scripts": {
     "dev": "vite dev",
     "build": "vite build",
-    "build:api": "node ../../scripts/swa/build-api.ts cv",
     "check:api": "tsc --project api/tsconfig.json --noEmit",
     "preview": "vite preview",
     "prepare": "svelte-kit sync || echo ''",

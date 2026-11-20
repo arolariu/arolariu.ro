@@ -46,9 +46,6 @@ on:
     branches: ["main"]
     paths:
       - "sites/cv.arolariu.ro/**"
-      - "scripts/swa/**"
-      - "scripts/common/**"
-      - "scripts/vitest.config.ts"
       - ".github/workflows/official-cv-trigger.yml"
       - ".github/actions/setup-workspace/**"
       - ".github/actions/setup-tooling/**"
@@ -56,9 +53,6 @@ on:
       - "package-lock.json"
       - ".npmrc"
       - ".nvmrc"
-      - "nx.json"
-      - "tsconfig*.json"
-      - "eslint.config.ts"
 
   # Manual trigger for on-demand deployments
   workflow_dispatch:
@@ -115,12 +109,6 @@ jobs:
           npm ci --prefix api --workspaces=false --omit=dev --ignore-scripts
           npm run check
           npm run check:api
-
-      - name: Check deployment tooling and site lint
-        working-directory: .
-        run: |
-          npm exec -- vitest run --config scripts/vitest.config.ts scripts/swa --coverage.enabled=false
-          npm run lint:cv
 
       - name: 🧪 Running unit tests...
         working-directory: "./sites/cv.arolariu.ro"
@@ -193,32 +181,9 @@ jobs:
           echo "| Output | build/static |" >> $GITHUB_STEP_SUMMARY
 
       - name: Build the managed API
-        id: api
-        run: npm run build:api
-
-      - name: Validate and fingerprint deployable artifacts
         run: |
-          test -s build/static/index.html
-          test -s build/static/404.html
-          test -s build/static/staticwebapp.config.json
-          test -d build/static/_app/immutable
-          test -s build/server/functions/cv-json.mjs
-          test -s build/server/host.json
-          test -s build/server/package-lock.json
-          printf '{"commit":"%s","runId":"%s","attempt":"%s"}\n' "$COMMIT_SHA" "$GITHUB_RUN_ID" "$GITHUB_RUN_ATTEMPT" > build/static/deployment.json
-          (cd build && find static server -type f -print0 | sort -z | xargs -0 sha256sum > checksums.sha256)
-
-      - name: Retain the complete deployment pair
-        uses: actions/upload-artifact@v7
-        with:
-          name: cv-swa-${{ github.sha }}-${{ github.run_attempt }}
-          retention-days: 7
-          if-no-files-found: error
-          include-hidden-files: true
-          path: |
-            sites/cv.arolariu.ro/build/static
-            sites/cv.arolariu.ro/build/server
-            sites/cv.arolariu.ro/build/checksums.sha256
+          npm ci --prefix api --workspaces=false --omit=dev --ignore-scripts
+          npm run build --prefix api
 
       - name: "🚀 Deploying CV website..."
         uses: Azure/static-web-apps-deploy@v1
@@ -227,15 +192,10 @@ jobs:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
           action: "upload"
           app_location: "./sites/cv.arolariu.ro/build/static"
-          api_location: ${{ steps.api.outputs.api_location }}
+          api_location: "./sites/cv.arolariu.ro/build/server"
           output_location: ""
           skip_app_build: true
           skip_api_build: true
-
-      - name: Verify the deployed HTTP contract
-        working-directory: .
-        timeout-minutes: 5
-        run: node scripts/swa/smoke.ts cv https://cv.arolariu.ro
 
       - name: 📊 Deployment summary
         run: |

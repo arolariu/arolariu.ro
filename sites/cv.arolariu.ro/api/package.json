@@ -4,6 +4,9 @@
   "version": "1.0.0",
   "type": "module",
   "main": "functions/*.mjs",
+  "scripts": {
+    "build": "node build.mjs"
+  },
   "engines": {
     "node": ">=22"
   },

@@ -5,7 +5,6 @@
     {"route": "/human/", "redirect": "/human", "statusCode": 301},
     {"route": "/json/", "redirect": "/json", "statusCode": 301},
     {"route": "/pdf/", "redirect": "/pdf", "statusCode": 301},
-    {"route": "/deployment.json", "headers": {"Cache-Control": "no-store"}},
     {"route": "/_app/immutable/*", "headers": {"Cache-Control": "public, max-age=31536000, immutable"}}
   ],
   "platform": {"apiRuntime": "node:22"},

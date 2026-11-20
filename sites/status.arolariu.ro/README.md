@@ -23,29 +23,21 @@ From the repository root:
 
 ```bash
 npm run build:status
-npm run build:api --workspace=sites/status.arolariu.ro
 ```
 
 The official `@sveltejs/adapter-static` writes strict prerendered pages/assets to `build/static`, including the source-owned SWA config and
-static HTTP 404 page. The separate API build currently reports no API and removes only stale `build/server` output. There is no dummy
-Function or SvelteKit server runtime.
+static HTTP 404 page. There is no managed API, dummy Function or SvelteKit server runtime today.
 
-For a future API, add a private `api/package.json` with `type: "module"`, `main: "functions/*.mjs"` and a declared `@azure/functions`
-runtime dependency; generate its adjacent npm lock, add `api/host.json` version `2.0`, and register real HTTP Functions in
-`api/src/functions/*.ts`. Keep dependency ownership separate from the root workspace. The shared builder restores production dependencies,
-bundles Node 22 ESM entries, and produces a complete `build/server`. Partial/malformed API folders fail rather than silently deploying no
-API. Add API-specific typechecks, tests, dependency-cache hashing and a Dependabot owner alongside the real API. SvelteKit `+server.ts`
-routes are not deployed automatically.
+CI includes an optional API build step: when an `api` folder exists, it restores that folder's npm lock with production dependencies and
+runs its `build` script. A future API must own that manifest, lock and build, producing a complete `build/server` with compiled Node 22
+Functions, `host.json`, a runtime manifest and production dependencies. Incomplete API folders fail the build. Add API-specific checks,
+tests and a Dependabot owner with the real API. SvelteKit `+server.ts` routes are not deployed automatically.
 
-The pipeline checks types, lint and unit gates, builds the frontend and optional API explicitly in CI, then uploads those artifacts with
-both SWA build skips enabled. It keeps the existing token, GitHub Environment and Free resource; there are no staging environments,
-deployment slots, Azure login steps or extra resources. Deployment jobs are serialized. Post-upload checks verify the commit marker,
-HTML/assets and 404s before the success summary. Browser-side status-data fetching remains unchanged.
+The pipeline checks types and unit gates, builds the frontend and optional API explicitly in CI, then uploads those artifacts with both SWA
+build skips enabled. It keeps the existing token, GitHub Environment and Free resource; there are no staging environments, deployment slots,
+Azure login steps or extra resources. Deployment jobs are serialized. Browser-side status-data fetching remains unchanged.
 
-A seven-day `status-swa-<commit>-<attempt>` artifact retains the deployable pair (static-only today), commit/run marker and checksums.
-Recovery requires explicit approval to re-upload a verified known-good artifact with matching configuration through the prebuilt path, not a
-revert to the broken Oryx build. Previously successful runs inspected during migration had no retained artifacts, so no tested historical
-bundle is assumed. Vite preview remains static-only; Azure routing/Function behavior must be checked after an authorized deployment.
+Vite preview remains static-only; Azure routing/Function behavior must be checked after an authorized deployment.
 
 ## Testing
 

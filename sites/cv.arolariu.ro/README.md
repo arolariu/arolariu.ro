@@ -41,14 +41,14 @@ Build and preview:
 
 ```bash
 npm run build:cv
-npm run build:api --workspace=sites/cv.arolariu.ro
+npm run build --prefix sites/cv.arolariu.ro/api
 cd sites/cv.arolariu.ro
 npm run preview
 ```
 
 The dev server serves `/rest/json` through a thin Vite middleware calling the same handler as the Function. Vite preview and the static
-container serve frontend content only; they do not host the managed API. Use handler/SDK tests locally and the HTTP smoke checks after an
-authorized SWA deployment to verify the complete transport.
+container serve frontend content only; they do not host the managed API. Unit tests cover the handler and real SDK transport; Azure rewrites
+and Functions-host startup still require an authorized deployment to verify.
 
 ## Project structure
 
@@ -67,25 +67,19 @@ Note: Structure follows common Svelte/SvelteKit conventions.
 
 Automated via GitHub Actions: .github/workflows/official-cv-trigger.yml
 
-- Triggers on relevant site, shared packaging, setup-action, workflow, and root dependency/configuration changes on main
-- Restores the independent API owner, checks frontend/API types, lint and unit tests, then builds static pages and packages the Function
+- Triggers on relevant site, setup-action, workflow, and root dependency/configuration changes on main
+- Restores the independent API owner, checks frontend/API types and unit tests, then builds static pages and packages the Function
 - Uploads `build/static` and the complete `build/server` directly, with `skip_app_build` and `skip_api_build`; Oryx does not rebuild either
 - Uses the existing Free SWA and token, with serialized deployment jobs; no staging, slots, additional resource, or Azure login
-- Checks the deployed commit marker, pages, assets, PDF, 404s and JSON transport before reporting success
 
-The API's `package.json` and adjacent lock own its production SDK closure separately from the root workspace lock. `build:api` restores that
-lock, bundles `api/src/functions/*.ts` for Node 22, and copies only host/runtime files and production dependencies. Keep it private with
-`type: "module"`, `main: "functions/*.mjs"` and a declared `@azure/functions` dependency. Register ordinary Functions here; adding SvelteKit
-`+server.ts` routes does not deploy an API. The static adapter remains strict.
+The API's `package.json` and adjacent lock own its production SDK closure separately from the root workspace lock. CI restores that lock and
+runs its `build` script. The small `api/build.mjs` configuration bundles the CV Function for Node 22 and copies host/runtime files and
+production dependencies into `build/server`. Register ordinary Functions here; adding SvelteKit `+server.ts` routes does not deploy an API.
+The static adapter remains strict.
 
 `static/staticwebapp.config.json` owns `/rest/json` compatibility rewrites and the Node 22 managed runtime. Static deep links are
 prerendered; unknown URLs retain HTTP 404 with a small static error page. The API handler retains its JSON errors, queries, CORS/cache
 headers and ETags. Raw resume ETags can change between cold instances because existing data includes a module-load timestamp.
-
-Each run retains a seven-day `cv-swa-<commit>-<attempt>` artifact containing the complete static/API pair, a public commit/run marker and
-checksums. For an explicitly approved recovery, verify the checksums and re-upload a known-good pair with its matching runtime config using
-the same prebuilt inputs. A source revert to the old failing Oryx workflow is not an operational rollback. Historical successful runs
-inspected during the migration had no retained artifacts; do not assume an already cloud-tested rollback bundle exists.
 
 Required secret:
 
