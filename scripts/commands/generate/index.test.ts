@@ -5,7 +5,7 @@
  *
  * @remarks
  * Leaf behavior comes from the in-memory harness (seeded `.env` and locale files, scripted exp and
- * taxonomy HTTP responses, a scripted archive extractor, and the test clock), never from stubbing
+ * pinned taxonomy inputs and the test clock), never from stubbing
  * the leaf modules. Only the terminal prompt boundary is replaced for the Ctrl+C case and only the
  * `HttpClient` boundary for the interruption case.
  */
@@ -17,15 +17,9 @@ import {HttpClient} from "effect/http";
 import {TestClock} from "effect/testing";
 import {describe, expect} from "vitest";
 
+import {pinnedTaxonomyFixtureFiles} from "../../common/taxonomy-fixtures.testing.ts";
 import {Prompts} from "../../platform/Prompts.ts";
-import {
-  effectTest,
-  makeTestLayer,
-  repositoryFixtureRoot,
-  type ScriptedHttp,
-  type TestHarness,
-  type TestLayerOptions,
-} from "../../platform/testing.ts";
+import {effectTest, makeTestLayer, repositoryFixtureRoot, type TestHarness, type TestLayerOptions} from "../../platform/testing.ts";
 import {renderGenerateCompletion} from "./cli.ts";
 import type {GenerateRequirements} from "./env.ts";
 import {runGenerate, type GenerateInput} from "./index.ts";
@@ -69,73 +63,15 @@ const WORKSPACE_FILES: Readonly<Record<string, string>> = {
 };
 
 /**
- * Reads the SPARQL query text of a request URL.
- *
- * @param url - The request URL.
- * @returns The `query` parameter, or `""`.
- */
-function sparqlQuery(url: string): string {
-  return new URL(url).searchParams.get("query") ?? "";
-}
-
-/** Successful GPC, ECOICOP, and NACE responses. */
-const TAXONOMY_SOURCES: readonly ScriptedHttp[] = [
-  {match: (request) => request.url === "https://ref.gs1.org/standards/gpc/2026-05/", respond: {status: 200, body: "zip-archive"}},
-  {
-    match: (request) => sparqlQuery(request.url).includes("ecoicop2"),
-    respond: {
-      status: 200,
-      body: JSON.stringify({results: {bindings: [{concept: {value: "e:01"}, notation: {value: "01"}, label: {value: "Food"}}]}}),
-    },
-  },
-  {
-    match: (request) => sparqlQuery(request.url).includes("nace2.1"),
-    respond: {
-      status: 200,
-      body: JSON.stringify({results: {bindings: [{concept: {value: "n:A"}, notation: {value: "A"}, label: {value: "Farming"}}]}}),
-    },
-  },
-];
-
-/** Valid English GPC document the scripted extractor writes. */
-const GPC_DOCUMENT = {
-  LanguageCode: "EN",
-  DateUtc: "2026-05-01",
-  Schema: [{Level: 1, Code: 50000000, Title: "Food", Definition: null, DefinitionExcludes: null, Active: true, Childs: []}],
-};
-
-/** Harness filesystem the scripted extractor writes into, bound per test. */
-interface Binding {
-  fs?: FileSystem.FileSystem;
-}
-
-/**
  * Builds a harness whose leaves all succeed unless `overrides` change the fixtures.
  *
- * @param binding - Receives the harness filesystem for the scripted extractor.
  * @param overrides - Harness options replacing the defaults.
  * @returns The harness.
  */
-function generateHarness(binding: Binding, overrides: TestLayerOptions = {}): TestHarness {
+function generateHarness(overrides: TestLayerOptions = {}): TestHarness {
   return makeTestLayer({
     context: "test::generate",
-    files: {".env": COMPLETE_ENV, ...SYNCHRONIZED_LOCALES, ...WORKSPACE_FILES},
-    http: TAXONOMY_SOURCES,
-    processes: [
-      {
-        match: (request) => request.command === "unzip",
-        respond: (request) => {
-          const outputDirectory = request.args.at(-1);
-          const fs = binding.fs;
-          if (outputDirectory === undefined || fs === undefined) {
-            return Effect.die(new Error("The archive extraction fixture is not bound."));
-          }
-          return Effect.orDie(
-            fs.writeFileString(join(outputDirectory, "GPC as of May 2026 (2026-05-20) EN.json"), JSON.stringify(GPC_DOCUMENT)),
-          ).pipe(Effect.as({stdout: "", stderr: "", durationMs: 0}));
-        },
-      },
-    ],
+    files: {".env": COMPLETE_ENV, ...SYNCHRONIZED_LOCALES, ...WORKSPACE_FILES, ...pinnedTaxonomyFixtureFiles(repositoryFixtureRoot)},
     ...overrides,
     environment: {platform: "linux", ...overrides.environment},
     clock: "test",
@@ -147,20 +83,18 @@ function generateHarness(binding: Binding, overrides: TestLayerOptions = {}): Te
  *
  * @param name - The test name.
  * @param overrides - Harness options replacing the defaults.
- * @param body - The test body; the clock and the extractor binding are set first.
+ * @param body - The test body; the test clock is set first.
  */
 function generateTest(
   name: string,
   overrides: TestLayerOptions,
   body: (harness: TestHarness) => Effect.Effect<void, unknown, GenerateRequirements | TestClock.TestClock | Scope.Scope>,
 ): void {
-  const binding: Binding = {};
-  const harness = generateHarness(binding, overrides);
+  const harness = generateHarness(overrides);
   effectTest(
     name,
     () =>
       Effect.gen(function* () {
-        binding.fs = yield* FileSystem.FileSystem;
         yield* TestClock.setTime(FIXED_NOW);
         yield* body(harness);
       }),
@@ -221,8 +155,8 @@ describe("runGenerate", () => {
         {stream: "stdout", text: "[arolariu::test::generate] ✅ i18n synchronization completed with 0 missing key(s) added."},
         {stream: "stdout", text: "[arolariu::test::generate] ℹ️ Running GraphQL types generator..."},
         {stream: "stdout", text: "[arolariu::test::generate] ✅ GraphQL generation completed (placeholder)."},
-        {stream: "stdout", text: "[arolariu::test::generate] ℹ️ Running taxonomy and license artifact generator..."},
-        {stream: "stdout", text: "[arolariu::test::generate] ✅ Generated 7 artifact file(s)."},
+        {stream: "stdout", text: "[arolariu::test::generate] ℹ️ Running pinned taxonomy and Website license preparation..."},
+        {stream: "stdout", text: "[arolariu::test::generate] ✅ Verified 3 pinned taxonomy pairs; generated 1 Website license file(s)."},
         {stream: "stdout", text: ""},
         {stream: "stdout", text: "[arolariu::test::generate] ✅ All requested generation tasks completed."},
         {stream: "stdout", text: "   Executed 4 task(s)."},
@@ -239,10 +173,12 @@ describe("runGenerate", () => {
       expect(result).toEqual({selected: ["gql", "artifacts"], completed: ["gql", "artifacts"]});
       const texts = records(harness).map((record) => record.text);
       const gqlSummary = texts.indexOf("[arolariu::test::generate] ✅ GraphQL generation completed (placeholder).");
-      const artifactsSummary = texts.indexOf("[arolariu::test::generate] ✅ Generated 7 artifact file(s).");
+      const artifactsSummary = texts.indexOf(
+        "[arolariu::test::generate] ✅ Verified 3 pinned taxonomy pairs; generated 1 Website license file(s).",
+      );
       expect(gqlSummary).toBeGreaterThan(-1);
       expect(artifactsSummary).toBeGreaterThan(gqlSummary);
-      expect(harness.httpCalls()).toHaveLength(3);
+      expect(harness.httpCalls()).toEqual([]);
     }),
   );
 
@@ -255,7 +191,7 @@ describe("runGenerate", () => {
       const texts = records(harness).map((record) => record.text);
       expect(texts.filter((text) => text === "🔧 Configuration:")).toHaveLength(1);
       expect(texts.filter((text) => text.includes("GraphQL generation completed"))).toHaveLength(1);
-      expect(texts.some((text) => text.includes("[GPC]") || text.includes("Starting 5 artifact generator(s)."))).toBe(false);
+      expect(texts.some((text) => text.includes("[Frontend licenses]"))).toBe(false);
     }),
   );
 

@@ -1,134 +1,89 @@
-/**
- * @fileoverview Unit tests for deleteInvoice server action.
- * @module app/domains/invoices/_actions/invoices/deleteInvoice.test
- */
-
-import {fetchBFFUserFromAuthService} from "@/lib/actions/user/fetchUser";
-import {fetchWithTimeout} from "@/lib/utils.server";
 import {revalidatePath} from "next/cache";
-import {beforeEach, describe, expect, it, vi} from "vitest";
-import {TestDataBuilder} from "../../../../../../tests/helpers";
+import {describe, expect, it, vi} from "vitest";
+import {apiUrl, auth, fetchAtHttp} from "../../../../../../tests/setup/server-http";
+import {deleteInvoice} from "./deleteInvoice";
 
-vi.mock("@/lib/actions/user/fetchUser");
-vi.mock("next/cache");
-const {deleteInvoice} = await import("./deleteInvoice");
-const mockFetchUser = vi.mocked(fetchBFFUserFromAuthService);
-const mockFetchWithTimeout = vi.mocked(fetchWithTimeout);
-const mockRevalidatePath = vi.mocked(revalidatePath);
+vi.mock("next/cache", () => ({revalidatePath: vi.fn<typeof revalidatePath>()}));
 
 describe("deleteInvoice", () => {
   const invoiceId = "11111111-1111-4111-8111-111111111111";
 
-  beforeEach(() => {
-    vi.clearAllMocks();
-    mockFetchUser.mockResolvedValue(TestDataBuilder.build("userInformation", {userIdentifier: "user-1", userJwt: "jwt-1"}));
-    mockFetchWithTimeout.mockResolvedValue({
-      ok: true,
-      status: 204,
-      statusText: "No Content",
-      text: async () => "",
-    } as Response);
-  });
+  it("deletes an invoice and revalidates both page views only after the backend succeeds", async () => {
+    const pending = Promise.withResolvers<Response>();
+    const started = Promise.withResolvers<void>();
+    fetchAtHttp.mockImplementationOnce(() => {
+      started.resolve();
+      return pending.promise;
+    });
 
-  it("deletes an invoice and revalidates edit and view paths", async () => {
-    const result = await deleteInvoice({invoiceId});
+    const deletion = deleteInvoice({invoiceId});
+    try {
+      await Promise.race([started.promise, deletion]);
+      expect(revalidatePath).not.toHaveBeenCalled();
+    } finally {
+      pending.resolve(new Response(null, {status: 204}));
+      await deletion;
+    }
+    const result = await deletion;
 
-    expect(result.success).toBe(true);
-    expect(mockFetchWithTimeout).toHaveBeenCalledWith(
-      `/rest/v1/invoices/${invoiceId}`,
-      expect.objectContaining({
-        method: "DELETE",
-        headers: expect.objectContaining({
-          Authorization: "Bearer jwt-1",
-          "Content-Type": "application/json",
-        }),
-      }),
+    expect(result).toEqual({success: true, data: undefined});
+    expect(fetchAtHttp).toHaveBeenCalledExactlyOnceWith(
+      `${apiUrl}/rest/v1/invoices/${invoiceId}`,
+      expect.objectContaining({method: "DELETE", cache: "no-store"}),
     );
-
-    expect(mockRevalidatePath).toHaveBeenCalledTimes(2);
-    expect(mockRevalidatePath).toHaveBeenCalledWith(`/domains/invoices/edit-invoice/${invoiceId}`, "page");
-    expect(mockRevalidatePath).toHaveBeenCalledWith(`/domains/invoices/view-invoice/${invoiceId}`, "page");
+    const [, options] = fetchAtHttp.mock.calls[0] ?? [];
+    const headers = new Headers(options?.headers);
+    expect(headers.get("authorization")).toMatch(/^Bearer \S+$/u);
+    expect(headers.get("content-type")).toBe("application/json");
+    expect(options?.body).toBeUndefined();
+    expect(vi.mocked(revalidatePath).mock.calls).toEqual([
+      [`/domains/invoices/edit-invoice/${invoiceId}`, "page"],
+      [`/domains/invoices/view-invoice/${invoiceId}`, "page"],
+    ]);
   });
 
-  it("returns an error result for an invalid invoice id", async () => {
+  it("rejects an invalid invoice identifier before authenticating or calling HTTP", async () => {
     const result = await deleteInvoice({invoiceId: "not-a-guid"});
 
-    expect(result.success).toBe(false);
-    if (!result.success) {
-      expect(result.error.message).toContain("invoiceId");
-    }
+    expect(result).toMatchObject({success: false, error: {message: expect.stringContaining("invoiceId")}});
+    expect(auth).not.toHaveBeenCalled();
+    expect(fetchAtHttp).not.toHaveBeenCalled();
+    expect(revalidatePath).not.toHaveBeenCalled();
   });
 
-  it("maps 404 and 403 responses to specific user messages", async () => {
-    mockFetchWithTimeout.mockResolvedValue(
-      TestDataBuilder.textResponse("Not found", {status: 404, statusText: "Not Found"}) as Awaited<ReturnType<typeof fetchWithTimeout>>,
-    );
-
-    const result404 = await deleteInvoice({invoiceId});
-    expect(result404.success).toBe(false);
-    if (!result404.success) {
-      expect(result404.error.message).toContain("404");
-      expect(result404.error.message).toContain("Failed to delete invoice");
-    }
-
-    mockFetchWithTimeout.mockResolvedValue(
-      TestDataBuilder.textResponse("Forbidden", {status: 403, statusText: "Forbidden"}) as Awaited<ReturnType<typeof fetchWithTimeout>>,
-    );
-
-    const result403 = await deleteInvoice({invoiceId});
-    expect(result403.success).toBe(false);
-    if (!result403.success) {
-      expect(result403.error.message).toContain("403");
-      expect(result403.error.message).toContain("Failed to delete invoice");
-    }
-  });
-
-  it("maps fallback non-OK responses to a generic user message", async () => {
-    mockFetchWithTimeout.mockResolvedValue(
-      TestDataBuilder.textResponse("Server error", {status: 500, statusText: "Internal Server Error"}) as Awaited<
-        ReturnType<typeof fetchWithTimeout>
-      >,
-    );
+  it.each([
+    [404, "NOT_FOUND", "The invoice was not found. It may have already been deleted."],
+    [403, "AUTH_ERROR", "You do not have permission to delete this invoice."],
+    [500, "SERVER_ERROR", "An unexpected error occurred while deleting the invoice."],
+  ] as const)("returns the HTTP %i failure without revalidating either page", async (status, code, message) => {
+    fetchAtHttp.mockResolvedValue(new Response("Invoice could not be deleted", {status, statusText: "Internal reason"}));
 
     const result = await deleteInvoice({invoiceId});
 
-    expect(result.success).toBe(false);
-    if (!result.success) {
-      expect(result.error.message).toContain("500");
-      expect(result.error.message).toContain("Failed to delete invoice");
-    }
+    expect(result).toEqual({success: false, error: {code, message, status}});
+    expect(fetchAtHttp).toHaveBeenCalledOnce();
+    expect(revalidatePath).not.toHaveBeenCalled();
   });
 
-  it("returns an error result when auth throws", async () => {
-    mockFetchUser.mockRejectedValue(new Error("Auth failed"));
+  it("does not delete or invalidate pages when the identity provider throws", async () => {
+    auth.mockRejectedValue(new Error("Auth failed"));
 
     const result = await deleteInvoice({invoiceId});
 
-    expect(result.success).toBe(false);
-    if (!result.success) {
-      expect(result.error.message).toContain("Auth failed");
-    }
+    expect(result).toEqual({success: false, error: {code: "NETWORK_ERROR", message: "Auth failed"}});
+    expect(fetchAtHttp).not.toHaveBeenCalled();
+    expect(revalidatePath).not.toHaveBeenCalled();
   });
 
-  it("returns an error result when fetch throws", async () => {
-    mockFetchWithTimeout.mockRejectedValue(new Error("Network error"));
+  it.each([
+    [new Error("Network error"), "Network error"],
+    ["Connection closed", "An unexpected error occurred"],
+  ] as const)("does not invalidate pages when HTTP rejects with %s", async (reason, message) => {
+    fetchAtHttp.mockRejectedValue(reason);
 
     const result = await deleteInvoice({invoiceId});
 
-    expect(result.success).toBe(false);
-    if (!result.success) {
-      expect(result.error.message).toContain("Network error");
-    }
-  });
-
-  it("returns a fallback error message when fetch throws a non-Error", async () => {
-    mockFetchWithTimeout.mockRejectedValue("Connection timeout");
-
-    const result = await deleteInvoice({invoiceId});
-
-    expect(result.success).toBe(false);
-    if (!result.success) {
-      expect(result.error.message).toContain("An unexpected error occurred");
-    }
+    expect(result).toEqual({success: false, error: {code: "NETWORK_ERROR", message}});
+    expect(revalidatePath).not.toHaveBeenCalled();
   });
 });

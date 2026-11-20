@@ -112,6 +112,19 @@ describe("useClipboard", () => {
     expect(result.current.error).toEqual(writeError);
   });
 
+  it("reports a useful error when the clipboard rejects without an Error object", async () => {
+    writeTextMock.mockRejectedValueOnce(undefined);
+    const {result} = renderHook(() => useClipboard());
+
+    await act(async () => {
+      await result.current.copy("test text");
+    });
+
+    expect(result.current.error).toEqual(new Error("Failed to copy to clipboard"));
+    expect(result.current.copied).toBe(false);
+    expect(vi.getTimerCount()).toBe(0);
+  });
+
   it("ignores an older failure after the latest copy succeeds", async () => {
     const older = Promise.withResolvers<void>();
     const latest = Promise.withResolvers<void>();

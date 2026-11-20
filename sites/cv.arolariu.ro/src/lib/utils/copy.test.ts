@@ -3,29 +3,32 @@
  * Tests clipboard operations with modern API and fallback
  */
 
-import {beforeEach, describe, expect, it, vi} from "vitest";
+import {afterEach, beforeEach, describe, expect, it, vi} from "vitest";
 import {copyText} from "./copy";
 
 describe("copyText", () => {
+  const execCommandDescriptor = Object.getOwnPropertyDescriptor(document, "execCommand");
+
   beforeEach(() => {
-    vi.clearAllMocks();
+    Object.defineProperty(document, "execCommand", {configurable: true, value: vi.fn(() => true)});
+  });
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
+    if (execCommandDescriptor) {
+      Object.defineProperty(document, "execCommand", execCommandDescriptor);
+    } else {
+      Reflect.deleteProperty(document, "execCommand");
+    }
   });
 
   describe("SSR/non-browser environment", () => {
     it("should return error when window is not defined", async () => {
-      const originalWindow = globalThis.window;
-      // @ts-expect-error - intentionally setting to undefined for testing
-      delete globalThis.window;
+      vi.stubGlobal("window", undefined);
 
       const result = await copyText("test text");
 
-      expect(result.ok).toBe(false);
-      if (!result.ok) {
-        expect(result.error.message).toBe("Clipboard not available (SSR)");
-      }
-
-      // Restore window
-      globalThis.window = originalWindow;
+      expect(result).toMatchObject({ok: false, error: {message: "Clipboard not available (SSR)"}});
     });
   });
 
@@ -100,6 +103,10 @@ describe("copyText", () => {
   });
 
   describe("clipboard API failures and fallback", () => {
+    beforeEach(() => {
+      vi.spyOn(console, "error").mockImplementation(() => {});
+    });
+
     it("should fallback to execCommand when clipboard API fails", async () => {
       const testText = "Fallback test";
       vi.spyOn(navigator.clipboard, "writeText").mockRejectedValue(new Error("Clipboard API failed"));
@@ -212,48 +219,23 @@ describe("copyText", () => {
   });
 
   describe("clipboard API unavailable", () => {
-    it("should fallback when navigator.clipboard is undefined", async () => {
-      const originalClipboard = navigator.clipboard;
-      Object.defineProperty(navigator, "clipboard", {
-        value: undefined,
-        writable: true,
-        configurable: true,
-      });
-
-      const execCommandSpy = vi.spyOn(document, "execCommand");
-      const result = await copyText("test");
-
-      expect(result.ok).toBe(true);
-      expect(execCommandSpy).toHaveBeenCalledWith("copy");
-
-      // Restore clipboard
-      Object.defineProperty(navigator, "clipboard", {
-        value: originalClipboard,
-        writable: true,
-        configurable: true,
-      });
+    const clipboardDescriptor = Object.getOwnPropertyDescriptor(navigator, "clipboard");
+    afterEach(() => {
+      if (clipboardDescriptor) Object.defineProperty(navigator, "clipboard", clipboardDescriptor);
+      else Reflect.deleteProperty(navigator, "clipboard");
     });
 
-    it("should fallback when navigator.clipboard.writeText is undefined", async () => {
-      const originalClipboard = navigator.clipboard;
-      Object.defineProperty(navigator, "clipboard", {
-        value: {},
-        writable: true,
-        configurable: true,
-      });
+    it.each([
+      ["navigator.clipboard", undefined],
+      ["navigator.clipboard.writeText", {}],
+    ])("falls back to the legacy copy command when %s is unavailable", async (_missing, clipboard) => {
+      Object.defineProperty(navigator, "clipboard", {value: clipboard, configurable: true});
+      const execCommand = vi.spyOn(document, "execCommand");
 
-      const execCommandSpy = vi.spyOn(document, "execCommand");
       const result = await copyText("test");
 
-      expect(result.ok).toBe(true);
-      expect(execCommandSpy).toHaveBeenCalledWith("copy");
-
-      // Restore clipboard
-      Object.defineProperty(navigator, "clipboard", {
-        value: originalClipboard,
-        writable: true,
-        configurable: true,
-      });
+      expect(result).toMatchObject({ok: true});
+      expect(execCommand).toHaveBeenCalledExactlyOnceWith("copy");
     });
   });
 });

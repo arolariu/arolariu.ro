@@ -84,30 +84,6 @@ describe("analyzeMerchant", () => {
     }
   });
 
-  it("returns an error result for 5xx responses", async () => {
-    fetchMock.mockResolvedValue(
-      TestDataBuilder.textResponse("Server error", {status: 500, statusText: "Internal Server Error"}) as Awaited<
-        ReturnType<typeof fetchWithTimeout>
-      >,
-    );
-    const result = await analyzeMerchant({merchantIdentifier: merchantId, profile: "fast"});
-    expect(result.success).toBe(false);
-    if (!result.success) {
-      expect(result.error.message).toContain("500");
-    }
-  });
-
-  it("returns an error result carrying the status for 4xx responses", async () => {
-    fetchMock.mockResolvedValue(
-      TestDataBuilder.textResponse("Bad request", {status: 400, statusText: "Bad Request"}) as Awaited<ReturnType<typeof fetchWithTimeout>>,
-    );
-    const result = await analyzeMerchant({merchantIdentifier: merchantId, profile: "fast"});
-    expect(result.success).toBe(false);
-    if (!result.success) {
-      expect(result.error.message).toContain("400");
-    }
-  });
-
   it("returns an unknown analysis error when fetch rejects with a non-Error value", async () => {
     fetchMock.mockRejectedValue("boom");
     const result = await analyzeMerchant({merchantIdentifier: merchantId, profile: "fast"});

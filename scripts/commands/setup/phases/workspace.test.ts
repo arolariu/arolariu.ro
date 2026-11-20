@@ -19,7 +19,6 @@ import {describe, expect, it, vi} from "vitest";
 
 import {createRepositoryPaths, type RepositoryPaths} from "../../../common/repository-paths.ts";
 import type {RepositoryRequirements} from "../../../common/requirements.ts";
-import {getExpectedTaxonomyArtifactPaths} from "../../../common/taxonomy-artifacts.ts";
 import type {NpmTreeFacts} from "../../../inspection/packages.ts";
 import type {InspectionOutcome} from "../../../inspection/types.ts";
 import {Presenter} from "../../../platform/Output.ts";
@@ -119,7 +118,7 @@ function fixtureFiles(patch: Readonly<Record<string, string>> = {}): Record<stri
 /** Every generated checkout artifact the generators phase asserts as a postcondition. */
 function expectedGeneratedArtifacts(): readonly string[] {
   return [
-    ...getExpectedTaxonomyArtifactPaths(FIXTURE_ROOT),
+    resolve(FIXTURE_PATHS.websiteRoot, "licenses.json"),
     resolve(FIXTURE_ROOT, "scripts", "__generated__", "gql", "README.placeholder.txt"),
   ];
 }
@@ -951,8 +950,8 @@ describe("workspace characterization (pre-Effect migration)", () => {
         {
           id: "workspace.generators",
           status: "succeeded",
-          summary: "Nx metadata and required generated checkout artifacts are valid.",
-          evidence: ["Nx reported 1 project(s).", "Executed action: workspace.generators.generate", "Verified 7 generated artifact(s)."],
+          summary: "Nx metadata, pinned taxonomies, and generated checkout artifacts are ready.",
+          evidence: ["Nx reported 1 project(s).", "Executed action: workspace.generators.generate", "Verified 2 generated artifact(s)."],
           nextActions: [],
           durationMs: 1,
         },
@@ -1102,7 +1101,7 @@ describe("workspace characterization (pre-Effect migration)", () => {
       ],
       actionLines: [
         "stdout: [arolariu::setup] ℹ️ Planned setup action 'workspace.github-scripts-dependencies.npm-ci' (repository): Restore .github scripts dependencies from the lockfile.",
-        "stdout: [arolariu::setup] ℹ️ Planned setup action 'workspace.generators.generate' (repository): Generate taxonomy, GraphQL, and internationalization checkout artifacts.",
+        "stdout: [arolariu::setup] ℹ️ Planned setup action 'workspace.generators.generate' (repository): Verify pinned taxonomies and prepare Website licenses, GraphQL, and internationalization artifacts.",
       ],
       executed: [],
       commands: [

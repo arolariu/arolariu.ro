@@ -1,0 +1,60 @@
+import type {StandardClassification} from "@/types/invoices/Classification";
+import {describe, expect, it} from "vitest";
+import {buildInvoice, buildProduct, buildRecipeSuggestion} from "../../../../../../../tests/helpers/builders/domain";
+import {calculateHealthScorePercentage} from "./healthScore";
+
+const classification = {
+  system: "ECOICOP_V2",
+  code: "01.1.1",
+  officialLabel: "Cereals",
+  version: "2",
+  hierarchy: [],
+  origin: "Manual",
+  confidence: null,
+  evidence: [],
+} satisfies StandardClassification;
+
+describe("calculateHealthScorePercentage", () => {
+  it("scores a fully classified receipt with payment, merchant and recipe at 100%", () => {
+    const invoice = buildInvoice({
+      items: [buildProduct({classification})],
+      possibleRecipes: [buildRecipeSuggestion({description: "A quick meal from the receipt"})],
+    });
+
+    const score = calculateHealthScorePercentage(invoice);
+
+    expect(score).toBe(100);
+  });
+
+  it("ignores deleted items and unknown OCR confidence when scoring a partially complete invoice", () => {
+    const complete = buildProduct({classification});
+    const partial = buildProduct({classification: null, metadata: {...complete.metadata, isComplete: false, confidence: 0.6}});
+    const invoice = buildInvoice({
+      items: [
+        {...complete, metadata: {...complete.metadata, confidence: 0}},
+        partial,
+        {...complete, metadata: {...complete.metadata, isSoftDeleted: true}},
+      ],
+      merchantReference: "",
+      paymentInformation: {...buildInvoice().paymentInformation, totalCostAmount: 0},
+    });
+
+    const score = calculateHealthScorePercentage(invoice);
+
+    expect(score).toBe(42);
+  });
+
+  it("gives no credit for archived items, the empty merchant sentinel, or a transaction without currency", () => {
+    const item = buildProduct({classification});
+    const payment = buildInvoice().paymentInformation;
+    const invoice = buildInvoice({
+      items: [{...item, metadata: {...item.metadata, isSoftDeleted: true}}],
+      merchantReference: "00000000-0000-0000-0000-000000000000",
+      paymentInformation: {...payment, currency: {...payment.currency, code: ""}},
+    });
+
+    const score = calculateHealthScorePercentage(invoice);
+
+    expect(score).toBe(0);
+  });
+});

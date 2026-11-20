@@ -1,26 +1,12 @@
-/**
- * @fileoverview Render-smoke tests for the Hero section.
- *
- * Verifies the section renders without throwing in jsdom (the
- * IntersectionObserver mock guards against the setup-file's
- * arrow-function mock that can't be `new`-invoked) and that key
- * editorial content (author name, taglines, CTAs) is present.
- */
+import {act, fireEvent, render, screen} from "@testing-library/svelte";
+import {afterEach, describe, expect, it, vi} from "vitest";
 
-import {render} from "@testing-library/svelte";
-import {beforeEach, describe, expect, it, vi} from "vitest";
-
+import styles from "./Hero.module.scss";
 import Hero from "./Hero.svelte";
 
 describe("Hero", () => {
-  beforeEach(() => {
-    global.IntersectionObserver = vi.fn(function (this: IntersectionObserver) {
-      this.observe = vi.fn();
-      this.unobserve = vi.fn();
-      this.disconnect = vi.fn();
-      this.takeRecords = vi.fn(() => []);
-      return this;
-    }) as unknown as typeof IntersectionObserver;
+  afterEach(() => {
+    vi.useRealTimers();
   });
 
   it("renders the author's name in the level-1 heading", () => {
@@ -52,5 +38,36 @@ describe("Hero", () => {
     expect(img?.getAttribute("height")).toBe("199");
     expect(img?.getAttribute("decoding")).toBe("async");
     expect(img?.getAttribute("fetchpriority")).toBe("high");
+  });
+
+  it("keeps a loaded avatar hidden until the entrance delay finishes", async () => {
+    vi.useFakeTimers({toFake: ["setTimeout", "clearTimeout"]});
+    render(Hero);
+    const avatar = screen.getByRole("img", {name: /Alexandru-Razvan Olariu/});
+
+    await fireEvent.load(avatar);
+    await act(() => vi.advanceTimersByTimeAsync(199));
+
+    expect(avatar).toHaveClass(styles.hidden);
+
+    await act(() => vi.advanceTimersByTimeAsync(1));
+
+    expect(avatar).toHaveClass(styles.visible);
+    expect(avatar).not.toHaveClass(styles.hidden);
+  });
+
+  it("shows a loaded avatar immediately when reduced motion is requested", async () => {
+    vi.useFakeTimers({toFake: ["setTimeout", "clearTimeout"]});
+    const preference = window.matchMedia("(prefers-reduced-motion: reduce)");
+    vi.spyOn(preference, "matches", "get").mockReturnValue(true);
+    vi.spyOn(window, "matchMedia").mockReturnValue(preference);
+    render(Hero);
+    const avatar = screen.getByRole("img", {name: /Alexandru-Razvan Olariu/});
+    expect(avatar).toHaveClass(styles.hidden);
+
+    await fireEvent.load(avatar);
+
+    expect(avatar).toHaveClass(styles.visible);
+    expect(avatar).not.toHaveClass(styles.hidden);
   });
 });

@@ -60,10 +60,8 @@ function getMonthGrid(month: (typeof MONTHS)[number]): HTMLElement {
 }
 
 function getDayCell(month: (typeof MONTHS)[number], day: number): HTMLElement {
-  const cell = within(getMonthGrid(month))
-    .getAllByRole("gridcell")
-    .find((candidate) => candidate.textContent === String(day));
-  if (cell === undefined) {
+  const cell = within(getMonthGrid(month)).getByText(String(day)).closest<HTMLElement>('[role="gridcell"]');
+  if (!cell) {
     throw new Error(`No day cell rendered for ${month} ${day}`);
   }
   return cell;
@@ -94,33 +92,20 @@ describe("SpendingCalendarHeatmap", () => {
   });
 
   describe("layout", () => {
-    it("renders the title, description, current year, and twelve month calendars in order", () => {
+    it("renders twelve month calendars in order with weekdays and the correct number of days", () => {
       renderHeatmap();
 
       expect(screen.getByText(`${HEATMAP_KEY}.title`)).toBeInTheDocument();
       expect(screen.getByText(`${HEATMAP_KEY}.description`)).toBeInTheDocument();
       expect(screen.getByText("2026")).toBeInTheDocument();
-      expect(screen.getAllByRole("grid").map((grid) => grid.getAttribute("aria-label"))).toEqual([...MONTHS]);
+      const grids = screen.getAllByRole("grid");
+      expect(grids.map((grid) => grid.getAttribute("aria-label"))).toEqual([...MONTHS]);
       expect(screen.getAllByRole("heading", {level: 3}).map((heading) => heading.textContent)).toEqual([...MONTHS]);
+      expect(grids.map((grid) => within(grid).getAllByRole("columnheader").length)).toEqual(MONTHS.map(() => 7));
+      expect(grids.map((grid) => within(grid).getAllByRole("gridcell").length)).toEqual([31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31]);
     });
 
-    it("renders seven weekday column headers per month", () => {
-      renderHeatmap();
-
-      const headers = within(getMonthGrid("January")).getAllByRole("columnheader");
-      expect(headers).toHaveLength(7);
-      expect(screen.getAllByRole("columnheader")).toHaveLength(7 * MONTHS.length);
-    });
-
-    it("renders one numbered day cell per calendar day", () => {
-      renderHeatmap();
-
-      expect(within(getMonthGrid("January")).getAllByRole("gridcell")).toHaveLength(31);
-      expect(within(getMonthGrid("February")).getAllByRole("gridcell")).toHaveLength(28);
-      expect(within(getMonthGrid("June")).getAllByRole("gridcell")).toHaveLength(30);
-    });
-
-    it("pads the first and last weeks so every week row spans Monday to Sunday", () => {
+    it("pads partial weeks to Monday–Sunday but leaves boundary-aligned weeks alone", () => {
       renderHeatmap();
 
       const januaryWeeks = getWeekRows("January");
@@ -139,11 +124,6 @@ describe("SpendingCalendarHeatmap", () => {
           .getAllByRole("gridcell")
           .map((cell) => cell.textContent),
       ).toEqual(["26", "27", "28", "29", "30", "31"]);
-    });
-
-    it("adds no padding to a month that starts on Monday or ends on Sunday", () => {
-      renderHeatmap();
-
       // 1 June 2026 is a Monday; 31 May 2026 is a Sunday.
       const juneWeeks = getWeekRows("June");
       expect(within(juneWeeks[0]!).getAllByRole("gridcell")).toHaveLength(7);
@@ -207,12 +187,15 @@ describe("SpendingCalendarHeatmap", () => {
       expect(screen.getByRole("button", {name: PREVIOUS_YEAR})).toBeEnabled();
     });
 
-    it("moves to the previous year with its own data and back to the current year", async () => {
+    it("moves to the previous year by keyboard and back to the current year", async () => {
       const user = userEvent.setup();
       renderHeatmap();
+      const previous = screen.getByRole("button", {name: PREVIOUS_YEAR});
+      previous.focus();
 
-      await user.click(screen.getByRole("button", {name: PREVIOUS_YEAR}));
+      await user.keyboard("{Enter}");
 
+      expect(previous).toHaveFocus();
       expect(screen.getByText("2025")).toBeInTheDocument();
       expect(screen.queryByText("2026")).not.toBeInTheDocument();
       expect(screen.getByRole("button", {name: NEXT_YEAR})).toBeEnabled();

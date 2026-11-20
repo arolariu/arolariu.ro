@@ -16,12 +16,12 @@
  * explicitly.
  */
 
-import {basename, join, resolve} from "node:path";
+import {join, resolve} from "node:path";
 
-import {Effect, type PlatformError} from "effect";
+import {Clock, Effect, type PlatformError} from "effect";
 
 import {formatVersionRequirement, parseVersion, satisfiesMinimum, type MinimumVersion} from "../../../common/requirements.ts";
-import {getExpectedTaxonomyArtifactPaths} from "../../../common/taxonomy-artifacts.ts";
+import {inspectTaxonomySnapshots} from "../../../common/taxonomy-snapshots.ts";
 import {ReadOnlyFiles} from "../../../platform/Files.ts";
 import type {Process} from "../../../platform/Process.ts";
 import {
@@ -48,9 +48,6 @@ const GIBIBYTE = 1024 ** 3;
 const MINIMUM_DISK_BYTES = GIBIBYTE;
 const RECOMMENDED_DISK_BYTES = 5 * GIBIBYTE;
 const RECOMMENDED_MEMORY_BYTES = GIBIBYTE;
-
-/** Shared decoder for mirrored taxonomy artifact bytes. */
-const artifactDecoder = new TextDecoder("utf-8");
 
 const REQUIRED_CONFIG_PATHS = [
   ".nvmrc",
@@ -297,20 +294,6 @@ function pathIsFile(path: string): Effect.Effect<boolean, PlatformError.Platform
       ),
     ),
   );
-}
-
-/**
- * Compares two artifact byte sequences without materializing an intermediate string.
- *
- * @param left - First artifact contents.
- * @param right - Second artifact contents.
- * @returns Whether both mirrors are byte-identical.
- */
-function sameBytes(left: Uint8Array, right: Uint8Array): boolean {
-  if (left.byteLength !== right.byteLength) {
-    return false;
-  }
-  return left.every((byte, index) => byte === right[index]);
 }
 
 /**
@@ -866,133 +849,25 @@ function diagnoseConfigFiles(context: Readonly<ModuleRunContext>): Effect.Effect
 function diagnoseGeneratedArtifacts(context: Readonly<ModuleRunContext>): Effect.Effect<DiagnosticResult, never, ReadOnlyFiles> {
   return Effect.gen(function* () {
     const startedAt = context.monotonicNow();
-    const paths = getExpectedTaxonomyArtifactPaths(context.paths.root);
-    const missing: string[] = [];
-    const mismatched: string[] = [];
-    const metadataErrors: string[] = [];
-    const freshnessWarnings: string[] = [];
-    const freshnessEvidence: string[] = [];
-    const contents = new Map<string, Uint8Array>();
-
-    const files = yield* ReadOnlyFiles;
-    // Sequential by design: the mirrored artifacts are read one after the other, and the first
-    // non-missing filesystem failure stops the scan.
-    const scan = yield* Effect.result(
-      Effect.forEach(
-        paths,
-        (path) =>
-          files.stat(path).pipe(
-            Effect.flatMap((info) =>
-              info.type === "File"
-                ? Effect.map(files.readFile(path), (bytes) => {
-                    contents.set(path, bytes);
-                  })
-                : Effect.sync(() => {
-                    missing.push(path);
-                  }),
-            ),
-            Effect.catchIf(
-              (error) => hasPlatformReason(error, "NotFound"),
-              () =>
-                Effect.sync(() => {
-                  missing.push(path);
-                }),
-            ),
-          ),
-        {concurrency: 1, discard: true},
-      ),
-    );
-    if (scan._tag === "Failure") {
-      const error = scan.failure;
+    const now = new Date(yield* Clock.currentTimeMillis);
+    const {issues, snapshots} = yield* inspectTaxonomySnapshots(context.paths.root, now);
+    if (issues.length > 0) {
       return issueDiagnostic(context, startedAt, {
         id: "workspace.generated-artifacts",
-        name: "Generated artifacts",
+        name: "Pinned taxonomy snapshots",
         status: "fail",
-        summary: "Generated artifact metadata could not be inspected.",
-        evidence: [normalizeErrorForReport(error, "Generated artifact metadata could not be inspected.")],
-        potentialCauses: [{cause: "Generated artifact paths or their source file are inaccessible.", confidence: "high"}],
-        fixes: [{description: "Correct filesystem access and regenerate repository artifacts.", command: "npm run generate -- artifacts"}],
-      });
-    }
-
-    const byName = new Map<string, string[]>();
-    for (const path of paths) {
-      const name = basename(path);
-      byName.set(name, [...(byName.get(name) ?? []), path]);
-    }
-    for (const [name, mirrors] of byName) {
-      if (mirrors.length !== 2 || mirrors.some((path) => !contents.has(path))) {
-        continue;
-      }
-      const first = contents.get(mirrors[0]!);
-      const second = contents.get(mirrors[1]!);
-      if (first !== undefined && second !== undefined && !sameBytes(first, second)) {
-        mismatched.push(name);
-        continue;
-      }
-
-      try {
-        const parsed: unknown = JSON.parse(artifactDecoder.decode(first!));
-        if (!isRecord(parsed)) {
-          throw new Error("artifact root must be an object");
-        }
-
-        const expectedVersion =
-          /^ecoicop-v(?<version>.+)\.min\.json$/u.exec(name)?.groups?.["version"]
-          ?? /^(?:gpc|nace)-(?<version>.+)\.min\.json$/u.exec(name)?.groups?.["version"];
-        if (expectedVersion === undefined || parsed["version"] !== expectedVersion) {
-          metadataErrors.push(
-            `${name}: expected embedded version '${expectedVersion ?? "(unknown)"}', received '${String(parsed["version"])}'.`,
-          );
-        }
-
-        const generatedAt = parsed["generatedAt"];
-        if (typeof generatedAt !== "string" || Number.isNaN(Date.parse(generatedAt))) {
-          freshnessWarnings.push(`${name}: invalid generatedAt '${String(generatedAt)}'.`);
-        } else {
-          freshnessEvidence.push(`${name}: generated at ${generatedAt}.`);
-        }
-      } catch (error: unknown) {
-        metadataErrors.push(`${name}: ${normalizeErrorForReport(error, "artifact metadata is malformed.")}`);
-      }
-    }
-
-    if (missing.length > 0 || mismatched.length > 0 || metadataErrors.length > 0) {
-      return issueDiagnostic(context, startedAt, {
-        id: "workspace.generated-artifacts",
-        name: "Generated artifacts",
-        status: "fail",
-        summary: "Required mirrored taxonomy artifacts are incomplete, inconsistent, or invalid.",
+        summary: "Required pinned taxonomy snapshots are incomplete, inconsistent, or invalid.",
         evidence: boundEvidence(
-          [
-            ...missing.map((path) => `Missing artifact: ${path}`),
-            ...mismatched.map((name) => `Mirrored taxonomy bytes differ: ${name}`),
-            ...metadataErrors,
-            ...freshnessWarnings,
-          ],
+          issues.map(({message}) => normalizeErrorForReport(message, "Snapshot validation failed.")),
           context.options.verbose,
         ),
-        potentialCauses: [
-          ...(missing.length > 0 ? [{cause: "Required taxonomy generation output is missing.", confidence: "high" as const}] : []),
-          ...(mismatched.length > 0
-            ? [{cause: "API and website taxonomy mirrors were generated from different content.", confidence: "high" as const}]
-            : []),
-          ...(metadataErrors.length > 0
-            ? [{cause: "One or more taxonomy artifacts contain invalid or outdated release metadata.", confidence: "high" as const}]
-            : []),
+        rootCause: "The checkout does not contain a valid, identical API and Website copy of each required taxonomy.",
+        fixes: [
+          {
+            description: "Recover both approved copies from version control and verify them.",
+            command: "npm run generate -- --check-taxonomies",
+          },
         ],
-        fixes: [{description: "Regenerate taxonomy artifacts without running a build.", command: "npm run generate -- artifacts"}],
-      });
-    }
-    if (freshnessWarnings.length > 0) {
-      return issueDiagnostic(context, startedAt, {
-        id: "workspace.generated-artifacts",
-        name: "Generated artifacts",
-        status: "warn",
-        summary: "Mirrored taxonomy artifacts have invalid freshness metadata.",
-        evidence: boundEvidence([...freshnessWarnings, ...freshnessEvidence], context.options.verbose),
-        rootCause: "One or more taxonomy artifacts have invalid embedded generation timestamps.",
-        fixes: [{description: "Regenerate taxonomy artifacts.", command: "npm run generate -- artifacts"}],
       });
     }
 
@@ -1000,9 +875,9 @@ function diagnoseGeneratedArtifacts(context: Readonly<ModuleRunContext>): Effect
       context,
       startedAt,
       "workspace.generated-artifacts",
-      "Generated artifacts",
-      "Mirrored taxonomy artifacts are present, metadata-valid, and byte-identical.",
-      [`Verified ${String(paths.length)} taxonomy artifacts across ${String(byName.size)} mirrored sets.`, ...freshnessEvidence],
+      "Pinned taxonomy snapshots",
+      "API and Website taxonomy snapshots are valid and byte-identical.",
+      snapshots.map(({fileName, generatedAt}) => `${fileName}: generated at ${generatedAt}.`),
     );
   });
 }

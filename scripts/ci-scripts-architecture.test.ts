@@ -52,6 +52,27 @@ describe("plan-aware hygiene workflow contract", () => {
     expect(job("gate")).toMatch(/^          merge-multiple: false$/m);
     expect(workflow.match(/^\s+name: hygiene-plan$/gm)).toHaveLength(3);
   });
+
+  it("checks the selected pinned snapshots once between setup and planning", () => {
+    const command = "node scripts/cli.ts generate --check-taxonomies";
+    const detect = job("detect");
+    const check = detect.indexOf(command);
+    expect(check).toBeGreaterThan(detect.indexOf("install-scripts-deps:"));
+    expect(check).toBeLessThan(detect.indexOf("id: plan"));
+    expect(workflow.split(command)).toHaveLength(2);
+    expect(workflow).not.toMatch(/^  schedule:/m);
+  });
+});
+
+describe("API taxonomy workflow contract", () => {
+  const workflow = readFileSync(resolve(ciRoot, "..", "workflows", "official-api-trigger.yml"), "utf8");
+
+  it.each(["test", "build"])("runs the %s integrity check from the checkout root", (jobName) => {
+    const job = new RegExp(`^  ${jobName}:\\r?\\n([\\s\\S]*?)(?=^  [a-z][a-z-]*:|$(?![\\s\\S]))`, "m").exec(workflow)?.[1];
+    expect(job).toMatch(
+      /^      - name: Check pinned taxonomy integrity\r?\n        working-directory: \.\r?\n        run: node scripts\/cli\.ts generate --check-taxonomies --json$/m,
+    );
+  });
 });
 
 interface BoundaryViolation {

@@ -3,9 +3,8 @@
  * @module sites/arolariu.ro/src/lib/utils.generic/tests
  */
 
-import {afterEach, beforeEach, describe, expect, it, vi} from "vitest";
+import {afterEach, describe, expect, it, vi} from "vitest";
 import {
-  COMMIT_SHA,
   deriveBlobExtension,
   extractFileExtension,
   formatAmount,
@@ -20,10 +19,6 @@ import {
   isExtensionInSet,
   normalizeMimeType,
   normalizeMimeTypeWithAliases,
-  SITE_ENV,
-  SITE_NAME,
-  SITE_URL,
-  TIMESTAMP,
   toSafeDate,
   validateStringIsGuidType,
 } from "./utils.generic";
@@ -407,85 +402,28 @@ describe("formatRelativeTime", () => {
   });
 });
 
-describe("Environment Variables", () => {
-  it("should have SITE_ENV defined", () => {
-    expect(SITE_ENV).toBeDefined();
-    // The ?? operator ensures it's always a string (not undefined)
-    expect(typeof SITE_ENV).toBe("string");
-  });
-
-  it("should have SITE_URL defined", () => {
-    expect(SITE_URL).toBeDefined();
-    expect(typeof SITE_URL).toBe("string");
-  });
-
-  it("should have SITE_NAME defined", () => {
-    expect(SITE_NAME).toBeDefined();
-    expect(typeof SITE_NAME).toBe("string");
-  });
-
-  it("should have COMMIT_SHA defined", () => {
-    expect(COMMIT_SHA).toBeDefined();
-    expect(typeof COMMIT_SHA).toBe("string");
-  });
-
-  it("should have TIMESTAMP defined", () => {
-    expect(TIMESTAMP).toBeDefined();
-    expect(typeof TIMESTAMP).toBe("string");
-  });
-
-  it("should return empty string when SITE_ENV is not set", () => {
-    // The ?? "" ensures empty string fallback
-    expect(SITE_ENV).not.toBeNull();
-    expect(SITE_ENV).not.toBeUndefined();
-  });
-
-  it("should return empty string when SITE_URL is not set", () => {
-    expect(SITE_URL).not.toBeNull();
-    expect(SITE_URL).not.toBeUndefined();
-  });
-
-  it("should return empty string when SITE_NAME is not set", () => {
-    expect(SITE_NAME).not.toBeNull();
-    expect(SITE_NAME).not.toBeUndefined();
-  });
-
-  it("should return empty string when COMMIT_SHA is not set", () => {
-    expect(COMMIT_SHA).not.toBeNull();
-    expect(COMMIT_SHA).not.toBeUndefined();
-  });
-
-  it("should return empty string when TIMESTAMP is not set", () => {
-    expect(TIMESTAMP).not.toBeNull();
-    expect(TIMESTAMP).not.toBeUndefined();
-  });
-});
-
-describe("Environment Variables Fallback", () => {
-  const originalEnv = process.env;
-
-  beforeEach(() => {
-    vi.resetModules();
-    process.env = {...originalEnv};
-    delete process.env["SITE_ENV"];
-    delete process.env["SITE_URL"];
-    delete process.env["SITE_NAME"];
-    delete process.env["COMMIT_SHA"];
-    delete process.env["TIMESTAMP"];
-  });
+describe("build environment", () => {
+  const configured = {
+    SITE_ENV: "preview",
+    SITE_URL: "https://preview.example.test",
+    SITE_NAME: "Preview invoice site",
+    COMMIT_SHA: "1111111111111111111111111111111111111111",
+    TIMESTAMP: "2026-04-19T13:00:00Z",
+  };
 
   afterEach(() => {
-    process.env = originalEnv;
+    vi.unstubAllEnvs();
   });
 
-  it("should fallback to empty string when env vars are missing", async () => {
-    const {COMMIT_SHA, SITE_ENV, SITE_NAME, SITE_URL, TIMESTAMP} = await import("./utils.generic");
+  it.each([true, false])("reads the build metadata on import (configured: %s)", async (isConfigured) => {
+    for (const [key, value] of Object.entries(configured)) {
+      vi.stubEnv(key, isConfigured ? value : undefined);
+    }
+    vi.resetModules();
 
-    expect(SITE_ENV).toBe("");
-    expect(SITE_URL).toBe("");
-    expect(SITE_NAME).toBe("");
-    expect(COMMIT_SHA).toBe("");
-    expect(TIMESTAMP).toBe("");
+    const metadata = await import("./utils.generic");
+
+    expect(metadata).toMatchObject(isConfigured ? configured : {SITE_ENV: "", SITE_URL: "", SITE_NAME: "", COMMIT_SHA: "", TIMESTAMP: ""});
   });
 });
 

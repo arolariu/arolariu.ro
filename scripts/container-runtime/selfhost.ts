@@ -5,7 +5,7 @@
  * @remarks
  * {@link runSelfhost} resolves the container engine, runs the shared preflight, and drives the
  * local compose stacks through the Effect `Process` service from `infra/Local`, echoing each command
- * as `$ <command>` with tee output. The start action generates the taxonomy and license artifacts
+ * as `$ <command>` with tee output. The start action verifies pinned taxonomies and prepares Website licenses
  * with {@link generateArtifacts} (silently), reads the SQL password as a `Redacted` value, makes
  * sure the localhost certificates exist, writes the Traefik file-provider config, and bootstraps
  * SQL Server, Cosmos, Azurite, and the .NET storage provisioner once the storage stack has
@@ -24,7 +24,7 @@ import {join} from "node:path";
 import {Duration, Effect, FileSystem, Redacted, Result, type PlatformError} from "effect";
 
 import {generateArtifacts} from "../commands/generate/artifacts.ts";
-import type {ArtifactGenerationFailed, TaxonomySourceUnavailable} from "../commands/generate/errors.ts";
+import type {ArtifactGenerationFailed} from "../commands/generate/errors.ts";
 import {silently} from "../commands/generate/index.ts";
 import {resolveRepositoryPaths, type RepositoryRootNotFound} from "../common/repository-paths.ts";
 import {Environment} from "../platform/Environment.ts";
@@ -466,12 +466,7 @@ export const runSelfhost: (
   input: Readonly<SelfhostInput>,
 ) => Effect.Effect<
   SelfhostResult,
-  | ContainerRuntimeError
-  | RepositoryRootNotFound
-  | ProcessError
-  | PlatformError.PlatformError
-  | TaxonomySourceUnavailable
-  | ArtifactGenerationFailed,
+  ContainerRuntimeError | RepositoryRootNotFound | ProcessError | PlatformError.PlatformError | ArtifactGenerationFailed,
   PlatformServices | LocalBlobStorage
 > = Effect.fn("containers.selfhost")(function* (input: Readonly<SelfhostInput>) {
   const adapter = yield* prepareContainerEngine(input, "selfhost");
@@ -485,7 +480,8 @@ export const runSelfhost: (
   }
 
   if (shouldGenerateTaxonomyArtifacts(input.action)) {
-    yield* silently(generateArtifacts({verbose: false}));
+    const paths = yield* resolveRepositoryPaths(import.meta.url);
+    yield* silently(generateArtifacts({verbose: false, root: paths.root}));
   }
 
   // A defined password is exactly the start action, the only one that runs the storage bootstrap.

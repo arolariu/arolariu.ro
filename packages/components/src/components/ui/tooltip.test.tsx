@@ -305,6 +305,26 @@ describe("Tooltip", () => {
     expect(ref.current).toBe(trigger);
   });
 
+  it("provides a matching ID and tooltip role when a render callback omits both", async () => {
+    const user = userEvent.setup();
+    render(
+      <Tooltip>
+        <TooltipTrigger>Keyboard help</TooltipTrigger>
+        <TooltipContent render={({id: _id, role: _role, ...props}) => <section {...props} />}>Press Enter to open.</TooltipContent>
+      </Tooltip>,
+    );
+    const trigger = screen.getByRole("button", {name: "Keyboard help"});
+    expect(trigger).not.toHaveAttribute("aria-describedby");
+
+    await user.tab();
+
+    const popup = await screen.findByRole("tooltip");
+    expect(popup.tagName).toBe("SECTION");
+    expect(popup.id).not.toBe("");
+    expect(trigger).toHaveAttribute("aria-describedby", popup.id);
+    expect(trigger).toHaveAccessibleDescription("Press Enter to open.");
+  });
+
   it("does not replace a caller-owned role or describe cancelled opening requests", async () => {
     const user = userEvent.setup();
     const {rerender} = render(

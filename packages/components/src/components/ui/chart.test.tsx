@@ -747,6 +747,41 @@ describe("ChartTooltipContent", () => {
     expect(screen.getByText("0")).toBeInTheDocument();
   });
 
+  it("labels anonymous data points with the configured generic value label in the tooltip and legend", () => {
+    render(
+      <ChartContainer config={{value: {label: "Observed count"}}}>
+        <ChartTooltipContent
+          active
+          payload={[{graphicalItemId: "anonymous", value: 42}]}
+        />
+        <ChartLegendContent payload={[{type: "plainline", value: undefined}]} />
+      </ChartContainer>,
+    );
+
+    expect(screen.getAllByText("Observed count")).toHaveLength(3);
+    expect(screen.getByText("42")).toBeInTheDocument();
+  });
+
+  it("omits a hidden series from the tooltip and renders a truly unnamed legend entry as an indicator", () => {
+    const {container} = render(
+      <ChartContainer config={{hidden: {label: "Hidden series"}}}>
+        <ChartTooltipContent
+          active
+          payload={[{type: "none", dataKey: "hidden", graphicalItemId: "hidden", value: 100}]}
+        />
+        <ChartLegendContent payload={[{type: "plainline", value: undefined}]} />
+      </ChartContainer>,
+    );
+
+    expect(container.querySelector('[data-slot="chart-tooltip"]')).toBeNull();
+    expect(container.querySelector('[data-slot="chart-legend-indicator"]')).toBeInTheDocument();
+    expect(container.querySelector('[data-slot="chart-legend-item"]')).toHaveTextContent(/^$/u);
+  });
+
+  it("reports the missing chart container when standalone legend content is rendered", () => {
+    expect(() => render(<ChartLegendContent payload={[{value: "Unconfigured series"}]} />)).toThrow(/within a <ChartContainer/u);
+  });
+
   it("renders numeric zero headings rather than replacing them with a series label", () => {
     render(
       <ChartContainer config={config}>

@@ -120,6 +120,7 @@ describe("DotBackground", () => {
 
   it("rejects invalid dot geometry and bounds tiny-spacing grids", () => {
     expect(() => render(<DotBackground cr={Number.NaN} />)).toThrow(/radius/u);
+    expect(() => render(<DotBackground cx={Number.POSITIVE_INFINITY} />)).toThrow(/offsets must be finite/u);
     const {container} = render(
       <DotBackground
         width={0.25}

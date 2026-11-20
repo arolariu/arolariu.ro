@@ -1,3 +1,5 @@
+// @vitest-environment node
+
 import {describe, expect, it} from "vitest";
 
 import {
@@ -58,6 +60,14 @@ describe("PDF viewer state", () => {
 
   it("shows assistance instead of replacing the native PDF surface after a load timeout", () => {
     expect(getNextPdfSurfaceStatus("loading", "timeout")).toBe("needs-assistance");
+  });
+
+  it("preserves a loaded native viewer when the assistance timer fires late", () => {
+    const previous = getNextPdfSurfaceStatus("loading", "load");
+
+    const result = getNextPdfSurfaceStatus(previous, "timeout");
+
+    expect(result).toBe("ready");
   });
 
   it("shows the explicit fallback actions when the browser reports an embed error", () => {

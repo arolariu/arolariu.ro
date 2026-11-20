@@ -28,7 +28,7 @@
 import {addSpanEvent, logWithTrace, withSpan} from "@/instrumentation.server";
 import {fetchBFFUserFromAuthService} from "@/lib/actions/user/fetchUser";
 import {validateStringIsGuidType} from "@/lib/utils.generic";
-import {createErrorResult, fetchWithTimeout, type ServerActionResult} from "@/lib/utils.server";
+import {createErrorResult, createHttpErrorResult, fetchWithTimeout, type ServerActionResult} from "@/lib/utils.server";
 import type {Product} from "@/types/invoices";
 import {resolveClassificationCodeForWrite} from "@/types/invoices/Classification";
 import {parseProductResponse, tryParse} from "@/types/invoices/transport";
@@ -194,7 +194,7 @@ export async function addInvoiceProduct({invoiceId, product}: ServerActionInputT
         response.status >= 500
           ? "A server error occurred. Please try again later."
           : "Failed to add the product. Please check your input and try again.";
-      return createErrorResult(new Error(internalMessage), userMessage);
+      return createHttpErrorResult(response.status, userMessage);
     } catch (error: unknown) {
       addSpanEvent("bff.request.add-invoice-product.error");
       const errorMessage = error instanceof Error ? error.message : "An unexpected error occurred";

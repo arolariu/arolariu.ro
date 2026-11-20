@@ -149,6 +149,28 @@ test.describe("CV Platform Accessibility @a11y", () => {
   });
 
   test.describe("Keyboard Navigation", () => {
+    test("Command palette keeps page controls inert until Escape restores focus", async ({page}) => {
+      await page.goto("/");
+      const opener = page.getByLabel(/Open command palette/);
+      await opener.focus();
+      await expect(opener).toBeFocused();
+      await page.keyboard.press("Control+k");
+      const palette = page.getByRole("dialog", {name: "Command palette"});
+      const search = palette.getByRole("textbox", {name: "Search commands"});
+      await expect(search).toBeFocused();
+
+      const firstCommand = palette.getByRole("button", {name: /Go to Home/});
+      await firstCommand.focus();
+      await expect(firstCommand).toBeFocused();
+      await opener.focus();
+      await expect(firstCommand).toBeFocused();
+
+      await page.keyboard.press("Escape");
+
+      await expect(palette).toBeHidden();
+      await expect(opener).toBeFocused();
+    });
+
     test("Can tab through interactive elements", async ({page}) => {
       await page.goto("/");
       await page.waitForLoadState("networkidle");

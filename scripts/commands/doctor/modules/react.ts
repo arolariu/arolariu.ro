@@ -366,7 +366,27 @@ function diagnoseTaxonomyAndLicenses(context: Readonly<ModuleRunContext>, facts:
     summary: "Website taxonomy artifacts or license metadata are incomplete or invalid.",
     evidence,
     ...buildIssueDiagnosis(issues),
-    fixes: [{description: "Regenerate taxonomy and license artifacts, then rerun doctor.", command: "npm run generate -- artifacts"}],
+    fixes: [
+      ...(issues.some((issue) => issue.includes(".min.json"))
+        ? [
+            {
+              description: "Recover both approved taxonomy copies from version control, then verify them.",
+              command: "npm run generate -- --check-taxonomies",
+            },
+          ]
+        : []),
+      ...(issues.some((issue) => issue.startsWith("messages/"))
+        ? [{description: "Restore the missing or unreadable locale dictionaries from version control, then rerun doctor."}]
+        : []),
+      ...(issues.some((issue) => issue.startsWith("licenses.json"))
+        ? [
+            {
+              description: "Regenerate the Website license manifest from installed dependencies.",
+              command: "npm run generate -- --website-licenses-only",
+            },
+          ]
+        : []),
+    ],
   });
 }
 

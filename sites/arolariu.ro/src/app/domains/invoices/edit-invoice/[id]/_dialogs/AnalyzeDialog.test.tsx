@@ -1,152 +1,106 @@
-/**
- * @fileoverview Unit tests for AnalyzeDialog component.
- * @module app/domains/invoices/edit-invoice/[id]/_dialogs/AnalyzeDialog.test
- *
- * @remarks
- * TDD suite that verifies the dialog uses the honest queued model and never
- * renders fabricated progress or completion messaging.
- */
+// @vitest-environment happy-dom
 
-import {render, screen} from "@testing-library/react";
-import userEvent from "@testing-library/user-event";
-import {afterEach, beforeEach, describe, expect, it, vi} from "vitest";
+import "@testing-library/jest-dom/vitest";
 import {DialogProvider, useDialogs} from "@/app/domains/invoices/_contexts/DialogContext";
-import {TestDataBuilder} from "../../../../../../../tests/helpers";
+import {act, render, screen, waitFor, within} from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
+import {NextIntlClientProvider} from "next-intl";
+import {describe, expect, it, vi} from "vitest";
+import messages from "../../../../../../../messages/en.json";
+import {buildInvoice} from "../../../../../../../tests/helpers/builders/domain";
+import {apiUrl, fetchAtHttp} from "../../../../../../../tests/setup/server-http";
 import AnalyzeDialog from "./AnalyzeDialog";
 
-// ── Mock external boundaries ───────────────────────────────────────────────────
+const router = vi.hoisted(() => ({refresh: vi.fn<() => void>()}));
+vi.mock("next/navigation", () => ({useRouter: () => router}));
 
-vi.mock("../../../_actions/invoices", () => ({
-  analyzeInvoice: vi.fn(),
-}));
+const invoice = buildInvoice({id: "11111111-1111-4111-8111-111111111111", items: []});
 
-// ── Typed mock references ──────────────────────────────────────────────────────
-
-const {analyzeInvoice} = await import("../../../_actions/invoices");
-const mockAnalyzeInvoice = vi.mocked(analyzeInvoice);
-
-// ── Fixtures ───────────────────────────────────────────────────────────────────
-
-const TEST_INVOICE = TestDataBuilder.build("invoice", {items: []});
-
-// ── Test harness: provides DialogProvider and opens the dialog ─────────────────
-
-function OpenAnalyzeDialog(): React.JSX.Element {
+function Trigger(): React.JSX.Element {
   const {openDialog} = useDialogs();
   return (
-    <>
-      <button
-        type='button'
-        onClick={() => openDialog("EDIT_INVOICE__ANALYSIS", "view", {invoice: TEST_INVOICE})}>
-        Open
-      </button>
-      <AnalyzeDialog />
-    </>
+    <button
+      type='button'
+      onClick={() => openDialog("EDIT_INVOICE__ANALYSIS", "view", {invoice})}>
+      Open analysis
+    </button>
   );
 }
 
-function Wrapper(): React.JSX.Element {
-  return (
-    <DialogProvider>
-      <OpenAnalyzeDialog />
-    </DialogProvider>
+async function openAnalysis() {
+  const user = userEvent.setup();
+  const {analyzeDialog, invoiceAnalysisControls, queuedAnalysisNotice} = messages.dialogs.invoices;
+  render(
+    <NextIntlClientProvider
+      locale='en'
+      messages={{dialogs: {invoices: {analyzeDialog, invoiceAnalysisControls, queuedAnalysisNotice}}, shared: messages.shared}}>
+      <DialogProvider>
+        <Trigger />
+        <AnalyzeDialog />
+      </DialogProvider>
+    </NextIntlClientProvider>,
   );
+  await user.click(screen.getByRole("button", {name: "Open analysis"}));
+  return {user, dialog: within(screen.getByRole("dialog", {name: "Analyze Invoice"}))};
 }
-
-// ── Suite ──────────────────────────────────────────────────────────────────────
 
 describe("AnalyzeDialog", () => {
-  beforeEach(() => {
-    vi.clearAllMocks();
+  it("submits the selected profile and shows the real accepted request as queued, not complete", async () => {
+    fetchAtHttp.mockResolvedValue(Response.json("queue-42", {status: 202}));
+    const {user, dialog} = await openAnalysis();
+    const defaultProfile = dialog.getByRole("radio", {name: "Comprehensive"});
+    const balanced = dialog.getByRole("radio", {name: "Balanced"});
+    expect(defaultProfile).toBeChecked();
+    expect(dialog.queryByText("Analysis Queued")).not.toBeInTheDocument();
+
+    await user.click(balanced);
+    expect(balanced).toBeChecked();
+    expect(defaultProfile).not.toBeChecked();
+
+    await act(() => user.click(dialog.getByRole("button", {name: "Start Analysis"})));
+
+    expect(await dialog.findByText("Analysis Queued")).toBeVisible();
+    expect(dialog.getByText("queue-42")).toBeVisible();
+    expect(dialog.queryByRole("progressbar")).not.toBeInTheDocument();
+    expect(dialog.queryByText(/complete|finished|analysis is done/iu)).not.toBeInTheDocument();
+    expect(dialog.queryByRole("button", {name: "Start Analysis"})).not.toBeInTheDocument();
+    expect(fetchAtHttp).toHaveBeenCalledExactlyOnceWith(
+      `${apiUrl}/rest/v1/invoices/${invoice.id}/analyze`,
+      expect.objectContaining({method: "POST", body: '{"profile":"balanced"}'}),
+    );
+    expect(router.refresh).not.toHaveBeenCalled();
   });
 
-  afterEach(() => {
-    vi.restoreAllMocks();
+  it("keeps a failed submission retryable and replaces the alert only after acceptance", async () => {
+    fetchAtHttp
+      .mockResolvedValueOnce(new Response("Backend unavailable", {status: 503, statusText: "Service Unavailable"}))
+      .mockResolvedValueOnce(Response.json("queue-retry", {status: 202}));
+    const {user, dialog} = await openAnalysis();
+
+    await act(() => user.click(dialog.getByRole("button", {name: "Start Analysis"})));
+
+    expect(await dialog.findByRole("alert")).toHaveTextContent("A server error occurred during analysis. Please try again later.");
+    expect(dialog.queryByText("Analysis Queued")).not.toBeInTheDocument();
+    expect(dialog.queryByRole("progressbar")).not.toBeInTheDocument();
+    expect(router.refresh).not.toHaveBeenCalled();
+    const retry = dialog.getByRole("button", {name: "Start Analysis"});
+    expect(retry).toBeEnabled();
+
+    await act(() => user.click(retry));
+
+    expect(await dialog.findByText("queue-retry")).toBeVisible();
+    expect(dialog.queryByRole("alert")).not.toBeInTheDocument();
+    expect(fetchAtHttp).toHaveBeenCalledTimes(2);
   });
 
-  // ── 1. Queued state after submission — the core contract ───────────────────────
+  it.each(["Cancel", "Escape"])("closes without submitting via %s", async (dismissal) => {
+    const {user, dialog} = await openAnalysis();
+    expect(dialog.getByRole("radio", {name: "Comprehensive"})).toBeChecked();
 
-  it("shows queued state after submission and never claims completion", async () => {
-    mockAnalyzeInvoice.mockReturnValueOnce(TestDataBuilder.actionSuccess("queue-42"));
+    if (dismissal === "Cancel") await user.click(dialog.getByRole("button", {name: "Cancel"}));
+    else await user.keyboard("{Escape}");
 
-    render(<Wrapper />);
-
-    // Open the dialog.
-    await userEvent.click(screen.getByRole("button", {name: /open/i}));
-
-    // Submit via the Start Analysis button (key path "...buttons.startAnalysis" uniquely identifies it).
-    await userEvent.click(screen.getByRole("button", {name: /startAnalysis/i}));
-
-    // QueuedAnalysisNotice title key path "dialogs.invoices.queuedAnalysisNotice.title" uniquely
-    // identifies the queued state panel; the sibling component tests use this same pattern.
-    expect(await screen.findByText(/queuedAnalysisNotice\.title/i)).toBeInTheDocument();
-
-    // Must NOT render a progressbar.
-    expect(screen.queryByRole("progressbar")).not.toBeInTheDocument();
-
-    // Must NOT claim analysis is complete or finished.
-    expect(screen.queryByText(/complete|finished|analysis is done/i)).not.toBeInTheDocument();
-  });
-
-  // ── 2. Error state shown inline — no fabricated success ───────────────────────
-
-  it("shows an inline error alert when submission fails", async () => {
-    mockAnalyzeInvoice.mockReturnValueOnce(TestDataBuilder.actionFailure({code: "SERVER_ERROR", message: "Backend unavailable"}));
-
-    render(<Wrapper />);
-    await userEvent.click(screen.getByRole("button", {name: /open/i}));
-    await userEvent.click(screen.getByRole("button", {name: /startAnalysis/i}));
-
-    // An error alert must appear.
-    expect(await screen.findByRole("alert")).toBeInTheDocument();
-
-    // Still no progressbar.
-    expect(screen.queryByRole("progressbar")).not.toBeInTheDocument();
-  });
-
-  // ── 3. Controls rendered when idle ────────────────────────────────────────────
-
-  it("renders analysis controls when dialog is open and idle", async () => {
-    render(<Wrapper />);
-    await userEvent.click(screen.getByRole("button", {name: /open/i}));
-
-    // Profile radios from InvoiceAnalysisControls should be present.
-    expect(screen.getAllByRole("radio").length).toBeGreaterThan(0);
-  });
-
-  it("selects a different profile when a profile radio is clicked", async () => {
-    render(<Wrapper />);
-    await userEvent.click(screen.getByRole("button", {name: /open/i}));
-    const radios = screen.getAllByRole("radio");
-    const initiallyChecked = radios.filter((radio) => (radio as HTMLInputElement).checked);
-    const target = radios.find((radio) => !(radio as HTMLInputElement).checked);
-    expect(initiallyChecked).toHaveLength(1);
-    expect(target).toBeDefined();
-
-    await userEvent.click(target as HTMLElement);
-
-    expect(target).toBeChecked();
-    expect(initiallyChecked[0]).not.toBeChecked();
-  });
-
-  it("closes the dialog and keeps analysis unsubmitted when Cancel is clicked", async () => {
-    render(<Wrapper />);
-    await userEvent.click(screen.getByRole("button", {name: /open/i}));
-    expect(screen.getByRole("dialog")).toBeInTheDocument();
-
-    await userEvent.click(screen.getByRole("button", {name: /buttons\.cancel/i}));
-
-    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
-    expect(mockAnalyzeInvoice).not.toHaveBeenCalled();
-  });
-
-  it("closes the dialog when Escape is pressed", async () => {
-    render(<Wrapper />);
-    await userEvent.click(screen.getByRole("button", {name: /open/i}));
-    expect(screen.getByRole("dialog")).toBeInTheDocument();
-
-    await userEvent.keyboard("{Escape}");
-
-    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    await waitFor(() => expect(screen.queryByRole("dialog", {name: "Analyze Invoice"})).not.toBeInTheDocument());
+    expect(fetchAtHttp).not.toHaveBeenCalled();
   });
 });

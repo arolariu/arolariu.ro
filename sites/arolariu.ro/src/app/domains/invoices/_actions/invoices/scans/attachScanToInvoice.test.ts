@@ -1,138 +1,74 @@
-/**
- * @fileoverview Unit tests for attachScanToInvoice server action.
- * @module app/domains/invoices/_actions/invoices/scans/attachScanToInvoice.test
- */
-
-import {fetchBFFUserFromAuthService} from "@/lib/actions/user/fetchUser";
-import {fetchWithTimeout} from "@/lib/utils.server";
 import {InvoiceScanType} from "@/types/invoices";
-import {beforeEach, describe, expect, it, vi} from "vitest";
-import {TestDataBuilder} from "../../../../../../../tests/helpers";
+import {describe, expect, it} from "vitest";
+import {buildCreateInvoiceScanPayload} from "../../../../../../../tests/helpers/builders/domain";
+import {apiUrl, auth, fetchAtHttp} from "../../../../../../../tests/setup/server-http";
+import {attachScanToInvoice} from "./attachScanToInvoice";
 
-vi.mock("@/lib/actions/user/fetchUser");
-const {attachScanToInvoice} = await import("./attachScanToInvoice");
-const mockFetchUser = vi.mocked(fetchBFFUserFromAuthService);
-const mockFetchWithTimeout = vi.mocked(fetchWithTimeout);
+const invoiceId = "11111111-1111-4111-8111-111111111111";
+const payload = buildCreateInvoiceScanPayload({
+  location: "https://storage.example.test/invoices/scan.jpg",
+  additionalMetadata: {page: "1"},
+});
 
 describe("attachScanToInvoice", () => {
-  beforeEach(() => {
-    vi.clearAllMocks();
-    mockFetchUser.mockResolvedValue(TestDataBuilder.build("userInformation", {userIdentifier: "user-1", userJwt: "jwt-1"}));
-    mockFetchWithTimeout.mockResolvedValue(
-      TestDataBuilder.jsonResponse(undefined, {status: 201}) as Awaited<ReturnType<typeof fetchWithTimeout>>,
-    );
-  });
-
-  it("posts an invoice scan attachment for a valid invoice id", async () => {
-    const invoiceId = "11111111-1111-4111-8111-111111111111";
-    const payload = TestDataBuilder.build("createInvoiceScanPayload", {
-      location: "https://storage.test/invoices/scan.jpg",
-      additionalMetadata: {page: "1"},
-    });
+  it("posts the attachment with the transport metadata name and signed authorization", async () => {
+    fetchAtHttp.mockResolvedValueOnce(new Response(null, {status: 201}));
 
     const result = await attachScanToInvoice({invoiceId, payload});
 
-    expect(result.success).toBe(true);
-    expect(mockFetchWithTimeout).toHaveBeenCalledWith(
-      `/rest/v1/invoices/${invoiceId}/scans`,
-      expect.objectContaining({
-        method: "POST",
-        headers: expect.objectContaining({
-          Authorization: "Bearer jwt-1",
-          "Content-Type": "application/json",
-        }),
-      }),
+    expect(result).toEqual({success: true, data: undefined});
+    expect(fetchAtHttp).toHaveBeenCalledExactlyOnceWith(
+      `${apiUrl}/rest/v1/invoices/${invoiceId}/scans`,
+      expect.objectContaining({method: "POST", cache: "no-store"}),
     );
-
-    const callArgs = mockFetchWithTimeout.mock.calls[0];
-    const body = JSON.parse(callArgs?.[1]?.body as string);
-    expect(body.type).toBe(InvoiceScanType.JPEG);
-    expect(body.location).toBe("https://storage.test/invoices/scan.jpg");
-    expect(body.metadata).toEqual({page: "1"});
-    expect(body).not.toHaveProperty("additionalMetadata");
+    const options = fetchAtHttp.mock.calls[0]?.[1];
+    const headers = new Headers(options?.headers);
+    expect(headers.get("authorization")).toMatch(/^Bearer \S+$/u);
+    expect(headers.get("content-type")).toBe("application/json");
+    expect(JSON.parse(String(options?.body))).toEqual({
+      type: InvoiceScanType.JPEG,
+      location: payload.location,
+      metadata: {page: "1"},
+    });
   });
 
-  it("returns an error result for an invalid invoice id", async () => {
-    const invalidId = "not-a-guid";
-    const payload = TestDataBuilder.build("createInvoiceScanPayload", {
-      location: "https://storage.test/scan.jpg",
-    });
+  it("rejects a malformed invoice identifier before Clerk or HTTP", async () => {
+    const result = await attachScanToInvoice({invoiceId: "not-a-guid", payload});
 
-    const result = await attachScanToInvoice({invoiceId: invalidId, payload});
-
-    expect(result.success).toBe(false);
-    expect(mockFetchWithTimeout).not.toHaveBeenCalled();
+    expect(result).toMatchObject({success: false, error: {message: expect.stringContaining("invoiceId")}});
+    expect(auth).not.toHaveBeenCalled();
+    expect(fetchAtHttp).not.toHaveBeenCalled();
   });
 
-  it("maps 400, 404, and fallback failures", async () => {
-    const invoiceId = "11111111-1111-4111-8111-111111111111";
-    const payload = TestDataBuilder.build("createInvoiceScanPayload", {
-      location: "https://storage.test/scan.jpg",
-    });
-
-    mockFetchWithTimeout.mockResolvedValue(
-      TestDataBuilder.textResponse("Bad Request", {status: 400, statusText: "Bad Request"}) as Awaited<ReturnType<typeof fetchWithTimeout>>,
-    );
-
-    const result400 = await attachScanToInvoice({invoiceId, payload});
-
-    expect(result400.success).toBe(false);
-    if (!result400.success) {
-      expect(result400.error.message).toContain("400");
-      expect(result400.error.message).toContain("Failed to attach invoice scan");
-    }
-
-    mockFetchWithTimeout.mockResolvedValue(
-      TestDataBuilder.textResponse("Not Found", {status: 404, statusText: "Not Found"}) as Awaited<ReturnType<typeof fetchWithTimeout>>,
-    );
-
-    const result404 = await attachScanToInvoice({invoiceId, payload});
-
-    expect(result404.success).toBe(false);
-    if (!result404.success) {
-      expect(result404.error.message).toContain("404");
-      expect(result404.error.message).toContain("Failed to attach invoice scan");
-    }
-
-    mockFetchWithTimeout.mockResolvedValue(
-      TestDataBuilder.textResponse("Internal Server Error", {status: 500, statusText: "Internal Server Error"}) as Awaited<
-        ReturnType<typeof fetchWithTimeout>
-      >,
-    );
-
-    const result500 = await attachScanToInvoice({invoiceId, payload});
-
-    expect(result500.success).toBe(false);
-    if (!result500.success) {
-      expect(result500.error.message).toContain("500");
-      expect(result500.error.message).toContain("Failed to attach invoice scan");
-    }
-  });
-
-  it("returns an error result when auth or fetch throws", async () => {
-    mockFetchUser.mockRejectedValue(new Error("Auth service unavailable"));
-
-    const invoiceId = "11111111-1111-4111-8111-111111111111";
-    const payload = TestDataBuilder.build("createInvoiceScanPayload", {
-      location: "https://storage.test/scan.jpg",
-    });
+  it.each([
+    [400, "VALIDATION_ERROR", "Invalid scan data. Please check the scan details and try again."],
+    [404, "NOT_FOUND", "Invoice not found. Please refresh and try again."],
+    [500, "SERVER_ERROR", "An unexpected error occurred while attaching the scan. Please try again."],
+  ] as const)("returns a public attachment failure for HTTP %i", async (status, code, message) => {
+    fetchAtHttp.mockResolvedValueOnce(new Response("Attachment unavailable", {status, statusText: "Internal reason"}));
 
     const result = await attachScanToInvoice({invoiceId, payload});
 
-    expect(result.success).toBe(false);
-    expect(mockFetchWithTimeout).not.toHaveBeenCalled();
+    expect(result).toEqual({success: false, error: {code, message, status}});
   });
 
-  it("handles fetch throwing a non-Error object", async () => {
-    mockFetchWithTimeout.mockRejectedValue("String error");
-
-    const invoiceId = "11111111-1111-4111-8111-111111111111";
-    const payload = TestDataBuilder.build("createInvoiceScanPayload", {
-      location: "https://storage.test/scan.jpg",
-    });
+  it("does not attempt an attachment when Clerk rejects", async () => {
+    auth.mockRejectedValueOnce(new Error("Auth service unavailable"));
 
     const result = await attachScanToInvoice({invoiceId, payload});
 
-    expect(result.success).toBe(false);
+    expect(result).toEqual({success: false, error: {code: "NETWORK_ERROR", message: "Auth service unavailable"}});
+    expect(fetchAtHttp).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    ["connection rejected", "NETWORK_ERROR", "An unexpected error occurred"],
+    [new DOMException("Aborted", "AbortError"), "TIMEOUT_ERROR", "Request timed out after 30000ms"],
+  ] as const)("classifies transport rejection %s", async (reason, code, message) => {
+    fetchAtHttp.mockRejectedValueOnce(reason);
+
+    const result = await attachScanToInvoice({invoiceId, payload});
+
+    expect(result).toEqual({success: false, error: {code, message}});
   });
 });

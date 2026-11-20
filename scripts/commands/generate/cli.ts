@@ -10,16 +10,18 @@
  * `--json` mode the {@link GenerateResult} is the single JSON document.
  */
 
-import {Effect} from "effect";
+import {Effect, Option} from "effect";
 import {Argument, Command, Flag} from "effect/cli";
 
 import type {CliSubcommand} from "../../cli.ts";
 import {Environment} from "../../platform/Environment.ts";
 import {reportUsageFailure, ReportedFailure} from "../../platform/exit.ts";
 import {Presenter, toJsonValue} from "../../platform/Output.ts";
-import {VerboseFlag, withCommandOutput} from "../flags.ts";
+import {JsonFlag, VerboseFlag, withCommandOutput} from "../flags.ts";
 import {generateTaskDisplayName, runGenerate, type GenerateInput, type GenerateResult, type GenerateTaskName} from "./index.ts";
 import {prepareWebsiteLicenses} from "./prepare-website-licenses.ts";
+import {checkTaxonomies} from "./taxonomy-check.ts";
+import {refreshTaxonomies} from "./taxonomy-refresh.ts";
 
 /** Every generator name accepted by the `task` argument. */
 const generateTaskNames = ["env", "i18n", "gql", "artifacts"] as const satisfies readonly GenerateTaskName[];
@@ -64,6 +66,18 @@ export function makeGenerateCommand(): CliSubcommand {
   return Command.make(
     "generate",
     {
+      checkTaxonomies: Flag.Boolean("check-taxonomies").pipe(
+        Flag.withDefault(false),
+        Flag.withDescription("Check the integrity and age of the Git-tracked taxonomy snapshots."),
+      ),
+      refreshTaxonomies: Flag.Boolean("refresh-taxonomies").pipe(
+        Flag.withDefault(false),
+        Flag.withDescription("Fetch fresh taxonomy candidates for review without modifying the checkout snapshots."),
+      ),
+      outputDir: Flag.String("output-dir").pipe(
+        Flag.optional,
+        Flag.withDescription("New candidate directory for --refresh-taxonomies; its parent must exist."),
+      ),
       websiteLicensesOnly: Flag.Boolean("website-licenses-only").pipe(
         Flag.withDefault(false),
         Flag.withDescription("Generate only website attribution from the repository working directory; do not select other tasks."),
@@ -73,8 +87,41 @@ export function makeGenerateCommand(): CliSubcommand {
         Argument.variadic(),
       ),
     },
-    ({tasks, websiteLicensesOnly}) =>
+    ({tasks, websiteLicensesOnly, checkTaxonomies: check, refreshTaxonomies: refresh, outputDir}) =>
       Effect.gen(function* () {
+        if ((check && refresh) || ((check || refresh) && (websiteLicensesOnly || tasks.length > 0))) {
+          return yield* reportUsageFailure(
+            "Taxonomy modes cannot be combined with each other, generator tasks, or --website-licenses-only.",
+          );
+        }
+        if (!refresh && Option.isSome(outputDir)) {
+          return yield* reportUsageFailure("--output-dir is only valid with --refresh-taxonomies.");
+        }
+        if (check) return yield* checkTaxonomies(yield* JsonFlag);
+        if (refresh) {
+          if (Option.isNone(outputDir) || outputDir.value.trim() === "") {
+            return yield* reportUsageFailure("--refresh-taxonomies requires --output-dir <new-directory>.");
+          }
+          const environment = yield* Environment;
+          const presenter = yield* Presenter;
+          const result = yield* refreshTaxonomies(environment.cwd, outputDir.value).pipe(
+            Effect.catch((error) =>
+              Effect.andThen(
+                presenter.fatal(error.message.replace(/[\r\n]/gu, " ")),
+                new ReportedFailure({exitCode: 1, message: error.message}),
+              ),
+            ),
+          );
+          for (const {candidate, added, removed, changed} of result.taxonomies) {
+            yield* presenter.line(
+              "stdout",
+              `${candidate.system}: ${added.length} added, ${removed.length} removed, ${changed.length} changed.`,
+            );
+          }
+          yield* presenter.success(`Review ${result.reportPath} before promoting any candidates. Pinned snapshots were not modified.`);
+          yield* Effect.orDie(presenter.json(toJsonValue(result)));
+          return;
+        }
         if (websiteLicensesOnly) {
           if (tasks.length > 0) {
             return yield* reportUsageFailure("--website-licenses-only cannot be combined with generator tasks.");
