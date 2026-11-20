@@ -31,16 +31,17 @@ Install and run from the repository root:
 
 ```bash
 npm install
-npm ci --prefix sites/cv.arolariu.ro/api --workspaces=false --omit=dev --ignore-scripts
 npm run dev:cv
 ```
 
-After `npm install`, `npm run setup` prepares the rest of a fresh checkout (generated artifacts and the other toolchains).
+After `npm install`, `npm run setup` prepares the rest of a fresh checkout (generated artifacts and the other toolchains). CV type checks
+and unit-test commands restore the independent API dependencies through `prepare:api` before using the SDK.
 
 Build and preview:
 
 ```bash
 npm run build:cv
+npm run prepare:api --workspace=sites/cv.arolariu.ro
 npm run build --prefix sites/cv.arolariu.ro/api
 cd sites/cv.arolariu.ro
 npm run preview
@@ -129,6 +130,20 @@ Coverage includes:
 Run from repository root:
 
 ```bash
+npm run test:e2e:cv
+```
+
+For local checks, start the development server on the local profile's port in one terminal. Do not use the static-only preview server for
+the JSON API checks:
+
+```powershell
+npm run dev --workspace=sites\cv.arolariu.ro -- --host localhost --port 4173 --strictPort
+```
+
+In another terminal at the repository root:
+
+```powershell
+$env:E2E_TEST_ENVIRONMENT = "local"
 npm run test:e2e:cv
 ```
 

@@ -10,12 +10,12 @@ export function cvJsonDevPlugin(): Plugin {
     apply: "serve",
     configureServer(server) {
       server.middlewares.use(async (request, response, next) => {
-        const url = new URL(request.url ?? "/", "http://localhost");
-        if (url.pathname !== "/rest/json" && url.pathname !== "/rest/json/") {
-          next();
-          return;
-        }
         try {
+          const url = new URL(request.url ?? "/", "http://localhost");
+          if (url.pathname !== "/rest/json" && url.pathname !== "/rest/json/") {
+            next();
+            return;
+          }
           const headers = new Headers();
           for (const [name, values] of Object.entries(request.headers)) {
             for (const value of Array.isArray(values) ? values : values === undefined ? [] : [values]) {

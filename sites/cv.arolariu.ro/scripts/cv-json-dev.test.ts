@@ -1,5 +1,6 @@
 // @vitest-environment node
 import type {AddressInfo} from "node:net";
+import {request} from "node:http";
 import {fileURLToPath} from "node:url";
 import {createServer} from "vite";
 import {expect, it} from "vitest";
@@ -29,6 +30,16 @@ it("serves real JSON queries and HTTP methods through Vite without a SvelteKit s
     expect((await fetch(url, {method: "POST"})).status).toBe(405);
     expect((await fetch(`${url}/?format=resume`, {redirect: "manual"})).headers.get("Location")).toBe("/rest/json?format=resume");
     expect((await fetch(`${url}-missing`)).status).toBe(404);
+    const malformedStatus = await new Promise<number | undefined>((resolve, reject) => {
+      const malformed = request({hostname: "127.0.0.1", port, path: "//", signal: AbortSignal.timeout(2000)}, (incoming) => {
+        incoming.resume();
+        resolve(incoming.statusCode);
+      });
+      malformed.on("error", reject);
+      malformed.end();
+    });
+    expect(malformedStatus).toBe(500);
+    expect((await fetch(url)).status).toBe(200);
   } finally {
     await server.close();
   }

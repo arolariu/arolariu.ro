@@ -5,6 +5,7 @@
 import * as exec from "../../../helpers/sdk/exec.ts";
 import {fs, withTemporaryDirectory} from "../../../helpers/filesystem/index.ts";
 import {MAX_REPORT_BYTES} from "../../../helpers/reports/validation.ts";
+import {redactEvidenceText} from "../../../helpers/reports/redact.ts";
 import type {VitestJsonReport} from "../../../helpers/reports/vitest.ts";
 import * as path from "node:path";
 import {suitesForTypeScriptChanges, type TypeScriptSuiteName} from "../domain/changedFiles.ts";
@@ -36,30 +37,19 @@ interface SuiteExecution {
 async function runSuite(name: TypeScriptSuiteName, directory: string, root: string): Promise<SuiteExecution> {
   return withTemporaryDirectory("arolariu-hygiene-vitest-", async (temporary) => {
     const file = path.join(temporary, "report.json");
-    if (name === "cv") {
-      const restore = await exec.getExecOutput("npm", ["ci", "--workspaces=false", "--omit=dev", "--ignore-scripts"], {
-        cwd: path.join(root, directory, "api"),
-        ignoreReturnCode: true,
-        silent: true,
-      });
-      if (restore.exitCode !== 0) {
-        return {
-          suite: runnerErrorSuite(name, "<CV API dependencies>", `CV API dependency restore failed (exit ${restore.exitCode}).`),
-          executionStatus: "errored",
-          evidenceStatus: "missing",
-        };
-      }
-    }
     const options = name === "tooling" ? ["--config", path.join("scripts", "vitest.config.ts"), "--pool=forks", "--maxWorkers=4"] : [];
+    const command = name === "cv" ? "npm" : "npx";
+    const args = name === "cv" ? ["run", "test:vitest", "--"] : ["vitest", "run"];
     const result = await exec.getExecOutput(
-      "npx",
-      ["vitest", "run", ...options, "--coverage.enabled=false", "--reporter=json", "--outputFile", file],
+      command,
+      [...args, ...options, "--coverage.enabled=false", "--reporter=json", "--outputFile", file],
       {
         cwd: path.join(root, directory),
         ignoreReturnCode: true,
         silent: true,
       },
     );
+    const diagnostics = redactEvidenceText(result.stderr.trim() || result.stdout.trim()).slice(-4000);
     let report: VitestJsonReport | null;
     try {
       report = extractLastVitestReport((await fs.exists(file)) ? await fs.readTextBounded(file, MAX_REPORT_BYTES) : result.stdout);
@@ -79,7 +69,7 @@ async function runSuite(name: TypeScriptSuiteName, directory: string, root: stri
         suite: runnerErrorSuite(
           name,
           `<vitest in ${directory || "."}>`,
-          `vitest produced no JSON report. exit ${result.exitCode}. stderr: ${result.stderr.slice(-4000)}`,
+          `vitest produced no JSON report. exit ${result.exitCode}. output: ${diagnostics}`,
         ),
         executionStatus: "errored",
         evidenceStatus: "missing",
@@ -93,7 +83,7 @@ async function runSuite(name: TypeScriptSuiteName, directory: string, root: stri
             ...runnerErrorSuite(
               name,
               `<vitest in ${directory || "."}>`,
-              `vitest exited with code ${result.exitCode} despite reporting no failed assertions. stderr: ${result.stderr.slice(-4000)}`,
+              `vitest exited with code ${result.exitCode} despite reporting no failed assertions. output: ${diagnostics}`,
             ).findings,
           ];
       return {suite: {...suite, findings}, executionStatus: "errored", evidenceStatus: "partial"};
