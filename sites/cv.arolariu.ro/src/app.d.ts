@@ -3,8 +3,6 @@
  * @module sites/cv.arolariu.ro/src/app
  */
 
-/// <reference types="svelte-adapter-azure-swa" />
-
 declare global {
   namespace App {}
 }

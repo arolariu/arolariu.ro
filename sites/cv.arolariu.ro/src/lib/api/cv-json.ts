@@ -1,5 +1,5 @@
 /**
- * @fileoverview SvelteKit endpoint that exposes the JSON Resume export
+ * @fileoverview Framework-neutral handler for the JSON Resume export
  * at `/rest/json`.
  *
  * Supports:
@@ -14,7 +14,6 @@
  */
 
 import {jsonCVData as resume} from "@/data/json";
-import {json, type RequestHandler} from "@sveltejs/kit";
 
 /** Keys of the JSON Resume top-level sections that can be requested via `?section=`. */
 type SectionKey =
@@ -81,7 +80,7 @@ function getSection(sectionName: string): unknown | undefined {
  *  - format: "full" (default), "minimal" (basics + work only), "resume" (raw resume)
  *  - pretty: "true" for pretty-printed output
  */
-export const GET: RequestHandler = ({request, url}) => {
+function getResume(request: Request, url: URL): Response {
   const section = url.searchParams.get("section");
   const format = url.searchParams.get("format") ?? "full";
   const pretty = url.searchParams.get("pretty") === "true";
@@ -93,7 +92,7 @@ export const GET: RequestHandler = ({request, url}) => {
   if (section) {
     const sectionData = getSection(section);
     if (sectionData === undefined) {
-      return json(
+      return Response.json(
         {
           error: `Section '${section}' not found`,
           availableSections: AVAILABLE_SECTIONS,
@@ -175,15 +174,32 @@ export const GET: RequestHandler = ({request, url}) => {
       Vary: "Accept-Encoding",
     },
   });
-};
+}
 
-export const OPTIONS: RequestHandler = () =>
-  new Response(null, {
-    status: 204,
-    headers: {
-      "Access-Control-Allow-Origin": "*",
-      "Access-Control-Allow-Methods": "GET, OPTIONS",
-      "Access-Control-Allow-Headers": "Content-Type, If-None-Match",
-      "Access-Control-Max-Age": "86400",
-    },
-  });
+/**
+ * Handles the public CV JSON contract independently of its hosting runtime.
+ * @param request - Incoming HTTP request, including query and conditional headers.
+ * @returns The existing JSON, preflight, redirect, or method-error response.
+ */
+export function handleCvJsonRequest(request: Request): Response {
+  const url = new URL(request.url);
+  if ((request.method === "GET" || request.method === "HEAD") && url.pathname === "/rest/json/") {
+    return new Response(null, {status: 308, headers: {Location: `/rest/json${url.search}`}});
+  }
+  if (request.method === "OPTIONS") {
+    return new Response(null, {
+      status: 204,
+      headers: {
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Allow-Methods": "GET, OPTIONS",
+        "Access-Control-Allow-Headers": "Content-Type, If-None-Match",
+        "Access-Control-Max-Age": "86400",
+      },
+    });
+  }
+  if (request.method !== "GET" && request.method !== "HEAD") {
+    return new Response(`${request.method} method not allowed`, {status: 405, headers: {Allow: "GET, OPTIONS, HEAD"}});
+  }
+  const response = getResume(request, url);
+  return request.method === "HEAD" ? new Response(null, {status: response.status, headers: response.headers}) : response;
+}

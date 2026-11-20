@@ -10,7 +10,7 @@
         "command": "npm run build",
         "cwd": "sites/cv.arolariu.ro"
       },
-      "outputs": ["{projectRoot}/build"]
+      "outputs": ["{projectRoot}/build/static"]
     },
     "dev": {
       "executor": "nx:run-commands",

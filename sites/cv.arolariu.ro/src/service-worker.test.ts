@@ -1,6 +1,7 @@
 // @vitest-environment node
 
 import {afterEach, beforeEach, describe, expect, it, vi} from "vitest";
+import config from "../svelte.config.js";
 
 class LifetimeEvent extends Event {
   lifetime?: Promise<unknown>;
@@ -51,6 +52,12 @@ describe("CV service worker", () => {
 
   afterEach(() => {
     vi.unstubAllGlobals();
+  });
+
+  it("excludes Azure hosting metadata from precaching without excluding public assets", () => {
+    const shouldCache = config.kit?.serviceWorker?.files ?? (() => true);
+
+    expect(["cv.pdf", "staticwebapp.config.json", "404.html"].filter(shouldCache)).toEqual(["cv.pdf", "404.html"]);
   });
 
   it("precaches the build assets and static files before requesting activation", async () => {

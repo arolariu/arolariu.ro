@@ -23,6 +23,7 @@
   },
   "devDependencies": {
     "@playwright/test": "*",
+    "@sveltejs/adapter-static": "*",
     "@sveltejs/kit": "*",
     "@sveltejs/vite-plugin-svelte": "*",
     "@testing-library/jest-dom": "*",
@@ -34,7 +35,6 @@
     "sass": "*",
     "set-cookie-parser": "*",
     "svelte": "*",
-    "svelte-adapter-azure-swa": "*",
     "svelte-check": "*",
     "typescript": "*",
     "vite": "*",
