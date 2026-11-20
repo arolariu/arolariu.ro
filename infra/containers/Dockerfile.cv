@@ -6,20 +6,20 @@
 #
 # Key points:
 # - Multi-stage build for optimized image size
-# - Serves the Azure SWA adapter's prerendered static output
+# - Serves the official static adapter's prerendered output
 # - Non-root user for security
 # - Uses dumb-init for proper signal handling (PID 1 zombie reaping)
 # - OCI-compliant labels for container metadata
 # - Static file serving with lightweight HTTP server
 # - Health check for container orchestration
 #
-# Note: The CV site primarily uses svelte-adapter-azure-swa for Azure Static Web Apps.
+# Note: The CV site uses @sveltejs/adapter-static and a separate SWA-managed API.
 # This Dockerfile provides a Node.js-based containerized alternative for:
 # - Local development with Docker
 # - Alternative deployment targets (Kubernetes, Cloud Run, etc.)
 # - Testing containerized deployments
 #
-# For Azure SWA deployment, use the native adapter instead.
+# This image builds/serves static pages only, not the managed JSON API.
 #
 # Build context: Repository root (not sites/cv.arolariu.ro)
 # Usage: npm run containers:build -- --engine rancher --target cv
@@ -122,7 +122,7 @@ ENV NODE_ENV=production \
     HOST="0.0.0.0"
 
 # Copy the built application
-# SvelteKit with Azure SWA adapter writes the document root to build/static.
+# The static adapter writes the document root to build/static.
 COPY --from=builder --chown=sveltekit:nodejs /app/sites/cv.arolariu.ro/build/static ./build
 COPY --from=builder --chown=sveltekit:nodejs /app/sites/cv.arolariu.ro/package.json ./
 

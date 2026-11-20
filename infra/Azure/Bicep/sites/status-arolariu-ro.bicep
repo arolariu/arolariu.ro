@@ -12,8 +12,8 @@
 //
 // Technology Stack:
 // - Framework: SvelteKit 2.x on Svelte 5 (prerendered shell + client fetch)
-// - Build output: Static HTML/CSS/JS + managed Azure Functions
-// - Adapter: svelte-adapter-azure-swa
+// - Build output: Static HTML/CSS/JS; optional separately authored managed Functions
+// - Adapter: @sveltejs/adapter-static
 //
 // Purpose:
 // - Service health dashboard

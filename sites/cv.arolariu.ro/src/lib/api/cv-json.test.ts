@@ -8,7 +8,10 @@
 import {jsonCVData} from "@/data/json";
 import type {RequestEvent} from "@sveltejs/kit";
 import {describe, expect, it, vi} from "vitest";
-import {GET, OPTIONS} from "./+server";
+import {handleCvJsonRequest} from "./cv-json";
+
+const GET = (event: RequestEvent): Response => handleCvJsonRequest(event.request);
+const OPTIONS = (event: RequestEvent): Response => handleCvJsonRequest(new Request(event.request, {method: "OPTIONS"}));
 
 /**
  * Creates a mock RequestEvent with proper url and request objects.
@@ -258,6 +261,32 @@ describe("CV JSON API Endpoint", () => {
       expect(response.headers.get("Access-Control-Allow-Origin")).toBe("*");
       expect(response.headers.get("Access-Control-Allow-Methods")).toBe("GET, OPTIONS");
       expect(response.headers.get("Access-Control-Max-Age")).toBe("86400");
+    });
+
+    it("gives section selection precedence over the requested format", async () => {
+      const response = handleCvJsonRequest(new Request("https://cv.arolariu.ro/rest/json?section=basics&format=minimal"));
+      expect(await response.json()).toMatchObject({section: "basics", data: jsonCVData.basics});
+    });
+
+    it("returns GET headers without a body for HEAD", async () => {
+      const response = handleCvJsonRequest(new Request("https://cv.arolariu.ro/rest/json?format=resume", {method: "HEAD"}));
+      expect(response.status).toBe(200);
+      expect(response.headers.get("Content-Type")).toBe("application/json; charset=utf-8");
+      expect(response.headers.get("ETag")).toMatch(/^"cv-[a-z0-9]+"$/u);
+      expect(await response.text()).toBe("");
+    });
+
+    it("rejects unsupported methods with the existing Allow header", async () => {
+      const response = handleCvJsonRequest(new Request("https://cv.arolariu.ro/rest/json", {method: "POST"}));
+      expect(response.status).toBe(405);
+      expect(response.headers.get("Allow")).toBe("GET, OPTIONS, HEAD");
+      expect(await response.text()).toBe("POST method not allowed");
+    });
+
+    it("preserves the query when redirecting a trailing slash", () => {
+      const response = handleCvJsonRequest(new Request("https://cv.arolariu.ro/rest/json/?format=resume"));
+      expect(response.status).toBe(308);
+      expect(response.headers.get("Location")).toBe("/rest/json?format=resume");
     });
   });
 });

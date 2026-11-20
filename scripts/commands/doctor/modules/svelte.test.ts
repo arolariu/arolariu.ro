@@ -108,7 +108,7 @@ function healthySvelteFacts(id: "cv" | "status"): SvelteFacts {
     nodeEngine: id === "cv" ? ">=22.8" : ">=24",
     scriptIssues: [],
     generatedConfigExists: true,
-    adapterSpecifier: "svelte-adapter-azure-swa",
+    adapterSpecifier: "@sveltejs/adapter-static",
     adapterIssues: [],
   };
 }
@@ -300,14 +300,14 @@ describe("svelteDoctorModule", () => {
   });
 
   it("detects package issues from SvelteFacts", async () => {
-    const cvFacts: SvelteFacts = {...healthySvelteFacts("cv"), packageIssues: ["svelte-adapter-azure-swa is not installed."]};
+    const cvFacts: SvelteFacts = {...healthySvelteFacts("cv"), packageIssues: ["@sveltejs/adapter-static is not installed."]};
     const fixture = createSvelteFixture({cvOutcome: availableOutcome(cvFacts)});
 
     const results = await fixture.run();
 
     const packages = resultById(results, "svelte.cv.packages");
     expect(packages.status).toBe("fail");
-    expect(packages.rootCause).toBe("svelte-adapter-azure-swa is not installed.");
+    expect(packages.rootCause).toBe("@sveltejs/adapter-static is not installed.");
   });
 
   it("skips node-engine check when requirements are invalid", async () => {
@@ -372,7 +372,7 @@ describe("svelteDoctorModule", () => {
   it("detects adapter issues", async () => {
     const statusFacts: SvelteFacts = {
       ...healthySvelteFacts("status"),
-      adapterIssues: ["svelte-adapter-azure-swa is declared but not installed."],
+      adapterIssues: ["@sveltejs/adapter-static is declared but not installed."],
     };
     const fixture = createSvelteFixture({statusOutcome: availableOutcome(statusFacts)});
 
@@ -380,7 +380,7 @@ describe("svelteDoctorModule", () => {
 
     const adapter = resultById(results, "svelte.status.adapter");
     expect(adapter.status).toBe("fail");
-    expect(adapter.rootCause).toBe("svelte-adapter-azure-swa is declared but not installed.");
+    expect(adapter.rootCause).toBe("@sveltejs/adapter-static is declared but not installed.");
   });
 
   it("detects adapter specifier missing with no issues", async () => {

@@ -7,7 +7,7 @@
     "build": {
       "executor": "nx:run-commands",
       "options": {"command": "npm run build", "cwd": "sites/status.arolariu.ro"},
-      "outputs": ["{projectRoot}/build"]
+      "outputs": ["{projectRoot}/build/static"]
     },
     "dev": {
       "executor": "nx:run-commands",

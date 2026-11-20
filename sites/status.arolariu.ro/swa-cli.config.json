@@ -2,7 +2,6 @@
   "configurations": {
     "app": {
       "outputLocation": "./build/static",
-      "apiLocation": "./build/server",
       "host": "127.0.0.1"
     }
   }

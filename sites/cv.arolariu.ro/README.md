@@ -9,7 +9,8 @@ presentation.
 
 ## Tech stack
 
-- SvelteKit 2 + Svelte 5 (svelte-adapter-azure-swa)
+- SvelteKit 2 + Svelte 5 with the official `@sveltejs/adapter-static`
+- Directly authored SWA-managed Azure Function for the public JSON API
 - Node.js + npm workspaces (installed from the repository root)
 - Prettier + prettier-plugin-svelte
 - Vitest (unit tests) + Playwright (accessibility tests)
@@ -33,20 +34,29 @@ npm install
 npm run dev:cv
 ```
 
-After `npm install`, `npm run setup` prepares the rest of a fresh checkout (generated artifacts and the other toolchains).
+After `npm install`, `npm run setup` prepares the rest of a fresh checkout (generated artifacts and the other toolchains). CV type checks
+and unit-test commands restore the independent API dependencies through `prepare:api` before using the SDK.
 
 Build and preview:
 
 ```bash
 npm run build:cv
+npm run prepare:api --workspace=sites/cv.arolariu.ro
+npm run build --prefix sites/cv.arolariu.ro/api
 cd sites/cv.arolariu.ro
 npm run preview
 ```
+
+The dev server serves `/rest/json` through a thin Vite middleware calling the same handler as the Function. Vite preview and the static
+container serve frontend content only; they do not host the managed API. Unit tests cover the handler and real SDK transport; Azure rewrites
+and Functions-host startup still require an authorized deployment to verify.
 
 ## Project structure
 
 - src/… — application code (routes, components, styles)
 - static/ — static assets (favicons, images, etc.)
+- api/ — independently locked managed Function runtime and transport
+- scripts/ — development-only JSON middleware
 - tests/ — Playwright accessibility suite
 - build/ — production artifacts (generated on build)
 - svelte.config.js, vite.config.ts, vitest.config.ts, playwright.config.ts, swa-cli.config.json — tooling configuration
@@ -58,12 +68,24 @@ Note: Structure follows common Svelte/SvelteKit conventions.
 
 Automated via GitHub Actions: .github/workflows/official-cv-trigger.yml
 
-- Triggers on pushes to main that change `sites/cv.arolariu.ro/**`
-- Runs unit tests (npm run test:unit), then builds with npm (npm run prepare, npm run build)
-- Deploys to Azure Static Web Apps using:
-  - app_location: ./sites/cv.arolariu.ro/
-  - api_location: ./sites/cv.arolariu.ro/build/server
-  - output_location: build/static
+- Triggers on changes under `sites/cv.arolariu.ro/` on main, or via manual dispatch
+- Restores the independent API owner, checks frontend/API types and unit tests, then builds static pages and packages the Function
+- Uploads `build/static` and the complete `build/server` directly, with `skip_app_build` and `skip_api_build`; Oryx does not rebuild either
+- Uses the existing Free SWA and token, with serialized deployment jobs; no staging, slots, additional resource, or Azure login
+
+The API's `package.json` and adjacent lock own its production SDK closure separately from the root workspace lock. CI restores that lock and
+runs its `build` script. The small `api/build.mjs` configuration bundles the CV Function for Node 22 and copies host/runtime files and
+production dependencies into `build/server`. Register ordinary Functions here; adding SvelteKit `+server.ts` routes does not deploy an API.
+The static adapter remains strict.
+
+`static/staticwebapp.config.json` owns `/rest/json` compatibility rewrites and requests the experimental `node:26` managed runtime.
+[SWA's managed-runtime matrix](https://learn.microsoft.com/en-us/azure/static-web-apps/languages-runtimes#api) currently lists Node versions
+only through 22, so Azure deployment acceptance remains unverified. If Azure rejects it, restore `platform.apiRuntime` to `node:22`.
+CI/build versions and the Node 22-compatible bundle remain unchanged.
+
+Static deep links are prerendered; unknown URLs retain HTTP 404 with a small static error page. The API handler retains its JSON errors,
+queries, CORS/cache headers and ETags. Raw resume ETags can change between cold instances because existing data includes a module-load
+timestamp.
 
 Required secret:
 
@@ -108,6 +130,20 @@ Coverage includes:
 Run from repository root:
 
 ```bash
+npm run test:e2e:cv
+```
+
+For local checks, start the development server on the local profile's port in one terminal. Do not use the static-only preview server for
+the JSON API checks:
+
+```powershell
+npm run dev --workspace=sites\cv.arolariu.ro -- --host localhost --port 4173 --strictPort
+```
+
+In another terminal at the repository root:
+
+```powershell
+$env:E2E_TEST_ENVIRONMENT = "local"
 npm run test:e2e:cv
 ```
 
