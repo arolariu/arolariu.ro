@@ -1,0 +1,13 @@
+{
+  "name": "@arolariu/cv-api",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "main": "functions/*.mjs",
+  "engines": {
+    "node": ">=22"
+  },
+  "dependencies": {
+    "@azure/functions": "4.17.1"
+  }
+}

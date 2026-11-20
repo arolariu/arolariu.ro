@@ -51,7 +51,7 @@ const requiredPackages = [
   "@sveltejs/kit",
   "@sveltejs/vite-plugin-svelte",
   "svelte",
-  "svelte-adapter-azure-swa",
+  "@sveltejs/adapter-static",
   "vite",
   "vitest",
   "typescript",
@@ -60,7 +60,7 @@ const packageVersions = new Map<string, string>([
   ["@sveltejs/kit", "2.70.2"],
   ["@sveltejs/vite-plugin-svelte", "7.2.0"],
   ["svelte", "5.56.8"],
-  ["svelte-adapter-azure-swa", "0.22.1"],
+  ["@sveltejs/adapter-static", "3.0.11"],
   ["vite", "8.2.0"],
   ["vitest", "4.1.10"],
   ["typescript", "6.0.3"],
@@ -165,7 +165,7 @@ function svelteFacts(id: SvelteProjectId, patch: SvelteFactsPatch = {}): SvelteF
     adapterIssues: [],
     ...rest,
     ...(includeNodeEngine ? {nodeEngine: nodeEngine ?? nodeEngines[id]} : {}),
-    ...(includeAdapter ? {adapterSpecifier: adapterSpecifier ?? "svelte-adapter-azure-swa"} : {}),
+    ...(includeAdapter ? {adapterSpecifier: adapterSpecifier ?? "@sveltejs/adapter-static"} : {}),
   };
 }
 
@@ -443,7 +443,7 @@ describe("locked package policy", () => {
     const harness = await createHarness({
       packages: [packagesAvailable(emptyInventory)],
       cv: [svelteAvailable("cv", {packageIssues: requiredPackages.map((name) => `${name} is not installed.`)})],
-      status: [svelteAvailable("status", {adapterIssues: ["svelte-adapter-azure-swa is not installed."]})],
+      status: [svelteAvailable("status", {adapterIssues: ["@sveltejs/adapter-static is not installed."]})],
       setupOptions: options({dryRun: true}),
     });
 

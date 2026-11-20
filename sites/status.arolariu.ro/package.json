@@ -9,6 +9,7 @@
   "scripts": {
     "dev": "vite dev",
     "build": "vite build",
+    "build:api": "node ../../scripts/swa/build-api.ts status",
     "preview": "vite preview --port 4175",
     "prepare": "svelte-kit sync || echo ''",
     "check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
@@ -23,6 +24,7 @@
   },
   "devDependencies": {
     "@playwright/test": "*",
+    "@sveltejs/adapter-static": "*",
     "@sveltejs/kit": "*",
     "@sveltejs/vite-plugin-svelte": "*",
     "@testing-library/jest-dom": "*",
@@ -34,7 +36,6 @@
     "sass": "*",
     "set-cookie-parser": "*",
     "svelte": "*",
-    "svelte-adapter-azure-swa": "*",
     "svelte-check": "*",
     "typescript": "*",
     "vite": "*",

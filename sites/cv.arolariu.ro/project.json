@@ -10,7 +10,16 @@
         "command": "npm run build",
         "cwd": "sites/cv.arolariu.ro"
       },
-      "outputs": ["{projectRoot}/build"]
+      "outputs": ["{projectRoot}/build/static"]
+    },
+    "build-api": {
+      "executor": "nx:run-commands",
+      "cache": false,
+      "options": {
+        "command": "npm run build:api",
+        "cwd": "sites/cv.arolariu.ro"
+      },
+      "outputs": ["{projectRoot}/build/server"]
     },
     "dev": {
       "executor": "nx:run-commands",

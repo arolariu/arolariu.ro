@@ -162,7 +162,7 @@ describe("testTypescriptProvider", () => {
     if (f?.kind === "line") {
       expect(f.suite).toBe("website");
     }
-    for (const call of getExecOutput.mock.calls) {
+    for (const call of getExecOutput.mock.calls.filter(([command]) => command === "npx")) {
       const args = call[1] as string[];
       const outputFile = args[args.indexOf("--outputFile") + 1];
       expect(outputFile).toBeDefined();
@@ -173,7 +173,7 @@ describe("testTypescriptProvider", () => {
   it("retains available suites but reports missing JSON without fabricating a test", async () => {
     const getExecOutput = vi.fn().mockImplementation((_cmd: string, args: string[], opts?: {cwd?: string}) => {
       const cwd = opts?.cwd ?? "";
-      if (cwd.includes("cv.arolariu.ro")) {
+      if (_cmd === "npx" && cwd.includes("cv.arolariu.ro")) {
         return Promise.resolve({exitCode: 1, stdout: "garbage non-json", stderr: "build failed"});
       }
       return writeReport(args, passing);
@@ -211,6 +211,7 @@ describe("testTypescriptProvider", () => {
       }
       return {exitCode: 0, stdout: "JSON report written to file", stderr: ""};
     });
+
     vi.doMock("@actions/exec", () => ({getExecOutput}));
     const {testTypescriptProvider} = await import("./testTypescriptProvider.ts");
 
@@ -229,6 +230,54 @@ describe("testTypescriptProvider", () => {
     expect(result.findings).toEqual([]);
     expect(path.isAbsolute(reportPath)).toBe(true);
     await expect(access(reportPath)).rejects.toMatchObject({code: "ENOENT"});
+  });
+
+  it("restores the separately locked CV runtime before starting its suite", async () => {
+    let restored = false;
+    const getExecOutput = vi.fn().mockImplementation((command: string, args: string[], options?: {cwd?: string}) => {
+      if (command === "npm") {
+        expect(args).toEqual(["ci", "--workspaces=false", "--omit=dev", "--ignore-scripts"]);
+        expect(options?.cwd).toBe(path.join("/w", "sites", "cv.arolariu.ro", "api"));
+        restored = true;
+        return Promise.resolve({exitCode: 0, stdout: "", stderr: ""});
+      }
+      return restored ? writeReport(args, passing) : Promise.resolve({exitCode: 1, stdout: "", stderr: "SDK missing"});
+    });
+    vi.doMock("@actions/exec", () => ({getExecOutput}));
+    const {testTypescriptProvider} = await import("./testTypescriptProvider.ts");
+    const result = await testTypescriptProvider.run({
+      workspaceRoot: "/w",
+      baseRef: "main",
+      headRef: "HEAD",
+      changeScope: "known",
+      changedFiles: ["sites/cv.arolariu.ro/api/src/cv-json.ts"],
+      selectedSuites: ["cv"],
+      env: {},
+    });
+    expect(result.executionStatus).toBe("passed");
+    expect(result.payload.passed).toBe(5);
+  });
+
+  it("reports a failed CV dependency restore without starting Vitest", async () => {
+    const getExecOutput = vi
+      .fn()
+      .mockImplementation((command: string, args: string[]) =>
+        command === "npm" ? Promise.resolve({exitCode: 1, stdout: "", stderr: "restore failed"}) : writeReport(args, passing),
+      );
+    vi.doMock("@actions/exec", () => ({getExecOutput}));
+    const {testTypescriptProvider} = await import("./testTypescriptProvider.ts");
+    const result = await testTypescriptProvider.run({
+      workspaceRoot: "/w",
+      baseRef: "main",
+      headRef: "HEAD",
+      changeScope: "known",
+      changedFiles: ["sites/cv.arolariu.ro/api/src/cv-json.ts"],
+      selectedSuites: ["cv"],
+      env: {},
+    });
+    expect(result.executionStatus).toBe("errored");
+    expect(result.findings[0]).toMatchObject({ruleId: "cv/runner-failed", message: expect.stringMatching(/restore/u)});
+    expect(getExecOutput).toHaveBeenCalledOnce();
   });
 
   it("preserves a nonzero runner exit when all reported assertions passed", async () => {

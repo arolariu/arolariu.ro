@@ -37,10 +37,10 @@ export default mergeConfig(
     },
     test: {
       setupFiles: ["./vitest.setup.ts"],
-      include: ["src/**/*.test.{ts,js}"],
+      include: ["src/**/*.test.{ts,js}", "api/src/**/*.test.ts", "scripts/**/*.test.ts"],
       exclude: ["**/node_modules/**", "**/tests/**", "**/dist/**", "**/build/**", "**/.svelte-kit/**", "**/coverage/**"],
       coverage: {
-        include: ["src/**/*.{ts,js,svelte}"],
+        include: ["src/**/*.{ts,js,svelte}", "api/src/cv-json.ts", "scripts/cv-json-dev.ts"],
         exclude: [
           // Static data that doesn't require testing
           "**/src/data/author.ts",

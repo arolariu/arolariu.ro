@@ -43,7 +43,7 @@ const SVELTE_PACKAGE_VERSIONS: ReadonlyMap<string, string> = new Map([
   ["@sveltejs/kit", "2.70.2"],
   ["@sveltejs/vite-plugin-svelte", "6.4.1"],
   ["svelte", "5.56.8"],
-  ["svelte-adapter-azure-swa", "0.22.1"],
+  ["@sveltejs/adapter-static", "3.0.11"],
   ["vite", "8.2.0"],
   ["vitest", "4.1.10"],
   ["typescript", "6.0.3"],
@@ -138,12 +138,12 @@ function docusaurusConfigSource(): string {
 function svelteConfigSource(): string {
   return [
     'import {vitePreprocess} from "@sveltejs/vite-plugin-svelte";',
-    'import azure from "svelte-adapter-azure-swa";',
+    'import adapter from "@sveltejs/adapter-static";',
     "",
     "const config = {",
     "  preprocess: vitePreprocess(),",
     "  kit: {",
-    "    adapter: azure(),",
+    "    adapter: adapter(),",
     "  },",
     "};",
     "",
@@ -176,7 +176,7 @@ function sveltePackageJsonSource(name: string, engines = ">=24"): string {
       test: "vitest run",
       build: "vite build",
     },
-    dependencies: {"svelte-adapter-azure-swa": "*"},
+    dependencies: {"@sveltejs/adapter-static": "*"},
     devDependencies: {
       "@sveltejs/kit": "*",
       "@sveltejs/vite-plugin-svelte": "*",
@@ -750,7 +750,7 @@ describe("createSvelteProvider", () => {
     expect(facts.scriptIssues).toEqual([]);
     expect(facts.adapterIssues).toEqual([]);
     expect(facts.nodeEngine).toBe(">=24");
-    expect(facts.adapterSpecifier).toBe("svelte-adapter-azure-swa");
+    expect(facts.adapterSpecifier).toBe("@sveltejs/adapter-static");
     expect(facts.generatedConfigExists).toBe(true);
   });
 
@@ -854,7 +854,7 @@ describe("createSvelteProvider", () => {
           name: "@arolariu/cv",
           engines: {node: ">=24"},
           scripts: {check: "svelte-kit sync && svelte-check", test: "vitest run", build: "vite build"},
-          dependencies: {"svelte-adapter-azure-swa": "*"},
+          dependencies: {"@sveltejs/adapter-static": "*"},
           devDependencies: {
             "@sveltejs/kit": "*",
             "@sveltejs/vite-plugin-svelte": "*",
@@ -945,7 +945,7 @@ describe("createSvelteProvider", () => {
 
     expect(outcome.kind).toBe("available");
     const facts = (outcome as Extract<typeof outcome, {kind: "available"}>).value as SvelteFacts;
-    expect(facts.adapterIssues).toContain("svelte-adapter-azure-swa is not declared as a dependency in package.json.");
+    expect(facts.adapterIssues).toContain("@sveltejs/adapter-static is not declared as a dependency in package.json.");
   });
 
   it("reports an adapter issue when the adapter package is not installed", async () => {
@@ -955,7 +955,7 @@ describe("createSvelteProvider", () => {
         value: (() => {
           const value = packagesOf();
           const installed = {...value.installed} as Record<string, {version: string; workspaceRoot?: string}>;
-          delete installed["svelte-adapter-azure-swa"];
+          delete installed["@sveltejs/adapter-static"];
           return {installed, malformed: []};
         })(),
         durationMs: 1,
@@ -966,7 +966,7 @@ describe("createSvelteProvider", () => {
 
     expect(outcome.kind).toBe("available");
     const facts = (outcome as Extract<typeof outcome, {kind: "available"}>).value as SvelteFacts;
-    expect(facts.adapterIssues).toContain("svelte-adapter-azure-swa is not installed.");
+    expect(facts.adapterIssues).toContain("@sveltejs/adapter-static is not installed.");
     // The adapter presence check must not additionally duplicate into packageIssues.
     expect(facts.packageIssues).toEqual([]);
   });

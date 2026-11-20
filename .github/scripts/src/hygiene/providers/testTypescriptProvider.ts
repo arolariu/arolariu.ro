@@ -36,6 +36,20 @@ interface SuiteExecution {
 async function runSuite(name: TypeScriptSuiteName, directory: string, root: string): Promise<SuiteExecution> {
   return withTemporaryDirectory("arolariu-hygiene-vitest-", async (temporary) => {
     const file = path.join(temporary, "report.json");
+    if (name === "cv") {
+      const restore = await exec.getExecOutput("npm", ["ci", "--workspaces=false", "--omit=dev", "--ignore-scripts"], {
+        cwd: path.join(root, directory, "api"),
+        ignoreReturnCode: true,
+        silent: true,
+      });
+      if (restore.exitCode !== 0) {
+        return {
+          suite: runnerErrorSuite(name, "<CV API dependencies>", `CV API dependency restore failed (exit ${restore.exitCode}).`),
+          executionStatus: "errored",
+          evidenceStatus: "missing",
+        };
+      }
+    }
     const options = name === "tooling" ? ["--config", path.join("scripts", "vitest.config.ts"), "--pool=forks", "--maxWorkers=4"] : [];
     const result = await exec.getExecOutput(
       "npx",

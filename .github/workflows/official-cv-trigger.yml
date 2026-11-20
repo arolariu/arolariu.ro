@@ -5,7 +5,7 @@
 # (cv.arolariu.ro), built with SvelteKit and deployed to Azure Static Web Apps.
 #
 # Architecture:
-#   - Single Job: Build and deploy in one step for simplicity
+#   - Tests gate the direct build-and-deploy job
 #   - Static Generation: SvelteKit builds static files for optimal performance
 #   - Serverless: Deployed to Azure Static Web Apps (global CDN included)
 #
@@ -14,12 +14,11 @@
 #   - Manual: workflow_dispatch for on-demand deployments
 #
 # Technology Stack:
-#   - SvelteKit v2.46.2 with Azure Static Web Apps adapter
+#   - SvelteKit with the official static adapter and a direct managed Function
 #   - Node.js 24 for build environment
 #   - Azure Static Web Apps for hosting
 #
 # Security:
-#   - Uses OIDC for Azure authentication
 #   - Static Web Apps deployment token stored in GitHub Secrets
 #
 # Prerequisites:
@@ -34,7 +33,7 @@
 name: "official-cv-trigger"
 
 permissions:
-  id-token: write # Required for OIDC authentication with Azure
+  id-token: write
   contents: read # Required to checkout repository
 
 defaults:
@@ -45,7 +44,21 @@ on:
   # Automatic trigger on main branch changes to CV site
   push:
     branches: ["main"]
-    paths: ["sites/cv.arolariu.ro/**"]
+    paths:
+      - "sites/cv.arolariu.ro/**"
+      - "scripts/swa/**"
+      - "scripts/common/**"
+      - "scripts/vitest.config.ts"
+      - ".github/workflows/official-cv-trigger.yml"
+      - ".github/actions/setup-workspace/**"
+      - ".github/actions/setup-tooling/**"
+      - "package.json"
+      - "package-lock.json"
+      - ".npmrc"
+      - ".nvmrc"
+      - "nx.json"
+      - "tsconfig*.json"
+      - "eslint.config.ts"
 
   # Manual trigger for on-demand deployments
   workflow_dispatch:
@@ -97,6 +110,18 @@ jobs:
       - name: 📦 Setup workspace
         uses: ./.github/actions/setup-workspace
 
+      - name: Restore and check the managed API
+        run: |
+          npm ci --prefix api --workspaces=false --omit=dev --ignore-scripts
+          npm run check
+          npm run check:api
+
+      - name: Check deployment tooling and site lint
+        working-directory: .
+        run: |
+          npm exec -- vitest run --config scripts/vitest.config.ts scripts/swa --coverage.enabled=false
+          npm run lint:cv
+
       - name: 🧪 Running unit tests...
         working-directory: "./sites/cv.arolariu.ro"
         run: |
@@ -115,10 +140,13 @@ jobs:
           echo "| Duration | ${DURATION}s |" >> $GITHUB_STEP_SUMMARY
 
   build-and-deploy:
-    if: github.repository == 'arolariu/arolariu.ro' && (needs.test.result == 'success' || needs.test.result == 'skipped')
+    if: github.repository == 'arolariu/arolariu.ro' && needs.test.result == 'success'
     needs: test
     name: 🚀 Building and deploying the CV platform (cv.arolariu.ro)...
     runs-on: ubuntu-latest
+    concurrency:
+      group: deploy-cv
+      cancel-in-progress: false
     environment:
       name: "cv-resume"
       url: "https://cv.arolariu.ro"
@@ -146,7 +174,7 @@ jobs:
         run: |
           echo "::group::🏗️ Building CV Website"
           echo "📍 Framework: SvelteKit"
-          echo "📍 Adapter: Azure Static Web Apps"
+          echo "📍 Adapter: official static adapter"
           echo ""
           START_TIME=$(date +%s)
           npm run prepare
@@ -164,28 +192,50 @@ jobs:
           echo "| Duration | ${DURATION}s |" >> $GITHUB_STEP_SUMMARY
           echo "| Output | build/static |" >> $GITHUB_STEP_SUMMARY
 
+      - name: Build the managed API
+        id: api
+        run: npm run build:api
+
+      - name: Validate and fingerprint deployable artifacts
+        run: |
+          test -s build/static/index.html
+          test -s build/static/404.html
+          test -s build/static/staticwebapp.config.json
+          test -d build/static/_app/immutable
+          test -s build/server/functions/cv-json.mjs
+          test -s build/server/host.json
+          test -s build/server/package-lock.json
+          printf '{"commit":"%s","runId":"%s","attempt":"%s"}\n' "$COMMIT_SHA" "$GITHUB_RUN_ID" "$GITHUB_RUN_ATTEMPT" > build/static/deployment.json
+          (cd build && find static server -type f -print0 | sort -z | xargs -0 sha256sum > checksums.sha256)
+
+      - name: Retain the complete deployment pair
+        uses: actions/upload-artifact@v7
+        with:
+          name: cv-swa-${{ github.sha }}-${{ github.run_attempt }}
+          retention-days: 7
+          if-no-files-found: error
+          include-hidden-files: true
+          path: |
+            sites/cv.arolariu.ro/build/static
+            sites/cv.arolariu.ro/build/server
+            sites/cv.arolariu.ro/build/checksums.sha256
+
       - name: "🚀 Deploying CV website..."
         uses: Azure/static-web-apps-deploy@v1
-        env:
-          # Oryx rebuilds the app in its own container and runs `npm install`
-          # resolved against the monorepo workspace root, so it pulls in every
-          # site's devDependencies. Our root .npmrc sets engine-strict=true,
-          # which turns any engines mismatch into a hard failure.
-          #
-          # jsdom@30 requires ^22.22.2 || ^24.15.0 || >=26.0.0, and Oryx's SDK
-          # feed tops out at Node 22.22.0 and 24.13.0 with no 26.x — so no Node
-          # it can provision satisfies that range, and raising engines.node
-          # cannot fix it. jsdom is a test-only dependency that is never
-          # imported by `vite build`, so relaxing the check here is safe and
-          # scoped strictly to this container.
-          NPM_CONFIG_ENGINE_STRICT: "false"
         with:
           azure_static_web_apps_api_token: ${{ secrets.AZURE_STATIC_WEB_APPS_CV_TOKEN }}
           repo_token: ${{ secrets.GITHUB_TOKEN }}
           action: "upload"
-          app_location: "./sites/cv.arolariu.ro/"
-          api_location: "./sites/cv.arolariu.ro/build/server"
-          output_location: "build/static"
+          app_location: "./sites/cv.arolariu.ro/build/static"
+          api_location: ${{ steps.api.outputs.api_location }}
+          output_location: ""
+          skip_app_build: true
+          skip_api_build: true
+
+      - name: Verify the deployed HTTP contract
+        working-directory: .
+        timeout-minutes: 5
+        run: node scripts/swa/smoke.ts cv https://cv.arolariu.ro
 
       - name: 📊 Deployment summary
         run: |
