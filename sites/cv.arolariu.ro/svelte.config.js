@@ -7,6 +7,9 @@ const config = {
 
   kit: {
     adapter: adapter({pages: "build/static", assets: "build/static", strict: true}),
+    serviceWorker: {
+      files: (filename) => filename !== "staticwebapp.config.json" && !/\.DS_Store/.test(filename),
+    },
     alias: {
       "@/*": "src/*",
     },

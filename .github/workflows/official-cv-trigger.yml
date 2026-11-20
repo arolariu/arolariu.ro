@@ -44,15 +44,7 @@ on:
   # Automatic trigger on main branch changes to CV site
   push:
     branches: ["main"]
-    paths:
-      - "sites/cv.arolariu.ro/**"
-      - ".github/workflows/official-cv-trigger.yml"
-      - ".github/actions/setup-workspace/**"
-      - ".github/actions/setup-tooling/**"
-      - "package.json"
-      - "package-lock.json"
-      - ".npmrc"
-      - ".nvmrc"
+    paths: ["sites/cv.arolariu.ro/**"]
 
   # Manual trigger for on-demand deployments
   workflow_dispatch:

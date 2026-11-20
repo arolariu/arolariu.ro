@@ -67,7 +67,7 @@ Note: Structure follows common Svelte/SvelteKit conventions.
 
 Automated via GitHub Actions: .github/workflows/official-cv-trigger.yml
 
-- Triggers on relevant site, setup-action, workflow, and root dependency/configuration changes on main
+- Triggers on changes under `sites/cv.arolariu.ro/` on main, or via manual dispatch
 - Restores the independent API owner, checks frontend/API types and unit tests, then builds static pages and packages the Function
 - Uploads `build/static` and the complete `build/server` directly, with `skip_app_build` and `skip_api_build`; Oryx does not rebuild either
 - Uses the existing Free SWA and token, with serialized deployment jobs; no staging, slots, additional resource, or Azure login

@@ -44,15 +44,7 @@ on:
   # Automatic trigger on main branch changes to Status site
   push:
     branches: ["main"]
-    paths:
-      - "sites/status.arolariu.ro/**"
-      - ".github/workflows/official-status-trigger.yml"
-      - ".github/actions/setup-workspace/**"
-      - ".github/actions/setup-tooling/**"
-      - "package.json"
-      - "package-lock.json"
-      - ".npmrc"
-      - ".nvmrc"
+    paths: ["sites/status.arolariu.ro/**"]
 
   # Manual trigger for on-demand deployments
   workflow_dispatch:
