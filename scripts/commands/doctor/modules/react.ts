@@ -367,13 +367,16 @@ function diagnoseTaxonomyAndLicenses(context: Readonly<ModuleRunContext>, facts:
     evidence,
     ...buildIssueDiagnosis(issues),
     fixes: [
-      ...(issues.some((issue) => !issue.startsWith("licenses.json"))
+      ...(issues.some((issue) => issue.includes(".min.json"))
         ? [
             {
-              description: "Recover the approved taxonomy snapshots from version control.",
+              description: "Recover both approved taxonomy copies from version control, then verify them.",
               command: "npm run generate -- --check-taxonomies",
             },
           ]
+        : []),
+      ...(issues.some((issue) => issue.startsWith("messages/"))
+        ? [{description: "Restore the missing or unreadable locale dictionaries from version control, then rerun doctor."}]
         : []),
       ...(issues.some((issue) => issue.startsWith("licenses.json"))
         ? [
