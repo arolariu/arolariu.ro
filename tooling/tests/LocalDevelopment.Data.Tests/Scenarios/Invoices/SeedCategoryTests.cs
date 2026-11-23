@@ -1,6 +1,7 @@
 namespace LocalDevelopment.Data.Tests.Scenarios.Invoices;
 
 using System.Text.Json.Nodes;
+using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Categories;
 using global::LocalDevelopment.Data.Scenarios.Invoices;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
@@ -15,6 +16,11 @@ public sealed class SeedCategoryTests
     using var files = new SeedScenarioDirectory();
     SeedScenarioManifest manifest = SeedData.LoadScenario(files.Path);
     Assert.AreEqual("v4", manifest.Version);
+    SeedInvoiceDefinition receipt = manifest.Invoices.Single(invoice => invoice.Key == "invoice/alice-riverside-topup");
+    Assert.AreEqual(InvoiceCategory.Groceries, receipt.Category);
+    Assert.AreEqual(ProductCategory.Milk, receipt.Products.Single(product => product.ProductCode == "PANTRY-MILK-17-2").Category);
+    Assert.AreEqual(MerchantCategory.GroceryStore, manifest.Merchants.Single(merchant => merchant.Key == receipt.MerchantKey).Category);
+    Assert.IsNull(manifest.Invoices.Single(invoice => invoice.Key == "invoice/alice-weekly-groceries").Category);
   }
 
   /// <summary>Quoted IDs and an ID from another domain are not valid receipt categories.</summary>
