@@ -5664,6 +5664,7 @@
       "saved": "Categoria a fost salvată.",
       "failed": "Categoria nu a putut fi salvată.",
       "conflict": "Bonul s-a modificat. Reîncarcă-l înainte de a încerca din nou.",
+      "merchantConflict": "Datele comerciantului s-au modificat. Reîncarcă pagina înainte de a încerca din nou.",
       "fillEmpty": "Analiza completează doar categoriile lipsă; nu modifică selecțiile existente.",
       "product": "Categoria produsului",
       "merchant": "Categoria comerciantului",

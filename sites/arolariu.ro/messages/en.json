@@ -5664,6 +5664,7 @@
       "saved": "Category saved.",
       "failed": "Could not save the category.",
       "conflict": "This receipt changed. Refresh it before trying again.",
+      "merchantConflict": "This merchant changed. Refresh the page before trying again.",
       "fillEmpty": "Analysis fills empty categories only; it does not change existing selections.",
       "product": "Product category",
       "merchant": "Merchant category",

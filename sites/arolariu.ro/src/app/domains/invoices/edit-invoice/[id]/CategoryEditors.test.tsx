@@ -3,6 +3,7 @@
 import "@testing-library/jest-dom/vitest";
 import {DialogProvider, useDialog} from "@/app/domains/invoices/_contexts/DialogContext";
 import type {Merchant} from "@/types/invoices";
+import {toast, Toaster} from "@arolariu/components";
 import {act, cleanup, render, screen, within} from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import {MotionGlobalConfig} from "motion/react";
@@ -18,8 +19,9 @@ import InvoiceHeader from "./_components/InvoiceHeader";
 import {EditInvoiceContextProvider} from "./_context/EditInvoiceContext";
 import MerchantDialog from "./_dialogs/MerchantDialog";
 
+const refresh = vi.hoisted(() => vi.fn());
 vi.mock("next/cache", () => ({revalidatePath: vi.fn()}));
-vi.mock("next/navigation", () => ({useRouter: () => ({refresh: vi.fn()})}));
+vi.mock("next/navigation", () => ({useRouter: () => ({refresh})}));
 
 const invoiceId = "11111111-1111-4111-8111-111111111111";
 const merchantId = "22222222-2222-4222-8222-222222222222";
@@ -67,18 +69,18 @@ function seedBackend() {
   return writes;
 }
 
-function MerchantTrigger({merchant}: Readonly<{merchant: Merchant}>): React.JSX.Element {
+function MerchantTrigger({merchant, label = "Open merchant"}: Readonly<{merchant: Merchant; label?: string}>): React.JSX.Element {
   const {open} = useDialog("EDIT_INVOICE__MERCHANT", "view", merchant);
   return (
     <button
       type='button'
       onClick={open}>
-      Open merchant
+      {label}
     </button>
   );
 }
 
-async function mountEditors() {
+async function mountEditors(otherMerchant?: Merchant) {
   const [invoice, merchant] = await Promise.all([fetchInvoice({invoiceId}), fetchMerchant({merchantId})]);
   if (!invoice.success || !merchant.success) throw new Error("Fixture could not load the edit screen");
   return render(
@@ -93,7 +95,14 @@ async function mountEditors() {
           <InvoiceHeader />
           <InvoiceCard />
           <MerchantTrigger merchant={merchant.data} />
+          {otherMerchant === undefined ? null : (
+            <MerchantTrigger
+              label='Open other merchant'
+              merchant={otherMerchant}
+            />
+          )}
           <MerchantDialog />
+          <Toaster />
         </EditInvoiceContextProvider>
       </DialogProvider>
     </NextIntlClientProvider>,
@@ -113,6 +122,7 @@ describe("individual category editors", () => {
   });
 
   afterEach(() => {
+    toast.close();
     cleanup();
     MotionGlobalConfig.skipAnimations = skipAnimations;
   });
@@ -187,5 +197,52 @@ describe("individual category editors", () => {
     await mountEditors();
     dialog = await open();
     expect(dialog.getByRole("combobox", {name: "Merchant category"})).toHaveValue("");
+  });
+
+  it("does not apply a late save or notification to a newly opened merchant dialog", async () => {
+    seedBackend();
+    const user = userEvent.setup();
+    const otherMerchant = buildMerchant({id: "44444444-4444-4444-8444-444444444444", category: null});
+    await mountEditors(otherMerchant);
+    await act(() => user.click(screen.getByRole("button", {name: "Open merchant"})));
+    const first = within(await screen.findByRole("dialog"));
+    await choose(user, first.getByRole("combobox", {name: "Merchant category"}), "Supermarket");
+
+    const pending = Promise.withResolvers<Response>();
+    fetchAtHttp.mockImplementationOnce(() => pending.promise);
+    const save = first.getByRole("button", {name: "Save category"});
+    await act(() => user.click(save));
+    expect(save).toBeDisabled();
+    await act(() => user.click(first.getByRole("button", {name: messages.shared.accessibility.close})));
+    await act(() => user.click(screen.getByRole("button", {name: "Open other merchant"})));
+    const next = within(await screen.findByRole("dialog"));
+    const input = next.getByRole("combobox", {name: "Merchant category"});
+    await choose(user, input, "Bakery");
+
+    await act(() => pending.resolve(Response.json(buildMerchant({id: merchantId, category: 2001}))));
+
+    expect(input).toHaveValue("Bakery");
+    expect(next.getByRole("button", {name: "Save category"})).toBeEnabled();
+    expect(screen.queryByText(messages.categories.ui.saved)).not.toBeInTheDocument();
+    expect(refresh).toHaveBeenCalledOnce();
+  });
+
+  it("keeps the merchant draft on conflict rather than retrying or showing it as saved", async () => {
+    seedBackend();
+    const user = userEvent.setup();
+    await mountEditors();
+    await act(() => user.click(screen.getByRole("button", {name: "Open merchant"})));
+    const dialog = within(await screen.findByRole("dialog"));
+    const input = dialog.getByRole("combobox", {name: "Merchant category"});
+    await choose(user, input, "Supermarket");
+    fetchAtHttp.mockResolvedValueOnce(new Response(null, {status: 409}));
+
+    await act(() => user.click(dialog.getByRole("button", {name: "Save category"})));
+
+    expect(await screen.findByText(messages.categories.ui.merchantConflict)).toBeVisible();
+    expect(dialog.getByText(messages.categories.ui.unclassified)).toBeVisible();
+    expect(input).toHaveValue("Supermarket");
+    expect(fetchAtHttp.mock.calls.filter(([, options]) => options?.method === "PUT")).toHaveLength(1);
+    expect(refresh).not.toHaveBeenCalled();
   });
 });

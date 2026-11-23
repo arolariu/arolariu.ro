@@ -5664,6 +5664,7 @@
       "saved": "Catégorie enregistrée.",
       "failed": "Impossible d’enregistrer la catégorie.",
       "conflict": "Le reçu a changé. Actualisez-le avant de réessayer.",
+      "merchantConflict": "Les données du commerçant ont changé. Actualisez la page avant de réessayer.",
       "fillEmpty": "L’analyse complète uniquement les catégories manquantes sans modifier les sélections existantes.",
       "product": "Catégorie du produit",
       "merchant": "Catégorie du commerçant",

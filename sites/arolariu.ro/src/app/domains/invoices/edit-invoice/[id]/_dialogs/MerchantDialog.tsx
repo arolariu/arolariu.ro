@@ -5,7 +5,7 @@ import CategoryPicker from "@/app/domains/invoices/_components/category/Category
 import {merchantCategoryLabel} from "@/app/domains/invoices/_utils/labelUtilities";
 import {notify} from "@/lib/notify";
 import {useMerchantsStore} from "@/stores/merchantsStore";
-import type {Merchant, MerchantCategory} from "@/types/invoices";
+import type {MerchantCategory} from "@/types/invoices";
 import {
   Badge,
   Button,
@@ -21,54 +21,84 @@ import {
 } from "@arolariu/components";
 import {useTranslations} from "next-intl-selector";
 import {useRouter} from "next/navigation";
-import {useCallback, useRef, useState} from "react";
+import {useCallback, useLayoutEffect, useRef, useState} from "react";
 import {TbBuilding, TbMapPin, TbPhone} from "react-icons/tb";
 import {useDialog} from "../../../_contexts/DialogContext";
 import styles from "./MerchantDialog.module.scss";
 
-function MerchantDetails({merchant, isOpen, close}: Readonly<{merchant: Merchant; isOpen: boolean; close: () => void}>): React.JSX.Element {
+/** Displays merchant information and edits its category from the invoice edit route. */
+export default function MerchantDialog(): React.JSX.Element | null {
+  const {currentDialog, isOpen, close} = useDialog("EDIT_INVOICE__MERCHANT");
+  const merchant = isOpen ? currentDialog.payload : null;
   const t = useTranslations();
   const router = useRouter();
-  const [saved, setSaved] = useState(merchant.category);
-  const [draft, setDraft] = useState<MerchantCategory | null | undefined>(undefined);
-  const [saving, setSaving] = useState(false);
-  const saveInFlightRef = useRef(false);
-  const value = draft === undefined ? saved : draft;
+  const [edit, setEdit] = useState<{
+    dialog: typeof currentDialog;
+    saved: MerchantCategory | null;
+    draft: MerchantCategory | null | undefined;
+    saving: boolean;
+  } | null>(null);
+  const activeDialogRef = useRef<typeof currentDialog | null>(null);
+  const saveInFlightRef = useRef<typeof currentDialog | null>(null);
+  const currentEdit = edit?.dialog === currentDialog ? edit : null;
+  const saved = currentEdit === null ? (merchant?.category ?? null) : currentEdit.saved;
+  const value = currentEdit?.draft === undefined ? saved : currentEdit.draft;
+  const saving = currentEdit?.saving === true;
 
-  const finishSaving = useCallback(() => {
-    saveInFlightRef.current = false;
-    setSaving(false);
-  }, []);
+  // The provider creates a new dialog state on each open, even for the same merchant.
+  useLayoutEffect(() => {
+    activeDialogRef.current = isOpen ? currentDialog : null;
+    return () => {
+      activeDialogRef.current = null;
+    };
+  }, [currentDialog, isOpen]);
+
+  const onOpenChange = useCallback(
+    (shouldOpen: boolean): void => {
+      if (!shouldOpen) {
+        activeDialogRef.current = null;
+        close();
+      }
+    },
+    [close],
+  );
+  const onCategoryChange = useCallback(
+    (draft: MerchantCategory | null): void => setEdit({dialog: currentDialog, saved, draft, saving: false}),
+    [currentDialog, saved],
+  );
   const save = useCallback(async (): Promise<void> => {
-    if (saveInFlightRef.current || value === saved) return;
-    saveInFlightRef.current = true;
-    setSaving(true);
+    if (merchant === null || activeDialogRef.current !== currentDialog || saveInFlightRef.current === currentDialog || value === saved)
+      return;
+    saveInFlightRef.current = currentDialog;
+    setEdit({dialog: currentDialog, saved, draft: value, saving: true});
     try {
       const result = await updateMerchant({merchantId: merchant.id, category: value});
+      if (result.success) {
+        useMerchantsStore.getState().updateEntity(merchant.id, {category: result.data.category});
+        router.refresh();
+      }
+      if (activeDialogRef.current !== currentDialog) return;
       if (!result.success) {
-        notify.error(t((m) => m.categories.ui.failed));
+        notify.error(result.error.status === 409 ? t((m) => m.categories.ui.merchantConflict) : t((m) => m.categories.ui.failed));
         return;
       }
-      const store = useMerchantsStore.getState();
-      store.updateEntity(merchant.id, {category: result.data.category});
-      setSaved(result.data.category);
-      setDraft(undefined);
+      setEdit({dialog: currentDialog, saved: result.data.category, draft: undefined, saving: false});
       notify.success(t((m) => m.categories.ui.saved));
-      router.refresh();
     } catch {
-      notify.error(t((m) => m.categories.ui.failed));
+      if (activeDialogRef.current === currentDialog) notify.error(t((m) => m.categories.ui.failed));
     } finally {
-      finishSaving();
+      if (saveInFlightRef.current === currentDialog) saveInFlightRef.current = null;
+      if (activeDialogRef.current === currentDialog) {
+        setEdit((previous) => (previous?.dialog === currentDialog && previous.saving ? {...previous, saving: false} : previous));
+      }
     }
-  }, [finishSaving, merchant.id, router, saved, t, value]);
+  }, [currentDialog, merchant, router, saved, t, value]);
 
+  if (merchant === null) return null;
   return (
     <Dialog
       open={isOpen}
-      // eslint-disable-next-line react/jsx-no-bind -- simple dialog close handler
-      onOpenChange={(shouldOpen) => {
-        if (!shouldOpen) close();
-      }}>
+      onOpenChange={onOpenChange}>
       <DialogContent
         closeLabel={t((m) => m.shared.accessibility.close)}
         className={styles["dialogContent"]}>
@@ -117,7 +147,7 @@ function MerchantDetails({merchant, isOpen, close}: Readonly<{merchant: Merchant
             domain='merchants'
             label={t((m) => m.categories.ui.merchant)}
             value={value}
-            onValueChange={setDraft}
+            onValueChange={onCategoryChange}
             disabled={saving}
           />
           <Button
@@ -138,23 +168,5 @@ function MerchantDetails({merchant, isOpen, close}: Readonly<{merchant: Merchant
         </div>
       </DialogContent>
     </Dialog>
-  );
-}
-
-/** Displays merchant information and edits its category from the invoice edit route. */
-export default function MerchantDialog(): React.JSX.Element | null {
-  const {
-    currentDialog: {payload = null},
-    isOpen,
-    close,
-  } = useDialog("EDIT_INVOICE__MERCHANT");
-
-  return payload === null ? null : (
-    <MerchantDetails
-      key={payload.id}
-      merchant={payload}
-      isOpen={isOpen}
-      close={close}
-    />
   );
 }
