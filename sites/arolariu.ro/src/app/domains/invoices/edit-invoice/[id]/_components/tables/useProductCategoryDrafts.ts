@@ -25,10 +25,27 @@ function countNames(items: readonly Product[]): ReadonlyMap<string, number> {
   return counts;
 }
 
+function reconcileCategories(drafts: DraftProduct[], persisted: readonly Product[]): DraftProduct[] {
+  const byName = new Map<string, ProductCategory | null>();
+  for (const item of persisted) byName.set(item.name, byName.has(item.name) ? null : item.category);
+  const counts = countNames(persisted);
+  return drafts.map((item) => {
+    const original = item[sourceName];
+    if (original === undefined || counts.get(original.toUpperCase()) !== 1) return item;
+    const category = byName.get(original);
+    return category === undefined || category === item.category ? item : {...item, category};
+  });
+}
+
 /** Owns the table drafts and applies committed categories without discarding local edits. */
 export function useProductCategoryDrafts(invoice: Invoice): CategoryDrafts {
   const router = useRouter();
   const [localItems, setLocalItems] = useState<DraftProduct[]>(() => invoice.items.map((item) => ({...item, [sourceName]: item.name})));
+  const [observedItems, setObservedItems] = useState(invoice.items);
+  if (observedItems !== invoice.items) {
+    setObservedItems(invoice.items);
+    setLocalItems((drafts) => reconcileCategories(drafts, invoice.items));
+  }
   const persistedNames = useMemo(() => countNames(invoice.items), [invoice.items]);
   const localNames = useMemo(() => countNames(localItems), [localItems]);
 

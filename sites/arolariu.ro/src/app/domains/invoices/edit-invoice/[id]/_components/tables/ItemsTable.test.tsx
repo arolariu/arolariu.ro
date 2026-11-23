@@ -1,5 +1,5 @@
 import {DialogProvider} from "@/app/domains/invoices/_contexts/DialogContext";
-import type {Invoice} from "@/types/invoices";
+import {ProductCategory, type Invoice} from "@/types/invoices";
 import {toast} from "@arolariu/components";
 import {fireEvent, render, screen, waitFor, within} from "@testing-library/react";
 import {MotionGlobalConfig} from "motion/react";
@@ -13,18 +13,18 @@ vi.unmock("next-intl");
 vi.unmock("next-intl-selector");
 
 function renderItems(invoice: Invoice): ReturnType<typeof render> {
-  return render(
-    <NextIntlClientProvider
-      locale='en'
-      messages={{
-        categories: messages.categories,
-        pages: {invoices: {editInvoice: {itemsTable: messages.pages.invoices.editInvoice.itemsTable}}},
-      }}>
-      <DialogProvider>
-        <ItemsTable invoice={invoice} />
-      </DialogProvider>
-    </NextIntlClientProvider>,
-  );
+  return render(<ItemsTable invoice={invoice} />, {
+    wrapper: ({children}) => (
+      <NextIntlClientProvider
+        locale='en'
+        messages={{
+          categories: messages.categories,
+          pages: {invoices: {editInvoice: {itemsTable: messages.pages.invoices.editInvoice.itemsTable}}},
+        }}>
+        <DialogProvider>{children}</DialogProvider>
+      </NextIntlClientProvider>
+    ),
+  });
 }
 
 describe("ItemsTable", () => {
@@ -129,5 +129,20 @@ describe("ItemsTable", () => {
     const renamed = within(screen.getByRole("row", {name: /Select Milk/}));
     expect(renamed.getByText("Milk")).toBeInTheDocument();
     expect(renamed.queryByRole("button", {name: "Product category: Milk"})).not.toBeInTheDocument();
+  });
+
+  it("shows a refreshed saved category without discarding a local quantity edit", () => {
+    const milk = buildProduct({name: "Milk", quantity: 2, quantityUnit: "L", category: null});
+    const invoice = buildInvoice({items: [milk]});
+    const {rerender} = renderItems(invoice);
+    fireEvent.click(screen.getByRole("cell", {name: "2 L"}));
+    const quantity = screen.getByRole("spinbutton", {name: "Edit Quantity for Milk"});
+    fireEvent.change(quantity, {target: {value: "5"}});
+    fireEvent.keyDown(quantity, {key: "Enter"});
+
+    rerender(<ItemsTable invoice={{...invoice, items: [{...milk, category: ProductCategory.Milk}]}} />);
+
+    expect(screen.getByRole("button", {name: "Product category: Milk"})).toHaveTextContent("Milk");
+    expect(screen.getByRole("cell", {name: "5 L"})).toBeInTheDocument();
   });
 });
