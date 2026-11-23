@@ -78,7 +78,7 @@ export const SVELTE_INSPECTED_PACKAGE_NAMES = [
   "@sveltejs/kit",
   "@sveltejs/vite-plugin-svelte",
   "svelte",
-  "svelte-adapter-azure-swa",
+  "@sveltejs/adapter-static",
   "vite",
   "vitest",
   "typescript",

@@ -310,7 +310,7 @@ updates:
   # ===========================================================================
   # CV SITE - SVELTEKIT
   # ===========================================================================
-  # Static CV/resume site built with SvelteKit + Azure SWA adapter
+  # Static CV/resume site built with SvelteKit and the official static adapter
   - package-ecosystem: "npm"
     directory: "/sites/cv.arolariu.ro"
     target-branch: "preview"
@@ -347,6 +347,31 @@ updates:
         update-types:
           - "minor"
           - "major"
+
+  # CV managed Function: independent production runtime lock, not a root workspace.
+  - package-ecosystem: "npm"
+    directory: "/sites/cv.arolariu.ro/api"
+    target-branch: "preview"
+    schedule:
+      interval: "weekly"
+      day: "wednesday"
+      time: "06:00"
+      timezone: "Europe/Bucharest"
+    commit-message:
+      prefix: "chore(cv-api)"
+      include: "scope"
+    labels:
+      - "dependencies"
+      - "npm"
+      - "cv-site"
+      - "automated"
+    assignees:
+      - "arolariu"
+    open-pull-requests-limit: 5
+    versioning-strategy: increase
+    ignore:
+      - dependency-name: "*"
+        update-types: ["version-update:semver-patch"]
 
   # ===========================================================================
   # BACKEND - .NET 10 API

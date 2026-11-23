@@ -26,9 +26,10 @@
 
 import {sveltekit} from "@sveltejs/kit/vite";
 import {defineConfig} from "vite";
+import {cvJsonDevPlugin} from "./scripts/cv-json-dev.ts";
 
 export default defineConfig({
-  plugins: [sveltekit()],
+  plugins: [cvJsonDevPlugin(), sveltekit()],
   esbuild: {
     pure: ["console.log", "console.debug", "console.info"],
   },

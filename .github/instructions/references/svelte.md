@@ -8,18 +8,19 @@ workflows execute inside.
 
 ## Standalone boundary: no monorepo imports, no React patterns
 
-The CV is deployed independently to Azure Static Web Apps via `svelte-adapter-azure-swa` and never imports `@arolariu/components` or any
-other `sites/*`/`packages/*` package:
+The CV uses `@sveltejs/adapter-static` for prerendered pages and a directly authored SWA-managed Function for `/rest/json`. It never imports
+`@arolariu/components` or any other `sites/*`/`packages/*` package. SvelteKit server routes are not deployed automatically. See the site's
+README for the independently locked API and deployment commands.
 
 ```js
 // sites/cv.arolariu.ro/svelte.config.js
 import {vitePreprocess} from "@sveltejs/vite-plugin-svelte";
-import azure from "svelte-adapter-azure-swa";
+import adapter from "@sveltejs/adapter-static";
 
 const config = {
   preprocess: vitePreprocess(),
   kit: {
-    adapter: azure(),
+    adapter: adapter({pages: "build/static", assets: "build/static", strict: true}),
     alias: {"@/*": "src/*"},
   },
 };
@@ -153,11 +154,11 @@ root `AGENTS.md`. `csr = true` is why client-only interactivity (Command Palette
 though the HTML is fully pre-baked. If a new route genuinely cannot be prerendered, that is a page-option change and needs explicit approval
 before introducing `export const prerender = false` anywhere.
 
-The exception is `src/routes/rest/json/+server.ts`, a `GET`/`OPTIONS` endpoint that reads the `section`, `format`, and `pretty` query
-parameters on each request (the Command Palette's copy-JSON action also fetches it from the browser). Layout page options do not apply to
-`+server.ts` files, so the SWA adapter serves it at runtime from its server output (`apiLocation: "./build/server"` in
-`swa-cli.config.json`) instead of a prerendered file; prerendering would forbid its `url.searchParams` reads. Do not treat the site as fully
-static.
+The dynamic `/rest/json` API is not a SvelteKit server route: `src/lib/api/cv-json.ts` owns its neutral handler, `api/src/cv-json.ts` adapts
+the HTTP transport, and `api/src/functions/cv-json.ts` registers the managed Function. `static/staticwebapp.config.json` owns compatibility
+rewrites. Vite development uses `scripts/cv-json-dev.ts`, while static preview and container output do not host the API. See the
+[site README](../../../sites/cv.arolariu.ro/README.md#deployment) for its independent build and upload contract; adding a `+server.ts` route
+does not deploy an API with the static adapter.
 
 ## State and effects: `onMount` for DOM listeners, `$effect` for reactive updates
 
@@ -349,8 +350,11 @@ before importing an unmocked `$app/*` module in a unit test.
 
 ## Live source pointers
 
-- `sites/cv.arolariu.ro/svelte.config.js` — Azure SWA adapter, `@/*` alias.
+- `sites/cv.arolariu.ro/svelte.config.js` — official static adapter, `@/*` alias.
 - `sites/cv.arolariu.ro/src/routes/+layout.ts` — site-wide prerender/ssr/csr page options.
+- `sites/cv.arolariu.ro/src/lib/api/cv-json.ts` — shared public JSON behavior.
+- `sites/cv.arolariu.ro/api/src/functions/cv-json.ts` — managed-Function registration.
+- `sites/cv.arolariu.ro/scripts/cv-json-dev.ts` — local Vite JSON middleware.
 - `sites/cv.arolariu.ro/src/hooks/useTheme.svelte.ts` — runes-class shared state pattern.
 - `sites/cv.arolariu.ro/src/components/CommandPalette.svelte` — layout singleton, `$derived.by`, `$effect`, native `<dialog>`, keyboard
   navigation.
