@@ -2,7 +2,7 @@
 
 import {updateMerchant} from "@/app/domains/invoices/_actions/merchants/updateMerchant";
 import CategoryPicker from "@/app/domains/invoices/_components/category/CategoryPicker";
-import {merchantCategoryLabel} from "@/lib/categories/categoryLabels";
+import {merchantCategoryLabel} from "@/app/domains/invoices/_utils/labelUtilities";
 import {notify} from "@/lib/notify";
 import {useMerchantsStore} from "@/stores/merchantsStore";
 import type {Merchant, MerchantCategory} from "@/types/invoices";

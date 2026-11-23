@@ -1,6 +1,6 @@
 "use client";
 
-import {invoiceCategoryLabel} from "@/lib/categories/categoryLabels";
+import {invoiceCategoryLabel} from "@/app/domains/invoices/_utils/labelUtilities";
 import {toRONDetailed} from "@/lib/currency";
 import {formatCurrency, formatDate, formatEnum, toSafeDate} from "@/lib/utils.generic";
 import {PaymentType, getAllergenEvidenceLevelLabelKey, getAllergenLabelKey} from "@/types/invoices";

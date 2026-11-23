@@ -1,6 +1,6 @@
 "use client";
 
-import {productCategoryLabel} from "@/lib/categories/categoryLabels";
+import {productCategoryLabel} from "@/app/domains/invoices/_utils/labelUtilities";
 import {
   Card,
   CardContent,

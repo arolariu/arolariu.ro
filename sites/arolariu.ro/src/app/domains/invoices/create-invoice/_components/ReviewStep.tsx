@@ -1,6 +1,6 @@
 "use client";
 
-import {invoiceCategoryLabel} from "@/lib/categories/categoryLabels";
+import {invoiceCategoryLabel} from "@/app/domains/invoices/_utils/labelUtilities";
 import {selectorFromPath, useTranslations} from "next-intl-selector";
 
 /**

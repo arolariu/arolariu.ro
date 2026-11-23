@@ -2,7 +2,7 @@
 
 import {updateInvoiceProduct} from "@/app/domains/invoices/_actions/invoices/products";
 import CategoryPicker from "@/app/domains/invoices/_components/category/CategoryPicker";
-import {productCategoryLabel} from "@/lib/categories/categoryLabels";
+import {productCategoryLabel} from "@/app/domains/invoices/_utils/labelUtilities";
 import {notify} from "@/lib/notify";
 import type {Product, ProductCategory} from "@/types/invoices";
 import {Button} from "@arolariu/components";

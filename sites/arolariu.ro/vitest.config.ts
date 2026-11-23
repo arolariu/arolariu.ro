@@ -34,7 +34,7 @@ const leanTests = [
   "src/app/domains/invoices/view-invoices/_utils/{datePresets,filterOptions,statistics,statistics.merchant}.test.ts",
   "src/components/Navigation.test.tsx",
   "src/lib/{calendarLocale,concurrency.client,utils.generic}.test.ts",
-  "src/lib/{actions/cookies/cookies.action,currency/converter,categories/categoryCatalog,categories/categoryMessages,telemetry/healthPolicy}.test.ts",
+  "src/lib/{actions/cookies/cookies.action,currency/converter,telemetry/healthPolicy}.test.ts",
   "src/types/{domainConstants,guards}.test.ts",
   "src/types/invoices/{Allergen,Analysis,Recipe,transport}.test.ts",
 ];

@@ -84,8 +84,3 @@ export function getMerchantCategory(id: MerchantCategory): MerchantCategoryDefin
 export function getInvoiceCategory(id: InvoiceCategory): InvoiceCategoryDefinition {
   return getEntry(invoices, id);
 }
-
-/** Returns whether a known product category is eligible for recipes. */
-export function isFoodProductCategory(id: ProductCategory | null): boolean {
-  return id !== null && getProductCategory(id).isFood;
-}

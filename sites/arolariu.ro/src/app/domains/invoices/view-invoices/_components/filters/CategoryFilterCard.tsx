@@ -1,6 +1,6 @@
 "use client";
 
-import {invoiceCategoryLabel} from "@/lib/categories/categoryLabels";
+import {invoiceCategoryLabel} from "@/app/domains/invoices/_utils/labelUtilities";
 import {Badge} from "@arolariu/components";
 import {useTranslations} from "next-intl-selector";
 import {useCallback, useMemo} from "react";

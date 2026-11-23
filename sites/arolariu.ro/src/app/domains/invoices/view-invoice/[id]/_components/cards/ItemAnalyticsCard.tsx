@@ -42,7 +42,7 @@
  * @see {@link useInvoiceContext} for invoice data access
  */
 
-import {productCategoryLabel} from "@/lib/categories/categoryLabels";
+import {productCategoryLabel} from "@/app/domains/invoices/_utils/labelUtilities";
 import {getAllergenEvidenceLevelLabelKey, getAllergenLabelKey} from "@/types/invoices";
 import {
   Badge,

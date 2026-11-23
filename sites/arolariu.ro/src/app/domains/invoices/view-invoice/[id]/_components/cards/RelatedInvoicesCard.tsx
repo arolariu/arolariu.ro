@@ -26,7 +26,7 @@
  * - Hidden completely if user has only one invoice
  */
 
-import {invoiceCategoryLabel} from "@/lib/categories/categoryLabels";
+import {invoiceCategoryLabel} from "@/app/domains/invoices/_utils/labelUtilities";
 import {formatAmount, formatDate} from "@/lib/utils.generic";
 import {useInvoicesStore} from "@/stores";
 import {type Invoice} from "@/types/invoices";

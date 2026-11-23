@@ -29,7 +29,7 @@
  * - Blob generation happens on-demand, not during render
  */
 
-import {invoiceCategoryLabel, productCategoryLabel} from "@/lib/categories/categoryLabels";
+import {invoiceCategoryLabel, productCategoryLabel} from "@/app/domains/invoices/_utils/labelUtilities";
 import {notify} from "@/lib/notify";
 import {formatAmount, formatDate} from "@/lib/utils.generic";
 import {Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle} from "@arolariu/components";

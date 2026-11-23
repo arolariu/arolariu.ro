@@ -9,7 +9,7 @@
  * shows invoice-level groups), this chart analyzes individual product items across all invoices.
  */
 
-import {productCategoryLabel} from "@/lib/categories/categoryLabels";
+import {productCategoryLabel} from "@/app/domains/invoices/_utils/labelUtilities";
 import {formatAmount} from "@/lib/utils.generic";
 import {
   Bar,

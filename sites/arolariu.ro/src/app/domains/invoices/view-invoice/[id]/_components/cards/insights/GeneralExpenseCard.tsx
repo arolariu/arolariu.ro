@@ -1,6 +1,6 @@
 "use client";
 
-import {invoiceCategoryLabel} from "@/lib/categories/categoryLabels";
+import {invoiceCategoryLabel} from "@/app/domains/invoices/_utils/labelUtilities";
 import {formatCurrency, formatDate} from "@/lib/utils.generic";
 import {Button, Card, CardContent, CardHeader, CardTitle, Checkbox, Label, Progress} from "@arolariu/components";
 import {useLocale} from "next-intl";

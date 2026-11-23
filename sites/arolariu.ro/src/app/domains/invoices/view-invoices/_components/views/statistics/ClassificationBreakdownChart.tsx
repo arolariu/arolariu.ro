@@ -5,7 +5,7 @@
  * @module app/domains/invoices/view-invoices/_components/views/statistics/ClassificationBreakdownChart
  */
 
-import {invoiceCategoryLabel} from "@/lib/categories/categoryLabels";
+import {invoiceCategoryLabel} from "@/app/domains/invoices/_utils/labelUtilities";
 import {formatAmount} from "@/lib/utils.generic";
 import {
   Card,

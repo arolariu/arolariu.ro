@@ -1,7 +1,7 @@
 "use client";
 
 import {invoiceCategories, merchantCategories, productCategories} from "@/lib/categories/categoryCatalog";
-import {invoiceCategoryLabel, merchantCategoryLabel, productCategoryLabel} from "@/lib/categories/categoryLabels";
+import {invoiceCategoryLabel, merchantCategoryLabel, productCategoryLabel} from "@/app/domains/invoices/_utils/labelUtilities";
 import type {InvoiceCategory, MerchantCategory, ProductCategory} from "@/types/invoices/Category";
 import {Combobox, ComboboxContent, ComboboxEmpty, ComboboxInput, ComboboxItem, ComboboxList, Label} from "@arolariu/components";
 import {useTranslations} from "next-intl-selector";
