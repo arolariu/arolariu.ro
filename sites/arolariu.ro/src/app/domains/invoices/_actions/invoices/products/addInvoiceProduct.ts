@@ -27,11 +27,10 @@
 
 import {addSpanEvent, logWithTrace, withSpan} from "@/instrumentation.server";
 import {fetchBFFUserFromAuthService} from "@/lib/actions/user/fetchUser";
-import {isProductCategory} from "@/lib/categories/categoryCatalog";
 import {validateStringIsGuidType} from "@/lib/utils.generic";
 import {createErrorResult, createHttpErrorResult, fetchWithTimeout, type ServerActionResult} from "@/lib/utils.server";
 import type {Product, ProductCategory} from "@/types/invoices";
-import {parseProductResponse, tryParse} from "@/types/invoices/transport";
+import {isCategoryIntentInput, parseProductResponse, tryParse} from "@/types/invoices/transport";
 import {revalidatePath} from "next/cache";
 
 /**
@@ -140,7 +139,7 @@ export async function addInvoiceProduct({invoiceId, product}: ServerActionInputT
       // Step 0. Validate invoice identifier is valid GUID
       logWithTrace("info", "Validating identifier is valid...", {invoiceId}, "server");
       validateStringIsGuidType(invoiceId, "invoiceId");
-      if (product.category !== undefined && product.category !== null && !isProductCategory(product.category)) {
+      if (!isCategoryIntentInput(product.category)) {
         return createHttpErrorResult(400, "Invalid product category.");
       }
 

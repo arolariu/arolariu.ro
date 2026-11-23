@@ -10,11 +10,10 @@
 
 import {addSpanEvent, logWithTrace, withSpan} from "@/instrumentation.server";
 import {fetchBFFUserFromAuthService} from "@/lib/actions/user/fetchUser";
-import {isMerchantCategory} from "@/lib/categories/categoryCatalog";
 import {validateStringIsGuidType} from "@/lib/utils.generic";
 import {createErrorResult, createHttpErrorResult, fetchWithTimeout, type ServerActionResult} from "@/lib/utils.server";
 import type {Merchant, MerchantCategory} from "@/types/invoices";
-import {parseMerchantResponse, tryParse} from "@/types/invoices/transport";
+import {isCategoryIntentInput, parseMerchantResponse, tryParse} from "@/types/invoices/transport";
 
 type ServerActionInputType = Readonly<{merchantId: string}>
   & (Readonly<{category: MerchantCategory | null; merchant?: never}> | Readonly<{category?: MerchantCategory | null; merchant: Merchant}>);
@@ -39,7 +38,7 @@ export async function updateMerchant({merchantId, merchant, category}: ServerAct
     try {
       logWithTrace("info", "Validating merchant identifier is valid...", {merchantId}, "server");
       validateStringIsGuidType(merchantId, "merchantId");
-      if (category !== undefined && category !== null && !isMerchantCategory(category)) {
+      if (!isCategoryIntentInput(category)) {
         return createHttpErrorResult(400, "Invalid merchant category.");
       }
 

@@ -18,11 +18,10 @@
 
 import {addSpanEvent, logWithTrace, withSpan} from "@/instrumentation.server";
 import {fetchBFFUserFromAuthService} from "@/lib/actions/user/fetchUser";
-import {isInvoiceCategory} from "@/lib/categories/categoryCatalog";
 import {validateStringIsGuidType} from "@/lib/utils.generic";
 import {createErrorResult, createHttpErrorResult, fetchWithTimeout, type ServerActionResult} from "@/lib/utils.server";
 import type {Invoice, InvoiceCategory, PaymentInformation, Product, RecipeSuggestion} from "@/types/invoices";
-import {parseInvoiceResponse, tryParse} from "@/types/invoices/transport";
+import {isCategoryIntentInput, parseInvoiceResponse, tryParse} from "@/types/invoices/transport";
 import {revalidatePath} from "next/cache";
 
 type ServerActionInputType = Readonly<{
@@ -98,7 +97,7 @@ export async function patchInvoice({invoiceId, payload}: ServerActionInputType):
       // Step 0. Validate invoice identifier is valid GUID
       logWithTrace("info", "Validating identifier is valid...", {invoiceId}, "server");
       validateStringIsGuidType(invoiceId, "invoiceId");
-      if (payload.category !== undefined && payload.category !== null && !isInvoiceCategory(payload.category)) {
+      if (!isCategoryIntentInput(payload.category)) {
         return createHttpErrorResult(400, "Invalid invoice category.");
       }
 

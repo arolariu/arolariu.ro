@@ -39,6 +39,15 @@ import {type Product, type ProductMetadata} from "./Product";
 import {isRecipeSuggestion, type RecipeSuggestion} from "./Recipe";
 import type {Currency} from "../DDD";
 
+/**
+ * Checks that category intent survives JSON serialization unchanged, including
+ * keeping a non-finite number from becoming an explicit null (clear). The API
+ * validates category membership.
+ */
+export function isCategoryIntentInput(value: unknown): value is number | null | undefined {
+  return value === undefined || value === null || isFiniteNumber(value);
+}
+
 // ============================================================
 // TransportValidationError
 // ============================================================

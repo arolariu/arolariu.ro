@@ -1,4 +1,5 @@
 import {revalidatePath} from "next/cache";
+import type {InvoiceCategory} from "@/types/invoices";
 import {describe, expect, it, vi} from "vitest";
 import {buildInvoice, buildProduct, buildRecipeSuggestion} from "../../../../../../tests/helpers/builders/domain";
 import {apiUrl, auth, fetchAtHttp} from "../../../../../../tests/setup/server-http";
@@ -87,6 +88,18 @@ describe("patchInvoice", () => {
     expect(result).toMatchObject({success: false, error: {message: expect.stringContaining("invoiceId")}});
     expect(auth).not.toHaveBeenCalled();
     expect(fetchAtHttp).not.toHaveBeenCalled();
+    expect(revalidatePath).not.toHaveBeenCalled();
+  });
+
+  it("lets the API reject an invalid receipt category and returns its HTTP failure", async () => {
+    const category = 2001 as InvoiceCategory;
+    fetchAtHttp.mockResolvedValue(new Response(null, {status: 400}));
+
+    const result = await patchInvoice({invoiceId, payload: {category}});
+
+    expect(fetchAtHttp).toHaveBeenCalledOnce();
+    expect(requestBody()).toEqual({category});
+    expect(result).toMatchObject({success: false, error: {code: "VALIDATION_ERROR", status: 400}});
     expect(revalidatePath).not.toHaveBeenCalled();
   });
 
