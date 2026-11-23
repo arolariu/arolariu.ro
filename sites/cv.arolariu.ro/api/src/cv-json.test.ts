@@ -53,7 +53,7 @@ describe("managed CV Function", () => {
     expect(new Headers(rejected.headers).get("Allow")).toBe("GET, OPTIONS, HEAD");
   });
 
-  it("preserves the slash redirect without trusting forwarded URL headers", async () => {
+  it("preserves the explicit slash alias when original-URL metadata is unrelated", async () => {
     const response = await handleCvJsonFunction(
       new HttpRequest({
         url: "https://example.test/api/cv-json/slash?format=resume",
@@ -64,6 +64,74 @@ describe("managed CV Function", () => {
     );
     expect(response.status).toBe(308);
     expect(new Headers(response.headers).get("Location")).toBe("/rest/json?format=resume");
+  });
+
+  it.each(["GET", "HEAD"])("preserves public slash redirects after an SWA rewrite for %s", async (method) => {
+    const response = await handleCvJsonFunction(
+      new HttpRequest({
+        url: "https://example.test/api/cv-json?format=minimal&pretty=true",
+        method,
+        headers: {"x-ms-original-url": "https://example.test/rest/json/?format=resume"},
+      }),
+    );
+
+    expect(response.status).toBe(308);
+    expect(new Headers(response.headers).get("Location")).toBe("/rest/json?format=minimal&pretty=true");
+    expect(response.body).toBeUndefined();
+  });
+
+  it("preserves an already-public slash path without original-URL metadata", async () => {
+    const response = await handleCvJsonFunction(new HttpRequest({url: "https://example.test/rest/json/?format=resume", method: "GET"}));
+
+    expect(response.status).toBe(308);
+    expect(new Headers(response.headers).get("Location")).toBe("/rest/json?format=resume");
+  });
+
+  it("never adopts the original-URL origin or query as the redirect destination", async () => {
+    const response = await handleCvJsonFunction(
+      new HttpRequest({
+        url: "https://example.test/api/cv-json?format=minimal",
+        method: "GET",
+        headers: {"x-ms-original-url": "https://untrusted.test/rest/json/?format=resume"},
+      }),
+    );
+
+    expect(response.status).toBe(308);
+    expect(new Headers(response.headers).get("Location")).toBe("/rest/json?format=minimal");
+  });
+
+  it.each([
+    "not-a-url",
+    "https://example.test/rest/json/unknown",
+    "ftp://example.test/rest/json/",
+    "https://test:invalid@example.test/rest/json/",
+  ])("ignores original-URL metadata that is not a valid public slash hint: %s", async (originalUrl) => {
+    const response = await handleCvJsonFunction(
+      new HttpRequest({
+        url: "https://example.test/api/cv-json?format=minimal",
+        method: "GET",
+        headers: {"x-ms-original-url": originalUrl},
+      }),
+    );
+
+    expect(response.status).toBe(200);
+    expect(new Headers(response.headers).get("Location")).toBeNull();
+  });
+
+  it.each([
+    {method: "POST", status: 405},
+    {method: "OPTIONS", status: 204},
+  ])("preserves $method handling for a rewritten public slash request", async ({method, status}) => {
+    const response = await handleCvJsonFunction(
+      new HttpRequest({
+        url: "https://example.test/api/cv-json",
+        method,
+        headers: {"x-ms-original-url": "https://example.test/rest/json/"},
+      }),
+    );
+
+    expect(response.status).toBe(status);
+    expect(new Headers(response.headers).get("Location")).toBeNull();
   });
 
   it("rejects unrecognized API suffixes", async () => {

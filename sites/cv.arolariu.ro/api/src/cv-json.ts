@@ -12,8 +12,17 @@ export async function handleCvJsonFunction(request: HttpRequest): Promise<HttpRe
     return {status: 404};
   }
   const url = new URL(request.url);
-  // An explicit rewrite alias preserves slash redirects without trusting forwarded headers.
-  url.pathname = suffix === "slash" ? "/rest/json/" : "/rest/json";
+  const originalUrl = request.headers.get("x-ms-original-url");
+  const original = originalUrl && URL.canParse(originalUrl) ? new URL(originalUrl) : null;
+  const hasPublicSlash =
+    url.pathname === "/rest/json/"
+    || (original !== null
+      && (original.protocol === "http:" || original.protocol === "https:")
+      && original.username === ""
+      && original.password === ""
+      && original.pathname === "/rest/json/");
+  // Only use the original pathname as a slash hint; never adopt its origin or query.
+  url.pathname = suffix === "slash" || hasPublicSlash ? "/rest/json/" : "/rest/json";
   const response = handleCvJsonRequest(
     new Request(url, {
       method: request.method,
