@@ -8,6 +8,7 @@
  */
 
 import type {GateResult, HygieneReport, ProviderOutcome} from "../domain/types.ts";
+import {providerDescriptor} from "../../../lib/hygiene/registry.ts";
 
 export type Conclusion = "success" | "failure" | "neutral" | "skipped";
 
@@ -64,12 +65,27 @@ export interface StatusChecksDeps {
  * @throws Original API errors or an invalid returned identity.
  */
 export async function postStatusChecks(report: HygieneReport, deps: StatusChecksDeps): Promise<ReadonlyMap<string, number>> {
+  const checks = new Map(report.outcomes.map((outcome) => [outcome.providerId, outcomeToCheckRun(outcome, report.commitSha)]));
+  for (const {id, requiredOutcome} of report.plan?.providers ?? []) {
+    if (!requiredOutcome || checks.has(id)) continue;
+    const {icon, name} = providerDescriptor(id);
+    checks.set(id, {
+      name: `hygiene/${id}`,
+      head_sha: report.commitSha,
+      status: "completed",
+      conclusion: "failure",
+      output: {
+        title: `${icon} ${name}: evidence unavailable`,
+        summary: "Required provider evidence could not be verified. See the hygiene gate report.",
+      },
+    });
+  }
+
   const created = new Map<string, number>();
-  for (const outcome of report.outcomes) {
-    const payload = outcomeToCheckRun(outcome, report.commitSha);
+  for (const [id, payload] of checks) {
     const response = await deps.create({...payload, owner: deps.owner, repo: deps.repo});
     if (!Number.isSafeInteger(response.data.id) || response.data.id <= 0) throw new TypeError("Checks API returned no valid check-run ID");
-    created.set(outcome.providerId, response.data.id);
+    created.set(id, response.data.id);
   }
   return created;
 }

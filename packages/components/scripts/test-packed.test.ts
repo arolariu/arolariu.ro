@@ -1,6 +1,7 @@
 import {spawnSync} from "node:child_process";
 import {EventEmitter} from "node:events";
 import fs from "node:fs";
+import {createRequire} from "node:module";
 import os from "node:os";
 import path from "node:path";
 import {pathToFileURL} from "node:url";
@@ -44,6 +45,90 @@ describe("required packed verification", () => {
     expect(manifest.scripts.test).toBe("npm run test:packed");
     expect(manifest.scripts["test:packed"]).toBe("node scripts/test-packed.ts");
     expect(manifest.scripts["test:unit"]).toBe("vitest run");
+  });
+
+  describe("release archive handoff", () => {
+    it.each(["pass", "fail", "interrupt", "unset", "existing"] as const)(
+      "retains only the tested archive for the %s release case",
+      (mode) => {
+        const root = createScratchDirectory();
+        const scripts = path.join(root, "scripts");
+        const modules = path.join(root, "node_modules");
+        const output = path.join(root, "release");
+        const filename = "component-pack-fixture-1.0.0.tgz";
+        const archive = path.join(output, filename);
+        const tested = path.join(root, "tested.tgz");
+        const npm = process.env["npm_execpath"];
+        if (!npm) throw new Error("Run the release archive test through npm");
+
+        fs.mkdirSync(scripts);
+        fs.mkdirSync(modules);
+        fs.copyFileSync(gateScript, path.join(scripts, "test-packed.ts"));
+        const vitest = createRequire(import.meta.url).resolve("vitest/package.json");
+        fs.symlinkSync(path.dirname(vitest), path.join(modules, "vitest"), "junction");
+        fs.writeFileSync(
+          path.join(root, "package.json"),
+          JSON.stringify({
+            name: "component-pack-fixture",
+            version: "1.0.0",
+            type: "module",
+            files: ["dist"],
+            scripts: {build: "node build.mjs"},
+          }),
+        );
+        fs.writeFileSync(
+          path.join(root, "build.mjs"),
+          'import fs from "node:fs"; fs.mkdirSync("dist"); fs.writeFileSync("dist/index.js", "export const fixture = true;");',
+        );
+        fs.writeFileSync(
+          path.join(root, "fixture.test.mjs"),
+          `
+            import {copyFileSync, readFileSync} from "node:fs";
+            import {dirname, join} from "node:path";
+            import {expect, it} from "vitest";
+
+            it("exercises the extracted archive", () => {
+              const packed = process.env.AROLARIU_COMPONENTS_PACKED_ROOT;
+              copyFileSync(join(dirname(packed), ${JSON.stringify(filename)}), process.env.TESTED_ARCHIVE);
+              expect(readFileSync(join(packed, "dist/index.js"), "utf8")).toContain("fixture = true");
+              if (process.env.PACK_CASE === "fail") throw new Error("fixture verification failure");
+              if (process.env.PACK_CASE === "interrupt") process.kill(Number(process.env.PACK_GATE_PID), "SIGTERM");
+            });
+          `,
+        );
+        fs.writeFileSync(
+          path.join(root, "run-gate.mjs"),
+          'import {verifyPackedArtifact} from "./scripts/test-packed.ts"; process.env.PACK_GATE_PID = String(process.pid); await verifyPackedArtifact();',
+        );
+        if (mode === "existing") {
+          fs.mkdirSync(output);
+          fs.writeFileSync(archive, "do not replace");
+        }
+
+        const result = spawnSync(process.execPath, ["run-gate.mjs"], {
+          cwd: root,
+          encoding: "utf8",
+          timeout: 15_000,
+          env: {
+            ...process.env,
+            npm_execpath: npm,
+            npm_config_offline: "true",
+            PACK_CASE: mode,
+            TESTED_ARCHIVE: tested,
+            AROLARIU_COMPONENTS_PACK_OUTPUT: mode === "unset" ? undefined : output,
+          },
+        });
+
+        expect(result.error).toBeUndefined();
+        expect(fs.existsSync(tested), result.stderr).toBe(true);
+        if (mode === "pass" || mode === "unset") expect(result.status, result.stderr).toBe(0);
+        else expect(result.status).not.toBe(0);
+        if (mode === "pass") expect(fs.readFileSync(archive)).toEqual(fs.readFileSync(tested));
+        else if (mode === "existing") expect(fs.readFileSync(archive, "utf8")).toBe("do not replace");
+        else expect(fs.existsSync(archive)).toBe(false);
+      },
+      20_000,
+    );
   });
 
   it("accepts the single local npm archive filename", () => {

@@ -32,7 +32,11 @@ afterEach(async () => {
   await rm(root, {recursive: true, force: true});
 });
 
-async function native(entry: string, args: readonly string[]): Promise<{exitCode: number; stdout: string; stderr: string}> {
+async function native(
+  entry: string,
+  args: readonly string[],
+  environment: Readonly<Record<string, string>> = {},
+): Promise<{exitCode: number; stdout: string; stderr: string}> {
   const env = {
     ...process.env,
     GITHUB_TOKEN: "",
@@ -52,6 +56,7 @@ async function native(entry: string, args: readonly string[]): Promise<{exitCode
     BASE_REF: sha,
     PR_NUMBER: "",
     GITHUB_STEP_SUMMARY: join(root, "summary.md"),
+    ...environment,
   };
   try {
     const result = await execFileAsync(process.execPath, [fileURLToPath(new URL(`./${entry}.ts`, import.meta.url)), ...args], {
@@ -108,6 +113,15 @@ describe("native required-plan CLI transport", () => {
           typeof value === "object" && value !== null && "executionStatus" in value && value.executionStatus === "skipped",
       ),
     ).toBe(true);
+
+    const failedTransfer = await native("runProjections", ["--plan", path], {HYGIENE_OUTCOME_DOWNLOAD_FAILED: "true"});
+    expect(failedTransfer.exitCode).toBe(1);
+    const rejectedReport: unknown = JSON.parse(await readFile(join(root, "artifacts", "hygiene", "hygiene-report.json"), "utf8"));
+    expect(rejectedReport).toMatchObject({
+      overallResult: "errored",
+      evidenceIssues: expect.arrayContaining([expect.objectContaining({code: "outcome-download-failed"})]),
+    });
+
     await fs.remove(join(root, "artifacts", "hygiene", "outcome-format.json"), {recursive: false, force: true});
     expect((await native("runProjections", ["--plan", path])).exitCode).not.toBe(0);
   }, 60_000);

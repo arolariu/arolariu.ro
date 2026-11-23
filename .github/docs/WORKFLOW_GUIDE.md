@@ -10,10 +10,10 @@ inputs, conditions, and retention settings.
 | `official-website-build`                                         | Push to `preview` (website changes), manual                                           | Build and test main website                                        |
 | `official-website-release`                                       | After a successful `preview` build (development only), manual                         | Deploy website to Azure                                            |
 | `official-api-trigger`                                           | Push to `main` (API changes), manual                                                  | Build, test, and deploy API                                        |
-| `official-cv-trigger`                                            | Push to `main` (CV changes), manual                                                   | Build and deploy CV site                                           |
+| `official-cv-trigger`                                            | Push to `main` (CV changes), manual                                                   | Test and package CV; deploy on Azure runs                          |
 | `official-docs-trigger`                                          | Push to `main`, manual                                                                | Generate and deploy docs                                           |
 | `official-exp-trigger`                                           | Push to `main` (exp changes), manual                                                  | Lint, security-scan, test, build, and deploy the exp service       |
-| `official-status-trigger`                                        | Push to `main` (status changes), manual                                               | Test, build, and deploy the status site                            |
+| `official-status-trigger`                                        | Push to `main` (status changes), manual                                               | Test and package status; deploy on Azure runs                      |
 | `official-status-probe`                                          | Every 30 minutes (:09 and :39 UTC), manual                                            | Probe services and commit results to the `status-data` branch      |
 | `official-components-publish`                                    | Push of a `components-v*` tag, manual (`dry-run`, `tag`)                              | Validate and publish `@arolariu/components` to npm with provenance |
 | `official-hygiene-check-v2` (shown as "Code Hygiene Check (v3)") | Pull requests (opened, synchronize, reopened), manual (`scope`: `affected` or `full`) | Plan-driven format, lint, test, and stats checks with a gate       |
@@ -45,8 +45,8 @@ Need to run tests?
 │   └── Automatic: official-hygiene-check-v2 ("Code Hygiene Check (v3)")
 ├── E2E tests against production?
 │   └── Use: official-e2e-action (manual dispatch)
-└── Website build tests?
-    └── Use: official-website-build (manual dispatch)
+└── Website checks without deploying?
+    └── Use: npm run test:website locally; official-website-build pushes an image to ACR
 ```
 
 ## Manual Trigger Instructions
@@ -58,6 +58,9 @@ For workflows with a manual entrypoint, use the GitHub UI:
 3. Click **Run workflow** button
 4. Select branch and fill in any inputs
 5. Click **Run workflow**
+
+Selecting a feature or `preview` branch does not make a dispatch a dry run. Verify the target and side effects in the workflow header before
+dispatching: deployment jobs can update live services, the status probe writes `status-data`, and live E2E can file issues.
 
 ### Common Manual Triggers
 
@@ -80,14 +83,53 @@ A production release deploys `frontend/arolariu:<commit SHA>`, which only a prod
 `:latest`. The automatic release after a `preview` build has no inputs, so it always deploys `frontend/dev.arolariu:latest` to the
 development app.
 
-**Deploy API:**
+**Deploy API, CV, status, or EXP from a selected revision:**
 
 ```
-Workflow: official-api-trigger
+Workflow: official-api-trigger (or official-cv-trigger, official-status-trigger, official-exp-trigger)
+Ref: main
 Inputs:
-  - environment: production
-  - infrastructure: azure
+  - commit_sha: optional, full 40-character commit SHA reachable from main
+  - other inputs: see the selected workflow
 ```
+
+Leave `commit_sha` empty to use the `main` commit that triggered the dispatch. Tests and builds use the same validated revision, including
+its local actions and scripts. Older revisions without the required setup inputs fail rather than mixing revisions. With
+`infrastructure: azure` (the default), API and EXP deploy the image pushed by that manual run. Rebuilding an older commit is not a
+byte-for-byte rollback; build inputs may have changed.
+
+CV and status keep their existing single-pending Azure deployment queues. A manual Azure dispatch can replace a pending Azure run before its
+SHA is validated; avoid dispatching in Azure mode while a deployment is queued. LOCAL runs use separate concurrency groups.
+
+**Build CV or status without deploying:** Dispatch `official-cv-trigger` or `official-status-trigger` from `main` with
+`infrastructure: local` and an optional `commit_sha`. The independent `test` job gates both builds. With LOCAL, `environment` is ignored;
+the workflow uploads a build archive with no Azure deployment. `azure` is the default for dispatch and for pushes; `deploy-azure` verifies
+and deploys the exact archive from `build-azure` without rebuilding.
+
+Download and unzip the `<site>-local-site-<sha>-<attempt>` artifact within seven days. For CV, run `sha256sum --check cv-site.tar.gz.sha256`
+then `tar -xzf cv-site.tar.gz` in a fresh directory. Substitute `status` for `cv` for the status site. `static/` contains the prerendered
+site and Static Web Apps configuration. CV also includes its managed Function in `server/`; status only includes `server/` when it builds an
+API. Serving the static files does not start the Function, and the status site may still request public status data.
+
+**Build an API or EXP image without Azure:** Dispatch `official-api-trigger` or `official-exp-trigger` from `main` with
+`infrastructure: local` and, optionally, `commit_sha`. The `environment` input is ignored. The runner tests the selected source, builds the
+image, and uploads a Docker archive instead of pushing or deploying. No Azure credentials or services are used; public base-image and
+dependency downloads and GitHub artifact upload still require network access.
+
+Download and unzip the `api-local-image-<sha>-<attempt>` or `exp-local-image-<sha>-<attempt>` Actions artifact within seven days. For API,
+verify and load it with the following commands; substitute `exp` for `api` for the EXP image:
+
+```bash
+sha256sum --check arolariu-api-local.tar.gz.sha256
+docker load -i arolariu-api-local.tar.gz
+```
+
+The loaded tag is `arolariu-api-local:<sha>` or `arolariu-exp-local:<sha>` with `INFRA=local`. Loading an image does not start it. Use the
+[local environment runbook](../../infra/Local/readme.md) for EXP configuration and the API's supporting services.
+
+**Dry-run components publishing:** Select `official-components-publish`, use an unpublished package version, and enable `dry-run`. The
+workflow builds, packs, and tests once. Both dry run and real publish consume the same verified tarball from the validation job. If it has
+expired, rerun validation rather than rebuilding in the publish job.
 
 **Run E2E tests:**
 
@@ -112,7 +154,10 @@ Inputs:
 These workflows upload artifacts for debugging:
 
 - `official-website-build`: `test-report-<environment>-<run_id>` (website `code-cov/` output)
-- `official-api-trigger`: `test-results-<run_id>` (`sites/api.arolariu.ro/TestResults/`)
+- `official-api-trigger`: `test-results-<run_id>` for Azure, or `api-local-test-results-<attempt>` and `api-local-image-<sha>-<attempt>` for
+  LOCAL.
+- `official-exp-trigger`: `exp-local-image-<sha>-<attempt>` for LOCAL.
+- `official-cv-trigger` and `official-status-trigger`: `<site>-<local|azure>-site-<sha>-<attempt>` (prebuilt site archive and SHA-256).
 - `official-e2e-action`: `e2e-reports-<target>` (Newman JSON, JUnit XML, and summary; run log; status and health files)
 - `official-hygiene-check-v2`: `hygiene-plan`, `outcome-<provider>`, and `hygiene-report`
 
@@ -156,7 +201,8 @@ act pull_request -W .github/workflows/official-hygiene-check-v2.yml
 act -l
 ```
 
-**Note:** Some workflows require secrets that won't be available locally.
+`act -l` lists the parsed job graph without running jobs. For execution, use an isolated runner and a non-deploying workflow or fixture
+without live secrets. Local runs do not establish parity for GitHub-hosted caches, artifact transfers, environment approvals, or OIDC.
 
 ## Workflow Architecture
 
@@ -200,13 +246,13 @@ A manual build can set `skip_tests` to skip the test phase; the build still runs
 
 Workflow-level environment variables; each workflow's `env:` block is authoritative:
 
-| Variable       | Set by                                                                | Description                                                                                            |
-| -------------- | --------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------ |
-| `COMMIT_SHA`   | Website build and release; API, CV, docs, exp, and status deployments | Workflow event's commit SHA; its meaning depends on the trigger                                        |
-| `INFRA`        | Website build, API, exp                                               | Infrastructure target (`local`/`azure`, default `azure`)                                               |
-| `SITE_ENV`     | Website build                                                         | `PRODUCTION` or `DEVELOPMENT` image build argument, passed with `SITE_NAME` and `SITE_URL`             |
-| `NODE_VERSION` | Hygiene check, components publish                                     | Node.js version passed to setup; other workflows use the setup-workspace default                       |
-| `PRODUCTION`   | Website build and release                                             | `true` for production dispatches; only the `env` generator, which these workflows do not run, reads it |
+| Variable       | Set by                                                                | Description                                                                                                    |
+| -------------- | --------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------- |
+| `COMMIT_SHA`   | Website build and release; API, CV, docs, exp, and status deployments | Workflow event's commit SHA; its meaning depends on the trigger                                                |
+| `INFRA`        | Website build, API, exp                                               | Infrastructure target (`local`/`azure`, default `azure`)                                                       |
+| `SITE_ENV`     | Website build                                                         | `PRODUCTION` or `DEVELOPMENT` image build argument, passed with `SITE_NAME` and `SITE_URL`                     |
+| `NODE_VERSION` | Hygiene check, components publish                                     | Node.js version for jobs opting in via `node-install`; other Node jobs use the setup-workspace version default |
+| `PRODUCTION`   | Website build and release                                             | `true` for production dispatches; only the `env` generator, which these workflows do not run, reads it         |
 
 ## Scheduled Workflows
 

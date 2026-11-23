@@ -42,7 +42,13 @@ export async function main(argv: readonly string[] = process.argv.slice(2)): Pro
     const plan = await loadRequiredPlan(argv);
     const variables = createEnvironmentHelper().snapshot();
     const context = await captureWorkflowContext(variables, {mode: "actions"});
-    const loaded = await loadProviderOutcomes(join(context.workspaceRoot, "artifacts", "hygiene"), plan, context.workflowRunAttempt);
+    const loaded =
+      variables["HYGIENE_OUTCOME_DOWNLOAD_FAILED"] === "true"
+        ? {
+            outcomes: [],
+            issues: [{code: "outcome-download-failed", message: "Artifact download failed; extracted outcome files were not verified"}],
+          }
+        : await loadProviderOutcomes(join(context.workspaceRoot, "artifacts", "hygiene"), plan, context.workflowRunAttempt);
     const report = buildVerifiedReport(context, plan, loaded);
     const token = createEnvironmentHelper(variables).get("GITHUB_TOKEN");
     const github = token ? createGitHubHelper(token) : null;

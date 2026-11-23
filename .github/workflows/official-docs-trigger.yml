@@ -1,48 +1,11 @@
-# =============================================================================
-# Documentation Website Build and Deployment Workflow
-# =============================================================================
-# This workflow generates and deploys the documentation website
-# (docs.arolariu.ro) using Docusaurus 3.10 as the shell, with three
-# extractors feeding into it (TypeDoc for the TS reference,
-# DefaultDocumentation for .NET internals, pydoc-markdown for the
-# Python experimental service).
-#
-# Architecture:
-#   - docs:assemble: Runs all three extractors + validator + normalizer + landing pages
-#   - npm run build:docs: Docusaurus build (fires the postbuild hook
-#     that copies staticwebapp.config.json and emits llms.txt)
-#   - Azure Static Web Apps: Hosts the generated documentation
-#
-# Triggers:
-#   - Automatic: Push to 'main' branch (excluding .github/ changes)
-#   - Manual: workflow_dispatch for on-demand documentation regeneration
-#
-# Technology Stack:
-#   - Docusaurus 3.10: Site shell
-#   - TypeDoc + DefaultDocumentation + pydoc-markdown: Extractors
-#   - .NET 10.0: Required for building assemblies whose XML docs feed DefaultDocumentation
-#   - Python 3.12: Required for pydoc-markdown
-#   - Azure Static Web Apps: Global CDN hosting
-#
-# Security:
-#   - Uses OIDC for Azure authentication
-#   - Static Web Apps deployment token stored in GitHub Secrets
-#
-# Prerequisites:
-#   1. Docusaurus config in sites/docs.arolariu.ro/docusaurus.config.ts
-#   2. .NET solution with XML documentation enabled
-#   3. GitHub Secrets configured:
-#      - AZURE_STATIC_WEB_APPS_DOCS_TOKEN
-#
-# Output:
-#   - URL: https://docs.arolariu.ro
-#   - Content: Unified developer reference across three services
-# =============================================================================
+# Assemble TypeDoc, .NET, and Python reference output, build Docusaurus, then upload the docs to Azure Static Web Apps.
+# Runs on main pushes (with the path ignore below) or manual dispatch. A failed extraction or build blocks upload.
+# Uses AZURE_STATIC_WEB_APPS_DOCS_TOKEN; the deploy action does not use OIDC. Does not deploy the source services.
+# Validation: run npm run docs:assemble and npm run build:docs locally; manual dispatch targets live documentation.
 
 name: "official-docs-trigger"
 
 permissions:
-  id-token: write # Required for OIDC authentication with Azure
   contents: read # Required to checkout repository
 
 on:
@@ -74,7 +37,7 @@ jobs:
       url: "https://docs.arolariu.ro"
     steps:
       - name: 🛫 Checking out the branch inside the runner environment...
-        uses: actions/checkout@v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       - name: 📝 Display workflow context
         run: |
@@ -104,10 +67,13 @@ jobs:
       - name: 📦 Setup workspace
         uses: ./.github/actions/setup-workspace
         with:
-          dotnet: "true"
-          python: "true"
-          install-python-deps: "true"
+          node-install: "true"
+          node-deps-install: "true"
+          dotnet-install: "true"
+          python-install: "true"
+          python-deps-install: "true"
 
+      # The .NET extractor needs the API assembly graph and its local documentation tool.
       - name: "[DOCS::1/4] 🏗️ Installing documentation extractor dependencies..."
         run: |
           echo "::group::📦 Documentation Extractor Dependencies"
@@ -137,6 +103,7 @@ jobs:
           echo "|--------|-------|" >> $GITHUB_STEP_SUMMARY
           echo "| Duration | ${DURATION}s |" >> $GITHUB_STEP_SUMMARY
 
+      # This build checks generated links and prepares the static deployment layout.
       - name: "[DOCS::3/4] ⚙️ Building the Docusaurus documentation platform..."
         run: |
           echo "::group::📚 Docusaurus Build"
@@ -156,7 +123,7 @@ jobs:
           echo "| Output | sites/docs.arolariu.ro/build |" >> $GITHUB_STEP_SUMMARY
 
       - name: "[DOCS::4/4] 🚀 Deploying documentation..."
-        uses: Azure/static-web-apps-deploy@v1
+        uses: Azure/static-web-apps-deploy@1a947af9992250f3bc2e68ad0754c0b0c11566c9 # v1
         with:
           azure_static_web_apps_api_token: ${{ secrets.AZURE_STATIC_WEB_APPS_DOCS_TOKEN }}
           action: "upload"

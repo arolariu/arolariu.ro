@@ -1,8 +1,7 @@
-# =============================================================================
-# Status Probe Cron — polls /health endpoints every 30 min, commits aggregates
-# to the `status-data` orphan branch. Data is served to the status SWA via
-# raw.githubusercontent.com at runtime; no SWA rebuild is needed per probe.
-# =============================================================================
+# Probe live health endpoints, aggregate incidents, and push state to the status-data branch.
+# Runs twice an hour or manually, serialized to avoid overlapping writes. Contents write is for that branch push.
+# The status site reads this data at runtime; this workflow does not rebuild or deploy Azure Static Web Apps.
+# Validation: use a fixture DATA_DIR and isolated Git remote; manual dispatch writes the live branch.
 
 name: "official-status-probe"
 
@@ -43,12 +42,15 @@ jobs:
       GIT_COMMITTER_EMAIL: "41898282+github-actions[bot]@users.noreply.github.com"
     steps:
       - name: 🛫 Checkout main (site code + scripts)
-        uses: actions/checkout@v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           ref: main
 
       - name: 📦 Setup workspace
         uses: ./.github/actions/setup-workspace
+        with:
+          node-install: "true"
+          node-deps-install: "true"
 
       - name: 🌲 Prepare status-data worktree (fetch or bootstrap orphan branch)
         run: |
