@@ -75,7 +75,7 @@ jobs:
       name: ${{ steps.package-info.outputs.name }}
     steps:
       - name: 🛫 Checking out the branch inside the runner environment...
-        uses: actions/checkout@v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       - name: 📝 Display workflow context
         run: |
@@ -191,7 +191,7 @@ jobs:
       url: https://www.npmjs.com/package/${{ needs.validate.outputs.name }}
     steps:
       - name: 🛫 Checking out the branch inside the runner environment...
-        uses: actions/checkout@v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       - name: 📝 Display publish context
         run: |

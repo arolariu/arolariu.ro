@@ -80,7 +80,7 @@ jobs:
     timeout-minutes: 10
     steps:
       - name: 🛫 Checking out the branch inside the runner environment...
-        uses: actions/checkout@v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       - name: 📝 Display workflow context
         run: |
@@ -141,7 +141,7 @@ jobs:
     environment: ${{ inputs.environment || 'production' }}
     steps:
       - name: 🛫 Checking out the branch inside the runner environment...
-        uses: actions/checkout@v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       - name: 📝 Display build context
         run: |
@@ -158,7 +158,7 @@ jobs:
           echo "::endgroup::"
 
       - name: 🔒 Performing auth against Azure Public Cloud...
-        uses: azure/login@v3
+        uses: azure/login@a641126d1b8aa4d1fa005f4f92df94a3a4c4c906 # v3.1.0
         with:
           client-id: ${{ secrets.AZURE_CLIENT_ID }}
           tenant-id: ${{ secrets.AZURE_TENANT_ID }}
@@ -232,7 +232,7 @@ jobs:
 
     steps:
       - name: 🔒 Handling the auth process to Azure Public Cloud...
-        uses: azure/login@v3
+        uses: azure/login@a641126d1b8aa4d1fa005f4f92df94a3a4c4c906 # v3.1.0
         with:
           client-id: ${{ secrets.AZURE_CLIENT_ID }}
           tenant-id: ${{ secrets.AZURE_TENANT_ID }}
@@ -246,7 +246,7 @@ jobs:
 
       - name: ⚓ Deploying docker container to Azure App Service...
         id: deploy-to-webapp
-        uses: azure/webapps-deploy@v3
+        uses: azure/webapps-deploy@02a81bead70021f5284939794bcec79c271ab383 # v3.0.8
         env:
           CONTAINER_NAME: "exp/exp.arolariu"
           CONTAINER_TAG: ${{ github.sha }}

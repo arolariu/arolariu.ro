@@ -44,7 +44,7 @@ jobs:
       plan-id: ${{ steps.plan.outputs.plan-id }}
     steps:
       - name: 🛫 Checkout repository
-        uses: actions/checkout@v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0
           ref: ${{ env.HEAD_REF }}
@@ -67,7 +67,7 @@ jobs:
         run: node --experimental-strip-types src/hygiene/pipeline/preparePlan.ts --scope "$HYGIENE_SCOPE"
 
       - name: 📤 Upload shared hygiene plan
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: hygiene-plan
           path: artifacts/hygiene/plan.json
@@ -85,13 +85,13 @@ jobs:
       matrix: ${{ fromJSON(needs.detect.outputs.provider-matrix) }}
     steps:
       - name: 🛫 Checkout repository
-        uses: actions/checkout@v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0
           ref: ${{ env.HEAD_REF }}
 
       - name: 📥 Download shared hygiene plan
-        uses: actions/download-artifact@v6
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
           name: hygiene-plan
           path: artifacts/hygiene
@@ -131,7 +131,7 @@ jobs:
 
       - name: 📤 Upload outcome artifact
         if: always()
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: outcome-${{ matrix.provider.id }}
           path: artifacts/hygiene/outcome-${{ matrix.provider.id }}.json
@@ -146,7 +146,7 @@ jobs:
     timeout-minutes: 5
     steps:
       - name: 🛫 Checkout repository
-        uses: actions/checkout@v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 1
           ref: ${{ env.HEAD_REF }}
@@ -159,15 +159,16 @@ jobs:
           install-scripts-deps: "true"
 
       - name: 📥 Download shared hygiene plan
-        uses: actions/download-artifact@v6
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
           name: hygiene-plan
           path: artifacts/hygiene
 
       - name: 📥 Download outcome evidence with provenance
-        uses: actions/download-artifact@v6
-        # The verifier still runs on download failure so it can publish a
-        # required errored report for missing evidence, never a false pass.
+        id: download-outcomes
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        # A digest failure can leave extracted files behind. Run the verifier
+        # to publish an errored report, but do not trust those files.
         continue-on-error: true
         with:
           pattern: outcome-*
@@ -177,12 +178,13 @@ jobs:
       - name: 🎯 Run projections & gate
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          HYGIENE_OUTCOME_DOWNLOAD_FAILED: ${{ steps.download-outcomes.outcome == 'failure' && 'true' || 'false' }}
         working-directory: .github/scripts
         run: node --experimental-strip-types src/hygiene/pipeline/runProjections.ts --plan "$GITHUB_WORKSPACE/artifacts/hygiene/plan.json"
 
       - name: 📤 Upload aggregated hygiene report
         if: always()
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: hygiene-report
           path: |

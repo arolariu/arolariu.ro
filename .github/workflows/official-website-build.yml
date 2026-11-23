@@ -119,7 +119,7 @@ jobs:
     timeout-minutes: 60
     steps:
       - name: 🛫 Checking out the branch inside the runner environment...
-        uses: actions/checkout@v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       - name: 📝 Display workflow context
         run: |
@@ -140,7 +140,7 @@ jobs:
           echo "::endgroup::"
 
       - name: 🔒 Performing auth against Azure Public Cloud...
-        uses: Azure/login@v3
+        uses: Azure/login@a641126d1b8aa4d1fa005f4f92df94a3a4c4c906 # v3.1.0
         with:
           client-id: ${{ secrets.AZURE_CLIENT_ID }}
           tenant-id: ${{ secrets.AZURE_TENANT_ID }}
@@ -230,7 +230,7 @@ jobs:
 
       - name: 📤 Upload Test Reports
         if: always()
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: test-report-${{ inputs.environment || 'development' }}-${{ github.run_id }}
           path: sites/arolariu.ro/code-cov/
@@ -238,7 +238,7 @@ jobs:
           retention-days: 7
 
       - name: 💬 Create PR Comment
-        uses: actions/github-script@v8
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
         if: github.event_name == 'push' && github.ref == 'refs/heads/preview'
         env:
           PR_NUMBER: ${{ github.event.pull_request.number }}
@@ -260,7 +260,7 @@ jobs:
             await runUnitTestAction();
 
       - name: ☂️ Uploading code coverage report to CodeCov
-        uses: codecov/codecov-action@v7
+        uses: codecov/codecov-action@303a32d7a59b442fa8d48b6a1cc6825c09c847a5 # v7.1.1
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
           directory: "sites/arolariu.ro/code-cov"
@@ -273,7 +273,7 @@ jobs:
     environment: ${{ inputs.environment || 'development'}}
     steps:
       - name: 🛫 Checking out the branch inside the runner environment...
-        uses: actions/checkout@v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       - name: 📋 Display build context
         run: |
@@ -298,7 +298,7 @@ jobs:
           echo "::warning::Triggered by: ${{ github.actor }}"
 
       - name: 🔒 Performing auth against Azure Public Cloud...
-        uses: Azure/login@v3
+        uses: Azure/login@a641126d1b8aa4d1fa005f4f92df94a3a4c4c906 # v3.1.0
         with:
           client-id: ${{ secrets.AZURE_CLIENT_ID }}
           tenant-id: ${{ secrets.AZURE_TENANT_ID }}
