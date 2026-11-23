@@ -568,8 +568,8 @@ export function parseInvoicesResponse(value: unknown): readonly Invoice[] {
  *
  * @remarks
  * Additive backend properties on the product object are silently ignored.
- * The `allergenAssessment` and `category` fields are nullable —
- * absent or `null` values resolve to `null`.
+ * `allergenAssessment` may be absent or null. `category` must be present
+ * as a product category ID or null.
  *
  * @param value - The raw JSON product object.
  * @returns A validated {@link Product}.
