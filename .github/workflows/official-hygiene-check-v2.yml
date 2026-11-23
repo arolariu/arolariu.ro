@@ -59,9 +59,6 @@ jobs:
           node-deps-install: "true"
           node-scripts-install: "true"
 
-      - name: Check category catalog mirrors
-        run: npm exec --no -- vitest run category-catalog-parity.test.ts --coverage.enabled=false
-
       # Produce the single plan that drives both setup choices and expected evidence.
       - name: 🔎 Prepare validated hygiene plan
         id: plan

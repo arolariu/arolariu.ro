@@ -53,15 +53,8 @@ describe("plan-aware hygiene workflow contract", () => {
     expect(workflow.match(/^\s+name: hygiene-plan$/gm)).toHaveLength(3);
   });
 
-  it("checks the category mirrors once between setup and planning", () => {
-    const command = "npm exec --no -- vitest run category-catalog-parity.test.ts --coverage.enabled=false";
-    const detect = job("detect");
-    const setup = detect.indexOf('node-scripts-install: "true"');
-    const check = detect.indexOf(command);
-    expect(setup).toBeGreaterThanOrEqual(0);
-    expect(check).toBeGreaterThan(setup);
-    expect(check).toBeLessThan(detect.indexOf("id: plan"));
-    expect(workflow.split(command)).toHaveLength(2);
+  it("leaves category parity to the unit-test provider", () => {
+    expect(workflow).not.toContain("category-catalog-parity.test.ts");
     expect(workflow).not.toMatch(/^  schedule:/m);
   });
 });
@@ -69,14 +62,8 @@ describe("plan-aware hygiene workflow contract", () => {
 describe("API category catalog workflow contract", () => {
   const workflow = readFileSync(resolve(ciRoot, "..", "workflows", "official-api-trigger.yml"), "utf8");
 
-  it("runs one shared API catalog integrity check from the checkout root", () => {
-    const jobs = workflow.replaceAll("\r\n", "\n").split(/^  (?=test:|build-local:|build-azure:|deploy-azure:)/mu);
-    const test = jobs.find((job) => job.startsWith("test:"));
-    expect(test).toMatch(/^      - &verify_catalog_assets\n(?:        .*\n)*?        working-directory: \.\n        run: \|$/mu);
-    expect(test).toContain("npm exec --no -- vitest run category-catalog-parity.test.ts --coverage.enabled=false");
-    for (const name of ["build-local:", "build-azure:"]) {
-      expect(jobs.find((job) => job.startsWith(name))).toMatch(/^      - \*verify_catalog_assets$/mu);
-    }
+  it("does not run website catalog checks in API validation or packaging", () => {
+    expect(workflow).not.toMatch(/category-catalog-parity\.test\.ts|--check-taxonomies/u);
   });
 });
 
