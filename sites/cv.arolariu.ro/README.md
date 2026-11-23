@@ -78,10 +78,10 @@ runs its `build` script. The small `api/build.mjs` configuration bundles the CV 
 production dependencies into `build/server`. Register ordinary Functions here; adding SvelteKit `+server.ts` routes does not deploy an API.
 The static adapter remains strict.
 
-`static/staticwebapp.config.json` owns `/rest/json` compatibility rewrites and requests the experimental `node:26` managed runtime.
-[SWA's managed-runtime matrix](https://learn.microsoft.com/en-us/azure/static-web-apps/languages-runtimes#api) currently lists Node versions
-only through 22, so Azure deployment acceptance remains unverified. If Azure rejects it, restore `platform.apiRuntime` to `node:22`.
-CI/build versions and the Node 22-compatible bundle remain unchanged.
+`static/staticwebapp.config.json` owns `/rest/json` compatibility rewrites and selects the supported `node:22` managed runtime. Runtime
+selection follows [SWA's managed-runtime matrix](https://learn.microsoft.com/en-us/azure/static-web-apps/languages-runtimes#api); newer
+standalone Azure Functions runtimes do not imply SWA managed-runtime support. CI/build versions and the Node 22-compatible bundle remain
+unchanged.
 
 Static deep links are prerendered; unknown URLs retain HTTP 404 with a small static error page. The API handler retains its JSON errors,
 queries, CORS/cache headers and ETags. Raw resume ETags can change between cold instances because existing data includes a module-load

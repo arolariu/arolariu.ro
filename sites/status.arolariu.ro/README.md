@@ -34,10 +34,9 @@ compatible with the configured managed runtime, `host.json`, a runtime manifest 
 build. Add API-specific checks, tests and a Dependabot owner with the real API. SvelteKit `+server.ts` routes are not deployed
 automatically.
 
-`static/staticwebapp.config.json` requests the experimental `node:26` managed runtime without introducing an API.
-[SWA's managed-runtime matrix](https://learn.microsoft.com/en-us/azure/static-web-apps/languages-runtimes#api) currently lists Node versions
-only through 22, so Azure deployment acceptance remains unverified. If Azure rejects it, restore `platform.apiRuntime` to `node:22`.
-CI/build versions remain unchanged.
+`static/staticwebapp.config.json` selects the supported `node:22` managed runtime for future APIs without introducing an API. Runtime
+selection follows [SWA's managed-runtime matrix](https://learn.microsoft.com/en-us/azure/static-web-apps/languages-runtimes#api); CI/build
+versions remain unchanged.
 
 The pipeline checks types and unit gates, builds the frontend and optional API explicitly in CI, then uploads those artifacts with both SWA
 build skips enabled. It keeps the existing token, GitHub Environment and Free resource; there are no staging environments, deployment slots,
