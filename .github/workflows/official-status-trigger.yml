@@ -1,40 +1,13 @@
-# =============================================================================
-# Status Website Build and Deployment Workflow
-# =============================================================================
-# This workflow handles the CI/CD pipeline for the Status website
-# (status.arolariu.ro), built with SvelteKit and deployed to Azure Static Web Apps.
-#
-# Architecture:
-#   - Tests gate the direct build-and-deploy job
-#   - Static Generation: SvelteKit builds static files for optimal performance
-#   - Serverless: Deployed to Azure Static Web Apps (global CDN included)
-#
-# Triggers:
-#   - Automatic: Push to 'main' branch with changes in sites/status.arolariu.ro/
-#   - Manual: workflow_dispatch for on-demand deployments
-#
-# Technology Stack:
-#   - SvelteKit with the official static adapter; optional direct managed APIs
-#   - Node.js 24 for build environment
-#   - Azure Static Web Apps for hosting
-#
-# Security:
-#   - Deploy auth: SWA deployment token (AZURE_STATIC_WEB_APPS_STATUS_TOKEN)
-#     stored in GitHub Secrets. Not OIDC.
-#
-# Prerequisites:
-#   1. Azure Static Web Apps resource provisioned
-#   2. GitHub Secrets configured:
-#      - AZURE_STATIC_WEB_APPS_STATUS_TOKEN
-#
-# Output:
-#   - URL: https://status.arolariu.ro
-# =============================================================================
+# Test and package the Status site. LOCAL uploads a build artifact; Azure deploys the prebuilt payload.
+# Runs on main pushes touching the status site or on manual dispatch; serializes Azure runs by target.
+# Uses AZURE_STATIC_WEB_APPS_STATUS_TOKEN, not OIDC. Does not run probes or write to the status-data branch.
+# Manual runs from main can pin all source checkouts to an optional full commit SHA.
+# Validation: dispatch from main with infrastructure=local to build without deploying.
 
 name: "official-status-trigger"
 
 concurrency:
-  group: deploy-status
+  group: ${{ inputs.infrastructure == 'local' && format('status-local-{0}', github.run_id) || 'deploy-status' }}
   cancel-in-progress: false
 
 permissions:
@@ -50,27 +23,82 @@ on:
     branches: ["main"]
     paths: ["sites/status.arolariu.ro/**"]
 
-  # Manual trigger for on-demand deployments
+  # Manual trigger for artifact-only builds or controlled deployments
   workflow_dispatch:
     inputs:
+      commit_sha:
+        description: "Optional full commit SHA from main history. Dispatch from main; blank uses the dispatch commit."
+        required: false
+        type: string
+        default: ""
+      infrastructure:
+        description: "'local' uploads a site artifact without Azure; 'azure' deploys it."
+        options:
+          - "local"
+          - "azure"
+        default: "azure"
+        type: choice
       environment:
-        description: "Target environment for deployment"
+        description: "Azure deployment environment; ignored for local builds."
         options:
           - "production"
         default: "production"
         type: choice
 
-env:
-  COMMIT_SHA: ${{ github.sha }}
-
 jobs:
+  revision:
+    name: Resolve deployment revision
+    if: github.repository == 'arolariu/arolariu.ro'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+    outputs:
+      source_sha: ${{ steps.resolve.outputs.source_sha }}
+    steps:
+      # Only read the trusted dispatch checkout; inspect the requested commit without executing it.
+      - name: Checkout trusted workflow revision and main history
+        if: github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main'
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Validate and select source commit
+        id: resolve
+        working-directory: .
+        shell: bash
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          DISPATCH_REF: ${{ github.ref }}
+          DISPATCH_SHA: ${{ github.sha }}
+          REQUESTED_SHA: ${{ inputs.commit_sha }}
+        run: |
+          if [[ "$EVENT_NAME" == push ]]; then
+            source_sha=$DISPATCH_SHA
+          elif [[ "$DISPATCH_REF" == refs/heads/main ]]; then
+            source_sha=$(bash .github/scripts/resolve-deploy-revision.sh node-install node-deps-install)
+          else
+            echo "::error::Manual deployments must be dispatched from main."
+            exit 1
+          fi
+          printf 'source_sha=%s\n' "$source_sha" >> "$GITHUB_OUTPUT"
+          printf 'Source commit: `%s`\n' "$source_sha" >> "$GITHUB_STEP_SUMMARY"
+
   test:
     if: github.repository == 'arolariu/arolariu.ro'
     name: 🧪 Testing the Status platform...
+    needs: revision
     runs-on: ubuntu-latest
+    env:
+      COMMIT_SHA: ${{ needs.revision.outputs.source_sha }}
+      INFRASTRUCTURE: ${{ inputs.infrastructure || 'azure' }}
     steps:
       - name: 🛫 Checking out the branch inside the runner environment...
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ needs.revision.outputs.source_sha }}
 
       - name: 📝 Display workflow context
         run: |
@@ -80,8 +108,8 @@ jobs:
           echo "├────────────────────────────────────────────────────────────┤"
           echo "│ 📦 Job:           Test phase                               │"
           echo "│ 🌍 Framework:     SvelteKit                                │"
-          echo "│ 🎯 Target:        Azure Static Web Apps                    │"
-          echo "│ 🏷️ Commit SHA:    ${{ github.sha }}"
+          echo "│ 🎯 Infrastructure: $INFRASTRUCTURE                    │"
+          echo "│ 🏷️ Commit SHA:    $COMMIT_SHA"
           echo "│ 👤 Triggered by:  ${{ github.actor }}"
           echo "│ 📅 Timestamp:     $(date -u '+%Y-%m-%d %H:%M:%S UTC')"
           echo "│ 🔗 Run ID:        ${{ github.run_id }}"
@@ -94,8 +122,7 @@ jobs:
           echo "| Parameter | Value |" >> $GITHUB_STEP_SUMMARY
           echo "|-----------|-------|" >> $GITHUB_STEP_SUMMARY
           echo "| Framework | SvelteKit |" >> $GITHUB_STEP_SUMMARY
-          echo "| Target | Azure Static Web Apps |" >> $GITHUB_STEP_SUMMARY
-          echo "| URL | https://status.arolariu.ro |" >> $GITHUB_STEP_SUMMARY
+          echo "| Infrastructure | $INFRASTRUCTURE |" >> $GITHUB_STEP_SUMMARY
 
       - name: 📦 Setup workspace
         uses: ./.github/actions/setup-workspace
@@ -123,61 +150,34 @@ jobs:
           echo "|--------|-------|" >> $GITHUB_STEP_SUMMARY
           echo "| Duration | ${DURATION}s |" >> $GITHUB_STEP_SUMMARY
 
-  build-and-deploy:
-    if: github.repository == 'arolariu/arolariu.ro' && needs.test.result == 'success'
-    needs: test
-    name: 🚀 Building and deploying the Status platform (status.arolariu.ro)...
+  build-local:
+    if: github.repository == 'arolariu/arolariu.ro' && github.event_name == 'workflow_dispatch' && inputs.infrastructure == 'local'
+    name: Build and export the LOCAL Status site
+    needs: [revision, test]
     runs-on: ubuntu-latest
-    environment:
-      name: "status"
-      url: "https://status.arolariu.ro"
-    steps:
-      - name: 🛫 Checking out the branch inside the runner environment...
+    env:
+      COMMIT_SHA: ${{ needs.revision.outputs.source_sha }}
+      INFRASTRUCTURE: local
+    # Both modes build the same payload from the selected checkout; only Azure has a deploy job.
+    steps: &build_steps
+      - name: Checkout the selected source commit
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ needs.revision.outputs.source_sha }}
+          persist-credentials: false
 
-      - name: 📋 Display deployment context
-        run: |
-          echo "::group::🔍 Deployment Context"
-          echo "┌────────────────────────────────────────────────────────────┐"
-          echo "│ 🚀 STATUS WEBSITE DEPLOYMENT                               │"
-          echo "├────────────────────────────────────────────────────────────┤"
-          echo "│ 🎯 Target:        Azure Static Web Apps                    │"
-          echo "│ 🔗 URL:           https://status.arolariu.ro               │"
-          echo "│ 📅 Timestamp:     $(date -u '+%Y-%m-%d %H:%M:%S UTC')"
-          echo "└────────────────────────────────────────────────────────────┘"
-          echo "::endgroup::"
-
-      - name: 📦 Setup workspace
+      - name: Set up the workspace
         uses: ./.github/actions/setup-workspace
         with:
           node-install: "true"
           node-deps-install: "true"
 
-      - name: 📦 Prepare and build...
-        working-directory: "./sites/status.arolariu.ro"
+      - name: Build the static site
         run: |
-          echo "::group::🏗️ Building Status Website"
-          echo "📍 Framework: SvelteKit"
-          echo "📍 Adapter: official static adapter"
-          echo ""
-          START_TIME=$(date +%s)
           npm run prepare
           npm run build
-          END_TIME=$(date +%s)
-          DURATION=$((END_TIME - START_TIME))
-          echo ""
-          echo "::notice::✅ Build completed in ${DURATION}s"
-          echo "::endgroup::"
 
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "### 🏗️ Build Results" >> $GITHUB_STEP_SUMMARY
-          echo "| Metric | Value |" >> $GITHUB_STEP_SUMMARY
-          echo "|--------|-------|" >> $GITHUB_STEP_SUMMARY
-          echo "| Duration | ${DURATION}s |" >> $GITHUB_STEP_SUMMARY
-          echo "| Output | build/static |" >> $GITHUB_STEP_SUMMARY
-
-      - name: Build an optional managed API
-        id: api
+      - name: Build the optional managed API
         run: |
           rm -rf build/server
           if [ -e api ]; then
@@ -185,17 +185,126 @@ jobs:
             npm run build --prefix api
             test -s build/server/host.json
             test -s build/server/package.json
-            echo "api_location=./sites/status.arolariu.ro/build/server" >> "$GITHUB_OUTPUT"
           fi
 
-      - name: "🚀 Deploying Status website..."
+      - name: Package the prebuilt site and API
+        id: package
+        shell: bash
+        run: |
+          test -s build/static/index.html
+          test -s build/static/staticwebapp.config.json
+          entries=(static)
+          has_api=false
+          if [[ -d build/server ]]; then
+            test -s build/server/host.json
+            test -s build/server/package.json
+            entries+=(server)
+            has_api=true
+          fi
+          output="$RUNNER_TEMP/swa-package"
+          mkdir -p "$output"
+          tar -czf "$output/status-site.tar.gz" -C build "${entries[@]}"
+          cd "$output"
+          digest=$(sha256sum "status-site.tar.gz")
+          printf '%s\n' "$digest" > "status-site.tar.gz.sha256"
+          printf 'sha256=%s\nhas_api=%s\n' "${digest%% *}" "$has_api" >> "$GITHUB_OUTPUT"
+          printf 'Packaged source \x60%s\x60 for %s (managed API: %s).\n' "$COMMIT_SHA" "$INFRASTRUCTURE" "$has_api" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload the prebuilt site archive and checksum
+        id: upload-site
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: status-${{ env.INFRASTRUCTURE }}-site-${{ needs.revision.outputs.source_sha }}-${{ github.run_attempt }}
+          path: |
+            ${{ runner.temp }}/swa-package/status-site.tar.gz
+            ${{ runner.temp }}/swa-package/status-site.tar.gz.sha256
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 7
+
+  build-azure:
+    if: github.repository == 'arolariu/arolariu.ro' && (inputs.infrastructure || 'azure') == 'azure'
+    name: Build the Status site for Azure
+    needs: [revision, test]
+    runs-on: ubuntu-latest
+    env:
+      COMMIT_SHA: ${{ needs.revision.outputs.source_sha }}
+      INFRASTRUCTURE: azure
+    outputs:
+      artifact_id: ${{ steps.upload-site.outputs.artifact-id }}
+      sha256: ${{ steps.package.outputs.sha256 }}
+      has_api: ${{ steps.package.outputs.has_api }}
+    steps: *build_steps
+
+  deploy-azure:
+    if: github.repository == 'arolariu/arolariu.ro' && (inputs.infrastructure || 'azure') == 'azure'
+    name: Deploy the Status site to Azure Static Web Apps
+    needs: build-azure
+    runs-on: ubuntu-latest
+    environment:
+      name: "status"
+      url: "https://status.arolariu.ro"
+    defaults:
+      run:
+        working-directory: .
+    steps:
+      - name: Confirm the build produced an artifact ID
+        shell: bash
+        env:
+          ARTIFACT_ID: ${{ needs.build-azure.outputs.artifact_id }}
+        run: |
+          if [[ ! "$ARTIFACT_ID" =~ ^[0-9]+$ ]]; then
+            echo "::error::The Azure build did not produce an artifact ID; rerun the build job."
+            exit 1
+          fi
+
+      - name: Download the exact Azure build artifact
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          artifact-ids: ${{ needs.build-azure.outputs.artifact_id }}
+          path: ${{ runner.temp }}/swa-package
+
+      - name: Verify and extract the prebuilt payload
+        id: payload
+        shell: bash
+        env:
+          EXPECTED_SHA256: ${{ needs.build-azure.outputs.sha256 }}
+          HAS_API: ${{ needs.build-azure.outputs.has_api }}
+        run: |
+          cd "$RUNNER_TEMP/swa-package"
+          test -s "status-site.tar.gz"
+          [[ "$EXPECTED_SHA256" =~ ^[0-9a-f]{64}$ ]]
+          printf '%s  %s\n' "$EXPECTED_SHA256" "status-site.tar.gz" | sha256sum --check
+          [[ "$HAS_API" == true || "$HAS_API" == false ]]
+          tar -tzf "status-site.tar.gz" > entries.txt
+          if grep -Eq '(^|/)\.\.(/|$)|^/' entries.txt || grep -Evq '^(static|server)(/|$)' entries.txt; then
+            echo "::error::Unexpected path in the site archive."
+            exit 1
+          fi
+          mkdir "$GITHUB_WORKSPACE/swa-payload"
+          tar -xzf "status-site.tar.gz" -C "$GITHUB_WORKSPACE/swa-payload"
+          cd "$GITHUB_WORKSPACE/swa-payload"
+          test -s static/index.html
+          test -s static/staticwebapp.config.json
+          api_location=""
+          if [[ "$HAS_API" == true ]]; then
+            test -s server/host.json
+            test -s server/package.json
+            api_location=./swa-payload/server
+          else
+            test ! -e server
+          fi
+          printf 'api_location=%s\n' "$api_location" >> "$GITHUB_OUTPUT"
+
+      # SWA uploads exactly the files built before this job entered the deployment environment.
+      - name: Deploy the prebuilt Status site
         uses: Azure/static-web-apps-deploy@4d27395796ac319302594769cfe812bd207490b1 # upstream commit; supports skip_api_build (not the v1 tag)
         with:
           azure_static_web_apps_api_token: ${{ secrets.AZURE_STATIC_WEB_APPS_STATUS_TOKEN }}
           repo_token: ${{ secrets.GITHUB_TOKEN }}
           action: "upload"
-          app_location: "./sites/status.arolariu.ro/build/static"
-          api_location: ${{ steps.api.outputs.api_location }}
+          app_location: "./swa-payload/static"
+          api_location: ${{ steps.payload.outputs.api_location }}
           output_location: ""
           skip_app_build: true
           skip_api_build: true

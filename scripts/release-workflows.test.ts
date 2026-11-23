@@ -66,12 +66,15 @@ describe("components release handoff", () => {
 });
 
 describe("manual deployment revision contract", () => {
-  it.each(["api", "exp"])("pins %s test and build checkouts to the same resolved commit", (target) => {
+  it.each(["api", "cv", "status", "exp"])("pins %s test and build checkouts to the same resolved commit", (target) => {
     const workflow = readFileSync(join(workflows, `official-${target}-trigger.yml`), "utf8");
     expect(workflow).toMatch(/workflow_dispatch:\r?\n    inputs:\r?\n      commit_sha:\r?\n(?:        .*\r?\n)*?        required: false/u);
     expect(workflow).toContain("contents: read");
     expect(workflow).toContain("REQUESTED_SHA: ${{ inputs.commit_sha }}");
-    expect(workflow.match(/ref: \$\{\{ needs\.revision\.outputs\.source_sha \}\}/gu)).toHaveLength(3);
+    // The CV and status build jobs share an anchored checkout step.
+    expect(workflow.match(/ref: \$\{\{ needs\.revision\.outputs\.source_sha \}\}/gu)).toHaveLength(
+      target === "api" || target === "exp" ? 3 : 2,
+    );
     expect(workflow).toContain("needs: [revision, test]");
   });
 
@@ -126,6 +129,98 @@ describe("manual deployment revision contract", () => {
         expect(local).toContain("--build-arg INFRA=local");
         expect(local).not.toMatch(/--build-arg AZURE_|--secret/u);
       }
+    });
+
+    describe("CV and status static site delivery", () => {
+      it.each(["cv", "status"])("keeps %s tests independent and only deploys the Azure build's verified payload", (site) => {
+        const workflow = readFileSync(join(workflows, `official-${site}-trigger.yml`), "utf8").replaceAll("\r\n", "\n");
+        const [, testJob, local, build, deploy] = workflow.split(/^  (?:test|build-local|build-azure|deploy-azure):$/mu);
+        expect(workflow).toMatch(/      infrastructure:\n(?:        .*\n)*?        default: "azure"/u);
+        expect(testJob).toContain("needs: revision");
+        expect(testJob).toContain("npm run test:unit");
+        expect(local).toContain("github.event_name == 'workflow_dispatch' && inputs.infrastructure == 'local'");
+        expect(local).toContain("needs: [revision, test]");
+        expect(local).toContain("steps: &build_steps");
+        expect(local).toContain("ref: ${{ needs.revision.outputs.source_sha }}");
+        expect(local).not.toMatch(/^\s+environment:|secrets\.|azure\/static-web-apps-deploy@/imu);
+        expect(build).toContain("(inputs.infrastructure || 'azure') == 'azure'");
+        expect(build).toContain("needs: [revision, test]");
+        expect(build).toContain("steps: *build_steps");
+        expect(build).not.toMatch(/^\s+environment:|secrets\./mu);
+        expect(deploy).toContain("needs: build-azure");
+        expect(deploy).toContain("(inputs.infrastructure || 'azure') == 'azure'");
+        expect(deploy).toContain("artifact-ids: ${{ needs.build-azure.outputs.artifact_id }}");
+        expect(deploy).toContain("sha256sum --check");
+        expect(deploy).toContain("skip_app_build: true");
+        expect(deploy).toContain("skip_api_build: true");
+        expect(deploy).not.toMatch(/actions\/checkout@|npm (?:ci|run build)/u);
+        expect(workflow).toContain(`'deploy-${site}'`);
+        expect(workflow).toContain("github.run_id");
+      });
+
+      it.each(["cv", "status"])("rejects a bad %s artifact before it can expose a deployment path", (site) => {
+        const workflow = readFileSync(join(workflows, `official-${site}-trigger.yml`), "utf8").replaceAll("\r\n", "\n");
+        const step = workflow.split("name: Verify and extract the prebuilt payload")[1]?.split(/^      - name:/mu)[0];
+        const script = step?.split("        run: |")[1]?.replace(/^ {10}/gmu, "");
+        if (!script) throw new Error("Missing site payload verification script");
+        const root = mkdtempSync(join(tmpdir(), "swa-artifact-"));
+        try {
+          const downloads = join(root, "swa-package");
+          const payload = join(root, "build");
+          const archive = join(downloads, `${site}-site.tar.gz`);
+          const output = join(root, "outputs");
+          mkdirSync(downloads);
+          mkdirSync(join(payload, "static", ".well-known"), {recursive: true});
+          writeFileSync(join(payload, "static", "index.html"), "fixture");
+          writeFileSync(join(payload, "static", "staticwebapp.config.json"), "{}");
+          writeFileSync(join(payload, "static", ".well-known", "fixture"), "retained");
+          const bashPath = (file: string): string => file.replaceAll("\\", "/");
+          const pack = (...entries: string[]): void => {
+            execFileSync(bash, ["-ec", 'tar -czf "$1" -C build "${@:2}"', "pack", `swa-package/${site}-site.tar.gz`, ...entries], {
+              cwd: root,
+            });
+          };
+          const verify = (hasApi: string, hash = "0".repeat(64), workspace = root) =>
+            spawnSync(bash, ["-eo", "pipefail", "-s"], {
+              encoding: "utf8",
+              input: script,
+              env: {
+                ...process.env,
+                RUNNER_TEMP: bashPath(root),
+                GITHUB_WORKSPACE: bashPath(workspace),
+                GITHUB_OUTPUT: bashPath(output),
+                EXPECTED_SHA256: hash,
+                HAS_API: hasApi,
+              },
+            });
+          expect(verify("false").status).not.toBe(0);
+          pack("static");
+          expect(verify("false").status).not.toBe(0);
+          const digest = (): string => createHash("sha256").update(readFileSync(archive)).digest("hex");
+          if (site === "cv") {
+            expect(verify("false", digest()).status).not.toBe(0);
+          } else {
+            const staticOnly = join(root, "static-only");
+            mkdirSync(staticOnly);
+            const result = verify("false", digest(), staticOnly);
+            expect(result.status, result.stderr).toBe(0);
+            expect(readFileSync(output, "utf8").trim()).toBe("api_location=");
+            rmSync(output);
+          }
+          mkdirSync(join(payload, "server", "node_modules", "fixture"), {recursive: true});
+          writeFileSync(join(payload, "server", "host.json"), "{}");
+          writeFileSync(join(payload, "server", "package.json"), "{}");
+          writeFileSync(join(payload, "server", "node_modules", "fixture", "index.js"), "retained");
+          pack("static", "server");
+          const result = verify("true", digest());
+          expect(result.status, result.stderr).toBe(0);
+          expect(readFileSync(output, "utf8").trim()).toBe("api_location=./swa-payload/server");
+          expect(readFileSync(join(root, "swa-payload", "static", ".well-known", "fixture"), "utf8")).toBe("retained");
+          expect(readFileSync(join(root, "swa-payload", "server", "node_modules", "fixture", "index.js"), "utf8")).toBe("retained");
+        } finally {
+          rmSync(root, {recursive: true, force: true});
+        }
+      });
     });
   });
 
