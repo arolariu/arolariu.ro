@@ -33,6 +33,10 @@
 
 name: "official-status-trigger"
 
+concurrency:
+  group: deploy-status
+  cancel-in-progress: false
+
 permissions:
   contents: read # Required to checkout repository
 
@@ -121,9 +125,6 @@ jobs:
     needs: test
     name: 🚀 Building and deploying the Status platform (status.arolariu.ro)...
     runs-on: ubuntu-latest
-    concurrency:
-      group: deploy-status
-      cancel-in-progress: false
     environment:
       name: "status"
       url: "https://status.arolariu.ro"

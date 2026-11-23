@@ -32,6 +32,10 @@
 
 name: "official-cv-trigger"
 
+concurrency:
+  group: deploy-cv
+  cancel-in-progress: false
+
 permissions:
   contents: read # Required to checkout repository
 
@@ -123,9 +127,6 @@ jobs:
     needs: test
     name: 🚀 Building and deploying the CV platform (cv.arolariu.ro)...
     runs-on: ubuntu-latest
-    concurrency:
-      group: deploy-cv
-      cancel-in-progress: false
     environment:
       name: "cv-resume"
       url: "https://cv.arolariu.ro"
