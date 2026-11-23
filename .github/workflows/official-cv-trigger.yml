@@ -33,7 +33,6 @@
 name: "official-cv-trigger"
 
 permissions:
-  id-token: write
   contents: read # Required to checkout repository
 
 defaults:
