@@ -55,7 +55,7 @@ using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Products;
 /// <code>
 /// var request = new CreateProductRequestDto(
 ///     Name: "Milk 1L (LAPTE ZUZU)",
-///     Category: ProductCategory.FreshFruit,
+///     Category: ProductCategory.Milk,
 ///     Quantity: 2,
 ///     QuantityUnit: "buc",
 ///     ProductCode: "5941234567890",
