@@ -30,12 +30,10 @@ that one job needs to open an issue.
 
 **Live least-privilege drift, not templates:**
 
-- API and experimental-service workflows grant `id-token: write` at workflow scope even though their `test` jobs never call `azure/login`.
 - The website build grants `issues: write`/`pull-requests: write` at workflow scope although only the `test` job's PR-comment step uses
   them.
 - Components publishing grants OIDC/attestation capabilities to its validation job even though publishing owns those capabilities.
 - The hygiene workflow grants PR/check writes to every job even though only reporting/gating needs them.
-- CV and documentation grant `id-token: write` despite using Static Web Apps token secrets and never calling `azure/login`.
 
 Do not copy these broad blocks. Narrowing them is a workflow security change and remains approval-gated.
 
@@ -99,10 +97,7 @@ These are long-lived deployment-token secrets, not OIDC. Do not describe them as
 workflow, or expose the value in logs. Replacing this current authentication path is a workflow and security design change that requires
 explicit approval.
 
-**Live drift, not a template:** the CV and documentation workflows still describe Azure OIDC in header comments and grant `id-token: write`,
-while their deploy steps use Static Web Apps deployment tokens. Do not copy that mismatch into new workflows or infer that the token
-deployment consumes the OIDC permission. Removing the permission/comment or changing the authentication path is a workflow security change
-and remains approval-gated.
+The CV, documentation, and status workflows do not grant `id-token: write`; their Static Web Apps uploads use deployment tokens.
 
 ## Actions and pinned versions
 

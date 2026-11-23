@@ -6,7 +6,6 @@
 name: "official-docs-trigger"
 
 permissions:
-  id-token: write # Existing workflow grant; the token-based SWA upload below does not use OIDC.
   contents: read # Required to checkout repository
 
 on:

@@ -26,6 +26,14 @@ describe("Copilot setup workflow", () => {
   });
 });
 
+describe("docs deployment workflow", () => {
+  it("uses the Static Web Apps deployment token without granting OIDC", () => {
+    const workflow = readFileSync(join(workflows, "official-docs-trigger.yml"), "utf8");
+    expect(workflow).not.toMatch(/^\s+id-token:\s*write/mu);
+    expect(workflow).toContain("azure_static_web_apps_api_token: ${{ secrets.AZURE_STATIC_WEB_APPS_DOCS_TOKEN }}");
+  });
+});
+
 describe("components release handoff", () => {
   it("publishes the tested tarball by same-run artifact ID without a second build", () => {
     const workflow = readFileSync(join(workflows, "official-components-publish.yml"), "utf8");
