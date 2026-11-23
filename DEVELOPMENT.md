@@ -383,6 +383,11 @@ The initial cutover assumes fresh invoice and merchant stores, empty analysis qu
 automatic migration or legacy reader. Release matched API and website artifacts with writes paused. A rollback to the previous contract
 needs an empty store; a live reset or release requires separate approval.
 
+Do not merge the initial cutover into `preview` until the release owner has verified a hold on the automatic development website release (or
+an approved procedure that switches it together with the matching API and worker). A `preview` push builds and releases the website; it does
+not deploy the API. Do not mix the contracts, including during an API-only rollback: the earlier API does not understand category-only
+writes. Verify the pair, paused writes, fresh stores, empty queues and browser state before lifting the hold.
+
 ### Root tooling scripts
 
 Every root script under `scripts/` — setup, doctor, status, the generators, documentation assembly, exchange rates, E2E, the
