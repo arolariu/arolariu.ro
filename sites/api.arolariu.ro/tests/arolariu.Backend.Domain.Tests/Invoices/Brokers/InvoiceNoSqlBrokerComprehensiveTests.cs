@@ -462,8 +462,38 @@ public sealed partial class CosmosDatabaseBrokerComprehensiveTests : CosmosDatab
 
   #region UpdateInvoiceAsync Tests
 
+  private const string ObservedInvoiceRevision = "\"invoice-revision\"";
+
+  /// <summary>A regular invoice edit rejects a newer product or analysis write instead of overwriting it.</summary>
+  [TestMethod]
+  public async Task UpdateInvoiceAsync_ObservedVersionChanged_RejectsStaleWrite()
+  {
+    var invoice = InvoiceBuilder.CreateRandomInvoice();
+    var partition = new PartitionKey(invoice.UserIdentifier.ToString());
+    const string observed = "\"before\"";
+    var before = new Mock<ItemResponse<Invoice>>();
+    before.SetupGet(response => response.Resource).Returns(invoice);
+    before.SetupGet(response => response.ETag).Returns(observed);
+    mockInvoicesContainer.Setup(container => container.ReadItemAsync<Invoice>(
+      invoice.id.ToString(), partition, null, CancellationToken.None)).ReturnsAsync(before.Object);
+    mockInvoicesContainer.Setup(container => container.UpsertItemAsync(
+      invoice, partition, It.IsAny<ItemRequestOptions>(), CancellationToken.None)).ReturnsAsync(before.Object);
+    mockInvoicesContainer.Setup(container => container.ReplaceItemAsync(
+      invoice, invoice.id.ToString(), partition, It.Is<ItemRequestOptions>(options => options.IfMatchEtag == observed),
+      CancellationToken.None)).ThrowsAsync(new CosmosException("Previous revision", System.Net.HttpStatusCode.PreconditionFailed, 0, "", 0));
+
+    Invoice? edited = await invoiceNoSqlBroker.ReadInvoiceAsync(invoice.id, invoice.UserIdentifier, CancellationToken.None);
+    Assert.IsNotNull(edited);
+    edited.Name = "Edited receipt";
+
+    await Assert.ThrowsExactlyAsync<InvoiceAlreadyExistsException>(
+      () => invoiceNoSqlBroker.UpdateInvoiceAsync(invoice.id, edited, CancellationToken.None).AsTask());
+    mockInvoicesContainer.Verify(container => container.UpsertItemAsync(
+      It.IsAny<Invoice>(), It.IsAny<PartitionKey?>(), It.IsAny<ItemRequestOptions>(), It.IsAny<CancellationToken>()), Times.Never);
+  }
+
   /// <summary>
-  /// Verifies updating an invoice by identifier uses upsert and returns updated invoice.
+  /// Verifies updating an invoice by identifier uses its revision and returns the saved invoice.
   /// </summary>
   [TestMethod]
   [DynamicData(nameof(GetInvoiceTestData))]
@@ -476,14 +506,16 @@ public sealed partial class CosmosDatabaseBrokerComprehensiveTests : CosmosDatab
       id: originalInvoice.id,
       userIdentifier: originalInvoice.UserIdentifier,
       name: "Updated Invoice Name");
+    updatedInvoice.StorageETag = ObservedInvoiceRevision;
 
     var itemResponseMock = new Mock<ItemResponse<Invoice>>();
     itemResponseMock.Setup(response => response.Resource).Returns(updatedInvoice);
 
-    mockInvoicesContainer.Setup(container => container.UpsertItemAsync(
+    mockInvoicesContainer.Setup(container => container.ReplaceItemAsync(
         updatedInvoice,
+        updatedInvoice.id.ToString(),
         new PartitionKey(updatedInvoice.UserIdentifier.ToString()),
-        It.IsAny<ItemRequestOptions>(),
+        It.Is<ItemRequestOptions>(options => options.IfMatchEtag == ObservedInvoiceRevision),
         It.IsAny<System.Threading.CancellationToken>()
       ))
       .ReturnsAsync(itemResponseMock.Object);
@@ -496,16 +528,17 @@ public sealed partial class CosmosDatabaseBrokerComprehensiveTests : CosmosDatab
     Assert.AreEqual(updatedInvoice.id, actualInvoice.id);
     Assert.AreEqual("Updated Invoice Name", actualInvoice.Name);
 
-    mockInvoicesContainer.Verify(container => container.UpsertItemAsync(
+    mockInvoicesContainer.Verify(container => container.ReplaceItemAsync(
         updatedInvoice,
+        updatedInvoice.id.ToString(),
         It.IsAny<PartitionKey?>(),
-        It.IsAny<ItemRequestOptions>(),
+        It.Is<ItemRequestOptions>(options => options.IfMatchEtag == ObservedInvoiceRevision),
         It.IsAny<System.Threading.CancellationToken>()
       ), Times.Once);
   }
 
   /// <summary>
-  /// Verifies updating invoice using current and updated objects performs upsert.
+  /// Verifies the two-snapshot overload replaces using the original revision.
   /// </summary>
   [TestMethod]
   [DynamicData(nameof(GetInvoiceTestData))]
@@ -518,14 +551,16 @@ public sealed partial class CosmosDatabaseBrokerComprehensiveTests : CosmosDatab
       id: originalInvoice.id,
       userIdentifier: originalInvoice.UserIdentifier,
       name: "Updated Name Via Objects");
+    originalInvoice.StorageETag = ObservedInvoiceRevision;
 
     var itemResponseMock = new Mock<ItemResponse<Invoice>>();
     itemResponseMock.Setup(response => response.Resource).Returns(updatedInvoice);
 
-    mockInvoicesContainer.Setup(container => container.UpsertItemAsync(
+    mockInvoicesContainer.Setup(container => container.ReplaceItemAsync(
         updatedInvoice,
+        updatedInvoice.id.ToString(),
         new PartitionKey(updatedInvoice.UserIdentifier.ToString()),
-        It.IsAny<ItemRequestOptions>(),
+        It.Is<ItemRequestOptions>(options => options.IfMatchEtag == ObservedInvoiceRevision),
         It.IsAny<System.Threading.CancellationToken>()
       ))
       .ReturnsAsync(itemResponseMock.Object);
@@ -547,10 +582,12 @@ public sealed partial class CosmosDatabaseBrokerComprehensiveTests : CosmosDatab
   {
     // Given
     var invoice = InvoiceBuilder.CreateRandomInvoice();
+    invoice.StorageETag = ObservedInvoiceRevision;
     var cosmosException = new CosmosException("Update failed", System.Net.HttpStatusCode.InternalServerError, 500, "", 0);
 
-    mockInvoicesContainer.Setup(container => container.UpsertItemAsync(
+    mockInvoicesContainer.Setup(container => container.ReplaceItemAsync(
         It.IsAny<Invoice>(),
+        invoice.id.ToString(),
         It.IsAny<PartitionKey?>(),
         It.IsAny<ItemRequestOptions>(),
         It.IsAny<System.Threading.CancellationToken>()
@@ -581,6 +618,7 @@ public sealed partial class CosmosDatabaseBrokerComprehensiveTests : CosmosDatab
     // Given
     var itemResponseMock = new Mock<ItemResponse<Invoice>>();
     itemResponseMock.Setup(response => response.Resource).Returns(expectedInvoice);
+    itemResponseMock.Setup(response => response.ETag).Returns(ObservedInvoiceRevision);
 
     mockInvoicesContainer.Setup(container => container.ReadItemAsync<Invoice>(
         expectedInvoice.id.ToString(),
@@ -623,6 +661,7 @@ public sealed partial class CosmosDatabaseBrokerComprehensiveTests : CosmosDatab
     ArgumentNullException.ThrowIfNull(expectedInvoice);
 
     // Given
+    expectedInvoice.StorageETag = ObservedInvoiceRevision;
     var invoiceList = new List<Invoice> { expectedInvoice };
     var feedResponseMock = new Mock<FeedResponse<Invoice>>();
     feedResponseMock.Setup(response => response.Resource).Returns(invoiceList);
@@ -718,7 +757,11 @@ public sealed partial class CosmosDatabaseBrokerComprehensiveTests : CosmosDatab
     // Given
     var userIdentifier = Guid.NewGuid();
     var invoices = InvoiceBuilder.CreateMultipleRandomInvoices(3);
-    invoices.ForEach(i => i.UserIdentifier = userIdentifier);
+    foreach (var invoice in invoices)
+    {
+      invoice.UserIdentifier = userIdentifier;
+      invoice.StorageETag = ObservedInvoiceRevision;
+    }
 
     var feedResponseMock = new Mock<FeedResponse<Invoice>>();
     feedResponseMock.Setup(response => response.Resource).Returns(invoices);
@@ -771,6 +814,7 @@ public sealed partial class CosmosDatabaseBrokerComprehensiveTests : CosmosDatab
     var userIdentifier = Guid.NewGuid();
     var invoice = InvoiceBuilder.CreateRandomInvoice();
     invoice.UserIdentifier = userIdentifier;
+    invoice.StorageETag = ObservedInvoiceRevision;
 
     var invoiceList = new List<Invoice> { invoice };
     var feedResponseMock = new Mock<FeedResponse<Invoice>>();
@@ -866,8 +910,11 @@ public sealed partial class CosmosDatabaseBrokerComprehensiveTests : CosmosDatab
     var userIdentifier = Guid.NewGuid();
     var firstPageInvoices = InvoiceBuilder.CreateMultipleRandomInvoices(2);
     var secondPageInvoices = InvoiceBuilder.CreateMultipleRandomInvoices(2);
-    firstPageInvoices.ForEach(i => i.UserIdentifier = userIdentifier);
-    secondPageInvoices.ForEach(i => i.UserIdentifier = userIdentifier);
+    foreach (var invoice in firstPageInvoices.Concat(secondPageInvoices))
+    {
+      invoice.UserIdentifier = userIdentifier;
+      invoice.StorageETag = ObservedInvoiceRevision;
+    }
 
     var firstFeedResponseMock = new Mock<FeedResponse<Invoice>>();
     firstFeedResponseMock.Setup(response => response.Resource).Returns(firstPageInvoices);

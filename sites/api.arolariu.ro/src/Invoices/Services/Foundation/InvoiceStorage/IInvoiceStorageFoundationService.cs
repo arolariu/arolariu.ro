@@ -91,11 +91,6 @@ public interface IInvoiceStorageFoundationService
   /// <exception cref="OperationCanceledException">Thrown if the operation is cancelled.</exception>
   Task<Invoice> UpdateInvoiceObject(Invoice updatedInvoice, Guid invoiceIdentifier, Guid? userIdentifier, CancellationToken cancellationToken);
 
-  /// <summary>Reads an invoice and the opaque version required for a conditional replace.</summary>
-  Task<(Invoice Resource, string ETag)> ReadInvoiceSnapshotAsync(Guid invoiceId, Guid userIdentifier, CancellationToken cancellationToken);
-
-  /// <summary>Validates and conditionally replaces an existing invoice.</summary>
-  Task<bool> TryReplaceInvoiceSnapshotAsync(Invoice invoice, string expectedETag, CancellationToken cancellationToken);
   #endregion
 
   #region Delete Invoice Object API

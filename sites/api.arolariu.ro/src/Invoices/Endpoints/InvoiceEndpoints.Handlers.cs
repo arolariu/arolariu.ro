@@ -258,6 +258,7 @@ public static partial class InvoiceEndpoints
       }
 
       var updatedInvoiceEntity = invoicePayload.ToInvoice(id, potentialUserIdentifier);
+      updatedInvoiceEntity.StorageETag = possibleInvoice.StorageETag;
 
       // Preserve scans from the original invoice (scans are managed through dedicated endpoints)
       foreach (var scan in possibleInvoice.Scans)

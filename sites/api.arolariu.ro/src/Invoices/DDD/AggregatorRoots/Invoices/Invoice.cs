@@ -19,7 +19,7 @@ using arolariu.Backend.Domain.Invoices.Serialization;
 /// <remarks>
 /// <para>This aggregate encapsulates the canonical mutable state of an invoice. Identity (<c>id</c>) is immutable (Version 7 GUID) and is never reassigned.</para>
 /// <para>Collections (<c>Items</c>, <c>PossibleRecipes</c>, <c>SharedWith</c>) preserve insertion order and allow duplicates. There is currently
-/// no de-duplication or concurrency token; last writer wins on updates. Future optimization may introduce distinct filtering.</para>
+/// no de-duplication of collections. Updates use the storage revision from the original read.</para>
 /// <para><b>Soft Delete Lifecycle:</b> When soft-deleted at the storage layer, the invoice and each contained product are marked; queries exclude
 /// soft-deleted entities unless explicitly overridden. See service layer deletion logic for cascade behavior.</para>
 /// <para><b>Sentinel Defaults:</b> <c>Guid.Empty</c> for <c>UserIdentifier</c> and <c>MerchantReference</c>, and <see langword="null"/> for
@@ -30,6 +30,12 @@ using arolariu.Backend.Domain.Invoices.Serialization;
 /// </remarks>
 public sealed class Invoice : NamedEntity<Guid>
 {
+  internal string? StorageETag { get; set; }
+
+  // Read the Cosmos system field on query results without writing it into the document.
+  [Newtonsoft.Json.JsonProperty("_etag")]
+  private string? CosmosETag { set => StorageETag = value; }
+
   /// <inheritdoc/>
   [JsonPropertyName("id")]
   [JsonPropertyOrder(0)]

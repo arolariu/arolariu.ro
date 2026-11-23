@@ -30,6 +30,17 @@ using Newtonsoft.Json.Linq;
 [TestClass]
 public sealed class AnalysisPersistenceSerializationTests
 {
+  /// <summary>Query results carry their version without putting a version into application JSON.</summary>
+  [TestMethod]
+  public void Invoice_CosmosRevision_IsReadOnlyStorageMetadata()
+  {
+    Invoice invoice = JsonConvert.DeserializeObject<Invoice>("""{"_etag":"invoice-revision"}""")!;
+
+    Assert.AreEqual("invoice-revision", invoice.StorageETag);
+    Assert.DoesNotContain("_etag", JsonConvert.SerializeObject(invoice), StringComparison.Ordinal);
+    Assert.DoesNotContain("StorageETag", System.Text.Json.JsonSerializer.Serialize(invoice), StringComparison.Ordinal);
+  }
+
   #region Invoice
 
   /// <summary>

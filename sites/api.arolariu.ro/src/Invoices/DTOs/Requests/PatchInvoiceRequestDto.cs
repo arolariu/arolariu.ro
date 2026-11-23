@@ -168,6 +168,7 @@ public readonly record struct PatchInvoiceRequestDto(
     {
       id = existing.id,
       UserIdentifier = existing.UserIdentifier,
+      StorageETag = existing.StorageETag,
       Name = !string.IsNullOrWhiteSpace(Name) ? Name : existing.Name,
       Description = !string.IsNullOrWhiteSpace(Description) ? Description : existing.Description,
       Category = HasCategory ? Category : existing.Category,

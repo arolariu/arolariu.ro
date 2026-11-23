@@ -78,6 +78,7 @@ public partial class CosmosDatabaseBroker
         throw new InvoiceLockedException(invoiceIdentifier);
       }
 
+      if (invoice is not null) invoice.StorageETag = response.ETag ?? invoice.StorageETag;
       activity?.RecordSuccess();
       return invoice;
     }
@@ -111,54 +112,6 @@ public partial class CosmosDatabaseBroker
 
       activity?.RecordSuccess();
       return invoice;
-    }
-  }
-
-  /// <inheritdoc/>
-  public async ValueTask<(Invoice Resource, string ETag)> ReadInvoiceSnapshotAsync(Guid invoiceId, Guid userIdentifier, CancellationToken cancellationToken)
-  {
-    using var activity = InvoicePackageTracing.StartActivity(nameof(ReadInvoiceSnapshotAsync));
-    var container = CosmosClient.GetDatabase("primary").GetContainer("invoices");
-    var response = await TranslateInvoiceCosmosAsync(
-      () => container.ReadItemAsync<Invoice>(invoiceId.ToString(), new PartitionKey(userIdentifier.ToString()), cancellationToken: cancellationToken),
-      invoiceId).ConfigureAwait(false);
-
-    InvoiceMetrics.RecordCosmosDbCharge(response.RequestCharge, "read", "invoices");
-    Invoice invoice = response.Resource ?? throw new InvoiceNotFoundException(invoiceId);
-    if (invoice.IsSoftDeleted)
-    {
-      throw new InvoiceLockedException(invoiceId);
-    }
-
-    activity?.RecordSuccess();
-    return (invoice, response.ETag);
-  }
-
-  /// <inheritdoc/>
-  public async ValueTask<bool> TryReplaceInvoiceSnapshotAsync(Invoice invoice, string expectedETag, CancellationToken cancellationToken)
-  {
-    using var activity = InvoicePackageTracing.StartActivity(nameof(TryReplaceInvoiceSnapshotAsync));
-    ArgumentNullException.ThrowIfNull(invoice);
-    ArgumentException.ThrowIfNullOrWhiteSpace(expectedETag);
-
-    var container = CosmosClient.GetDatabase("primary").GetContainer("invoices");
-    try
-    {
-      var response = await container.ReplaceItemAsync(
-        invoice, invoice.id.ToString(), new PartitionKey(invoice.UserIdentifier.ToString()),
-        new ItemRequestOptions { IfMatchEtag = expectedETag }, cancellationToken).ConfigureAwait(false);
-      InvoiceMetrics.RecordCosmosDbCharge(response.RequestCharge, "replace", "invoices");
-      activity?.RecordSuccess();
-      return true;
-    }
-    catch (CosmosException exception) when (exception.StatusCode == HttpStatusCode.PreconditionFailed)
-    {
-      activity?.SetTag("result.conflict", true);
-      return false;
-    }
-    catch (CosmosException exception)
-    {
-      throw TranslateInvoiceCosmos(exception, invoice.id);
     }
   }
 
@@ -206,52 +159,43 @@ public partial class CosmosDatabaseBroker
   /// <inheritdoc/>
   public async ValueTask<Invoice> UpdateInvoiceAsync(Guid invoiceIdentifier, Invoice updatedInvoice, CancellationToken cancellationToken)
   {
+    ArgumentNullException.ThrowIfNull(updatedInvoice);
     using var activity = InvoicePackageTracing.StartActivity(nameof(UpdateInvoiceAsync));
     activity?
       .SetLayerContext("Broker", nameof(CosmosDatabaseBroker))
-      .SetCosmosDbContext("primary", "invoices", "upsert", updatedInvoice?.UserIdentifier.ToString())
-      .SetInvoiceContext(invoiceIdentifier, updatedInvoice?.UserIdentifier);
+      .SetCosmosDbContext("primary", "invoices", "replace", updatedInvoice.UserIdentifier.ToString())
+      .SetInvoiceContext(invoiceIdentifier, updatedInvoice.UserIdentifier);
 
     var database = CosmosClient.GetDatabase("primary");
     var container = database.GetContainer("invoices");
 
-    var partitionKey = new PartitionKey(updatedInvoice?.UserIdentifier.ToString());
+    var partitionKey = new PartitionKey(updatedInvoice.UserIdentifier.ToString());
+    var options = MatchStorageRevision(updatedInvoice.StorageETag);
     var response = await TranslateInvoiceCosmosAsync(
-      () => container.UpsertItemAsync(updatedInvoice, partitionKey, cancellationToken: cancellationToken),
+      () => container.ReplaceItemAsync(updatedInvoice, invoiceIdentifier.ToString(), partitionKey, options, cancellationToken),
       invoiceIdentifier).ConfigureAwait(false);
 
     activity?.SetCosmosDbRequestCharge(response.RequestCharge);
-    InvoiceMetrics.RecordCosmosDbCharge(response.RequestCharge, "upsert", "invoices");
+    InvoiceMetrics.RecordCosmosDbCharge(response.RequestCharge, "replace", "invoices");
     activity?.RecordSuccess();
 
     var invoice = response.Resource;
-    return invoice!;
+    invoice.StorageETag = response.ETag ?? invoice.StorageETag;
+    return invoice;
   }
 
   /// <inheritdoc/>
-  public async ValueTask<Invoice> UpdateInvoiceAsync(Invoice currentInvoice, Invoice updatedInvoice, CancellationToken cancellationToken)
+  public ValueTask<Invoice> UpdateInvoiceAsync(Invoice currentInvoice, Invoice updatedInvoice, CancellationToken cancellationToken)
   {
-    using var activity = InvoicePackageTracing.StartActivity(nameof(UpdateInvoiceAsync));
-    activity?
-      .SetLayerContext("Broker", nameof(CosmosDatabaseBroker))
-      .SetCosmosDbContext("primary", "invoices", "upsert", updatedInvoice?.UserIdentifier.ToString())
-      .SetInvoiceContext(updatedInvoice?.id ?? Guid.Empty, updatedInvoice?.UserIdentifier);
+    ArgumentNullException.ThrowIfNull(currentInvoice);
+    ArgumentNullException.ThrowIfNull(updatedInvoice);
+    if (currentInvoice.id != updatedInvoice.id || currentInvoice.UserIdentifier != updatedInvoice.UserIdentifier)
+    {
+      throw new ArgumentException("Updates must retain the invoice identity and partition.", nameof(updatedInvoice));
+    }
 
-    var database = CosmosClient.GetDatabase("primary");
-    var invoicesContainer = database.GetContainer("invoices");
-
-    var partitionKeyForInvoice = new PartitionKey(updatedInvoice?.UserIdentifier.ToString());
-
-    var response = await TranslateInvoiceCosmosAsync(
-      () => invoicesContainer.UpsertItemAsync(updatedInvoice, partitionKeyForInvoice, cancellationToken: cancellationToken),
-      updatedInvoice?.id ?? Guid.Empty).ConfigureAwait(false);
-
-    activity?.SetCosmosDbRequestCharge(response.RequestCharge);
-    InvoiceMetrics.RecordCosmosDbCharge(response.RequestCharge, "upsert", "invoices");
-    activity?.RecordSuccess();
-
-    var invoice = response.Resource;
-    return invoice!;
+    updatedInvoice.StorageETag = currentInvoice.StorageETag;
+    return UpdateInvoiceAsync(currentInvoice.id, updatedInvoice, cancellationToken);
   }
 
 
@@ -291,7 +235,8 @@ public partial class CosmosDatabaseBroker
 
         // Update the invoice and the products.
         var replaceResponse = await TranslateInvoiceCosmosAsync(
-          () => container.ReplaceItemAsync(invoice, invoice.id.ToString(), partitionKey, cancellationToken: cancellationToken),
+          () => container.ReplaceItemAsync(invoice, invoice.id.ToString(), partitionKey,
+            MatchStorageRevision(response.ETag ?? invoice.StorageETag), cancellationToken),
           invoiceIdentifier).ConfigureAwait(false);
         totalRequestCharge += replaceResponse.RequestCharge;
       }
@@ -324,7 +269,8 @@ public partial class CosmosDatabaseBroker
         // Update the invoice and the products.
         var partitionKey = new PartitionKey(invoice.UserIdentifier.ToString());
         var replaceResponse = await TranslateInvoiceCosmosAsync(
-          () => container.ReplaceItemAsync(invoice, invoice.id.ToString(), partitionKey, cancellationToken: cancellationToken),
+          () => container.ReplaceItemAsync(invoice, invoice.id.ToString(), partitionKey,
+            MatchStorageRevision(invoice.StorageETag), cancellationToken),
           invoiceIdentifier).ConfigureAwait(false);
         totalRequestCharge += replaceResponse.RequestCharge;
       }
@@ -374,7 +320,8 @@ public partial class CosmosDatabaseBroker
 
         // Update the invoice and the products.
         var replaceResponse = await TranslateInvoiceCosmosAsync(
-          () => container.ReplaceItemAsync(invoice, invoice.id.ToString(), partitionKey, cancellationToken: cancellationToken),
+          () => container.ReplaceItemAsync(invoice, invoice.id.ToString(), partitionKey,
+            MatchStorageRevision(invoice.StorageETag), cancellationToken),
           invoice.id).ConfigureAwait(false);
         totalRequestCharge += replaceResponse.RequestCharge;
         deletedCount++;

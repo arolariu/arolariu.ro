@@ -13,6 +13,7 @@ using arolariu.Backend.Domain.Invoices.Brokers.QueueBroker;
 using arolariu.Backend.Domain.Invoices.DDD.Analysis.Contracts;
 using arolariu.Backend.Domain.Invoices.DDD.Analysis.Enums;
 using arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices;
+using arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices.Exceptions.Inner;
 using arolariu.Backend.Domain.Invoices.DDD.Analysis.Exceptions.Outer.Orchestration;
 using arolariu.Backend.Domain.Invoices.DDD.Entities.Merchants;
 using arolariu.Backend.Domain.Invoices.DDD.Entities.Merchants.Exceptions.Inner;
@@ -244,12 +245,12 @@ public sealed class InvoiceProcessingServiceCurrentArchitectureTests
         It.IsAny<CancellationToken>()))
       .Callback(() => operations.Add("receive"))
       .ReturnsAsync(receipt);
-    invoiceOrchestration.Setup(service => service.ReadInvoiceSnapshotAsync(
+    invoiceOrchestration.Setup(service => service.ReadInvoiceObject(
       invoice.id,
       invoice.UserIdentifier,
       It.IsAny<CancellationToken>()))
     .Callback(() => operations.Add("read-target"))
-    .ReturnsAsync((invoice, "observed"));
+    .ReturnsAsync(invoice);
     analysis.Setup(service => service.AnalyzeInvoiceAsync(
       invoice,
       receipt.Message!.InvoiceOptions!,
@@ -257,12 +258,13 @@ public sealed class InvoiceProcessingServiceCurrentArchitectureTests
       It.IsAny<CancellationToken>()))
     .Callback(() => operations.Add("analyze"))
     .ReturnsAsync((invoice, null));
-    invoiceOrchestration.Setup(service => service.TryReplaceInvoiceSnapshotAsync(
+    invoiceOrchestration.Setup(service => service.UpdateInvoiceObject(
         invoice,
-        "observed",
+        invoice.id,
+        invoice.UserIdentifier,
         It.IsAny<CancellationToken>()))
       .Callback(() => operations.Add("persist"))
-      .ReturnsAsync(true);
+      .ReturnsAsync(invoice);
     analysis.Setup(service => service.DeleteAnalysisAsync(
         receipt,
         It.IsAny<CancellationToken>()))
@@ -293,10 +295,10 @@ public sealed class InvoiceProcessingServiceCurrentArchitectureTests
     QueueAnalysisMessage message = receipt.Message!;
     var invoice = new Invoice { id = message.TargetId, UserIdentifier = message.RequestedBy };
     var invoices = new Mock<IInvoiceOrchestrationService>(MockBehavior.Strict);
-    invoices.Setup(service => service.ReadInvoiceSnapshotAsync(invoice.id, invoice.UserIdentifier, It.IsAny<CancellationToken>()))
-      .ReturnsAsync((invoice, "\"observed\""));
-    invoices.Setup(service => service.TryReplaceInvoiceSnapshotAsync(invoice, "\"observed\"", It.IsAny<CancellationToken>()))
-      .ReturnsAsync(false);
+    invoices.Setup(service => service.ReadInvoiceObject(invoice.id, invoice.UserIdentifier, It.IsAny<CancellationToken>()))
+      .ReturnsAsync(invoice);
+    invoices.Setup(service => service.UpdateInvoiceObject(invoice, invoice.id, invoice.UserIdentifier, It.IsAny<CancellationToken>()))
+      .ThrowsAsync(new InvoiceOrchestrationDependencyValidationException(new InvoiceAlreadyExistsException(invoice.id)));
     var analysis = new Mock<IAnalysisOrchestrationService>(MockBehavior.Strict);
     analysis.Setup(service => service.ReceiveAnalysisAsync(It.IsAny<TimeSpan>(), It.IsAny<CancellationToken>())).ReturnsAsync(receipt);
     analysis.Setup(service => service.AnalyzeInvoiceAsync(invoice, message.InvoiceOptions!, message.CorrelationId, It.IsAny<CancellationToken>()))
@@ -379,11 +381,11 @@ public sealed class InvoiceProcessingServiceCurrentArchitectureTests
         TimeSpan.FromMinutes(2),
         It.IsAny<CancellationToken>()))
       .ReturnsAsync(receipt);
-    invoiceOrchestration.Setup(service => service.ReadInvoiceSnapshotAsync(
+    invoiceOrchestration.Setup(service => service.ReadInvoiceObject(
         invoice.id,
         invoice.UserIdentifier,
         It.IsAny<CancellationToken>()))
-      .ReturnsAsync((invoice, "observed"));
+      .ReturnsAsync(invoice);
     InvoiceAnalysisOptions failedOptions = new(
       AnalysisProfile.Custom,
       documentExtraction: false,
@@ -399,9 +401,10 @@ public sealed class InvoiceProcessingServiceCurrentArchitectureTests
         receipt.Message.CorrelationId,
         It.IsAny<CancellationToken>()))
       .ReturnsAsync((invoice, failedOptions));
-    invoiceOrchestration.Setup(service => service.TryReplaceInvoiceSnapshotAsync(
+    invoiceOrchestration.Setup(service => service.UpdateInvoiceObject(
         invoice,
-        "observed",
+        invoice.id,
+        invoice.UserIdentifier,
         It.IsAny<CancellationToken>()))
       .ThrowsAsync(new InvoiceOrchestrationDependencyException(new TimeoutException()));
     analysis.Setup(service => service.DeleteAnalysisAsync(
@@ -451,22 +454,23 @@ public sealed class InvoiceProcessingServiceCurrentArchitectureTests
         TimeSpan.FromMinutes(2),
         It.IsAny<CancellationToken>()))
       .ReturnsAsync(receipt);
-    invoiceOrchestration.Setup(service => service.ReadInvoiceSnapshotAsync(
+    invoiceOrchestration.Setup(service => service.ReadInvoiceObject(
         invoice.id,
         invoice.UserIdentifier,
         It.IsAny<CancellationToken>()))
-      .ReturnsAsync((invoice, "observed"));
+      .ReturnsAsync(invoice);
     analysis.Setup(service => service.AnalyzeInvoiceAsync(
         invoice,
         receipt.Message.InvoiceOptions!,
         receipt.Message.CorrelationId,
         It.IsAny<CancellationToken>()))
       .ReturnsAsync((invoice, failedOptions));
-    invoiceOrchestration.Setup(service => service.TryReplaceInvoiceSnapshotAsync(
+    invoiceOrchestration.Setup(service => service.UpdateInvoiceObject(
         invoice,
-        "observed",
+        invoice.id,
+        invoice.UserIdentifier,
         It.IsAny<CancellationToken>()))
-      .ReturnsAsync(true);
+      .ReturnsAsync(invoice);
     analysis.Setup(service => service.DeleteAnalysisAsync(
         receipt,
         It.IsAny<CancellationToken>()))
@@ -512,22 +516,23 @@ public sealed class InvoiceProcessingServiceCurrentArchitectureTests
         TimeSpan.FromMinutes(2),
         It.IsAny<CancellationToken>()))
       .ReturnsAsync(receipt);
-    invoiceOrchestration.Setup(service => service.ReadInvoiceSnapshotAsync(
+    invoiceOrchestration.Setup(service => service.ReadInvoiceObject(
         invoice.id,
         invoice.UserIdentifier,
         It.IsAny<CancellationToken>()))
-      .ReturnsAsync((invoice, "observed"));
+      .ReturnsAsync(invoice);
     analysis.Setup(service => service.AnalyzeInvoiceAsync(
         invoice,
         receipt.Message.InvoiceOptions!,
         receipt.Message.CorrelationId,
         It.IsAny<CancellationToken>()))
       .ReturnsAsync((invoice, failedOptions));
-    invoiceOrchestration.Setup(service => service.TryReplaceInvoiceSnapshotAsync(
+    invoiceOrchestration.Setup(service => service.UpdateInvoiceObject(
         invoice,
-        "observed",
+        invoice.id,
+        invoice.UserIdentifier,
         It.IsAny<CancellationToken>()))
-      .ReturnsAsync(true);
+      .ReturnsAsync(invoice);
     analysis.Setup(service => service.DeleteAnalysisAsync(
         receipt,
         It.IsAny<CancellationToken>()))

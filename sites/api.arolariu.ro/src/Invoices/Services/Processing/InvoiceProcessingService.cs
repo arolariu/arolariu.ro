@@ -8,6 +8,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using arolariu.Backend.Domain.Invoices.Brokers.QueueBroker;
 using arolariu.Backend.Common.Telemetry.Tracing;
+using arolariu.Backend.Common.Exceptions;
 using arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices;
 using arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices.Exceptions.Inner;
 using arolariu.Backend.Domain.Invoices.DDD.Entities.Merchants;
@@ -454,8 +455,9 @@ public sealed partial class InvoiceProcessingService : IInvoiceProcessingService
         throw new ArgumentException("A valid product and category update are required.", nameof(request));
       }
 
-      var (invoice, etag) = await invoiceOrchestrationService
-        .ReadInvoiceSnapshotAsync(invoiceIdentifier, userIdentifier, cancellationToken).ConfigureAwait(false);
+      var invoice = await invoiceOrchestrationService
+        .ReadInvoiceObject(invoiceIdentifier, userIdentifier, cancellationToken).ConfigureAwait(false);
+      if (invoice is null) throw new InvoiceNotFoundException(invoiceIdentifier);
       var items = invoice.Items.ToList();
       int index = items.FindIndex(item => string.Equals(item.Name, request.OriginalProductName, StringComparison.OrdinalIgnoreCase));
       if (index < 0)
@@ -473,10 +475,7 @@ public sealed partial class InvoiceProcessingService : IInvoiceProcessingService
       invoice.Items = items;
       invoice.PerformUpdate(userIdentifier);
 
-      if (!await invoiceOrchestrationService.TryReplaceInvoiceSnapshotAsync(invoice, etag, cancellationToken).ConfigureAwait(false))
-      {
-        throw new InvoiceAlreadyExistsException("The invoice changed. Refresh it before trying again.");
-      }
+      await invoiceOrchestrationService.UpdateInvoiceObject(invoice, invoiceIdentifier, userIdentifier, cancellationToken).ConfigureAwait(false);
 
       return updated;
     }).ConfigureAwait(false);
@@ -887,12 +886,14 @@ public sealed partial class InvoiceProcessingService : IInvoiceProcessingService
     QueueAnalysisMessage message,
     CancellationToken cancellationToken)
   {
-    var (invoice, etag) = await invoiceOrchestrationService
-      .ReadInvoiceSnapshotAsync(
+    Guid partition = message.TargetPartitionIdentifier ?? message.RequestedBy;
+    var invoice = await invoiceOrchestrationService
+      .ReadInvoiceObject(
         message.TargetId,
-        message.TargetPartitionIdentifier ?? message.RequestedBy,
+        partition,
         cancellationToken)
       .ConfigureAwait(false);
+    if (invoice is null) throw new InvoiceNotFoundException(message.TargetId);
 
     InvoiceAnalysisOptions options = message.InvoiceOptions
       ?? throw new InvalidOperationException("Invoice analysis messages must contain invoice options.");
@@ -903,12 +904,13 @@ public sealed partial class InvoiceProcessingService : IInvoiceProcessingService
 
     try
     {
-      if (!await invoiceOrchestrationService.TryReplaceInvoiceSnapshotAsync(analyzed, etag, cancellationToken).ConfigureAwait(false))
-      {
-        logger.LogAnalysisTargetPersistenceFailed(message.CorrelationId);
-        InvoiceMetrics.RecordAnalysisTargetPersistenceFailure(AnalysisTargetType.Invoice);
-        return null;
-      }
+      await invoiceOrchestrationService.UpdateInvoiceObject(analyzed, message.TargetId, partition, cancellationToken).ConfigureAwait(false);
+    }
+    catch (Exception exception) when (IsWriteConflict(exception))
+    {
+      logger.LogAnalysisTargetPersistenceFailed(message.CorrelationId);
+      InvoiceMetrics.RecordAnalysisTargetPersistenceFailure(AnalysisTargetType.Invoice);
+      return null;
     }
     catch (OperationCanceledException)
     {
@@ -921,6 +923,16 @@ public sealed partial class InvoiceProcessingService : IInvoiceProcessingService
     }
 
     return CreateInvoiceReplacement(message, failedOptions);
+  }
+
+  private static bool IsWriteConflict(Exception exception)
+  {
+    for (Exception? cause = exception; cause is not null; cause = cause.InnerException)
+    {
+      if (cause is IAlreadyExistsException) return true;
+    }
+
+    return false;
   }
 
   [SuppressMessage(

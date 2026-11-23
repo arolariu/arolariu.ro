@@ -20,12 +20,6 @@ internal abstract class DatabaseBrokerTestAdapter : IDatabaseBroker
   public virtual ValueTask<Invoice?> ReadInvoiceAsync(Guid invoiceIdentifier, Guid? userIdentifier, CancellationToken cancellationToken) =>
     throw new NotSupportedException();
 
-  public virtual ValueTask<(Invoice Resource, string ETag)> ReadInvoiceSnapshotAsync(Guid invoiceId, Guid userIdentifier, CancellationToken cancellationToken) =>
-    throw new NotSupportedException();
-
-  public virtual ValueTask<bool> TryReplaceInvoiceSnapshotAsync(Invoice invoice, string expectedETag, CancellationToken cancellationToken) =>
-    throw new NotSupportedException();
-
   public virtual ValueTask<IEnumerable<Invoice>> ReadInvoicesAsync(Guid userIdentifier, CancellationToken cancellationToken) =>
     throw new NotSupportedException();
 

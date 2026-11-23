@@ -105,11 +105,6 @@ public interface IInvoiceOrchestrationService
   /// <returns>Updated invoice instance.</returns>
   Task<Invoice> UpdateInvoiceObject(Invoice updatedInvoice, Guid invoiceIdentifier, Guid? userIdentifier, CancellationToken cancellationToken);
 
-  /// <summary>Reads an invoice and the opaque version used for a conditional replace.</summary>
-  Task<(Invoice Resource, string ETag)> ReadInvoiceSnapshotAsync(Guid invoiceId, Guid userIdentifier, CancellationToken cancellationToken);
-
-  /// <summary>Conditionally replaces the invoice without creating a missing document.</summary>
-  Task<bool> TryReplaceInvoiceSnapshotAsync(Invoice invoice, string expectedETag, CancellationToken cancellationToken);
   #endregion
 
   #region Delete Invoice API

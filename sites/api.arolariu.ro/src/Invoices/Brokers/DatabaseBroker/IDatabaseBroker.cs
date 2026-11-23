@@ -72,12 +72,6 @@ public interface IDatabaseBroker
   /// <exception cref="OperationCanceledException">Thrown if the operation is cancelled.</exception>
   ValueTask<Invoice?> ReadInvoiceAsync(Guid invoiceIdentifier, Guid? userIdentifier, CancellationToken cancellationToken);
 
-  /// <summary>Reads an invoice and its storage version from the owning partition.</summary>
-  ValueTask<(Invoice Resource, string ETag)> ReadInvoiceSnapshotAsync(Guid invoiceId, Guid userIdentifier, CancellationToken cancellationToken);
-
-  /// <summary>Replaces an existing invoice; returns false if its storage version has changed.</summary>
-  ValueTask<bool> TryReplaceInvoiceSnapshotAsync(Invoice invoice, string expectedETag, CancellationToken cancellationToken);
-
   /// <summary>
   /// Lists all non soft-deleted invoices for a specific user/partition.
   /// </summary>
@@ -88,10 +82,10 @@ public interface IDatabaseBroker
   ValueTask<IEnumerable<Invoice>> ReadInvoicesAsync(Guid userIdentifier, CancellationToken cancellationToken);
 
   /// <summary>
-  /// Replaces (upserts) an invoice by identifier (partition inferred from <paramref name="updatedInvoice"/>).
+  /// Replaces an invoice against the revision observed when <paramref name="updatedInvoice"/> was read.
   /// </summary>
   /// <remarks>
-  /// <para>Assumes <paramref name="updatedInvoice"/> carries the correct <c>UserIdentifier</c>. Does not perform concurrency (ETag) checks.</para>
+  /// <para>A newer revision causes a conflict instead of replacing that revision with stale data.</para>
   /// </remarks>
   /// <param name="invoiceIdentifier">Target invoice identity.</param>
   /// <param name="updatedInvoice">Updated invoice aggregate snapshot.</param>
@@ -102,10 +96,10 @@ public interface IDatabaseBroker
   ValueTask<Invoice> UpdateInvoiceAsync(Guid invoiceIdentifier, Invoice updatedInvoice, CancellationToken cancellationToken);
 
   /// <summary>
-  /// Replaces (upserts) an invoice using current and updated aggregate snapshots.
+  /// Replaces an invoice using the storage revision from the current snapshot.
   /// </summary>
   /// <remarks>
-  /// <para><paramref name="currentInvoice"/> is not modified; only <paramref name="updatedInvoice"/> is persisted. No optimistic concurrency token applied.</para>
+  /// <para>The snapshots must retain the same invoice identity and partition.</para>
   /// </remarks>
   /// <param name="currentInvoice">Current persisted invoice snapshot (not validated here).</param>
   /// <param name="updatedInvoice">Updated invoice aggregate snapshot.</param>

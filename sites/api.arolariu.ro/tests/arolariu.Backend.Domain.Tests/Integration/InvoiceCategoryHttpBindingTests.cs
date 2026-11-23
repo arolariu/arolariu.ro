@@ -11,6 +11,7 @@ using System.Threading.Tasks;
 
 using arolariu.Backend.Domain.Invoices.Brokers.DatabaseBroker;
 using arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices;
+using arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices.Exceptions.Inner;
 using arolariu.Backend.Domain.Invoices.DDD.Entities.Merchants;
 using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Categories;
 using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Products;
@@ -102,10 +103,11 @@ public sealed class InvoiceCategoryHttpBindingTests
     var second = new Product { Name = duplicate ? "MILK" : "Coffee", Category = ProductCategory.Coffee };
     var invoice = new Invoice { id = Guid.NewGuid(), UserIdentifier = userId, Items = [first, second] };
     var database = new Mock<IDatabaseBroker>(MockBehavior.Strict);
-    database.Setup(item => item.ReadInvoiceSnapshotAsync(invoice.id, userId, It.IsAny<CancellationToken>()))
-      .ReturnsAsync((invoice, "\"original\""));
-    database.Setup(item => item.TryReplaceInvoiceSnapshotAsync(invoice, "\"original\"", It.IsAny<CancellationToken>()))
-      .ReturnsAsync(commit);
+    database.Setup(item => item.ReadInvoiceAsync(invoice.id, userId, It.IsAny<CancellationToken>()))
+      .ReturnsAsync(invoice);
+    var update = database.Setup(item => item.UpdateInvoiceAsync(invoice.id, invoice, It.IsAny<CancellationToken>()));
+    if (commit) update.ReturnsAsync(invoice);
+    else update.ThrowsAsync(new InvoiceAlreadyExistsException(invoice.id));
 
     var logger = NullLoggerFactory.Instance;
     var storage = new InvoiceStorageFoundationService(database.Object, logger);
@@ -120,9 +122,8 @@ public sealed class InvoiceCategoryHttpBindingTests
     using var response = await client.PutAsync(new Uri($"/rest/v1/invoices/{invoice.id}/products", UriKind.Relative), body).ConfigureAwait(false);
 
     Assert.AreEqual(expected, response.StatusCode);
-    database.Verify(item => item.TryReplaceInvoiceSnapshotAsync(invoice, "\"original\"", It.IsAny<CancellationToken>()),
+    database.Verify(item => item.UpdateInvoiceAsync(invoice.id, invoice, It.IsAny<CancellationToken>()),
       duplicate ? Times.Never() : Times.Once());
-    database.Verify(item => item.UpdateInvoiceAsync(It.IsAny<Guid>(), It.IsAny<Invoice>(), It.IsAny<CancellationToken>()), Times.Never());
     if (expected == HttpStatusCode.Accepted)
     {
       using var json = JsonDocument.Parse(await response.Content.ReadAsStringAsync().ConfigureAwait(false));
