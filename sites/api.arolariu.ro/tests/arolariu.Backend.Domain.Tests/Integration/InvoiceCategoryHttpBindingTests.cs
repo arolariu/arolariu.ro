@@ -1,6 +1,7 @@
 namespace arolariu.Backend.Domain.Tests.Integration;
 
 using System;
+using System.Linq;
 using System.Net;
 using System.Net.Http;
 using System.Security.Claims;
@@ -92,11 +93,13 @@ public sealed class InvoiceCategoryHttpBindingTests
 
   /// <summary>Edits commit once against the observed version and leave ambiguous/stale targets unchanged.</summary>
   [TestMethod]
-  [DataRow("null", false, true, HttpStatusCode.Accepted)]
-  [DataRow("1100", false, true, HttpStatusCode.Accepted)]
-  [DataRow("1100", true, true, HttpStatusCode.BadRequest)]
-  [DataRow("1100", false, false, HttpStatusCode.Conflict)]
-  public async Task UpdateProduct_ExplicitCategory_UsesSingleVersionedWrite(string category, bool duplicate, bool commit, HttpStatusCode expected)
+  [DataRow("null", false, false, true, HttpStatusCode.Accepted)]
+  [DataRow("1100", false, false, true, HttpStatusCode.Accepted)]
+  [DataRow("1100", false, true, true, HttpStatusCode.BadRequest)]
+  [DataRow("1100", false, false, false, HttpStatusCode.Conflict)]
+  [DataRow("", true, false, true, HttpStatusCode.Accepted)]
+  [DataRow("", true, false, false, HttpStatusCode.Conflict)]
+  public async Task UpdateProduct_CategoryOrDetails_UsesSingleVersionedWrite(string category, bool fullEdit, bool duplicate, bool commit, HttpStatusCode expected)
   {
     Guid userId = Guid.NewGuid();
     var first = new Product { Name = "Milk", Price = 7m, Quantity = 2, Category = ProductCategory.Milk };
@@ -105,7 +108,9 @@ public sealed class InvoiceCategoryHttpBindingTests
     var database = new Mock<IDatabaseBroker>(MockBehavior.Strict);
     database.Setup(item => item.ReadInvoiceAsync(invoice.id, userId, It.IsAny<CancellationToken>()))
       .ReturnsAsync(invoice);
-    var update = database.Setup(item => item.UpdateInvoiceAsync(invoice.id, invoice, It.IsAny<CancellationToken>()));
+    var update = database.Setup(item => item.UpdateInvoiceAsync(invoice.id,
+      It.Is<Invoice>(edited => edited.Items.Count == 2 && edited.Items.First().Name == (fullEdit ? "Full milk" : "Milk")),
+      It.IsAny<CancellationToken>()));
     if (commit) update.ReturnsAsync(invoice);
     else update.ThrowsAsync(new InvoiceAlreadyExistsException(invoice.id));
 
@@ -118,7 +123,10 @@ public sealed class InvoiceCategoryHttpBindingTests
     await app.StartAsync().ConfigureAwait(false);
 
     using var client = app.GetTestClient();
-    using var body = new StringContent($$"""{"originalProductName":"Milk","category":{{category}}}""", Encoding.UTF8, "application/json");
+    string payload = fullEdit
+      ? """{"originalProductName":"Milk","name":"Full milk","quantity":3,"price":8}"""
+      : $$"""{"originalProductName":"Milk","category":{{category}}}""";
+    using var body = new StringContent(payload, Encoding.UTF8, "application/json");
     using var response = await client.PutAsync(new Uri($"/rest/v1/invoices/{invoice.id}/products", UriKind.Relative), body).ConfigureAwait(false);
 
     Assert.AreEqual(expected, response.StatusCode);
@@ -127,8 +135,8 @@ public sealed class InvoiceCategoryHttpBindingTests
     if (expected == HttpStatusCode.Accepted)
     {
       using var json = JsonDocument.Parse(await response.Content.ReadAsStringAsync().ConfigureAwait(false));
-      Assert.AreEqual(category, json.RootElement.GetProperty("category").GetRawText());
-      Assert.AreEqual(7m, json.RootElement.GetProperty("price").GetDecimal());
+      Assert.AreEqual(fullEdit ? "1014" : category, json.RootElement.GetProperty("category").GetRawText());
+      Assert.AreEqual(fullEdit ? 8m : 7m, json.RootElement.GetProperty("price").GetDecimal());
       Assert.AreSame(second, System.Linq.Enumerable.Last(invoice.Items));
     }
   }

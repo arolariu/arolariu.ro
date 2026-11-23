@@ -39,9 +39,8 @@ internal abstract class WorkerManagementServiceBase : IInvoiceManagementService
   public Task DeleteInvoice(Guid identifier, Guid? userIdentifier, CancellationToken cancellationToken) => Task.FromException(Unsupported());
   public Task DeleteInvoices(Guid userIdentifier, CancellationToken cancellationToken) => Task.FromException(Unsupported());
   public Task AddProduct(Guid invoiceIdentifier, Guid? userIdentifier, Product product, CancellationToken cancellationToken) => Task.FromException(Unsupported());
-  public Task<Product> UpdateProductWithCategory(Guid invoiceIdentifier, Guid userIdentifier, UpdateProductRequestDto request, CancellationToken cancellationToken) => Task.FromException<Product>(Unsupported());
+  public Task<Product> UpdateProduct(Guid invoiceIdentifier, Guid userIdentifier, UpdateProductRequestDto request, CancellationToken cancellationToken) => Task.FromException<Product>(Unsupported());
   public Task<IEnumerable<Product>> GetProducts(Guid invoiceIdentifier, Guid? userIdentifier, CancellationToken cancellationToken) => Task.FromException<IEnumerable<Product>>(Unsupported());
-  public Task<Product> GetProduct(Guid invoiceIdentifier, Guid? userIdentifier, string productName, CancellationToken cancellationToken) => Task.FromException<Product>(Unsupported());
   public Task DeleteProduct(Guid invoiceIdentifier, Guid? userIdentifier, string productName, CancellationToken cancellationToken) => Task.FromException(Unsupported());
   public Task AttachInvoiceScan(Guid invoiceIdentifier, Guid? userIdentifier, InvoiceScan scan, CancellationToken cancellationToken) => Task.FromException(Unsupported());
   public Task<IEnumerable<InvoiceScan>> ReadInvoiceScans(Guid invoiceIdentifier, Guid? userIdentifier, CancellationToken cancellationToken) => Task.FromException<IEnumerable<InvoiceScan>>(Unsupported());

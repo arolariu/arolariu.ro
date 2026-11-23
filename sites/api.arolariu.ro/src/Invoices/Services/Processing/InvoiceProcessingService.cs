@@ -445,14 +445,14 @@ public sealed partial class InvoiceProcessingService : IInvoiceProcessingService
   #endregion
 
   /// <inheritdoc/>
-  public async Task<Product> UpdateProductWithCategory(
+  public async Task<Product> UpdateProduct(
     Guid invoiceIdentifier, Guid userIdentifier, UpdateProductRequestDto request, CancellationToken cancellationToken) =>
     await TryCatchAsync(async () =>
     {
-      using var activity = InvoicePackageTracing.StartActivity(nameof(UpdateProductWithCategory));
-      if (!request.HasCategory || !request.IsValid || (request.Category is { } category && !Enum.IsDefined(category)))
+      using var activity = InvoicePackageTracing.StartActivity(nameof(UpdateProduct));
+      if (!request.IsValid || (request.Category is { } category && !Enum.IsDefined(category)))
       {
-        throw new ArgumentException("A valid product and category update are required.", nameof(request));
+        throw new ArgumentException("A valid product update is required.", nameof(request));
       }
 
       var invoice = await invoiceOrchestrationService
@@ -500,31 +500,6 @@ public sealed partial class InvoiceProcessingService : IInvoiceProcessingService
 
     var products = invoice.Items;
     return products;
-  }).ConfigureAwait(false);
-  #endregion
-
-  #region Get Product API
-  /// <summary>Returns the first invoice product whose name exactly matches the supplied text.</summary>
-  /// <param name="productName">The case-insensitive exact product name.</param>
-  /// <param name="invoiceIdentifier">The target invoice identifier.</param>
-  /// <param name="userIdentifier">The optional owning user partition.</param>
-  /// <param name="cancellationToken">The token used to cancel the read.</param>
-  /// <returns>The first exact-name product.</returns>
-  /// <exception cref="DDD.AggregatorRoots.Invoices.Exceptions.Outer.Processing.InvoiceProcessingServiceDependencyValidationException">
-  /// Thrown when the invoice is unavailable to the request.
-  /// </exception>
-  /// <inheritdoc/>
-  public async Task<Product> GetProduct(Guid invoiceIdentifier, Guid? userIdentifier, string productName, CancellationToken cancellationToken) =>
-  await TryCatchAsync(async () =>
-  {
-    using var activity = InvoicePackageTracing.StartActivity(nameof(GetProduct));
-    var invoice = await invoiceOrchestrationService
-      .ReadInvoiceObject(invoiceIdentifier, userIdentifier, cancellationToken)
-      .ConfigureAwait(false);
-
-    return invoice.Items.FirstOrDefault(product =>
-      string.Equals(product.Name, productName, StringComparison.OrdinalIgnoreCase))
-      ?? throw new ProductNotFoundException(invoiceIdentifier);
   }).ConfigureAwait(false);
   #endregion
 

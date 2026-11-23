@@ -611,42 +611,12 @@ public static partial class InvoiceEndpoints
         return TypedResults.BadRequest("Provide a product name and category, or complete product details.");
       }
 
-      if (productInformation.HasCategory)
-      {
-        var saved = await invoiceManagementService
-          .UpdateProductWithCategory(id, potentialUserIdentifier, productInformation, writeScope.Token)
-          .ConfigureAwait(false);
-        activity?.RecordSuccess("Product category updated");
-        return TypedResults.Accepted($"/rest/v1/invoices/{id}/products", value: ProductResponseDto.FromProduct(saved));
-      }
-
-      var persistedProduct = await invoiceManagementService
-        .GetProduct(
-          id,
-          potentialUserIdentifier,
-          productInformation.OriginalProductName,
-          writeScope.Token)
-        .ConfigureAwait(false);
-      var updatedProduct = productInformation.ToProduct(persistedProduct);
-
-      await invoiceManagementService
-        .DeleteProduct(
-          id,
-          potentialUserIdentifier,
-          productInformation.OriginalProductName,
-          writeScope.Token)
-        .ConfigureAwait(false);
-
-      await invoiceManagementService
-        .AddProduct(
-          id,
-          potentialUserIdentifier,
-          updatedProduct,
-          writeScope.Token)
+      var saved = await invoiceManagementService
+        .UpdateProduct(id, potentialUserIdentifier, productInformation, writeScope.Token)
         .ConfigureAwait(false);
 
       activity?.RecordSuccess("Product updated in invoice");
-      return TypedResults.Accepted($"/rest/v1/invoices/{id}/products", value: ProductResponseDto.FromProduct(updatedProduct));
+      return TypedResults.Accepted($"/rest/v1/invoices/{id}/products", value: ProductResponseDto.FromProduct(saved));
     }
     catch (OperationCanceledException)
     {

@@ -146,14 +146,14 @@ public sealed class InvoiceProcessingServiceCurrentArchitectureTests
     merchantOrchestration.VerifyNoOtherCalls();
   }
 
-  /// <summary>Verifies exact-name reads do not select an overlapping product name.</summary>
+  /// <summary>Verifies exact-name updates do not select an overlapping product name.</summary>
   [TestMethod]
-  public async Task GetProduct_OverlappingNames_ReturnsExactMatch()
+  public async Task UpdateProduct_OverlappingNames_UpdatesOnlyExactMatch()
   {
     Guid invoiceId = Guid.NewGuid();
     Guid userId = Guid.NewGuid();
     var chocolate = new Product { Name = "Milk Chocolate" };
-    var milk = new Product { Name = "Milk" };
+    var milk = new Product { Name = "Milk", Category = ProductCategory.Milk, Metadata = new ProductMetadata { IsComplete = true } };
     var invoice = new Invoice
     {
       id = invoiceId,
@@ -166,19 +166,26 @@ public sealed class InvoiceProcessingServiceCurrentArchitectureTests
         userId,
         It.IsAny<CancellationToken>()))
       .ReturnsAsync(invoice);
+    invoiceOrchestration.Setup(item => item.UpdateInvoiceObject(invoice, invoiceId, userId, It.IsAny<CancellationToken>()))
+      .ReturnsAsync(invoice);
     var service = new InvoiceProcessingService(
       invoiceOrchestration.Object,
       Mock.Of<IMerchantOrchestrationService>(),
       Mock.Of<IAnalysisOrchestrationService>(),
       NullLoggerFactory.Instance);
 
-    Product result = await service.GetProduct(
+    Product result = await service.UpdateProduct(
       invoiceId,
       userId,
-      "Milk",
+      new UpdateProductRequestDto("MILK", "Whole Milk", 2m, null, null, 2m, null),
       CancellationToken.None);
 
-    Assert.AreSame(milk, result);
+    Assert.AreSame(chocolate, invoice.Items.First());
+    Assert.AreSame(result, invoice.Items.Last());
+    Assert.AreEqual("Whole Milk", result.Name);
+    Assert.AreEqual(ProductCategory.Milk, result.Category);
+    Assert.IsTrue(result.Metadata.IsComplete);
+    Assert.IsTrue(result.Metadata.IsEdited);
   }
 
   /// <summary>

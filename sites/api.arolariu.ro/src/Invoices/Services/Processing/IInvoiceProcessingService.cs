@@ -136,7 +136,7 @@ public interface IInvoiceProcessingService
     CancellationToken cancellationToken);
 
   /// <summary>Conditionally updates one unambiguously named product in its invoice.</summary>
-  Task<Product> UpdateProductWithCategory(Guid invoiceIdentifier, Guid userIdentifier, UpdateProductRequestDto request, CancellationToken cancellationToken);
+  Task<Product> UpdateProduct(Guid invoiceIdentifier, Guid userIdentifier, UpdateProductRequestDto request, CancellationToken cancellationToken);
   #endregion
 
   #region Get Invoice Products API
@@ -148,18 +148,6 @@ public interface IInvoiceProcessingService
   /// <param name="cancellationToken">Cancellation token to abort the operation (required).</param>
   /// <returns>The products currently stored on the invoice.</returns>
   Task<IEnumerable<Product>> GetProducts(Guid invoiceIdentifier, Guid? userIdentifier, CancellationToken cancellationToken);
-  #endregion
-
-  #region Get Invoice Product API
-  /// <summary>
-  /// Retrieves a single product by name from an invoice.
-  /// </summary>
-  /// <param name="invoiceIdentifier">Invoice id.</param>
-  /// <param name="userIdentifier">Partition / tenant context; pass null for a cross-partition operation.</param>
-  /// <param name="productName">Product name (case sensitivity policy defined by implementation).</param>
-  /// <param name="cancellationToken">Cancellation token to abort the operation (required).</param>
-  /// <returns>The first matching product, or a default product when no item matches.</returns>
-  Task<Product> GetProduct(Guid invoiceIdentifier, Guid? userIdentifier, string productName, CancellationToken cancellationToken);
   #endregion
 
   #region Delete Invoice Product API

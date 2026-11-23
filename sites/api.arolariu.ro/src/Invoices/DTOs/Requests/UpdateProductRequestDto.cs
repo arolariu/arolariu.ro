@@ -13,7 +13,7 @@ using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Products;
 /// Represents a category change or a full product edit addressed by its current name.
 /// </summary>
 /// <remarks>
-/// A category-only edit preserves commercial data. With category present, the name must identify exactly one product.
+/// A category-only edit preserves commercial data. The name must identify exactly one product.
 /// </remarks>
 /// <param name="OriginalProductName">The current name used to locate the product by case-insensitive exact match.</param>
 /// <param name="Name">The replacement product name.</param>
@@ -59,7 +59,7 @@ public readonly record struct UpdateProductRequestDto(
 
   /// <summary>Maps client-editable fields onto a replacement while preserving server-owned product state.</summary>
   /// <param name="persistedProduct">The persisted product returned by the Management read operation.</param>
-  /// <returns>A replacement product suitable for the Management delete-and-add workflow.</returns>
+  /// <returns>The replacement for the existing product line.</returns>
   /// <exception cref="ArgumentNullException">Thrown when <paramref name="persistedProduct"/> is null.</exception>
   public Product ToProduct(Product persistedProduct)
   {

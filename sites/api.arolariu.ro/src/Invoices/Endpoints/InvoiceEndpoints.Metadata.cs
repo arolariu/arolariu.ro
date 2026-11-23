@@ -362,7 +362,7 @@ public static partial class InvoiceEndpoints
     Summary = "Updates a product in a specific invoice in the system.",
     Description = "Selects the product by its exact, case-insensitive original name. " +
     "Supplying category alone changes only that field; null clears it. A full edit without category preserves the current category. " +
-    "When category is supplied, a unique match is required and the invoice is replaced once against the observed version.",
+    "A unique match is required and the invoice is replaced once against the observed version.",
     OperationId = nameof(UpdateProductInInvoiceAsync),
     Tags = [EndpointNameTag])]
   [SwaggerResponse(StatusCodes.Status202Accepted, "The product was successfully updated in the invoice.", typeof(ProductResponseDto))]

@@ -79,8 +79,8 @@ public interface IInvoiceManagementService
     Product product,
     CancellationToken cancellationToken);
 
-  /// <summary>Updates one unambiguously named product with an explicit category assignment or clear.</summary>
-  Task<Product> UpdateProductWithCategory(Guid invoiceIdentifier, Guid userIdentifier, UpdateProductRequestDto request, CancellationToken cancellationToken);
+  /// <summary>Conditionally updates one unambiguously named product in its invoice.</summary>
+  Task<Product> UpdateProduct(Guid invoiceIdentifier, Guid userIdentifier, UpdateProductRequestDto request, CancellationToken cancellationToken);
 
   /// <summary>Retrieves every product line from an invoice.</summary>
   /// <param name="invoiceIdentifier">The target invoice identifier.</param>
@@ -88,14 +88,6 @@ public interface IInvoiceManagementService
   /// <param name="cancellationToken">The token that cancels the asynchronous operation.</param>
   /// <returns>The invoice product lines.</returns>
   Task<IEnumerable<Product>> GetProducts(Guid invoiceIdentifier, Guid? userIdentifier, CancellationToken cancellationToken);
-
-  /// <summary>Retrieves the first invoice product matching a name.</summary>
-  /// <param name="invoiceIdentifier">The target invoice identifier.</param>
-  /// <param name="userIdentifier">The owning user partition, or <see langword="null"/> when resolved downstream.</param>
-  /// <param name="productName">The product name to locate.</param>
-  /// <param name="cancellationToken">The token that cancels the asynchronous operation.</param>
-  /// <returns>The matching product line.</returns>
-  Task<Product> GetProduct(Guid invoiceIdentifier, Guid? userIdentifier, string productName, CancellationToken cancellationToken);
 
   /// <summary>Removes the first invoice product matching a name.</summary>
   /// <param name="invoiceIdentifier">The target invoice identifier.</param>

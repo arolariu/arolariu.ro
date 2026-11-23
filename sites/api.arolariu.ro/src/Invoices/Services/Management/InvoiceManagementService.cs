@@ -188,30 +188,13 @@ public sealed partial class InvoiceManagementService : IInvoiceManagementService
     }).ConfigureAwait(false);
 
   /// <inheritdoc/>
-  public async Task<Product> UpdateProductWithCategory(
+  public async Task<Product> UpdateProduct(
     Guid invoiceIdentifier, Guid userIdentifier, UpdateProductRequestDto request, CancellationToken cancellationToken) =>
     await TryCatchAsync(async () =>
     {
-      using var activity = InvoicePackageTracing.StartActivity(nameof(UpdateProductWithCategory));
-      return await invoiceProcessingService.UpdateProductWithCategory(invoiceIdentifier, userIdentifier, request, cancellationToken)
+      using var activity = InvoicePackageTracing.StartActivity(nameof(UpdateProduct));
+      return await invoiceProcessingService.UpdateProduct(invoiceIdentifier, userIdentifier, request, cancellationToken)
         .ConfigureAwait(false);
-    }).ConfigureAwait(false);
-
-  /// <summary>Returns the first product whose name contains the supplied text.</summary>
-  /// <param name="productName">The case-insensitive text to find within a product name.</param>
-  /// <param name="invoiceIdentifier">The target invoice identifier.</param>
-  /// <param name="userIdentifier">The optional owning user partition.</param>
-  /// <param name="cancellationToken">The token used to cancel the read.</param>
-  /// <returns>The first matching product, or a default product when no line matches.</returns>
-  /// <exception cref="arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices.Exceptions.Outer.Management.InvoiceManagementDependencyValidationException">
-  /// Thrown when the invoice is unavailable to the request.
-  /// </exception>
-  /// <inheritdoc/>
-  public async Task<Product> GetProduct(Guid invoiceIdentifier, Guid? userIdentifier, string productName, CancellationToken cancellationToken) =>
-    await TryCatchAsync(async () =>
-    {
-      using var activity = InvoicePackageTracing.StartActivity(nameof(GetProduct));
-      return await invoiceProcessingService.GetProduct(invoiceIdentifier, userIdentifier, productName, cancellationToken).ConfigureAwait(false);
     }).ConfigureAwait(false);
 
   /// <summary>Deletes the first product matching an exact persisted name.</summary>

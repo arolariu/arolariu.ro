@@ -686,13 +686,12 @@ public sealed class InvoiceEndpointsStatusCodeTests
     service.VerifyAll();
   }
 
-  /// <summary>Verifies product replacement composes Management get, delete, and add calls in order.</summary>
+  /// <summary>Verifies the product edit handler calls the Management update only once.</summary>
   [TestMethod]
-  public async Task UpdateProductInInvoiceAsync_ValidReplacement_ComposesManagementCallsInOrder()
+  public async Task UpdateProductInInvoiceAsync_ValidReplacement_DelegatesOneUpdate()
   {
     Guid invoiceId = Guid.NewGuid();
     Guid userId = Guid.NewGuid();
-    var classification = ProductCategory.Milk;
     var request = new UpdateProductRequestDto(
       OriginalProductName: "Old Milk",
       Name: "New Milk",
@@ -702,37 +701,8 @@ public sealed class InvoiceEndpointsStatusCodeTests
       Price: 9m,
       AllergenAssessment: null);
     var service = new Mock<IInvoiceManagementService>(MockBehavior.Strict);
-    var persistedProduct = new Product
-    {
-      Name = "Old Milk",
-      Category = classification,
-      Metadata = new ProductMetadata { IsComplete = true },
-    };
-    Product? addedProduct = null;
-    var sequence = new MockSequence();
-    service.InSequence(sequence)
-      .Setup(candidate => candidate.GetProduct(
-        invoiceId,
-        userId,
-        "Old Milk",
-        It.IsAny<CancellationToken>()))
-      .ReturnsAsync(persistedProduct);
-    service.InSequence(sequence)
-      .Setup(candidate => candidate.DeleteProduct(
-        invoiceId,
-        userId,
-        "Old Milk",
-        It.IsAny<CancellationToken>()))
-      .Returns(Task.CompletedTask);
-    service.InSequence(sequence)
-      .Setup(candidate => candidate.AddProduct(
-        invoiceId,
-        userId,
-        It.IsAny<Product>(),
-        It.IsAny<CancellationToken>()))
-      .Callback<Guid, Guid?, Product, CancellationToken>(
-        (_, _, product, _) => addedProduct = product)
-      .Returns(Task.CompletedTask);
+    service.Setup(candidate => candidate.UpdateProduct(invoiceId, userId, request, It.IsAny<CancellationToken>()))
+      .ReturnsAsync(new Product { Name = "New Milk", Quantity = 2m, Price = 9m, Category = ProductCategory.Milk });
 
     IResult result = await InvoiceEndpoints.UpdateProductInInvoiceAsync(
       service.Object,
@@ -741,13 +711,8 @@ public sealed class InvoiceEndpointsStatusCodeTests
       request);
 
     Assert.AreEqual(StatusCodes.Status202Accepted, GetStatusCode(result));
-    Assert.IsNotNull(addedProduct);
-    Assert.AreEqual("New Milk", addedProduct.Name);
-    Assert.AreEqual(2m, addedProduct.Quantity);
-    Assert.AreEqual(classification, addedProduct.Category);
-    Assert.IsTrue(addedProduct.Metadata.IsEdited);
-    Assert.IsTrue(addedProduct.Metadata.IsComplete);
-    service.VerifyAll();
+    service.Verify(candidate => candidate.UpdateProduct(invoiceId, userId, request, It.IsAny<CancellationToken>()), Times.Once);
+    service.VerifyNoOtherCalls();
   }
   #endregion
 
