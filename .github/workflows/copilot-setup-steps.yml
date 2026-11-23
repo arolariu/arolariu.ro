@@ -22,10 +22,15 @@ jobs:
         with:
           fetch-depth: 1
 
-      # The reserved agent job installs the SDK but leaves package restore and generation to the task.
-      - name: 🚀 Provision the workspace and .NET SDK
+      - name: 🚀 Provision Node.js and workspace dependencies
         uses: ./.github/actions/setup-workspace
         with:
           node-install: "true"
           node-deps-install: "true"
+
+      # SDK-only setup cannot save a NuGet package cache before a restore has populated it.
+      - name: 📦 Provision the .NET SDK without a package cache
+        uses: ./.github/actions/setup-workspace
+        with:
           dotnet-install: "true"
+          cache: "false"

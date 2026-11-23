@@ -12,6 +12,20 @@ const bash =
     ? resolve(execFileSync("git", ["--exec-path"], {encoding: "utf8"}).trim(), "..", "..", "..", "bin", "bash.exe")
     : "bash";
 
+describe("Copilot setup workflow", () => {
+  it("caches npm dependencies without scheduling a NuGet package cache save", () => {
+    const workflow = readFileSync(join(workflows, "copilot-setup-steps.yml"), "utf8").replaceAll("\r\n", "\n");
+    const setup = [...workflow.matchAll(/uses: \.\/\.github\/actions\/setup-workspace\n        with:\n((?: {10}[^\n]+\n)+)/gu)];
+    expect(setup).toHaveLength(2);
+    const sdk = setup.find(([, inputs]) => inputs?.includes('dotnet-install: "true"'))?.[1];
+    const node = setup.find(([, inputs]) => inputs?.includes('node-deps-install: "true"'))?.[1];
+    expect(sdk).toContain('cache: "false"');
+    expect(sdk).not.toContain('install-dotnet-deps: "true"');
+    expect(node).toContain('node-install: "true"');
+    expect(node).not.toContain('cache: "false"');
+  });
+});
+
 describe("components release handoff", () => {
   it("publishes the tested tarball by same-run artifact ID without a second build", () => {
     const workflow = readFileSync(join(workflows, "official-components-publish.yml"), "utf8");
@@ -66,15 +80,20 @@ describe("components release handoff", () => {
 });
 
 describe("manual deployment revision contract", () => {
-  it.each(["api", "cv", "status", "exp"])("pins %s test and build checkouts to the same resolved commit", (target) => {
+  it.each(["api", "cv", "status", "exp"])("validates the %s revision in the consuming worktree before setup", (target) => {
     const workflow = readFileSync(join(workflows, `official-${target}-trigger.yml`), "utf8");
     expect(workflow).toMatch(/workflow_dispatch:\r?\n    inputs:\r?\n      commit_sha:\r?\n(?:        .*\r?\n)*?        required: false/u);
     expect(workflow).toContain("contents: read");
     expect(workflow).toContain("REQUESTED_SHA: ${{ inputs.commit_sha }}");
-    // The CV and status build jobs share an anchored checkout step.
-    expect(workflow.match(/ref: \$\{\{ needs\.revision\.outputs\.source_sha \}\}/gu)).toHaveLength(
-      target === "api" || target === "exp" ? 3 : 2,
-    );
+    const text = workflow.replaceAll("\r\n", "\n");
+    expect(text).not.toMatch(/ref: .*\bneeds\.revision\b/u);
+    expect(text).toContain("run: bash .github/scripts/resolve-deploy-revision.sh --checkout");
+    expect(text).toContain("if: needs.revision.outputs.source_sha != github.sha");
+    const consumers = [...text.matchAll(/^      - (?:&validated_checkout|\*validated_checkout)$/gmu)];
+    expect(consumers).toHaveLength(target === "api" || target === "exp" ? 3 : 2);
+    for (const consumer of consumers) {
+      expect(text.slice(consumer.index).split(/^  [\w-]+:$/mu)[0]).toMatch(/uses: \.\/\.github\/actions\/setup-workspace|docker build/u);
+    }
     expect(workflow).toContain("needs: [revision, test]");
   });
 
@@ -90,7 +109,7 @@ describe("manual deployment revision contract", () => {
       const local = job(workflow, "build-local");
       expect(local).toContain("github.event_name == 'workflow_dispatch' && inputs.infrastructure == 'local'");
       expect(local).toContain("needs: revision");
-      expect(local).toContain("ref: ${{ needs.revision.outputs.source_sha }}");
+      expect(local).toContain("COMMIT_SHA: ${{ needs.revision.outputs.source_sha }}");
       expect(local).toContain("persist-credentials: false");
       expect(local).toContain("INFRA: local");
       expect(local).toContain("permissions:\n      contents: read");
@@ -141,7 +160,7 @@ describe("manual deployment revision contract", () => {
         expect(local).toContain("github.event_name == 'workflow_dispatch' && inputs.infrastructure == 'local'");
         expect(local).toContain("needs: [revision, test]");
         expect(local).toContain("steps: &build_steps");
-        expect(local).toContain("ref: ${{ needs.revision.outputs.source_sha }}");
+        expect(local).toContain("COMMIT_SHA: ${{ needs.revision.outputs.source_sha }}");
         expect(local).not.toMatch(/^\s+environment:|secrets\.|azure\/static-web-apps-deploy@/imu);
         expect(build).toContain("(inputs.infrastructure || 'azure') == 'azure'");
         expect(build).toContain("needs: [revision, test]");
@@ -258,7 +277,13 @@ describe("manual deployment revision contract", () => {
         spawnSync(bash, [resolver.replaceAll("\\", "/"), ...requiredInputs], {
           cwd: dir,
           encoding: "utf8",
-          env: {...process.env, REQUESTED_SHA: requested, DISPATCH_SHA: first, DISPATCH_REF: ref, EVENT_NAME: "workflow_dispatch"},
+          env: {
+            ...process.env,
+            REQUESTED_SHA: requested,
+            DISPATCH_SHA: requiredInputs[0] === "--checkout" ? tip : first,
+            DISPATCH_REF: ref,
+            EVENT_NAME: "workflow_dispatch",
+          },
         });
       expect(run("").stdout.trim()).toBe(first);
       expect(run(tip.toUpperCase()).stdout.trim()).toBe(tip);
@@ -269,6 +294,16 @@ describe("manual deployment revision contract", () => {
       expect(run(first, "refs/heads/main", "node-install").stderr).toContain("does not contain the workspace setup action");
       expect(run(tip, "refs/heads/main", "node-install").stdout.trim()).toBe(tip);
       expect(run(tip, "refs/heads/main", "wrong-input").stderr).toContain("does not support the workflow's setup input");
+
+      expect(run(first, "refs/heads/main", "--checkout").stderr).toContain("Expected the trusted dispatch commit");
+      git("switch", "--detach", tip);
+      expect(run(outside, "refs/heads/main", "--checkout").status).toBe(1);
+      expect(run("", "refs/heads/main", "--checkout").status).toBe(1);
+      expect(git("rev-parse", "HEAD")).toBe(tip);
+      const historical = run(first, "refs/heads/main", "--checkout");
+      expect(historical.status, historical.stderr).toBe(0);
+      expect(git("rev-parse", "HEAD")).toBe(first);
+      expect(git("ls-files")).toBe("");
     } finally {
       rmSync(dir, {recursive: true, force: true});
     }

@@ -95,10 +95,23 @@ jobs:
       COMMIT_SHA: ${{ needs.revision.outputs.source_sha }}
       INFRASTRUCTURE: ${{ inputs.infrastructure || 'azure' }}
     steps:
-      - name: 🛫 Checking out the branch inside the runner environment...
+      - name: Checkout the trusted event commit
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          ref: ${{ needs.revision.outputs.source_sha }}
+          fetch-depth: ${{ github.event_name == 'workflow_dispatch' && needs.revision.outputs.source_sha != github.sha && '0' || '1' }}
+
+      # Validate against the trusted history in this job before executing code from an older checkout.
+      - &validated_checkout
+        name: Validate and check out the selected revision
+        if: needs.revision.outputs.source_sha != github.sha
+        shell: bash
+        working-directory: .
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          DISPATCH_REF: ${{ github.ref }}
+          DISPATCH_SHA: ${{ github.sha }}
+          REQUESTED_SHA: ${{ needs.revision.outputs.source_sha }}
+        run: bash .github/scripts/resolve-deploy-revision.sh --checkout
 
       - name: 📝 Display workflow context
         run: |
@@ -164,11 +177,13 @@ jobs:
       INFRASTRUCTURE: local
     # Both modes build the same payload from the selected checkout; only Azure has a deploy job.
     steps: &build_steps
-      - name: Checkout the selected source commit
+      - name: Checkout the trusted event commit
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          ref: ${{ needs.revision.outputs.source_sha }}
+          fetch-depth: ${{ github.event_name == 'workflow_dispatch' && needs.revision.outputs.source_sha != github.sha && '0' || '1' }}
           persist-credentials: false
+
+      - *validated_checkout
 
       - name: Set up the workspace
         uses: ./.github/actions/setup-workspace
