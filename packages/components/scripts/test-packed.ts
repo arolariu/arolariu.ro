@@ -176,7 +176,7 @@ export function packedVitestArgs(options: readonly string[]): readonly string[] 
  * @remarks
  * The isolated extraction lives beneath the package so real installed peers resolve naturally; {@link runPackedGate}
  * removes it when the run settles or is interrupted. No source aliases, dependency installation, or publish operation is
- * involved.
+ * involved. CI can retain the tested archive by setting `AROLARIU_COMPONENTS_PACK_OUTPUT` to an output directory.
  *
  * @returns A promise that resolves once the packed suite passes.
  */
@@ -206,6 +206,11 @@ export async function verifyPackedArtifact(): Promise<void> {
       stdio: "inherit",
       env: {...process.env, AROLARIU_COMPONENTS_PACKED_ROOT: packedRoot},
     });
+    const outputDirectory = process.env["AROLARIU_COMPONENTS_PACK_OUTPUT"];
+    if (outputDirectory) {
+      fs.mkdirSync(outputDirectory, {recursive: true});
+      fs.copyFileSync(archive, path.join(outputDirectory, path.basename(archive)), fs.constants.COPYFILE_EXCL);
+    }
   });
 }
 
