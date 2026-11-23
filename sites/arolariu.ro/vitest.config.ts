@@ -15,7 +15,7 @@ import baseConfig from "../../vitest.config.ts";
 const realHttpTests = [
   "src/app/domains/invoices/_actions/invoices/{analyzeInvoice,createInvoice,deleteInvoice,fetchInvoice,fetchInvoices,patchInvoice,updateInvoice}.test.ts",
   "src/app/domains/invoices/_actions/invoices/metadata/{addInvoiceMetadata,deleteInvoiceMetadata}.test.ts",
-  "src/app/domains/invoices/_actions/invoices/products/productCategoryHttp.test.ts",
+  "src/app/domains/invoices/_actions/invoices/products/updateInvoiceProduct.test.ts",
   "src/app/domains/invoices/_actions/invoices/scans/attachScanToInvoice.test.ts",
   "src/app/domains/invoices/_actions/merchants/merchantHttpErrors.test.ts",
   "src/app/domains/invoices/_actions/scans/{createScan,deleteScan,fetchScans,updateScan}.test.ts",
