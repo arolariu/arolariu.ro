@@ -145,4 +145,16 @@ describe("ItemsTable", () => {
     expect(screen.getByRole("button", {name: "Product category: Milk"})).toHaveTextContent("Milk");
     expect(screen.getByRole("cell", {name: "5 L"})).toBeInTheDocument();
   });
+
+  it("keeps distinctly named Unicode rows editable but blocks definite case-insensitive duplicates", () => {
+    const names = ["Straße", "STRASSE", "Milk", "MILK"];
+    renderItems(buildInvoice({items: names.map((name) => buildProduct({name}))}));
+
+    for (const name of ["Straße", "STRASSE"]) {
+      expect(screen.getByRole("button", {name: `Product category: ${name}`})).toBeEnabled();
+    }
+    for (const name of ["Milk", "MILK"]) {
+      expect(screen.queryByRole("button", {name: `Product category: ${name}`})).not.toBeInTheDocument();
+    }
+  });
 });

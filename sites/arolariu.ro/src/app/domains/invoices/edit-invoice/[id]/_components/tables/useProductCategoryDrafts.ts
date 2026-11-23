@@ -16,10 +16,15 @@ type CategoryDrafts = Readonly<{
   categoryEditorProps: (item: DraftProduct) => ProductCategoryEditorProps;
 }>;
 
+// Leave non-ASCII case equivalence to the API's ordinal comparison.
+function nameKey(name: string): string {
+  return name.replaceAll(/[a-z]/gu, (letter) => letter.toUpperCase());
+}
+
 function countNames(items: readonly Product[]): ReadonlyMap<string, number> {
   const counts = new Map<string, number>();
   for (const {name} of items) {
-    const key = name.toUpperCase();
+    const key = nameKey(name);
     counts.set(key, (counts.get(key) ?? 0) + 1);
   }
   return counts;
@@ -31,7 +36,7 @@ function reconcileCategories(drafts: DraftProduct[], persisted: readonly Product
   const counts = countNames(persisted);
   return drafts.map((item) => {
     const original = item[sourceName];
-    if (original === undefined || counts.get(original.toUpperCase()) !== 1) return item;
+    if (original === undefined || counts.get(nameKey(original)) !== 1) return item;
     const category = byName.get(original);
     return category === undefined || category === item.category ? item : {...item, category};
   });
@@ -55,7 +60,7 @@ export function useProductCategoryDrafts(invoice: Invoice): CategoryDrafts {
       setLocalItems((items) => items.map((item) => (item[sourceName] === product.name ? applyCategory(item) : item)));
       const store = useInvoicesStore.getState();
       const cached = store.getEntityById(invoice.id);
-      if (cached !== undefined && countNames(cached.items).get(product.name.toUpperCase()) === 1) {
+      if (cached !== undefined && countNames(cached.items).get(nameKey(product.name)) === 1) {
         store.updateEntity(invoice.id, {
           items: cached.items.map((item) => (item.name === product.name ? applyCategory(item) : item)),
         });
@@ -66,7 +71,7 @@ export function useProductCategoryDrafts(invoice: Invoice): CategoryDrafts {
   );
 
   const categoryEditorProps = (item: DraftProduct): ProductCategoryEditorProps => {
-    const key = item.name.toUpperCase();
+    const key = nameKey(item.name);
     return {
       invoiceId: invoice.id,
       product: item,
