@@ -66,6 +66,56 @@ public sealed class InvoiceCategoryHttpBindingTests
     management.Verify(service => service.UpdateInvoice(invoice.id, userId, It.IsAny<Invoice>(), It.IsAny<CancellationToken>()), Times.Never);
   }
 
+  /// <summary>Both receipt routes distinguish an absent category from a clear or assignment in JSON.</summary>
+  [TestMethod]
+  [DataRow("PUT", "", "3001")]
+  [DataRow("PUT", "null", "null")]
+  [DataRow("PUT", "3074", "3074")]
+  [DataRow("PATCH", "", "3001")]
+  [DataRow("PATCH", "null", "null")]
+  [DataRow("PATCH", "3074", "3074")]
+  public async Task EditInvoice_CategoryIntent_BindsOmissionClearAndAssignment(string method, string category, string expected)
+  {
+    Guid userId = Guid.NewGuid();
+    var original = new Invoice
+    {
+      id = Guid.NewGuid(),
+      UserIdentifier = userId,
+      Name = "Original receipt",
+      Category = InvoiceCategory.Groceries,
+      StorageETag = "original-revision",
+    };
+    var broker = new Mock<IDatabaseBroker>(MockBehavior.Strict);
+    broker.Setup(service => service.ReadInvoiceAsync(original.id, userId, It.IsAny<CancellationToken>())).ReturnsAsync(original);
+    broker.Setup(service => service.UpdateInvoiceAsync(
+      original.id, It.Is<Invoice>(edited => edited.StorageETag == original.StorageETag), It.IsAny<CancellationToken>()))
+      .ReturnsAsync((Guid _, Invoice edited, CancellationToken _) => edited);
+    var log = NullLoggerFactory.Instance;
+    var invoices = new InvoiceOrchestrationService(new InvoiceStorageFoundationService(broker.Object, log), log);
+    var processing = new InvoiceProcessingService(
+      invoices, Mock.Of<IMerchantOrchestrationService>(), Mock.Of<IAnalysisOrchestrationService>(), log);
+    await using var app = BuildApp(new InvoiceManagementService(processing, log), userId);
+    await app.StartAsync().ConfigureAwait(false);
+
+    using var client = app.GetTestClient();
+    var payload = method == "PUT"
+      ? """{"name":"Edited receipt","description":"Full update","paymentInformation":{}"""
+      : "{\"name\":\"Edited receipt\"";
+    if (category.Length > 0) payload += $""","category":{category}""";
+    using var request = new HttpRequestMessage(new HttpMethod(method), new Uri($"/rest/v1/invoices/{original.id}", UriKind.Relative))
+    {
+      Content = new StringContent(payload + "}", Encoding.UTF8, "application/json"),
+    };
+    using var response = await client.SendAsync(request).ConfigureAwait(false);
+
+    Assert.AreEqual(HttpStatusCode.Accepted, response.StatusCode);
+    using var json = JsonDocument.Parse(await response.Content.ReadAsStringAsync().ConfigureAwait(false));
+    Assert.AreEqual(expected, json.RootElement.GetProperty("category").GetRawText());
+    Assert.AreEqual("Edited receipt", json.RootElement.GetProperty("name").GetString());
+    Assert.AreEqual(InvoiceCategory.Groceries, original.Category);
+    broker.Verify(service => service.UpdateInvoiceAsync(original.id, It.IsAny<Invoice>(), It.IsAny<CancellationToken>()), Times.Once());
+  }
+
   /// <summary>Invalid category intent cannot update either side of a merchant relationship.</summary>
   [TestMethod]
   [DataRow("2001")]
