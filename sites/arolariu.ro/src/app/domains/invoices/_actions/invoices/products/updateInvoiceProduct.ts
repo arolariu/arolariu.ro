@@ -5,19 +5,8 @@
  * @module app/domains/invoices/_actions/invoices/products/updateInvoiceProduct
  *
  * @remarks
- * Provides server-side product management functionality for modifying existing line items
- * in invoices. This operation updates a single product within the invoice's items collection
- * without requiring full collection reconstruction.
- *
- * **Key Features:**
- * - Server-side execution with authentication
- * - GUID validation for invoice identifiers
- * - Product identification by original name (case-insensitive substring match)
- * - Automatic cache revalidation for edit/view pages
- * - OpenTelemetry instrumentation for observability
- * - Structured error handling with user-friendly messages
- *
- * Category edits use one conditional write. Existing full edits retain their transport.
+ * Supports category-only changes and full edits to one existing product line.
+ * Both use the invoice API's conditional replacement of the original revision.
  *
  * @see {@link addInvoiceProduct} - Sibling action for adding products
  * @see {@link deleteInvoiceProduct} - Sibling action for deleting products
@@ -37,10 +26,11 @@ import {revalidatePath} from "next/cache";
  * Input parameters for the updateInvoiceProduct server action.
  *
  * @remarks
- * The invoiceId must be a valid UUIDv4 GUID.
- * The payload contains both the identifier (originalProductName) and the updated product data.
+ * The `originalProductName` is the current, complete name, even when a full
+ * edit renames the line. A category-only edit does not send `updatedProduct`.
  */
 type ServerActionInputType = Readonly<{
+  /** Valid GUID identifying the containing invoice. */
   invoiceId: string;
   payload: Readonly<{originalProductName: string}>
     & (
@@ -59,10 +49,56 @@ type ServerActionInputType = Readonly<{
 type ServerActionOutputType = ServerActionResult<Readonly<Product>>;
 
 /**
- * Updates the exact-name product selected by the current invoice owner.
- * An explicit category, including null, uses the API's conditional write.
- * @param input - Invoice, product name, and category or full product edit.
- * @returns The saved product or the API's classified failure.
+ * Updates one existing product in an invoice's line items.
+ *
+ * @remarks
+ * **Authorization and transport:** Validates the invoice GUID and update shape,
+ * obtains a server-derived BFF JWT, then sends a bounded `PUT` request to
+ * `/rest/v1/invoices/{id}/products`. The API checks the caller's access to the
+ * invoice and requires exactly one `originalProductName` match using
+ * `StringComparison.OrdinalIgnoreCase`. The replacement stays in the same
+ * position and commits only if the read revision is still current.
+ *
+ * **Request body:** A category-only update sends `{originalProductName, category}`
+ * and preserves the other product fields. A full edit flattens `updatedProduct`
+ * to its editable fields (including `name`, `quantity`, and `price`), not a nested
+ * object or a copy of server-owned metadata. Passing a category ID assigns it,
+ * `null` clears it, and omission on a full edit preserves the stored category.
+ * The category inside `updatedProduct` is never sent as write intent.
+ *
+ * **Result and side effects:** The API responds with `202 Accepted` and the
+ * updated product. After parsing the response, this action revalidates both
+ * the edit and view invoice pages. OpenTelemetry traces JWT retrieval and the
+ * upstream request.
+ *
+ * **Failure behavior:** An invalid body or ambiguous name yields HTTP 400, a
+ * missing product or invoice yields 404, and a stale revision yields 409.
+ * The action preserves the API status, maps malformed successful responses to
+ * `SERVER_ERROR`, and does not retry. Refresh before making another attempt
+ * after a conflict or uncertain network outcome.
+ *
+ * @param input - The invoice GUID and the product selector with its update.
+ * @returns The parsed saved product or a structured failure.
+ *
+ * @example
+ * ```ts
+ * await updateInvoiceProduct({
+ *   invoiceId: "11111111-1111-4111-8111-111111111111",
+ *   payload: {originalProductName: "Milk 1L", category: 1014},
+ * });
+ * ```
+ *
+ * @example
+ * ```ts
+ * // Edit price without copying a stale category from the loaded product.
+ * await updateInvoiceProduct({
+ *   invoiceId: "11111111-1111-4111-8111-111111111111",
+ *   payload: {originalProductName: product.name, updatedProduct: {...product, price: 8.99}},
+ * });
+ * ```
+ *
+ * @see {@link fetchBFFUserFromAuthService} - Server-derived identity and token.
+ * @see {@link fetchWithTimeout} - Bounded upstream HTTP transport.
  */
 export async function updateInvoiceProduct({invoiceId, payload}: ServerActionInputType): ServerActionOutputType {
   console.info(">>> Executing server action {{updateInvoiceProduct}}, with:", {invoiceId});
