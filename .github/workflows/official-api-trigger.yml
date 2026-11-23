@@ -1,42 +1,13 @@
-# =============================================================================
-# Backend API Build and Deployment Workflow
-# =============================================================================
-# This workflow handles the complete CI/CD pipeline for the .NET backend API
-# (api.arolariu.ro), including testing, containerization, and Azure deployment.
-#
-# Architecture:
-#   - Phase 1: Test - Runs unit tests to validate code quality
-#   - Phase 2: Build - Containerizes the .NET API using Docker
-#   - Phase 3: Deploy - Pushes container to ACR and deploys to Azure App Service
-#
-# Triggers:
-#   - Automatic: Push to 'main' branch with changes in sites/api.arolariu.ro/
-#   - Manual: workflow_dispatch with environment and infrastructure selection
-#
-# Security:
-#   - Uses OIDC (OpenID Connect) for Azure authentication (no long-lived secrets)
-#   - Azure Container Registry auth via OIDC (no admin credentials)
-#   - Federated identity via Azure Managed Identity
-#
-# Prerequisites:
-#   1. Azure Managed Identity configured with Federated Credentials
-#   2. Azure Container Registry with push/pull access
-#   3. Azure App Service configured for container deployment
-#   4. GitHub Secrets configured:
-#      - AZURE_TENANT_ID, AZURE_SUBSCRIPTION_ID
-#      - AZURE_BACKEND_MANAGED_IDENTITY_CLIENT_ID
-#      - AZURE_CONTAINER_REGISTRY_ADDRESS
-#
-# Documentation:
-#   - RFC 2001: Domain-Driven Design Architecture
-#   - RFC 2002: OpenTelemetry Backend Observability
-#   - RFC 2003: The Standard Implementation
-# =============================================================================
+# Test the API and build its image. Azure runs push to ACR and deploy; LOCAL runs upload a Docker archive.
+# Runs on main pushes touching the API directory or on manual dispatch. Tests and taxonomy checks gate the image build.
+# Publishes TRX and coverage artifacts; does not build the website or provision Azure resources.
+# Azure login uses environment-scoped OIDC (id-token: write); deploy targets the API app.
+# Manual runs from main can pin all source checkouts to an optional full commit SHA.
+# Validation: dispatch from main with infrastructure=local to build without deploying.
 
 name: "official-api-trigger"
 
 permissions:
-  id-token: write # Required for OIDC authentication with Azure
   contents: read # Required to checkout repository
 
 defaults:
@@ -52,8 +23,13 @@ on:
   # Manual trigger for controlled deployments
   workflow_dispatch:
     inputs:
+      commit_sha:
+        description: "Optional full commit SHA from main history. Dispatch from main; blank uses the dispatch commit."
+        required: false
+        type: string
+        default: ""
       environment:
-        description: "The environment to deploy to. (e.g. 'development', 'production')"
+        description: "Azure deployment environment; ignored for local builds."
         options:
           - "development"
           - "production"
@@ -61,7 +37,7 @@ on:
         required: true
         type: choice
       infrastructure:
-        description: "The infrastructure where it will be deployed (e.g. 'local' or 'azure')"
+        description: "'local' uploads an image artifact without Azure; 'azure' pushes and deploys."
         options:
           - "local"
           - "azure"
@@ -72,22 +48,63 @@ on:
 env:
   API_NAME: "api.arolariu.ro"
   API_URL: "https://api.arolariu.ro"
-  COMMIT_SHA: ${{ github.sha }}
   INFRA: ${{ inputs.infrastructure || 'azure' }}
-  AZURE_TENANT_ID: ${{secrets.AZURE_TENANT_ID}}
-  AZURE_SUBSCRIPTION_ID: ${{secrets.AZURE_SUBSCRIPTION_ID}}
-  AZURE_CLIENT_ID: ${{secrets.AZURE_BACKEND_MANAGED_IDENTITY_CLIENT_ID}}
 
 jobs:
-  test:
+  revision:
+    name: Resolve deployment revision
     if: github.repository == 'arolariu/arolariu.ro'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+    outputs:
+      source_sha: ${{ steps.resolve.outputs.source_sha }}
+    steps:
+      # Only read the trusted dispatch checkout; inspect the requested commit without executing it.
+      - name: Checkout trusted workflow revision and main history
+        if: github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main'
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Validate and select source commit
+        id: resolve
+        working-directory: .
+        shell: bash
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          DISPATCH_REF: ${{ github.ref }}
+          DISPATCH_SHA: ${{ github.sha }}
+          REQUESTED_SHA: ${{ inputs.commit_sha }}
+        run: |
+          if [[ "$EVENT_NAME" == push ]]; then
+            source_sha=$DISPATCH_SHA
+          elif [[ "$DISPATCH_REF" == refs/heads/main ]]; then
+            source_sha=$(bash .github/scripts/resolve-deploy-revision.sh node-install node-deps-install dotnet-install install-dotnet-deps)
+          else
+            echo "::error::Manual deployments must be dispatched from main."
+            exit 1
+          fi
+          printf 'source_sha=%s\n' "$source_sha" >> "$GITHUB_OUTPUT"
+          printf 'Source commit: `%s`\n' "$source_sha" >> "$GITHUB_STEP_SUMMARY"
+
+  test:
+    if: github.repository == 'arolariu/arolariu.ro' && (inputs.infrastructure || 'azure') == 'azure'
     name: 🧪 Test phase (1/3)
+    needs: revision
     runs-on: ubuntu-latest
     environment: ${{ inputs.environment || 'production' }}
     timeout-minutes: 10
+    env:
+      COMMIT_SHA: ${{ needs.revision.outputs.source_sha }}
     steps:
       - name: 🛫 Checking out the branch inside the runner environment...
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ needs.revision.outputs.source_sha }}
 
       - name: 📝 Display workflow context
         run: |
@@ -98,7 +115,7 @@ jobs:
           echo "│ 📦 Job:           Test phase (1/3)                         │"
           echo "│ 🌍 Environment:   ${{ inputs.environment || 'production' }}"
           echo "│ 🔧 Infrastructure: ${{ env.INFRA }}"
-          echo "│ 🏷️ Commit SHA:    ${{ github.sha }}"
+          echo "│ 🏷️ Commit SHA:    $COMMIT_SHA"
           echo "│ 👤 Triggered by:  ${{ github.actor }}"
           echo "│ 📅 Timestamp:     $(date -u '+%Y-%m-%d %H:%M:%S UTC')"
           echo "│ 🔗 Run ID:        ${{ github.run_id }}"
@@ -114,6 +131,7 @@ jobs:
           dotnet-install: "true"
           install-dotnet-deps: "true"
 
+      # Fail before tests if the API and website taxonomy mirrors no longer match their manifest.
       - name: Check pinned taxonomy integrity
         working-directory: .
         run: node scripts/cli.ts generate --check-taxonomies --json
@@ -165,15 +183,115 @@ jobs:
           echo "└────────────────────────────────────────────────────────────┘"
           echo "::endgroup::"
 
-  build:
-    if: github.repository == 'arolariu/arolariu.ro'
-    name: 🛠️ Build phase (2/3)
-    needs: test
+  build-local:
+    if: github.repository == 'arolariu/arolariu.ro' && github.event_name == 'workflow_dispatch' && inputs.infrastructure == 'local'
+    name: Build and export the LOCAL API image
+    needs: revision
     runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+    env:
+      INFRA: local
+      COMMIT_SHA: ${{ needs.revision.outputs.source_sha }}
+      IMAGE: arolariu-api-local:${{ needs.revision.outputs.source_sha }}
+    steps:
+      - name: Checkout the selected source commit
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ needs.revision.outputs.source_sha }}
+          persist-credentials: false
+
+      - name: Set up API test dependencies
+        uses: ./.github/actions/setup-workspace
+        with:
+          node-install: "true"
+          node-deps-install: "true"
+          dotnet-install: "true"
+          install-dotnet-deps: "true"
+
+      - name: Check pinned taxonomy integrity
+        working-directory: .
+        run: node scripts/cli.ts generate --check-taxonomies --json
+
+      - name: Test the selected source
+        working-directory: .
+        run: |
+          dotnet test --configuration Release --logger trx \
+            --results-directory ./sites/api.arolariu.ro/TestResults \
+            --collect:"XPlat Code Coverage" ./arolariu.slnx
+
+      - name: Upload LOCAL API test results
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: api-local-test-results-${{ github.run_attempt }}
+          path: sites/api.arolariu.ro/TestResults/
+          if-no-files-found: warn
+          retention-days: 7
+
+      - name: Build the LOCAL API image
+        shell: bash
+        run: |
+          docker build \
+            --build-arg "API_NAME=$API_NAME" \
+            --build-arg API_URL=http://localhost:8080 \
+            --build-arg "COMMIT_SHA=$COMMIT_SHA" \
+            --build-arg INFRA=local \
+            --tag "$IMAGE" .
+
+      - name: Export the LOCAL image
+        shell: bash
+        run: |
+          image_env=$(docker image inspect --format '{{range .Config.Env}}{{println .}}{{end}}' "$IMAGE")
+          grep -Fxq 'INFRA=local' <<< "$image_env"
+          grep -Fxq "COMMIT_SHA=$COMMIT_SHA" <<< "$image_env"
+          if grep -Eq '^AZURE_(TENANT_ID|SUBSCRIPTION_ID|CLIENT_ID)=.+' <<< "$image_env"; then
+            echo "::error::LOCAL image contains an Azure identity configuration"
+            exit 1
+          fi
+          platform=$(docker image inspect --format '{{.Os}}/{{.Architecture}}' "$IMAGE")
+          mkdir -p "$RUNNER_TEMP/local-image"
+          cd "$RUNNER_TEMP/local-image"
+          IMAGE_ARCHIVE=arolariu-api-local.tar.gz
+          docker image save "$IMAGE" | gzip -n > "$IMAGE_ARCHIVE"
+          test -s "$IMAGE_ARCHIVE"
+          sha256sum "$IMAGE_ARCHIVE" > "$IMAGE_ARCHIVE.sha256"
+          printf 'Image: `%s` (%s)\n\nSource: `%s`\n\nImport: `docker load -i %s`\n' \
+            "$IMAGE" "$platform" "$COMMIT_SHA" "$IMAGE_ARCHIVE" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload the LOCAL API image and checksum
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: api-local-image-${{ needs.revision.outputs.source_sha }}-${{ github.run_attempt }}
+          path: |
+            ${{ runner.temp }}/local-image/arolariu-api-local.tar.gz
+            ${{ runner.temp }}/local-image/arolariu-api-local.tar.gz.sha256
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 7
+
+  build-azure:
+    if: github.repository == 'arolariu/arolariu.ro' && (inputs.infrastructure || 'azure') == 'azure'
+    name: 🛠️ Build phase (2/3)
+    needs: [revision, test]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write # Azure OIDC
     environment: ${{ inputs.environment || 'production' }}
+    env:
+      COMMIT_SHA: ${{ needs.revision.outputs.source_sha }}
+      CONTAINER_TAG:
+        ${{ github.event_name == 'workflow_dispatch' && format('{0}-{1}-{2}', needs.revision.outputs.source_sha, github.run_id,
+        github.run_attempt) || 'latest' }}
+    outputs:
+      image_tag: ${{ steps.push-image.outputs.image_tag }}
     steps:
       - name: 🛫 Checking out the branch inside the runner environment...
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ needs.revision.outputs.source_sha }}
 
       - name: 📝 Display build context
         run: |
@@ -183,7 +301,7 @@ jobs:
           echo "├────────────────────────────────────────────────────────────┤"
           echo "│ 📦 Job:           Build phase (2/3)                        │"
           echo "│ 🐳 Container:     backend/api.arolariu                     │"
-          echo "│ 🏷️ Tag:          ${{ inputs.environment == 'production' && github.sha || 'latest' }}"
+          echo "│ 🏷️ Tag:          $CONTAINER_TAG"
           echo "│ 🌍 Environment:   ${{ inputs.environment || 'production' }}"
           echo "│ 📅 Timestamp:     $(date -u '+%Y-%m-%d %H:%M:%S UTC')"
           echo "└────────────────────────────────────────────────────────────┘"
@@ -195,6 +313,7 @@ jobs:
           node-install: "true"
           node-deps-install: "true"
 
+      # Keep the container phase independently protected against building with invalid taxonomy inputs.
       - name: Check pinned taxonomy integrity
         working-directory: .
         run: node scripts/cli.ts generate --check-taxonomies --json
@@ -215,7 +334,9 @@ jobs:
       - name: 🏗️ Building the docker container...
         env:
           CONTAINER_NAME: "backend/api.arolariu"
-          CONTAINER_TAG: ${{ inputs.environment == 'production' && github.sha || 'latest' }}
+          AZURE_TENANT_ID: ${{secrets.AZURE_TENANT_ID}}
+          AZURE_SUBSCRIPTION_ID: ${{secrets.AZURE_SUBSCRIPTION_ID}}
+          AZURE_CLIENT_ID: ${{secrets.AZURE_BACKEND_MANAGED_IDENTITY_CLIENT_ID}}
         run: |
           echo "::group::🐳 Docker Build"
           echo "┌────────────────────────────────────────────────────────────┐"
@@ -261,28 +382,35 @@ jobs:
           echo "| Container | \`${{env.CONTAINER_NAME}}:${{env.CONTAINER_TAG}}\` |" >> $GITHUB_STEP_SUMMARY
 
       - name: ⏫ Pushing the docker container...
+        id: push-image
         env:
           CONTAINER_NAME: "backend/api.arolariu"
-          CONTAINER_TAG: ${{ inputs.environment == 'production' && github.sha || 'latest' }}
         run: |
           echo "::group::⏫ Docker Push"
           echo "📤 Pushing to Azure Container Registry..."
           START_TIME=$(date +%s)
           docker push ${{ secrets.AZURE_CONTAINER_REGISTRY_ADDRESS }}/${{env.CONTAINER_NAME}}:${{env.CONTAINER_TAG}}
+          printf 'image_tag=%s\n' "$CONTAINER_TAG" >> "$GITHUB_OUTPUT"
           END_TIME=$(date +%s)
           DURATION=$((END_TIME - START_TIME))
           echo "::notice::✅ Docker push completed in ${DURATION}s"
           echo "::endgroup::"
 
-  deploy:
-    if: github.repository == 'arolariu/arolariu.ro'
+  deploy-azure:
+    if: github.repository == 'arolariu/arolariu.ro' && (inputs.infrastructure || 'azure') == 'azure'
     name: 🚀 Deploy phase (3/3)
-    needs: build
+    needs: [revision, build-azure]
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write # Azure OIDC
     environment:
       name: ${{ inputs.environment || 'production' }}
       url: ${{ steps.deploy-to-webapp.outputs.webapp-url }}
 
+    env:
+      COMMIT_SHA: ${{ needs.revision.outputs.source_sha }}
+      CONTAINER_TAG: ${{ needs.build-azure.outputs.image_tag }}
     steps:
       - name: 🔒 Handling the auth process to Azure Public Cloud...
         uses: Azure/login@a641126d1b8aa4d1fa005f4f92df94a3a4c4c906 # v3.1.0
@@ -297,12 +425,12 @@ jobs:
         env:
           ACR_LOGIN_SERVER: ${{ secrets.AZURE_CONTAINER_REGISTRY_ADDRESS }}
 
+      # Use the same image tag rule as the build and push steps above.
       - name: ⚓ Deploying docker container to Azure App Service...
         id: deploy-to-webapp
         uses: azure/webapps-deploy@02a81bead70021f5284939794bcec79c271ab383 # v3.0.8
         env:
           CONTAINER_NAME: "backend/api.arolariu"
-          CONTAINER_TAG: ${{ inputs.environment == 'production' && github.sha || 'latest' }}
         with:
           app-name: "api-arolariu-ro"
           images: "${{ secrets.AZURE_CONTAINER_REGISTRY_ADDRESS }}/${{env.CONTAINER_NAME}}:${{env.CONTAINER_TAG}}"
