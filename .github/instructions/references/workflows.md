@@ -47,7 +47,7 @@ Secrets — never a client secret or long-lived credential:
 ```yaml
 # .github/workflows/official-api-trigger.yml
 - name: 🔒 Performing auth against Azure Public Cloud...
-  uses: Azure/login@<current-approved-major>
+  uses: Azure/login@<approved-commit-sha> # <release>
   with:
     client-id: ${{ secrets.AZURE_CLIENT_ID }}
     tenant-id: ${{ secrets.AZURE_TENANT_ID }}
@@ -89,7 +89,7 @@ Static Web Apps deployments are a separate live authentication path. The CV, doc
 `Azure/static-web-apps-deploy` action with a site-specific `azure_static_web_apps_api_token` secret:
 
 ```yaml
-- uses: Azure/static-web-apps-deploy@<current-approved-major>
+- uses: Azure/static-web-apps-deploy@<approved-commit-sha> # <release or reviewed exception>
   with:
     azure_static_web_apps_api_token: ${{ secrets.<site-specific-token-name> }}
     action: upload
@@ -106,21 +106,17 @@ and remains approval-gated.
 
 ## Actions and pinned versions
 
-Actions are pinned to a specific major version in live workflow/action files. Read the current reference from the exact workflow family and
-compare relevant siblings before editing; this catalog intentionally does not snapshot action versions.
-
-Live drift exists between the pinned major used by the hygiene gate and the one used by the E2E failure fan-in for
-`actions/download-artifact`. Do not propagate or normalize that difference as unrelated cleanup. Match the owning workflow unless an
-action-version change is explicitly approved.
+Read the pinned commit and release annotation from the exact workflow family. Check relevant siblings before editing; this catalog does not
+snapshot action versions. For example, CV and status require the SWA action input `skip_api_build`; the docs workflow does not.
 
 ## Caching
 
 Toolchain-level caches (`~/.npm`, `~/.nuget/packages`, pip) are delegated entirely to each `actions/setup-*` action's own built-in
-mechanism, configured by `setup-tooling` with a `cache-dependency-path` and nothing else:
+mechanism, configured by the internal `setup-runtime` composite:
 
 ```yaml
-# .github/actions/setup-tooling/action.yml
-- uses: actions/setup-node@<current-approved-major>
+# .github/actions/setup-runtime/action.yml
+- uses: actions/setup-node@<approved-commit-sha> # <release>
   with:
     cache: ${{ inputs.cache == 'true' && 'npm' || '' }}
     cache-dependency-path: |
@@ -133,29 +129,9 @@ The comment on that step explains a real bug the two-path list prevents: if only
 changed packages anyway, and — because the restore counted as a hit — nothing would be written back, repeating the wasted download on every
 subsequent run.
 
-Workspace-produced artifacts (`node_modules`, the Playwright browser bundle) use explicit `actions/cache` steps pinned in the live composite
-action with **no `restore-keys` fallback**, per RFC 0001 §3.2 ("Why No Fallback Keys?"):
-
-```yaml
-# .github/actions/setup-workspace/action.yml
-key: ${{ runner.os }}-node-modules-${{ inputs.node-version }}-${{ hashFiles('package-lock.json') }}
-```
-
-```yaml
-key: ${{ runner.os }}-playwright-${{ inputs.playwright-browsers }}-${{ hashFiles('package-lock.json') }}
-```
-
-The `node_modules` key includes the Node major version and the Playwright key does not — this is deliberate, not an inconsistency to
-reconcile. A `node_modules` cache hit skips `npm ci` entirely, so a natively-compiled addon (the tree pulls in `sharp`) built for a previous
-Node ABI would never rebuild; the Node version must be part of the key so a Node bump forces a fresh install. The Playwright bundle holds
-browser binaries, not Node addons, and the Playwright version that governs them is already pinned by the lock file the key hashes.
-Anti-pattern: adding a `restore-keys:` fallback to either cache "to reduce cache misses" — RFC 0001 documents the exact failure mode this
-reintroduces (a changed lock hash falling back to a cache from an older dependency graph).
-
-**Live drift, not a correctness guarantee:** the current `node_modules` key hashes only `package-lock.json`, and a cache hit skips `npm ci`.
-If a `package.json`/workspace manifest changes without the lock file, the primary key still hits and no lock-consistency check runs.
-Omitting `restore-keys` prevents fallback across _different lock hashes_; it does not detect manifest/lock divergence. An approved workflow
-correction should hash the owning manifests alongside the lock file or always run an explicit lock-consistency check.
+Workspace-produced artifacts (`node_modules` and Playwright's browser bundle) use explicit, exact-key `actions/cache` steps in
+[`setup-workspace`](../../actions/setup-workspace/readme.md#caching-model), without `restore-keys`. The npm tree requires a completeness
+check before skipping `npm ci`. Playwright still installs OS libraries on a browser cache hit.
 
 ## Path filters and triggers
 
@@ -227,12 +203,12 @@ non-idempotent push to shared data should serialize (queue), not cancel.
 
 Artifacts follow a produce → upload → download → aggregate shape for fan-out/fan-in work. `official-hygiene-check-v2.yml`'s matrix
 `providers` job uploads one `outcome-<provider>` artifact per parallel check, and the `gate` job downloads them by pattern into per-artifact
-subdirectories. The download is best-effort, so the verifier still runs and publishes an errored report for missing evidence, never a false
-pass:
+subdirectories. The download is best-effort only to let the verifier publish an errored report. The verifier checks the download's raw
+`outcome` rather than its post-`continue-on-error` `conclusion` and rejects any files left behind by a failed transfer:
 
 ```yaml
 # .github/workflows/official-hygiene-check-v2.yml (providers job)
-- uses: actions/upload-artifact@<current-approved-major>
+- uses: actions/upload-artifact@<approved-commit-sha> # <release>
   if: always()
   with:
     name: outcome-${{ matrix.provider.id }}
@@ -241,13 +217,19 @@ pass:
     retention-days: 7
 
 # (gate job)
-- uses: actions/download-artifact@<current-approved-major>
-  # The verifier still runs on download failure so it can publish an errored report.
+- uses: actions/download-artifact@<approved-commit-sha> # <release>
+  id: download-outcomes
   continue-on-error: true
   with:
     pattern: outcome-*
     path: artifacts/hygiene/outcomes
     merge-multiple: false
+
+- name: Run projections and gate
+  env:
+    HYGIENE_OUTCOME_DOWNLOAD_FAILED: ${{ steps.download-outcomes.outcome == 'failure' && 'true' || 'false' }}
+  working-directory: .github/scripts
+  run: node --experimental-strip-types src/hygiene/pipeline/runProjections.ts --plan "$GITHUB_WORKSPACE/artifacts/hygiene/plan.json"
 ```
 
 `if-no-files-found` is chosen per situation, not defaulted: `warn` for a best-effort outcome file, `error` for
@@ -333,16 +315,15 @@ small the diff looks.
 
 ## Reusable composite actions
 
-`setup-tooling` and `setup-workspace` are the only two composite actions, and they have a strict ownership boundary documented in
-`setup-tooling`'s own header: `setup-tooling` only installs binaries (Node/.NET/Python) and is repo-agnostic; `setup-workspace` wraps it and
-adds everything repo-specific (dependency installs, Playwright, code generation, the components build). Jobs that need only a binary (for
-example `official-e2e-action.yml`'s `prepare` job, which just needs `node` to resolve inputs) use `setup-tooling` directly instead of paying
-for a full workspace bootstrap:
+Only `setup-workspace` calls `setup-runtime`, which provisions the requested toolchains. Workflows use `setup-workspace` even when they want
+only a toolchain:
 
 ```yaml
 # .github/workflows/official-e2e-action.yml
-- name: 🧰 Setup tooling
-  uses: ./.github/actions/setup-tooling
+- name: Prepare Node.js without workspace dependencies
+  uses: ./.github/actions/setup-workspace
+  with:
+    node-install: "true"
 ```
 
 `setup-workspace` validates its own input combinations _before_ installing any toolchain, specifically so a contradictory input set fails in
@@ -353,27 +334,27 @@ runner happens to preinstall:
 # .github/actions/setup-workspace/action.yml
 require() {
   if [ "$3" = "true" ] && [ "$1" != "true" ]; then
-    errors+=("  - '$4: true' requires '$2: true' (currently '$2: $1')")
+    errors+=("  - '$4: true' requires '$2: true'")
   fi
 }
-require "$NODE" node "$INSTALL_NODE_DEPS" install-node-deps
-require "$INSTALL_NODE_DEPS" install-node-deps "$RUN_GENERATE" run-generate
+require "$NODE" node-install "$INSTALL_NODE_DEPS" node-deps-install
+require "$INSTALL_NODE_DEPS" node-deps-install "$RUN_GENERATE" workspace-generate
 ```
 
 This is the pattern to follow when adding a new composite-action input that depends on another one: validate the combination up front with a
 clear `::error::`, don't let a downstream step fail with a confusing, unrelated error message. `official-hygiene-check-v2.yml`'s matrix
 strategy shows the same "provision only what's needed" discipline at the workflow level — each `provider` entry carries its own
 `needs-dotnet`/`needs-python` booleans, and `setup-workspace` is called once per matrix job with those booleans forwarded directly as
-`dotnet:`/`python:` inputs, so a lint-only job never pays for a .NET SDK install.
+`dotnet-install:`/`python-install:` inputs, so a lint-only job never pays for a .NET SDK install.
 
 ## RFC 0001 patterns at a glance
 
-| Pattern                  | Shape                                                                                                  | Live example                                                                       |
-| ------------------------ | ------------------------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------- |
-| Build-Release            | `push/manual build → validate → workflow_run/manual release → [configured protection] → deploy`        | `official-website-build.yml` + `official-website-release.yml`                      |
-| Trigger                  | `push/manual → test → build → deploy` (CV: test → build-and-deploy; docs: single build-and-deploy job) | `official-api-trigger.yml`, `official-cv-trigger.yml`, `official-docs-trigger.yml` |
-| PR validation            | `PR/manual → detect → provider matrix → gate/report`                                                   | `official-hygiene-check-v2.yml`                                                    |
-| Scheduled E2E validation | `schedule/manual → E2E → failure reporting`                                                            | `official-e2e-action.yml`                                                          |
+| Pattern                  | Shape                                                                                           | Live example                                                                       |
+| ------------------------ | ----------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------- |
+| Build-Release            | `push/manual build → validate → workflow_run/manual release → [configured protection] → deploy` | `official-website-build.yml` + `official-website-release.yml`                      |
+| Trigger                  | `push/manual → test → build-azure → deploy-azure` (docs: single build-and-deploy job)           | `official-api-trigger.yml`, `official-cv-trigger.yml`, `official-docs-trigger.yml` |
+| PR validation            | `PR/manual → detect → provider matrix → gate/report`                                            | `official-hygiene-check-v2.yml`                                                    |
+| Scheduled E2E validation | `schedule/manual → E2E → failure reporting`                                                     | `official-e2e-action.yml`                                                          |
 
 Use this table to classify which pattern a proposed workflow change belongs to before comparing it against the wrong example — a
 trigger-pattern workflow gaining a manual-approval gate is effectively becoming a build-release workflow, which is a deployment-behavior
@@ -387,10 +368,10 @@ and requires explicit approval; the catalog records the gap but does not authori
 
 | Anti-pattern                                                                                              | Why it fails here                                                                                                                 | Correction                                                                                                                                                                                  |
 | --------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Adding `restore-keys:` to the `node_modules` or Playwright cache                                          | Allows a changed lock hash to fall back to artifacts from an older dependency graph                                               | Keep exact-match restoration; separately treat the current manifest-only-change blind spot as live drift requiring an approved key/check change                                             |
+| Adding `restore-keys:` to the `node_modules` or Playwright cache                                          | Allows a changed lock hash to fall back to artifacts from an older dependency graph                                               | Keep exact-match restoration                                                                                                                                                                |
 | Renaming/adding a GitHub Environment on an Azure-login job without a matching Bicep federated credential  | The pinned `azure/login` action's OIDC token exchange fails against a subject claim that does not exist                           | Add the matching `federatedIdentityCredentials` entry in `identity/federatedCredentials.bicep` in the same approved change; do not add Azure federation for npm/SWA-token-only environments |
 | Interpolating a secret directly into a `run:` shell string                                                | Script-injection risk; violates `setup-workspace`'s own documented convention                                                     | Pass the value through an `env:` block and reference the environment variable inside `run:`                                                                                                 |
-| Bumping one workflow's pinned action version without checking siblings                                    | Creates or extends the current `download-artifact` major-version drift                                                            | Match the version the file already uses unless the version bump itself is the approved task                                                                                                 |
+| Bumping one workflow's pinned action version without checking siblings                                    | Can break shared output, cache, artifact, or authentication contracts                                                             | Check related callers and update only the approved cohort                                                                                                                                   |
 | Adding a deploy step to a currently build/test-only trigger workflow                                      | Silently converts a lower-risk trigger pattern into a production deployment behavior change                                       | Treat as a deployment-safety/environment change requiring confirmation, not a routine step addition                                                                                         |
 | Setting `cancel-in-progress: true` on a workflow that pushes to shared state (e.g. an orphan data branch) | Can cancel mid-write and corrupt or lose the push                                                                                 | Use a fixed concurrency group with `cancel-in-progress: false` to serialize instead                                                                                                         |
 | Adding a `paths:` filter to a schedule- or tag-triggered workflow                                         | `schedule`/tag-push triggers are time- or version-based, not file-change-based; a path filter can silently suppress required runs | Leave schedule/tag workflows without a `paths:` filter                                                                                                                                      |
@@ -398,7 +379,7 @@ and requires explicit approval; the catalog records the gap but does not authori
 ## Live source pointers
 
 - `docs/rfc/0001-github-actions-workflows.md` — workflow pattern taxonomy, caching philosophy, and the "why no fallback keys" rationale
-- `.github/actions/setup-tooling/action.yml` — toolchain-only composite action and its built-in cache configuration
+- `.github/actions/setup-runtime/action.yml` — internal toolchain provisioning and built-in cache configuration
 - `.github/actions/setup-workspace/action.yml` — workspace bootstrap, input validation guard, and explicit cache steps
 - `.github/workflows/official-api-trigger.yml` — trigger-pattern test→build→deploy chain with OIDC and environment gating
 - `.github/workflows/official-website-build.yml`, `official-website-release.yml` — build-release split and `workflow_run` chaining

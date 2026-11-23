@@ -9,7 +9,7 @@ to the documentation that owns their details.
 | Path                                                   | Contents                                                                                              |
 | ------------------------------------------------------ | ----------------------------------------------------------------------------------------------------- |
 | [`workflows/`](workflows/)                             | GitHub Actions workflow definitions; see [Workflows](#workflows)                                      |
-| [`actions/`](actions/)                                 | Composite actions `setup-tooling` and `setup-workspace`; see [Composite Actions](#composite-actions)  |
+| [`actions/`](actions/)                                 | Workspace setup and its internal runtime helper; see [Composite Actions](#composite-actions)          |
 | [`scripts/`](scripts/)                                 | Isolated npm package of TypeScript workflow scripts; see [Workflow Scripts](#workflow-scripts)        |
 | [`templates/`](templates/)                             | `e2e-test-template.md`, the body template for E2E live-test failure issues                            |
 | [`ISSUE_TEMPLATE/`](ISSUE_TEMPLATE/)                   | Issue forms and the template chooser configuration (`config.yml`)                                     |
@@ -32,8 +32,8 @@ The Copilot customization assets are [`copilot-instructions.md`](copilot-instruc
 | [`official-website-release.yml`](workflows/official-website-release.yml)       | Completed `official-website-build` run on `preview`; manual dispatch                  | Deploy the website container to Azure App Service                                            |
 | [`official-api-trigger.yml`](workflows/official-api-trigger.yml)               | Push to `main` touching `sites/api.arolariu.ro/**`; manual dispatch                   | Test, containerize, and deploy the .NET API to Azure App Service                             |
 | [`official-exp-trigger.yml`](workflows/official-exp-trigger.yml)               | Push to `main` touching `sites/exp.arolariu.ro/**`; manual dispatch                   | Test (pytest), containerize, and deploy the FastAPI service to Azure App Service             |
-| [`official-cv-trigger.yml`](workflows/official-cv-trigger.yml)                 | Push to `main` touching `sites/cv.arolariu.ro/**`; manual dispatch                    | Test, build, and deploy the CV site to Azure Static Web Apps                                 |
-| [`official-status-trigger.yml`](workflows/official-status-trigger.yml)         | Push to `main` touching `sites/status.arolariu.ro/**`; manual dispatch                | Test, build, and deploy the status site to Azure Static Web Apps                             |
+| [`official-cv-trigger.yml`](workflows/official-cv-trigger.yml)                 | Push to `main` touching `sites/cv.arolariu.ro/**`; manual dispatch                    | Test and package CV; deploy only in Azure mode                                               |
+| [`official-status-trigger.yml`](workflows/official-status-trigger.yml)         | Push to `main` touching `sites/status.arolariu.ro/**`; manual dispatch                | Test and package status; deploy only in Azure mode                                           |
 | [`official-docs-trigger.yml`](workflows/official-docs-trigger.yml)             | Push to `main` unless every changed file matches `.github/*`; manual dispatch         | Generate and deploy the documentation site to Azure Static Web Apps                          |
 | [`official-components-publish.yml`](workflows/official-components-publish.yml) | Push of a `components-v*` tag; manual dispatch (dry run, npm dist-tag)                | Validate and publish `@arolariu/components` to npm with Trusted Publishing and provenance    |
 | [`official-hygiene-check-v2.yml`](workflows/official-hygiene-check-v2.yml)     | Pull request opened, synchronized, or reopened; manual dispatch (`affected` / `full`) | "Code Hygiene Check (v3)": planned format, lint, TypeScript/.NET/Python test, and stats jobs |
@@ -46,10 +46,10 @@ inputs, conditions, and job graphs.
 
 ## Composite Actions
 
-| Action                                                 | Role                                                                                                                                                                              |
-| ------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| [`setup-tooling`](actions/setup-tooling/readme.md)     | Installs the Node.js, .NET, and Python toolchains with built-in dependency caching. It installs binaries only.                                                                    |
-| [`setup-workspace`](actions/setup-workspace/readme.md) | Runs `setup-tooling`, then bootstraps the monorepo: root, `.github/scripts`, .NET, and Python dependencies, Playwright browsers, code generation, and the shared component build. |
+| Action                                                 | Role                                                                                                                                                |
+| ------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------- |
+| [`setup-workspace`](actions/setup-workspace/readme.md) | The workflow entry point. Provisions selected toolchains and optionally installs dependencies and browsers, generates files, and builds components. |
+| [`setup-runtime`](actions/setup-runtime/readme.md)     | Internal to `setup-workspace`; provisions the toolchains and configures their download caches.                                                      |
 
 Both are local actions (`uses: ./.github/actions/<name>`) and neither checks out the repository, so a job runs `actions/checkout` first.
 Each action's readme owns its inputs, outputs, and usage examples.
@@ -61,8 +61,8 @@ step. Workflows enter it at these points:
 
 | Entry point                                                                                | Caller                                                  | Invocation                                                                                          |
 | ------------------------------------------------------------------------------------------ | ------------------------------------------------------- | --------------------------------------------------------------------------------------------------- |
-| [`src/runUnitTestAction.ts`](scripts/src/runUnitTestAction.ts)                             | `official-website-build.yml`, `test` job                | `actions/github-script@v8` imports the module and awaits its parameterless default export           |
-| [`src/runLiveTestAction.ts`](scripts/src/runLiveTestAction.ts)                             | `official-e2e-action.yml`, `raise-issue-on-failure` job | `actions/github-script@v8` imports the module and awaits its parameterless default export           |
+| [`src/runUnitTestAction.ts`](scripts/src/runUnitTestAction.ts)                             | `official-website-build.yml`, `test` job                | `actions/github-script` imports the module and awaits its parameterless default export              |
+| [`src/runLiveTestAction.ts`](scripts/src/runLiveTestAction.ts)                             | `official-e2e-action.yml`, `raise-issue-on-failure` job | `actions/github-script` imports the module and awaits its parameterless default export              |
 | [`src/hygiene/pipeline/preparePlan.ts`](scripts/src/hygiene/pipeline/preparePlan.ts)       | `official-hygiene-check-v2.yml`, `detect` job           | `node --experimental-strip-types src/hygiene/pipeline/preparePlan.ts --scope <scope>`               |
 | [`src/hygiene/pipeline/runProvider.ts`](scripts/src/hygiene/pipeline/runProvider.ts)       | `official-hygiene-check-v2.yml`, `providers` matrix job | `node --experimental-strip-types src/hygiene/pipeline/runProvider.ts <provider> --plan <plan.json>` |
 | [`src/hygiene/pipeline/runProjections.ts`](scripts/src/hygiene/pipeline/runProjections.ts) | `official-hygiene-check-v2.yml`, `gate` job             | `node --experimental-strip-types src/hygiene/pipeline/runProjections.ts --plan <plan.json>`         |
@@ -76,9 +76,9 @@ The hygiene commands run from `.github/scripts`. The [scripts README](scripts/RE
 
 The [helper guide](scripts/helpers/README.md) documents the native SDK facades and the narrow helper modules.
 
-Root `npm run setup` restores the `.github/scripts` dependencies. In CI, the hygiene jobs restore them through the `install-scripts-deps`
-input of `setup-workspace`, and each `actions/github-script` step runs `npm ci` in `.github/scripts` before it imports its entry point. From
-the repository root:
+Root `npm run setup` restores the `.github/scripts` dependencies. In CI, the hygiene jobs restore them through the `node-scripts-install`
+input of `setup-workspace`, as does the E2E failure reporter. The website's `actions/github-script` step runs `npm ci` in `.github/scripts`
+before importing its entry point. From the repository root:
 
 ```powershell
 npm --prefix .github/scripts test
@@ -93,7 +93,7 @@ npm --prefix .github/scripts run test:coverage
 - `azure/login` steps authenticate with OIDC federated credentials (`id-token: write`). Static Web Apps deployments use per-site deployment
   tokens, and npm publishing uses Trusted Publishing with provenance.
 - Credentials come from the `secrets` context.
-- Actions are referenced by major-version tag (for example `actions/checkout@v7`), and the `github-actions` entry in
+- External action pins follow the [workflow instructions](instructions/workflows.instructions.md#rules). The `github-actions` entry in
   [`dependabot.yml`](dependabot.yml) proposes updates.
 - Code scanning is described in the [CodeQL README](codeql/README.md).
 

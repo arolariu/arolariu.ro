@@ -3,7 +3,7 @@
 - **Status**: Implemented
 - **Date**: 2025-10-22
 - **Authors**: arolariu
-- **Related Components**: `.github/workflows/`, `.github/actions/setup-tooling`, `.github/actions/setup-workspace`
+- **Related Components**: `.github/workflows/`, `.github/actions/setup-workspace`, `.github/actions/setup-runtime`
 
 ---
 
@@ -11,8 +11,7 @@
 
 This RFC documents the DevOps architecture for the arolariu.ro monorepo using GitHub Actions. The system uses **build-release workflows**
 for staged deployments, **trigger workflows** for direct build-and-deploy operations, validation workflows, and stateful scheduled jobs.
-Build/test jobs generally reuse `setup-tooling` or `setup-workspace`; release, probe, and other narrow jobs may not need repository
-bootstrap.
+Build/test jobs generally reuse `setup-workspace`; release and other narrow jobs may not need repository bootstrap.
 
 ---
 
@@ -72,8 +71,8 @@ Trigger (push/manual) → Test → Build → Deploy (all in one)
 **Characteristics:**
 
 - Single workflow handles build and deploy
-- The build (or combined `build-and-deploy`) job declares `needs: test`; `official-docs-trigger.yml` has no test job, only
-  `build-and-deploy`
+- API, EXP, CV, and status use `build-azure` and `deploy-azure` for Azure. CV and status keep one `test` job for both modes; Azure deploys
+  the verified build artifact, while LOCAL stops after `build-local` uploads it. Docs still uses one `build-and-deploy` job.
 - Faster feedback loop
 - Suitable for lower-risk deployments (CV site, documentation)
 
@@ -120,130 +119,22 @@ planning or reviewing a change.
 
 ## 3. Technical Design
 
-### 3.1 Composite Actions: setup-tooling and setup-workspace
+### 3.1 Workspace Setup
 
-**Purpose:** Centralized environment setup for all workflows
-
-**Location:** `.github/actions/setup-tooling/`, `.github/actions/setup-workspace/`
-
-| Action            | Responsibility                                                                                                                                                                                                                                                                                         |
-| ----------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `setup-tooling`   | Installs Node.js / .NET / Python. Repo-agnostic. Caching is delegated to each `setup-*` action's built-in mechanism                                                                                                                                                                                    |
-| `setup-workspace` | Invokes `setup-tooling`, then bootstraps the repo: root `npm ci` (plus the SvelteKit sync for the CV and status sites), `npm ci` in `.github/scripts`, `dotnet restore`, `pip install`, Playwright, `npm run generate <generate-args>`, `npm run build:components`; each bootstrap step is input-gated |
-
-Use `setup-tooling` when a job needs only a binary. Use `setup-workspace` when repository dependencies, generation, builds, or tests are
-required. Narrow release, probe, or deployment jobs may need `setup-tooling` only or neither action.
-
-| Cache                              | Owner                      | Key                                                          |
-| ---------------------------------- | -------------------------- | ------------------------------------------------------------ |
-| `~/.npm`, `~/.nuget/packages`, pip | `setup-tooling` (built-in) | lock-file hashes                                             |
-| `node_modules`                     | `setup-workspace`          | `<os>-node-modules-<node-version>-<hash(package-lock.json)>` |
-| `~/.cache/ms-playwright`           | `setup-workspace`          | `<os>-playwright-<browsers>-<hash(package-lock.json)>`       |
+Workflows call [`setup-workspace`](../../.github/actions/setup-workspace/readme.md) after checkout. It validates inputs before delegating
+Node.js, .NET SDK, or Python provisioning to its internal `setup-runtime` composite. It then manages input-gated dependency installs,
+Playwright browsers, code generation, and component builds. All setup operations are opt-in. Caching is enabled by default for opted-in
+operations only. For runtime-only jobs, enable just the required toolchains; no workflow calls `setup-runtime` directly.
 
 ### 3.2 Caching Strategy
 
-**Philosophy:** Hash-based exact matching, no fallback keys
+`setup-runtime` delegates language package-download caches to the upstream setup actions. `setup-workspace` separately caches the installed
+npm tree and Playwright's browser binaries. See the
+[cache inputs and behavior](../../.github/actions/setup-workspace/readme.md#caching-model).
 
-#### **Toolchain Caches (setup-tooling)**
-
-Toolchain caches (`~/.npm`, `~/.nuget/packages`, pip) are delegated entirely to each `actions/setup-*` action's built-in mechanism. The
-`setup-tooling` action configures each with a `cache-dependency-path` pointing at the relevant lock file:
-
-| Toolchain                    | Action                                     | `cache-dependency-path`                                  |
-| ---------------------------- | ------------------------------------------ | -------------------------------------------------------- |
-| Node.js (npm download cache) | `actions/setup-node` (live pinned major)   | `package-lock.json`, `.github/scripts/package-lock.json` |
-| .NET (NuGet)                 | `actions/setup-dotnet` (live pinned major) | `**/packages.lock.json`                                  |
-| Python (pip)                 | `actions/setup-python` (live pinned major) | `sites/exp.arolariu.ro/requirements*.txt`                |
-
-The exact key strings are generated internally by each `setup-*` action; no per-workflow segment is added.
-
-#### **Workspace Caches (setup-workspace)**
-
-Workspace caches use explicit `actions/cache` steps pinned in the live composite action. The key shapes below come from
-`setup-workspace/action.yml`:
-
-**node_modules:**
-
-```yaml
-key: ${{ runner.os }}-node-modules-${{ inputs.node-version }}-${{ hashFiles('package-lock.json') }}
-```
-
-Example: `Linux-node-modules-<node-major>-a3f9b2c1d4e5...`
-
-The Node version is part of the key because `node_modules` can contain natively-compiled addons whose ABI is tied to the runtime. A cache
-hit skips `npm ci`, so nothing would rebuild them — bumping Node must invalidate the cache rather than restore binaries built for the
-previous runtime.
-
-**Playwright browser bundle (`~/.cache/ms-playwright`):**
-
-```yaml
-key: ${{ runner.os }}-playwright-${{ inputs.playwright-browsers }}-${{ hashFiles('package-lock.json') }}
-```
-
-Example: `Linux-playwright-chromium-b7e4c9a2f1d8...`
-
-The Playwright key omits the Node version deliberately: the cached artifacts are browser binaries, not Node addons, and the Playwright
-version that governs them is already pinned by the lock file. The key does include the `playwright-browsers` input (default `chromium`), so
-a job that installs a different browser set never restores another set's binaries.
-
-**Behavior (both caches):**
-
-- **Cache hit**: When `package-lock.json` hasn't changed (and, for `node_modules`, the Node version is unchanged; for Playwright, the
-  browser list is unchanged)
-- **Cache miss**: When `package-lock.json` changes, or — for `node_modules` — when the Node version is bumped, or — for Playwright — when
-  the `playwright-browsers` list changes
-- **No fallback**: Prevents a changed lock hash from restoring artifacts produced for an older lock state
-
-#### **Why No Fallback Keys?**
-
-**Problem with fallback keys:**
-
-```yaml
-# DANGEROUS (what we deliberately do NOT do)
-key: ${{ runner.os }}-node-modules-${{ inputs.node-version }}-${{ hashFiles('package-lock.json') }}
-restore-keys: |
-  Linux-node-modules-<node-major>-
-  Linux-node-modules-
-```
-
-Note the key itself is the current one — the hazard below comes entirely from the `restore-keys` stanza, not from the key format.
-
-**Scenario that fails:**
-
-1. Dev pushes feature → Cache created: `Linux-node-modules-<node-major>-hash123`
-2. 3 days later, dev updates dependencies and regenerates `package-lock.json`
-3. Workflow runs → The new lock hash makes the primary key miss
-4. Fallback `Linux-node-modules-<node-major>-` hits old cache! ❌
-5. Build fails with incompatible dependencies ❌
-
-**Solution (current approach):**
-
-```yaml
-# Exact-match current approach
-key: ${{ runner.os }}-node-modules-${{ inputs.node-version }}-${{ hashFiles('package-lock.json') }}
-# NO restore-keys
-```
-
-**Benefits:**
-
-- ✅ No fallback to an older lock-file state
-- ✅ Forces fresh installation when the lock hash changes
-- ✅ Workflows can reuse an exact entry when GitHub cache scope and cache version make it accessible
-- ✅ Clear: cache hit = exact match, cache miss = fresh install
-
-**Trade-off:**
-
-- More frequent cache misses (but correct behavior)
-- Slightly longer execution time on first run after dependency update
-- Correctness still depends on manifests and `package-lock.json` remaining synchronized
-
-**When cache invalidates (as expected):** a) Developer deploys new features without version bumps → **Cache HIT** (lock file unchanged) b)
-Developer deploys new feature with version bump → Lock file regenerated → **Cache MISS** → Fresh install ✅ c) Developer only bumps versions
-→ Lock file regenerated → **Cache MISS** → Fresh install ✅
-
-**Known limitation:** the current key hashes only `package-lock.json`, and the workflow skips `npm ci` on a cache hit. A manifest-only
-change therefore keeps the same key and can reuse stale dependencies. Omitting fallback keys does not solve that case. A future approved
-workflow change should hash the owning manifests too or run an explicit lock-consistency check before trusting the cache.
+**Why no fallback keys?** A fallback under a different lockfile or runtime key could restore dependencies for the wrong graph or native ABI.
+Exact keys trade a first-run install for correctness. An npm tree archive hit must also pass the installed-file check before it can skip
+`npm ci`. Playwright still installs OS libraries when its browser archive hits. GitHub cache visibility remains branch/tag scoped.
 
 ### 3.3 Workflow Structure Pattern
 
@@ -259,7 +150,7 @@ on:
     paths: ["relevant/paths/**"]
   workflow_dispatch: # every workflow keeps a manual trigger
 
-# Optional: only the hygiene, E2E, and status-probe workflows declare concurrency, each with its own group.
+# Use a concurrency group appropriate to the workflow's side effects.
 concurrency:
   group: <workflow-specific-group>
   cancel-in-progress: true
@@ -274,18 +165,20 @@ jobs:
 
     steps:
       - name: 📥 Checkout repository
-        uses: actions/checkout@<live-pinned-major>
+        uses: actions/checkout@<approved-commit-sha> # <release>
 
       - name: 🔐 Azure authentication (if needed)
-        uses: azure/login@<live-pinned-major>
+        uses: azure/login@<approved-commit-sha> # <release>
         with:
           # ...
 
       - name: 🚀 Setup workspace
         uses: ./.github/actions/setup-workspace
         with:
-          run-generate: "true"
-          generate-args: "artifacts" # only the generators the job needs
+          node-install: "true"
+          node-deps-install: "true"
+          workspace-generate: "true"
+          workspace-generate-args: "artifacts" # only the generators the job needs
           # ... other inputs
 
       - name: 🏗️ Build
@@ -419,7 +312,7 @@ Trigger: PR (+ manual dispatch with scope: affected | full)
 
 - ✅ **Pro**: No fallback across distinct lock-file states
 - ⚠️ **Con**: No fallback means every dependency change = cache miss
-- ⚠️ **Con**: The current lock-only key does not detect manifest-only drift
+- ⚠️ **Con**: An npm tree check detects missing manifests, not modified package contents
 - **Decision**: Prefer exact restoration now; separately harden manifest/lock consistency in an approved workflow change
 
 **Composite Action:**
@@ -440,23 +333,8 @@ Trigger: PR (+ manual dispatch with scope: affected | full)
 
 ### 6.1 Cache Key Generation
 
-**Node.js (node_modules):**
-
-```yaml
-key: ${{ runner.os }}-node-modules-${{ inputs.node-version }}-${{ hashFiles('package-lock.json') }}
-```
-
-**Components:**
-
-- `${{ runner.os }}`: OS-specific (`Linux`, `Windows`, `macOS`)
-- `${{ inputs.node-version }}`: guards against restoring native addons built for a different Node ABI
-- `${{ hashFiles('package-lock.json') }}`: SHA-256 hash of the root `package-lock.json`
-
-**Example:**
-
-```
-Linux-node-modules-<node-major>-7f3e9a2c1b5d4...
-```
+The exact key expressions live in [`setup-workspace/action.yml`](../../.github/actions/setup-workspace/action.yml). The npm tree key uses
+the resolved Node and npm versions, not the requested runtime range; manifest-only changes invalidate the key and force an install.
 
 ### 6.2 Progress Indicators
 
@@ -466,10 +344,9 @@ step names and final logging step in `.github/actions/setup-workspace/action.yml
 
 ### 6.3 Workspace Generation
 
-**Feature:** The `run-generate` input runs `npm run generate <generate-args>` during workspace setup. `generate-args` defaults to
-`env artifacts gql i18n`, so live callers pass an explicit subset: the website build uses `artifacts gql i18n`, and the API and hygiene
-workflows use `artifacts`. Omitting `generate-args` also runs the `env` generator, which outside `INFRA=azure` reads `.env` and prompts for
-missing required keys.
+**Feature:** `workspace-generate` runs `npm run generate <workspace-generate-args>` during workspace setup. The website build selects
+`artifacts gql i18n` and hygiene selects `artifacts`. With generation enabled, omitting `workspace-generate-args` also runs the `env`
+generator, which outside `INFRA=azure` reads `.env` and prompts for missing required keys.
 
 **Use Case:** Jobs that need generated workspace artifacts (taxonomy and license artifacts, synchronized locale files) before they build or
 test. The `gql` generator currently writes only a placeholder (`scripts/__generated__/gql/README.placeholder.txt`).
@@ -480,8 +357,10 @@ test. The `gql` generator currently writes only a placeholder (`scripts/__genera
 - name: 🚀 Setup workspace
   uses: ./.github/actions/setup-workspace
   with:
-    run-generate: "true"
-    generate-args: "artifacts gql i18n" # only the generators the job needs
+    node-install: "true"
+    node-deps-install: "true"
+    workspace-generate: "true"
+    workspace-generate-args: "artifacts gql i18n" # only the generators the job needs
 
 - name: 🏗️ Build website
   run: npm run build # Can now use the generated artifacts
@@ -538,7 +417,7 @@ test. The `gql` generator currently writes only a placeholder (`scripts/__genera
 
 - A contaminated entry can be reused by another workflow that resolves the same key and cache scope.
 - `setup-workspace` skips `npm ci` on a `node_modules` hit, so that path does not independently validate dependencies.
-- The current lock-only key does not detect a manifest-only change.
+- A cache hit is not a content integrity check; do not cache credentials or generated environment files.
 - Treat GitHub cache permissions, workflow trust, and manifest/lock consistency as separate controls; the hash is not a poisoning boundary.
 
 ### 8.2 Secret Management
@@ -586,7 +465,7 @@ test. The `gql` generator currently writes only a placeholder (`scripts/__genera
 
 ### 10.1 Internal Documentation
 
-- `.github/actions/setup-tooling/readme.md` - setup-tooling usage guide
+- `.github/actions/setup-runtime/readme.md` - internal runtime responsibilities
 - `.github/actions/setup-workspace/readme.md` - setup-workspace usage guide
 - `.github/instructions/workflows.instructions.md` - Workflow development guidelines
 

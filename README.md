@@ -625,7 +625,7 @@ arolariu.ro/
 │
 ├── 🤖 .github/                     # GitHub configuration
 │   ├── workflows/                  #    CI/CD workflows
-│   ├── actions/                    #    Composite setup actions (setup-tooling, setup-workspace)
+│   ├── actions/                    #    Workflow setup (setup-workspace and its internal setup-runtime)
 │   ├── scripts/                    #    CI TypeScript scripts (hygiene, unit/live test reporting)
 │   ├── instructions/               #    Path instructions and reference catalogs
 │   ├── agents/                     #    Specialist agent definitions
