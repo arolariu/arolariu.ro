@@ -106,6 +106,8 @@ jobs:
       - name: 📦 Setup workspace
         uses: ./.github/actions/setup-workspace
         with:
+          node-install: "true"
+          node-deps-install: "true"
           node-version: ${{ env.NODE_VERSION }}
 
       - name: 📋 Extract package information
@@ -209,6 +211,8 @@ jobs:
       - name: 📦 Setup workspace
         uses: ./.github/actions/setup-workspace
         with:
+          node-install: "true"
+          node-deps-install: "true"
           node-version: ${{ env.NODE_VERSION }}
           node-registry-url: "https://registry.npmjs.org"
 

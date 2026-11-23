@@ -1,48 +1,7 @@
-# =============================================================================
-# Main Website Build Workflow (Development/Preview)
-# =============================================================================
-# This workflow handles the CI/CD pipeline for the main Next.js website
-# (arolariu.ro) in development/preview environments, including testing,
-# containerization, and deployment to development Azure App Service.
-#
-# Architecture:
-#   - Phase 1: Test - Unit tests (Vitest) and E2E tests (Playwright)
-#   - Phase 2: Build - Containerizes Next.js app and pushes to ACR
-#
-# Technology Stack:
-#   - Next.js App Router, React Server Components, and strict TypeScript
-#   - Framework versions are owned by root package.json and AGENTS.md
-#   - Playwright for E2E testing
-#   - Vitest for unit testing
-#   - Docker for containerization
-#
-# Triggers:
-#   - Automatic: Push to 'preview' branch with changes in sites/arolariu.ro/
-#   - Manual: workflow_dispatch with environment/infrastructure selection
-#
-# Test Coverage:
-#   - Unit tests with code coverage (uploaded to CodeCov)
-#   - E2E tests with Playwright
-#   - Test reports uploaded as artifacts
-#   - PR comments with test results (on preview branch)
-#
-# Security:
-#   - Uses OIDC for Azure authentication (no long-lived secrets)
-#   - Azure Container Registry credentials in GitHub Secrets
-#   - Environment-specific configurations
-#
-# Prerequisites:
-#   1. Azure Managed Identity configured with Federated Credentials
-#   2. Azure Container Registry with push/pull access
-#   3. GitHub Secrets configured:
-#      - AZURE_TENANT_ID, AZURE_SUBSCRIPTION_ID
-#      - AZURE_FRONTEND_MANAGED_IDENTITY_CLIENT_ID
-#      - AZURE_CONTAINER_REGISTRY_ADDRESS
-#      - CODECOV_TOKEN (for coverage reporting)
-#
-# Related Workflows:
-#   - official-website-release.yml: Deploys built container to Azure
-# =============================================================================
+# Type-check and test the website, then build, smoke-test, and push its image to ACR.
+# Runs on preview pushes touching the website or on manual dispatch. Dispatch can explicitly skip tests.
+# Uses Azure OIDC and emits test/coverage reports. Does not deploy directly; official-website-release owns deployment.
+# Validation: run website checks locally; a successful preview build can start the downstream release.
 
 name: "official-website-build"
 
@@ -146,12 +105,15 @@ jobs:
           tenant-id: ${{ secrets.AZURE_TENANT_ID }}
           subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
 
+      # Browser provisioning and generated inputs are required by the website test job.
       - name: 📦 Setup workspace
         uses: ./.github/actions/setup-workspace
         with:
-          install-playwright: "true"
-          run-generate: "true"
-          generate-args: "artifacts gql i18n"
+          node-install: "true"
+          node-deps-install: "true"
+          playwright-install: "true"
+          workspace-generate: "true"
+          workspace-generate-args: "artifacts gql i18n"
 
       - name: 📝 Set public build timestamp
         run: echo "TIMESTAMP=$(date -u '+%Y-%m-%dT%H:%M:%SZ')" >> "$GITHUB_ENV"
@@ -307,8 +269,10 @@ jobs:
       - name: 📦 Setup workspace
         uses: ./.github/actions/setup-workspace
         with:
-          run-generate: "true"
-          generate-args: "artifacts gql i18n"
+          node-install: "true"
+          node-deps-install: "true"
+          workspace-generate: "true"
+          workspace-generate-args: "artifacts gql i18n"
 
       - name: 📝 Set public build timestamp
         run: echo "TIMESTAMP=$(date -u '+%Y-%m-%dT%H:%M:%SZ')" >> "$GITHUB_ENV"
@@ -372,6 +336,7 @@ jobs:
           echo "| Image Size | ${IMAGE_SIZE} |" >> $GITHUB_STEP_SUMMARY
           echo "| Container | \`${{env.CONTAINER_NAME}}:${{env.CONTAINER_TAG}}\` |" >> $GITHUB_STEP_SUMMARY
 
+      # Verify the exact image built above before making its tag available to the release workflow.
       - name: 🧪 Smoke test final image runtime configuration
         env:
           CONTAINER_NAME: ${{ inputs.container_name || 'frontend/dev.arolariu' }}

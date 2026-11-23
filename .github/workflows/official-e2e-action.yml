@@ -1,14 +1,7 @@
-# =============================================================================
-# End-to-End (E2E) Live Testing Workflow
-# =============================================================================
-# Newman-based live testing for frontend, backend, and CV targets.
-#
-# Features:
-#   - Matrix execution for frontend/backend/cv
-#   - Deterministic artifact naming for reports and logs
-#   - Concurrency control to avoid overlapping live runs
-#   - Automatic issue creation with parsed diagnostics on failure
-# =============================================================================
+# Run Newman against live website, API, and CV endpoints; collect reports and open or update an issue on test failure.
+# Runs daily or on manual dispatch (all targets or one); target jobs run independently and do not deploy.
+# Live requests may use E2E_TEST_AUTH_TOKEN. Only the failure reporter needs issues: write.
+# Validation: exercise the collections and report handling with safe fixtures before running against live services.
 
 name: "official-e2e-action"
 
@@ -55,9 +48,13 @@ jobs:
       - name: 📥 Checkout repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
-      - name: 🧰 Setup tooling
-        uses: ./.github/actions/setup-tooling
+      - name: 🧰 Prepare Node.js without workspace dependencies
+        uses: ./.github/actions/setup-workspace
+        with:
+          node-install: "true"
+          node-deps-install: "false"
 
+      # Both scheduled and manual runs emit the same JSON matrix contract.
       - name: 🔍 Resolve run inputs
         id: resolve
         shell: bash
@@ -116,6 +113,9 @@ jobs:
 
       - name: 🚀 Setup workspace
         uses: ./.github/actions/setup-workspace
+        with:
+          node-install: "true"
+          node-deps-install: "true"
 
       - name: 🌡️ Backend health check
         if: matrix.target == 'backend'
@@ -139,6 +139,7 @@ jobs:
             sleep 5
           done
 
+      # Keep Newman failures visible to the matrix job even though output also goes through tee.
       - name: 🧪 Run Newman collection
         id: run-tests
         shell: bash
@@ -232,9 +233,14 @@ jobs:
       - name: 📥 Checkout repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
-      - name: 🧰 Setup tooling
-        uses: ./.github/actions/setup-tooling
+      - name: 🧰 Install dependencies for the failure reporter only
+        uses: ./.github/actions/setup-workspace
+        with:
+          node-install: "true"
+          node-deps-install: "false"
+          node-scripts-install: "true"
 
+      # The reporter expects the target-specific filenames together in one directory.
       - name: 📥 Download E2E artifacts
         uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
@@ -255,7 +261,5 @@ jobs:
           WORKFLOW: ${{ github.workflow }}
         with:
           script: |
-            const {execSync} = require('node:child_process');
-            execSync('cd .github/scripts && npm ci', {stdio: 'inherit'});
             const {default: runLiveTestAction} = await import('${{ github.workspace }}/.github/scripts/src/runLiveTestAction.ts');
             await runLiveTestAction();

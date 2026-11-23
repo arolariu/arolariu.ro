@@ -1,7 +1,9 @@
 ---
-# One validated plan selects work and setup for the six existing named jobs.
-# Every job emits executed or explicitly skipped versioned evidence. The gate
-# retains artifact directories so rerun provenance/conflicts survive collection.
+# On PR changes or manual dispatch, plan affected/full checks, run six providers, then aggregate and gate versioned evidence.
+# Preserve an outcome for each provider, even when skipped. Keep artifact directories distinct so rerun provenance survives.
+# Publishes summaries, PR updates, and checks; contents are read-only and no artifacts are deployed.
+# Validation: exercise both scopes and confirm missing or invalid required evidence does not pass the gate.
+
 name: "Code Hygiene Check (v3)"
 
 permissions:
@@ -52,13 +54,15 @@ jobs:
       - name: 📦 Setup planning dependencies
         uses: ./.github/actions/setup-workspace
         with:
+          node-install: "true"
           node-version: ${{ env.NODE_VERSION }}
-          install-node-deps: "true"
-          install-scripts-deps: "true"
+          node-deps-install: "true"
+          node-scripts-install: "true"
 
       - name: Check pinned taxonomy snapshots
         run: node scripts/cli.ts generate --check-taxonomies
 
+      # Produce the single plan that drives both setup choices and expected evidence.
       - name: 🔎 Prepare validated hygiene plan
         id: plan
         working-directory: .github/scripts
@@ -101,14 +105,15 @@ jobs:
       - name: 📦 Setup workspace
         uses: ./.github/actions/setup-workspace
         with:
+          node-install: "true"
           node-version: ${{ env.NODE_VERSION }}
-          install-node-deps: ${{ matrix.provider.root-node-deps }}
-          install-scripts-deps: "true"
-          run-build-components: ${{ matrix.provider.build-components }}
-          run-generate: ${{ matrix.provider.generate-artifacts }}
-          generate-args: "artifacts"
-          dotnet: ${{ matrix.provider.needs-dotnet }}
-          python: ${{ matrix.provider.needs-python }}
+          node-deps-install: ${{ matrix.provider.root-node-deps }}
+          node-scripts-install: "true"
+          components-build: ${{ matrix.provider.build-components }}
+          workspace-generate: ${{ matrix.provider.generate-artifacts }}
+          workspace-generate-args: "artifacts"
+          dotnet-install: ${{ matrix.provider.needs-dotnet }}
+          python-install: ${{ matrix.provider.needs-python }}
 
       # Preserve best-effort dependency restoration; the actual provider
       # process/evidence remains authoritative and cannot turn failure to pass.
@@ -129,6 +134,7 @@ jobs:
           node --experimental-strip-types src/hygiene/pipeline/runProvider.ts ${{ matrix.provider.id }} --plan
           "$GITHUB_WORKSPACE/artifacts/hygiene/plan.json"
 
+      # Keep failed outcomes visible to the gate; it also checks for missing evidence.
       - name: 📤 Upload outcome artifact
         if: always()
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
@@ -154,9 +160,10 @@ jobs:
       - name: 📦 Setup workspace
         uses: ./.github/actions/setup-workspace
         with:
+          node-install: "true"
           node-version: ${{ env.NODE_VERSION }}
-          install-node-deps: "false"
-          install-scripts-deps: "true"
+          node-deps-install: "false"
+          node-scripts-install: "true"
 
       - name: 📥 Download shared hygiene plan
         uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2

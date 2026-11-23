@@ -102,10 +102,10 @@ jobs:
       - name: 📦 Setup workspace
         uses: ./.github/actions/setup-workspace
         with:
-          node: "false"
-          install-node-deps: "false"
-          python: "true"
-          install-python-deps: "true"
+          node-install: "false"
+          node-deps-install: "false"
+          python-install: "true"
+          python-deps-install: "true"
 
       - name: 🔍 Running lint checks...
         run: python -m ruff check .
