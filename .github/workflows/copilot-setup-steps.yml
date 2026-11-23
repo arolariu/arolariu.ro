@@ -1,15 +1,7 @@
-# =============================================================================
-# Copilot Coding Agent — Environment Setup
-# =============================================================================
-# Configures the development environment for GitHub's Copilot coding agent.
-# This workflow runs before the agent starts working on assigned issues/PRs.
-#
-# Prerequisites:
-#   - Node.js 24 (LTS)
-#   - .NET 10.0 SDK
-#   - npm dependencies installed
-#   - Generated files (env, i18n, GraphQL types)
-# =============================================================================
+# Provision Copilot coding agent runners with Node.js, root npm dependencies, and the .NET SDK.
+# GitHub uses the reserved job before an agent session; manual runs and pushes touching this file also exercise it.
+# Does not restore .NET packages, generate app artifacts, run app tests, or deploy. Checkout only needs contents: read.
+# Validation: inspect the reserved setup job and confirm it finishes without application secrets.
 
 name: "Copilot Setup Steps"
 
@@ -26,11 +18,19 @@ jobs:
       contents: read
     steps:
       - name: 📥 Checkout repository
-        uses: actions/checkout@v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 1
 
-      - name: 🚀 Setup workspace
+      - name: 🚀 Provision Node.js and workspace dependencies
         uses: ./.github/actions/setup-workspace
         with:
-          dotnet: "true"
+          node-install: "true"
+          node-deps-install: "true"
+
+      # SDK-only setup cannot save a NuGet package cache before a restore has populated it.
+      - name: 📦 Provision the .NET SDK without a package cache
+        uses: ./.github/actions/setup-workspace
+        with:
+          dotnet-install: "true"
+          cache: "false"

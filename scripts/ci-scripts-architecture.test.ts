@@ -39,11 +39,11 @@ describe("plan-aware hygiene workflow contract", () => {
     expect(job("providers")).toMatch(/^    if: needs.detect.result == 'success'$/m);
     expect(job("providers")).toMatch(/^      matrix: \$\{\{ fromJSON\(needs.detect.outputs.provider-matrix\) \}\}$/m);
     for (const [input, field] of [
-      ["install-node-deps", "root-node-deps"],
-      ["run-build-components", "build-components"],
-      ["run-generate", "generate-artifacts"],
-      ["dotnet", "needs-dotnet"],
-      ["python", "needs-python"],
+      ["node-deps-install", "root-node-deps"],
+      ["components-build", "build-components"],
+      ["workspace-generate", "generate-artifacts"],
+      ["dotnet-install", "needs-dotnet"],
+      ["python-install", "needs-python"],
     ]) {
       expect(job("providers")).toMatch(new RegExp(`^          ${input}: \\$\\{\\{ matrix\\.provider\\.${field} \\}\\}$`, "m"));
     }
@@ -56,8 +56,10 @@ describe("plan-aware hygiene workflow contract", () => {
   it("checks the selected pinned snapshots once between setup and planning", () => {
     const command = "node scripts/cli.ts generate --check-taxonomies";
     const detect = job("detect");
+    const setup = detect.indexOf('node-scripts-install: "true"');
     const check = detect.indexOf(command);
-    expect(check).toBeGreaterThan(detect.indexOf("install-scripts-deps:"));
+    expect(setup).toBeGreaterThanOrEqual(0);
+    expect(check).toBeGreaterThan(setup);
     expect(check).toBeLessThan(detect.indexOf("id: plan"));
     expect(workflow.split(command)).toHaveLength(2);
     expect(workflow).not.toMatch(/^  schedule:/m);
@@ -67,7 +69,7 @@ describe("plan-aware hygiene workflow contract", () => {
 describe("API taxonomy workflow contract", () => {
   const workflow = readFileSync(resolve(ciRoot, "..", "workflows", "official-api-trigger.yml"), "utf8");
 
-  it.each(["test", "build"])("runs the %s integrity check from the checkout root", (jobName) => {
+  it.each(["test", "build-azure"])("runs the %s integrity check from the checkout root", (jobName) => {
     const job = new RegExp(`^  ${jobName}:\\r?\\n([\\s\\S]*?)(?=^  [a-z][a-z-]*:|$(?![\\s\\S]))`, "m").exec(workflow)?.[1];
     expect(job).toMatch(
       /^      - name: Check pinned taxonomy integrity\r?\n        working-directory: \.\r?\n        run: node scripts\/cli\.ts generate --check-taxonomies --json$/m,

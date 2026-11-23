@@ -2,33 +2,33 @@
 # Setup Workspace (Composite Action)
 #
 # Summary:
-# - Installs toolchains via `setup-tooling`, then bootstraps the
+# - Installs toolchains via the internal `setup-runtime`, then bootstraps the
 #   monorepo: dependency installs, Playwright browsers, code
 #   generation, and the shared component build.
 #
 # Remarks:
-# - Toolchain caching belongs to `setup-tooling` (built-in caches).
+# - Toolchain caching belongs to `setup-runtime` (built-in caches).
 #   This action caches only what it produces itself: `node_modules`
 #   and the Playwright browser bundle.
 # - Neither cache key carries a workflow-name segment, but GitHub still
 #   applies branch/tag scope and cache-version accessibility. The
 #   Playwright key includes the requested browsers and lock-file hash;
-#   the `node_modules` key includes the Node version because a cache hit skips
-#   `npm ci` and the tree can hold native addons tied to the runtime ABI.
+#   the `node_modules` key includes the resolved runtime and install inputs
+#   because a usable tree can skip `npm ci` and contain native addons.
 # - Inputs are never interpolated directly into `run:` blocks; they
 #   are passed through `env:` to avoid script injection.
 #+#+#+#+############################################################
 
 name: "Setup Workspace"
-description: "Installs toolchains via setup-tooling, then bootstraps the arolariu.ro monorepo."
+description: "Provisions toolchains and optionally installs, generates, and builds the arolariu.ro workspace."
 author: "arolariu.ro"
 
 inputs:
-  # ── Toolchain (forwarded verbatim to setup-tooling) ──────────────
-  node:
+  # ── Toolchain (forwarded to setup-runtime) ────────────────────────
+  node-install:
     description: "Whether to install Node.js."
     required: false
-    default: "true"
+    default: "false"
 
   node-version:
     description: "Node.js version to install."
@@ -40,7 +40,7 @@ inputs:
     required: false
     default: ""
 
-  dotnet:
+  dotnet-install:
     description: "Whether to install the .NET SDK."
     required: false
     default: "false"
@@ -50,7 +50,7 @@ inputs:
     required: false
     default: "10.0.x"
 
-  python:
+  python-install:
     description: "Whether to install Python."
     required: false
     default: "false"
@@ -60,13 +60,18 @@ inputs:
     required: false
     default: "3.12"
 
-  # ── Dependency installation ──────────────────────────────────────
-  install-node-deps:
-    description: "Whether to run `npm ci` at the repository root."
+  cache:
+    description: "Whether to enable toolchain download, node_modules, and Playwright caches."
     required: false
     default: "true"
 
-  install-scripts-deps:
+  # ── Dependency installation ──────────────────────────────────────
+  node-deps-install:
+    description: "Whether to run `npm ci` at the repository root."
+    required: false
+    default: "false"
+
+  node-scripts-install:
     description: "Whether to run `npm ci` inside `.github/scripts`."
     required: false
     default: "false"
@@ -81,17 +86,17 @@ inputs:
     required: false
     default: "arolariu.slnx"
 
-  install-python-deps:
+  python-deps-install:
     description: "Whether to install Python requirements with pip."
     required: false
     default: "false"
 
-  python-deps-path:
+  python-requirements-path:
     description: "Requirements file passed to `pip install -r`."
     required: false
     default: "sites/exp.arolariu.ro/requirements-dev.txt"
 
-  install-playwright:
+  playwright-install:
     description: "Whether to install Playwright browsers and OS dependencies."
     required: false
     default: "false"
@@ -102,39 +107,39 @@ inputs:
     default: "chromium"
 
   # ── Workspace tasks ──────────────────────────────────────────────
-  run-generate:
+  workspace-generate:
     description: "Whether to run the monorepo generators."
     required: false
     default: "false"
 
-  generate-args:
+  workspace-generate-args:
     description: "Generator names passed to `npm run generate` (env, artifacts, gql, i18n)."
     required: false
     default: "env artifacts gql i18n"
 
-  run-build-components:
+  components-build:
     description: "Whether to build the @arolariu/components package."
     required: false
     default: "false"
 
 outputs:
-  node-cache-hit:
+  npm-download-cache-hit:
     description: "Whether the npm download cache was restored."
-    value: ${{ steps.tooling.outputs.node-cache-hit }}
+    value: ${{ steps.runtime.outputs.npm-download-cache-hit }}
 
-  dotnet-cache-hit:
+  nuget-packages-cache-hit:
     description: "Whether the NuGet package cache was restored."
-    value: ${{ steps.tooling.outputs.dotnet-cache-hit }}
+    value: ${{ steps.runtime.outputs.nuget-packages-cache-hit }}
 
-  python-cache-hit:
+  pip-download-cache-hit:
     description: "Whether the pip cache was restored."
-    value: ${{ steps.tooling.outputs.python-cache-hit }}
+    value: ${{ steps.runtime.outputs.pip-download-cache-hit }}
 
   node-modules-cache-hit:
     description: "Whether node_modules was restored from cache."
     value: ${{ steps.cache-node-modules.outputs.cache-hit }}
 
-  playwright-cache-hit:
+  playwright-browsers-cache-hit:
     description: "Whether the Playwright browser bundle was restored from cache."
     value: ${{ steps.cache-playwright.outputs.cache-hit }}
 
@@ -154,67 +159,138 @@ runs:
     # instead of the version this action pins.
     - name: 🔎 Validate input combinations
       shell: bash
+      working-directory: ${{ github.workspace }}
       env:
-        NODE: ${{ inputs.node }}
-        DOTNET: ${{ inputs.dotnet }}
-        PYTHON: ${{ inputs.python }}
-        INSTALL_NODE_DEPS: ${{ inputs.install-node-deps }}
-        INSTALL_SCRIPTS_DEPS: ${{ inputs.install-scripts-deps }}
+        NODE: ${{ inputs.node-install }}
+        DOTNET: ${{ inputs.dotnet-install }}
+        PYTHON: ${{ inputs.python-install }}
+        CACHE: ${{ inputs.cache }}
+        INSTALL_NODE_DEPS: ${{ inputs.node-deps-install }}
+        INSTALL_SCRIPTS_DEPS: ${{ inputs.node-scripts-install }}
         INSTALL_DOTNET_DEPS: ${{ inputs.install-dotnet-deps }}
-        INSTALL_PYTHON_DEPS: ${{ inputs.install-python-deps }}
-        INSTALL_PLAYWRIGHT: ${{ inputs.install-playwright }}
-        RUN_GENERATE: ${{ inputs.run-generate }}
-        RUN_BUILD_COMPONENTS: ${{ inputs.run-build-components }}
+        INSTALL_PYTHON_DEPS: ${{ inputs.python-deps-install }}
+        INSTALL_PLAYWRIGHT: ${{ inputs.playwright-install }}
+        RUN_GENERATE: ${{ inputs.workspace-generate }}
+        RUN_BUILD_COMPONENTS: ${{ inputs.components-build }}
+        DOTNET_DEPS_PATH: ${{ inputs.dotnet-deps-path }}
+        PYTHON_DEPS_PATH: ${{ inputs.python-requirements-path }}
+        PLAYWRIGHT_BROWSERS: ${{ inputs.playwright-browsers }}
+        GENERATE_ARGS: ${{ inputs.workspace-generate-args }}
       run: |
         errors=()
 
-        # require <toolchain-value> <toolchain-name> <dependent-value> <dependent-name>
+        boolean() {
+          case "$2" in
+            true|false) ;;
+            *) errors+=("  - '$1' must be 'true' or 'false'") ;;
+          esac
+        }
+
         require() {
           if [ "$3" = "true" ] && [ "$1" != "true" ]; then
-            errors+=("  - '$4: true' requires '$2: true' (currently '$2: $1')")
+            errors+=("  - '$4: true' requires '$2: true'")
           fi
         }
 
-        # Toolchain prerequisites.
-        require "$NODE" node "$INSTALL_NODE_DEPS" install-node-deps
-        require "$NODE" node "$INSTALL_SCRIPTS_DEPS" install-scripts-deps
-        require "$DOTNET" dotnet "$INSTALL_DOTNET_DEPS" install-dotnet-deps
-        require "$PYTHON" python "$INSTALL_PYTHON_DEPS" install-python-deps
+        require_file() {
+          if [ ! -f "$2" ]; then
+            errors+=("  - $1: required file does not exist")
+          fi
+        }
 
-        # These three consume the root `node_modules` tree. `install-node-deps`
+        boolean node-install "$NODE"
+        boolean dotnet-install "$DOTNET"
+        boolean python-install "$PYTHON"
+        boolean cache "$CACHE"
+        boolean node-deps-install "$INSTALL_NODE_DEPS"
+        boolean node-scripts-install "$INSTALL_SCRIPTS_DEPS"
+        boolean install-dotnet-deps "$INSTALL_DOTNET_DEPS"
+        boolean python-deps-install "$INSTALL_PYTHON_DEPS"
+        boolean playwright-install "$INSTALL_PLAYWRIGHT"
+        boolean workspace-generate "$RUN_GENERATE"
+        boolean components-build "$RUN_BUILD_COMPONENTS"
+
+        # Toolchain prerequisites.
+        require "$NODE" node-install "$INSTALL_NODE_DEPS" node-deps-install
+        require "$NODE" node-install "$INSTALL_SCRIPTS_DEPS" node-scripts-install
+        require "$DOTNET" dotnet-install "$INSTALL_DOTNET_DEPS" install-dotnet-deps
+        require "$PYTHON" python-install "$INSTALL_PYTHON_DEPS" python-deps-install
+
+        # These three consume the root `node_modules` tree. `node-deps-install`
         # gates BOTH the cache restore and `npm ci`, so with it disabled the
         # tree is absent entirely — `npm run …` would fail outright, and
         # `npx playwright` would silently fetch a floating version instead of
-        # the one pinned by the lock file. `install-node-deps` in turn
+        # the one pinned by the lock file. `node-deps-install` in turn
         # requires `node`, so that prerequisite is covered transitively.
-        require "$INSTALL_NODE_DEPS" install-node-deps "$INSTALL_PLAYWRIGHT" install-playwright
-        require "$INSTALL_NODE_DEPS" install-node-deps "$RUN_GENERATE" run-generate
-        require "$INSTALL_NODE_DEPS" install-node-deps "$RUN_BUILD_COMPONENTS" run-build-components
+        require "$INSTALL_NODE_DEPS" node-deps-install "$INSTALL_PLAYWRIGHT" playwright-install
+        require "$INSTALL_NODE_DEPS" node-deps-install "$RUN_GENERATE" workspace-generate
+        require "$INSTALL_NODE_DEPS" node-deps-install "$RUN_BUILD_COMPONENTS" components-build
+
+        if [ "$INSTALL_PLAYWRIGHT" = "true" ] && [[ ! "$PLAYWRIGHT_BROWSERS" =~ [^[:space:]] ]]; then
+          errors+=("  - 'playwright-browsers' must not be empty when installing browsers")
+        fi
+        if [ "$RUN_GENERATE" = "true" ] && [[ ! "$GENERATE_ARGS" =~ [^[:space:]] ]]; then
+          errors+=("  - 'workspace-generate-args' must not be empty when running generators")
+        fi
+
+        if [ "$INSTALL_NODE_DEPS" = "true" ] || { [ "$NODE" = "true" ] && [ "$CACHE" = "true" ]; }; then
+          require_file package-lock.json package-lock.json
+        fi
+        if [ "$INSTALL_SCRIPTS_DEPS" = "true" ] || { [ "$NODE" = "true" ] && [ "$CACHE" = "true" ]; }; then
+          require_file .github/scripts/package-lock.json .github/scripts/package-lock.json
+        fi
+        if [ "$INSTALL_DOTNET_DEPS" = "true" ]; then
+          require_file dotnet-deps-path "$DOTNET_DEPS_PATH"
+        fi
+        if [ "$INSTALL_PYTHON_DEPS" = "true" ]; then
+          require_file python-requirements-path "$PYTHON_DEPS_PATH"
+        fi
+        if [ "$DOTNET" = "true" ] && [ "$CACHE" = "true" ]; then
+          shopt -s globstar nullglob
+          locks=(**/packages.lock.json)
+          if [ "${#locks[@]}" -eq 0 ]; then
+            errors+=("  - NuGet caching requires at least one packages.lock.json")
+          fi
+        fi
+        if [ "$PYTHON" = "true" ] && [ "$CACHE" = "true" ] && ! compgen -G 'sites/exp.arolariu.ro/requirements*.txt' > /dev/null; then
+          errors+=("  - pip caching requires the experimental service requirements files")
+        fi
 
         if [ ${#errors[@]} -gt 0 ]; then
           printf '%s\n' "${errors[@]}"
-          echo "::error::setup-workspace received contradictory inputs (see above). A disabled toolchain still resolves to the runner's preinstalled version, so the dependent step would run against an unpinned toolchain instead of failing."
+          echo "::error::setup-workspace received invalid inputs or missing setup files (see above)."
           exit 1
         fi
 
         echo "✅ Input combination is consistent"
 
-    - name: 🧰 Install toolchains
-      id: tooling
-      uses: ./.github/actions/setup-tooling
+    - name: 🧰 Provision requested runtimes
+      id: runtime
+      uses: ./.github/actions/setup-runtime
       with:
-        node: ${{ inputs.node }}
+        node-install: ${{ inputs.node-install }}
         node-version: ${{ inputs.node-version }}
         node-registry-url: ${{ inputs.node-registry-url }}
-        dotnet: ${{ inputs.dotnet }}
+        dotnet-install: ${{ inputs.dotnet-install }}
         dotnet-version: ${{ inputs.dotnet-version }}
-        python: ${{ inputs.python }}
+        python-install: ${{ inputs.python-install }}
         python-version: ${{ inputs.python-version }}
+        cache: ${{ inputs.cache }}
+
+    - name: 🔑 Resolve workspace cache runtime
+      id: cache-runtime
+      if: inputs.cache == 'true' && inputs.node-deps-install == 'true'
+      shell: bash
+      run: |
+        node_version=$(node --version)
+        npm_version=$(npm --version)
+        echo "image=${ImageOS:-unknown}" >> "$GITHUB_OUTPUT"
+        echo "npm-tree=${node_version}-npm${npm_version}" >> "$GITHUB_OUTPUT"
 
     - name: 💾 Restoring node_modules...
       id: cache-node-modules
-      if: inputs.install-node-deps == 'true'
-      uses: actions/cache@v5
+      if: inputs.cache == 'true' && inputs.node-deps-install == 'true'
+      uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
       with:
         # `~/.npm` is intentionally absent: setup-node already owns it.
         #
@@ -228,14 +304,39 @@ runs:
           node_modules
           packages/*/node_modules
           sites/*/node_modules
-        # The Node major version is part of the key because `node_modules`
-        # can hold natively-compiled addons whose ABI is tied to the runtime
-        # (this tree pulls in `sharp`). On a cache hit `npm ci` is skipped, so
-        # nothing would rebuild them — a Node bump must invalidate the cache.
-        key: ${{ runner.os }}-node-modules-${{ inputs.node-version }}-${{ hashFiles('package-lock.json') }}
+        # A usable hit skips install scripts, including native-addon setup.
+        key: >-
+          node-modules-v2-${{ runner.os }}-${{ runner.arch }}-${{ steps.cache-runtime.outputs.image }}-${{
+          steps.cache-runtime.outputs.npm-tree }}-${{ hashFiles('package-lock.json', '.npmrc', 'package.json', 'packages/*/package.json',
+          'sites/*/package.json') }}
 
-    - name: 📥 Install npm dependencies
-      if: inputs.install-node-deps == 'true' && steps.cache-node-modules.outputs.cache-hit != 'true'
+    - name: 🔎 Verify cached npm tree
+      id: verify-node-modules
+      if: steps.cache-node-modules.outputs.cache-hit == 'true'
+      shell: bash
+      working-directory: ${{ github.workspace }}
+      run: |
+        if node --input-type=commonjs <<'NODE_CHECK'
+        const {existsSync, readFileSync} = require('node:fs');
+        const {join} = require('node:path');
+        try {
+          // npm's hidden lock describes the installed tree, excluding optional packages absent on this platform.
+          const {packages} = JSON.parse(readFileSync('node_modules/.package-lock.json', 'utf8'));
+          const installed = Object.keys(packages).filter(Boolean);
+          process.exitCode = installed.length && installed.every(path => existsSync(join(path, 'package.json'))) ? 0 : 1;
+        } catch {
+          process.exitCode = 1;
+        }
+        NODE_CHECK
+        then
+          echo "usable=true" >> "$GITHUB_OUTPUT"
+        else
+          echo "usable=false" >> "$GITHUB_OUTPUT"
+          echo "::warning::Cached npm tree is incomplete; reinstalling from the lockfile."
+        fi
+
+    - name: 📥 Install npm dependencies from the root lockfile
+      if: inputs.node-deps-install == 'true' && steps.verify-node-modules.outputs.usable != 'true'
       shell: bash
       run: |
         echo "::group::📦 npm ci (root)"
@@ -243,7 +344,7 @@ runs:
         echo "::endgroup::"
 
     - name: 🔗 Sync SvelteKit projects (.svelte-kit)
-      if: inputs.install-node-deps == 'true'
+      if: inputs.node-deps-install == 'true'
       shell: bash
       run: |
         echo "::group::🔗 svelte-kit sync"
@@ -268,7 +369,7 @@ runs:
         echo "::endgroup::"
 
     - name: 📥 Install .github/scripts dependencies
-      if: inputs.install-scripts-deps == 'true'
+      if: inputs.node-scripts-install == 'true'
       shell: bash
       working-directory: .github/scripts
       run: |
@@ -287,10 +388,10 @@ runs:
         echo "::endgroup::"
 
     - name: 📥 Install Python dependencies
-      if: inputs.install-python-deps == 'true'
+      if: inputs.python-deps-install == 'true'
       shell: bash
       env:
-        PYTHON_DEPS_PATH: ${{ inputs.python-deps-path }}
+        PYTHON_DEPS_PATH: ${{ inputs.python-requirements-path }}
       run: |
         echo "::group::📦 pip install"
         python -m pip install --upgrade pip
@@ -299,14 +400,16 @@ runs:
 
     - name: 💾 Restoring Playwright browsers...
       id: cache-playwright
-      if: inputs.install-playwright == 'true'
-      uses: actions/cache@v5
+      if: inputs.cache == 'true' && inputs.playwright-install == 'true'
+      uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
       with:
         path: ~/.cache/ms-playwright
-        key: ${{ runner.os }}-playwright-${{ inputs.playwright-browsers }}-${{ hashFiles('package-lock.json') }}
+        key: >-
+          playwright-v2-${{ runner.os }}-${{ runner.arch }}-${{ steps.cache-runtime.outputs.image }}-${{ inputs.playwright-browsers }}-${{
+          hashFiles('package-lock.json') }}
 
     - name: 🎭 Install Playwright browsers
-      if: inputs.install-playwright == 'true'
+      if: inputs.playwright-install == 'true'
       shell: bash
       env:
         PLAYWRIGHT_BROWSERS: ${{ inputs.playwright-browsers }}
@@ -320,17 +423,17 @@ runs:
         if [ "${PLAYWRIGHT_CACHE_HIT}" = "true" ]; then
           # Browsers are cached, but OS-level shared libraries are not
           # part of the cached directory and must be installed anyway.
-          npx playwright install-deps "${browsers[@]}"
+          ./node_modules/.bin/playwright install-deps "${browsers[@]}"
         else
-          npx playwright install "${browsers[@]}" --with-deps
+          ./node_modules/.bin/playwright install "${browsers[@]}" --with-deps
         fi
         echo "::endgroup::"
 
     - name: 🔨 Generate artifacts (env, taxonomy/licenses, GraphQL, i18n)
-      if: inputs.run-generate == 'true'
+      if: inputs.workspace-generate == 'true'
       shell: bash
       env:
-        GENERATE_ARGS: ${{ inputs.generate-args }}
+        GENERATE_ARGS: ${{ inputs.workspace-generate-args }}
       run: |
         echo "::group::🔨 npm run generate"
         # Same reasoning as the Playwright step: split deliberately into an
@@ -340,7 +443,7 @@ runs:
         echo "::endgroup::"
 
     - name: 🔨 Build the @arolariu/components package
-      if: inputs.run-build-components == 'true'
+      if: inputs.components-build == 'true'
       shell: bash
       run: |
         echo "::group::🔨 npm run build:components"
@@ -351,12 +454,26 @@ runs:
       shell: bash
       env:
         START_TIME: ${{ steps.init.outputs.start_time }}
-        NODE_MODULES_CACHE:
-          ${{ steps.cache-node-modules.outputs.cache-hit == 'true' && 'HIT' || (inputs.install-node-deps != 'true' && 'SKIPPED' || 'MISS')
-          }}
-        PLAYWRIGHT_CACHE:
-          ${{ steps.cache-playwright.outputs.cache-hit == 'true' && 'HIT' || (inputs.install-playwright != 'true' && 'SKIPPED' || 'MISS') }}
+        NODE_CACHE_RESULT: ${{ steps.cache-node-modules.outputs.cache-hit }}
+        NODE_TREE_USABLE: ${{ steps.verify-node-modules.outputs.usable }}
+        PLAYWRIGHT_CACHE_RESULT: ${{ steps.cache-playwright.outputs.cache-hit }}
+        CACHE: ${{ inputs.cache }}
+        INSTALL_NODE_DEPS: ${{ inputs.node-deps-install }}
+        INSTALL_PLAYWRIGHT: ${{ inputs.playwright-install }}
       run: |
+        cache_status() {
+          if [ "$1" != "true" ] || [ "$CACHE" != "true" ]; then
+            echo SKIPPED
+          elif [ "$2" = "true" ]; then
+            echo HIT
+          else
+            echo MISS
+          fi
+        }
+
+        NODE_MODULES_CACHE=$(cache_status "$INSTALL_NODE_DEPS" "$NODE_CACHE_RESULT")
+        if [ "$NODE_TREE_USABLE" = "false" ]; then NODE_MODULES_CACHE="HIT (reinstalled)"; fi
+        PLAYWRIGHT_CACHE=$(cache_status "$INSTALL_PLAYWRIGHT" "$PLAYWRIGHT_CACHE_RESULT")
         DURATION=$(( $(date +%s) - START_TIME ))
         echo "::group::✨ Workspace setup complete"
         echo "  Duration:     ${DURATION}s"

@@ -1,6 +1,7 @@
 import {describe, it, expect, vi} from "vitest";
 import {outcomeToCheckRun, postStatusChecks} from "./statusChecks.ts";
 import type {ProviderOutcome, HygieneReport} from "../domain/types.ts";
+import {plan} from "../../../lib/hygiene/fixtures/outcomes.ts";
 
 const passed: ProviderOutcome<unknown> = {
   providerId: "format",
@@ -61,6 +62,30 @@ describe("outcomeToCheckRun", () => {
 });
 
 describe("postStatusChecks", () => {
+  it("publishes failed checks for every planned provider when a failed transfer leaves no verified outcomes", async () => {
+    const planned = plan();
+    const create = vi.fn().mockResolvedValue({data: {id: 101}});
+    const report: HygieneReport = {
+      schemaVersion: "3",
+      commitSha: planned.commitSha,
+      prNumber: 1,
+      workflowRunId: planned.workflowRunId,
+      workflowRunUrl: "https://x/1",
+      generatedAt: "2026-05-30T00:00:00.000Z",
+      overallResult: "errored",
+      outcomes: [],
+      plan: planned,
+      evidenceIssues: [{code: "outcome-download-failed", message: "Artifact download failed"}],
+    };
+    const ids = await postStatusChecks(report, {owner: "o", repo: "r", create});
+    expect([...ids.keys()]).toEqual(planned.providers.map(({id}) => id));
+    for (const {id} of planned.providers) {
+      expect(create).toHaveBeenCalledWith(
+        expect.objectContaining({name: `hygiene/${id}`, head_sha: planned.commitSha, conclusion: "failure"}),
+      );
+    }
+  });
+
   it("creates one check-run per outcome", async () => {
     const create = vi
       .fn()

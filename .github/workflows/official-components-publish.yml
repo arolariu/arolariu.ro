@@ -1,26 +1,7 @@
-# =============================================================================
-# NPM Package Publishing Workflow for @arolariu/components
-# =============================================================================
-# This workflow publishes the @arolariu/components package to npm registry
-# using Trusted Publishing (OIDC) for secure, tokenless authentication.
-#
-# Features:
-#   - Trusted Publishing via OIDC (no long-lived npm tokens required)
-#   - Automatic provenance attestations for supply chain security
-#   - Version validation before publish
-#   - Comprehensive testing before release
-#
-# Prerequisites:
-#   1. Configure Trusted Publisher on npmjs.com:
-#      - Organization: arolariu
-#      - Repository: arolariu.ro
-#      - Workflow filename: official-components-publish.yml
-#      - Environment name: npm-publish (optional but recommended)
-#
-# Documentation:
-#   - https://docs.npmjs.com/trusted-publishers
-#   - https://docs.npmjs.com/generating-provenance-statements
-# =============================================================================
+# Validate and package @arolariu/components; publish it to npm with provenance in the npm-publish environment.
+# Runs on components-v* tags or manual dispatch. Publishes the exact tarball tested by the packed contract.
+# Trusted Publishing uses OIDC; this does not build or deploy the website or update its package dependency.
+# Validation: use manual dry-run with an unpublished version; tag pushes are real publishes.
 
 name: "official-components-publish"
 
@@ -73,9 +54,11 @@ jobs:
     outputs:
       version: ${{ steps.package-info.outputs.version }}
       name: ${{ steps.package-info.outputs.name }}
+      sha256: ${{ steps.package-digest.outputs.sha256 }}
+      artifact_id: ${{ steps.upload-package.outputs.artifact-id }}
     steps:
       - name: 🛫 Checking out the branch inside the runner environment...
-        uses: actions/checkout@v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       - name: 📝 Display workflow context
         run: |
@@ -106,6 +89,8 @@ jobs:
       - name: 📦 Setup workspace
         uses: ./.github/actions/setup-workspace
         with:
+          node-install: "true"
+          node-deps-install: "true"
           node-version: ${{ env.NODE_VERSION }}
 
       - name: 📋 Extract package information
@@ -156,27 +141,42 @@ jobs:
           fi
           echo "::endgroup::"
 
-      - name: 🏗️ Build package
-        run: |
-          echo "::group::🏗️ Building Package"
-          START_TIME=$(date +%s)
-          npm run build
-          END_TIME=$(date +%s)
-          DURATION=$((END_TIME - START_TIME))
-          echo "::notice::✅ Build completed in ${DURATION}s"
-          echo "::endgroup::"
+      # The packed gate builds and packs once and only exports the tarball after its tests pass.
+      - name: 🧪 Build, pack, and test the release tarball
+        env:
+          AROLARIU_COMPONENTS_PACK_OUTPUT: ${{ runner.temp }}/components-package
+        run: npm run test:packed
 
-      - name: 🧪 Run tests
+      - name: 📦 Verify package identity and record digest
+        id: package-digest
+        shell: bash
+        env:
+          EXPECTED_NAME: ${{ steps.package-info.outputs.name }}
+          EXPECTED_VERSION: ${{ steps.package-info.outputs.version }}
         run: |
-          echo "::group::🧪 Running Tests"
-          npm run test --if-present
-          echo "::endgroup::"
+          shopt -s nullglob
+          archives=("$RUNNER_TEMP"/components-package/*.tgz)
+          if [[ ${#archives[@]} -ne 1 ]]; then
+            echo "::error::Expected exactly one validated components tarball"
+            exit 1
+          fi
+          tar -xOzf "${archives[0]}" package/package.json | node --input-type=commonjs -e '
+            const {name, version} = JSON.parse(require("node:fs").readFileSync(0, "utf8"));
+            if (name !== process.env.EXPECTED_NAME || version !== process.env.EXPECTED_VERSION) {
+              throw new Error("Packed name or version does not match the validated manifest");
+            }
+          '
+          digest=$(sha256sum "${archives[0]}")
+          printf 'sha256=%s\n' "${digest%% *}" >> "$GITHUB_OUTPUT"
 
-      - name: 📦 Verify package contents
-        run: |
-          echo "::group::📦 Package Contents"
-          npm pack --dry-run
-          echo "::endgroup::"
+      - name: 📤 Upload the validated tarball
+        id: upload-package
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: components-package-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/components-package/*.tgz
+          if-no-files-found: error
+          retention-days: 7
 
   # ===========================================================================
   # PUBLISH JOB
@@ -191,7 +191,9 @@ jobs:
       url: https://www.npmjs.com/package/${{ needs.validate.outputs.name }}
     steps:
       - name: 🛫 Checking out the branch inside the runner environment...
-        uses: actions/checkout@v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
 
       - name: 📝 Display publish context
         run: |
@@ -209,38 +211,54 @@ jobs:
       - name: 📦 Setup workspace
         uses: ./.github/actions/setup-workspace
         with:
+          node-install: "true"
           node-version: ${{ env.NODE_VERSION }}
           node-registry-url: "https://registry.npmjs.org"
+          cache: "false"
 
-      # Ensure npm CLI is new enough for trusted publishing (11.5.1+).
-      # Kept in the workflow: this is publish-specific, not workspace bootstrap.
-      - name: 🔄 Update npm to latest
-        run: npm install -g npm@latest
-
-      - name: 🏗️ Build package
-        run: npm run build
-
-      - name: 📋 Display package info
+      - name: Verify the bundled npm supports Trusted Publishing
+        shell: bash
         run: |
-          echo "📦 Publishing ${{ needs.validate.outputs.name }}@${{ needs.validate.outputs.version }}"
-          echo "📁 Package contents:"
-          npm pack --dry-run
-          echo ""
-          echo "🏷️ Distribution tag: ${{ inputs.tag || 'latest' }}"
-          echo "🔐 Authentication: Trusted Publishing (OIDC)"
+          version=$(npm --version)
+          if [[ ! "$version" =~ ^([0-9]+)\.([0-9]+)\.([0-9]+)$ ]] ||
+            (( BASH_REMATCH[1] < 11 || (BASH_REMATCH[1] == 11 &&
+               (BASH_REMATCH[2] < 5 || (BASH_REMATCH[2] == 5 && BASH_REMATCH[3] < 1))) )); then
+            echo "::error::Trusted Publishing requires npm 11.5.1 or later (found $version)"
+            exit 1
+          fi
 
+      - name: 📥 Download the validated tarball by artifact ID
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          artifact-ids: ${{ needs.validate.outputs.artifact_id }}
+          path: ${{ runner.temp }}/components-publish
+
+      - name: Verify the release tarball before publishing
+        shell: bash
+        env:
+          EXPECTED_SHA256: ${{ needs.validate.outputs.sha256 }}
+        run: |
+          shopt -s nullglob
+          archives=("$RUNNER_TEMP"/components-publish/*.tgz)
+          if [[ ${#archives[@]} -ne 1 || ! "$EXPECTED_SHA256" =~ ^[0-9a-f]{64}$ ]]; then
+            echo "::error::Expected one validated tarball and its SHA-256 digest"
+            exit 1
+          fi
+          printf '%s  %s\n' "$EXPECTED_SHA256" "${archives[0]}" | sha256sum --check
+          printf 'TARBALL=%s\n' "${archives[0]}" >> "$GITHUB_ENV"
+
+      # The dry run still checks packaging but never creates a registry version.
       - name: 🚀 Publish to npm (Dry Run)
         if: inputs.dry-run == true
-        run: |
-          echo "::notice::🔍 DRY RUN - Package would be published as:"
-          echo "  Name: ${{ needs.validate.outputs.name }}"
-          echo "  Version: ${{ needs.validate.outputs.version }}"
-          echo "  Tag: ${{ inputs.tag || 'latest' }}"
-          npm publish --dry-run --tag ${{ inputs.tag || 'latest' }}
+        env:
+          DIST_TAG: ${{ inputs.tag || 'latest' }}
+        run: npm publish "$TARBALL" --dry-run --tag "$DIST_TAG"
 
       - name: 🚀 Publish to npm
         if: inputs.dry-run != true
-        run: npm publish --provenance --tag ${{ inputs.tag || 'latest' }} --access public
+        env:
+          DIST_TAG: ${{ inputs.tag || 'latest' }}
+        run: npm publish "$TARBALL" --provenance --tag "$DIST_TAG" --access public
         # Note: No NODE_AUTH_TOKEN needed - using Trusted Publishing (OIDC)
         # Provenance is now explicitly generated via --provenance flag
 

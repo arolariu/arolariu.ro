@@ -21,11 +21,11 @@ Owns GitHub Actions workflow and composite-action conventions.
 
 - Use the narrowest job and workflow permissions.
 - Prefer OIDC and managed identity over stored cloud credentials.
-- Pin action major versions consistently with the repository.
+- Pin external actions to full upstream commit SHAs and annotate the release tag or why an untagged commit is needed.
 - Use hash-based cache keys without broad fallback keys.
 - Keep path filters aligned with real project dependency boundaries.
 - Add concurrency controls for deployments and other non-parallel-safe work.
-- Reuse composite actions for repeated setup.
+- Use `setup-workspace` for workflow setup; only it calls the internal `setup-runtime` composite.
 - Keep secrets out of logs, outputs, artifacts, and command lines.
 - Do not hide a failing build/test/deploy step with `continue-on-error`.
 - Preserve explicit environments and approval boundaries.

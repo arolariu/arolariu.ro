@@ -9,8 +9,8 @@ action-owned runtime contract. Editing a workflow remains approval-gated even wh
    version research.
 2. Group callers by workflow family, composite owner, artifact exchange, authentication path, and runner. Do not normalize an unrelated
    version difference merely because the same action appears elsewhere.
-3. Record the exact current and proposed ref. This repository currently uses approved major tags; changing the pinning policy to commit SHAs
-   is a separate workflow-security decision.
+3. Record the exact current and proposed ref. Follow the workflow instructions for pinning and provenance; do not assume two callers can
+   share a pin without comparing their required inputs and outputs.
 
 ## Research the target
 

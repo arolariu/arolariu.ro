@@ -1,32 +1,32 @@
 #+#+#+#+############################################################
-# Setup Tooling (Composite Action)
+# Setup Runtime (Internal Composite Action)
 #
 # Summary:
 # - Installs the language toolchains used across the monorepo:
 #   Node.js, the .NET SDK, and Python.
 #
 # Remarks:
-# - Deliberately repo-agnostic: it installs binaries and nothing else.
+# - Internal to setup-workspace; workflows must not call this action.
+# - Installs runtimes/SDKs, not repository dependencies.
 #   Dependency installation, code generation, and browser provisioning
 #   belong to `setup-workspace`, which wraps this action.
 # - Caching is delegated entirely to each `actions/setup-*` action's
 #   built-in mechanism. Keys contain no workflow-name segment, but GitHub
 #   still applies branch/tag scope and cache-version accessibility; these
 #   are not one repository-wide cache object or a fixed budget guarantee.
-# - Every toolchain except Node.js is opt-in. Installing an SDK a job
-#   never uses costs real minutes on every run.
+# - Every toolchain is opt-in. Caching applies only to selected toolchains.
 #+#+#+#+############################################################
 
-name: "Setup Tooling"
-description: "Installs the Node.js, .NET, and Python toolchains with built-in dependency caching."
+name: "Setup Runtime"
+description: "Internal runtime provisioning and toolchain cache setup for setup-workspace."
 author: "arolariu.ro"
 
 inputs:
   # ── Node.js ──────────────────────────────────────────────────────
-  node:
+  node-install:
     description: "Whether to install Node.js."
     required: false
-    default: "true"
+    default: "false"
 
   # Matches the root `.nvmrc` and `engines.node` in `package.json`.
   node-version:
@@ -41,7 +41,7 @@ inputs:
     default: ""
 
   # ── .NET ─────────────────────────────────────────────────────────
-  dotnet:
+  dotnet-install:
     description: "Whether to install the .NET SDK."
     required: false
     default: "false"
@@ -54,7 +54,7 @@ inputs:
     default: "10.0.x"
 
   # ── Python ───────────────────────────────────────────────────────
-  python:
+  python-install:
     description: "Whether to install Python."
     required: false
     default: "false"
@@ -72,15 +72,15 @@ inputs:
     default: "true"
 
 outputs:
-  node-cache-hit:
+  npm-download-cache-hit:
     description: "Whether actions/setup-node restored the npm cache."
     value: ${{ steps.node.outputs.cache-hit }}
 
-  dotnet-cache-hit:
+  nuget-packages-cache-hit:
     description: "Whether actions/setup-dotnet restored the NuGet cache."
     value: ${{ steps.dotnet.outputs.cache-hit }}
 
-  python-cache-hit:
+  pip-download-cache-hit:
     description: "Whether actions/setup-python restored the pip cache."
     value: ${{ steps.python.outputs.cache-hit }}
 
@@ -89,13 +89,14 @@ runs:
   steps:
     - name: 📦 Setting up Node.js v${{ inputs.node-version }}...
       id: node
-      if: inputs.node == 'true'
-      uses: actions/setup-node@v7
+      if: inputs.node-install == 'true'
+      uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
       with:
         node-version: ${{ inputs.node-version }}
         registry-url: ${{ inputs.node-registry-url }}
         # An empty string disables the built-in cache.
         cache: ${{ inputs.cache == 'true' && 'npm' || '' }}
+        package-manager-cache: false
         # Both lock files, because both feed the same `~/.npm` store:
         # `setup-workspace` installs the root workspaces AND `.github/scripts`,
         # which has its own lock file. Keying on the root file alone means a
@@ -109,8 +110,8 @@ runs:
 
     - name: 📦 Setting up .NET v${{ inputs.dotnet-version }}...
       id: dotnet
-      if: inputs.dotnet == 'true'
-      uses: actions/setup-dotnet@v6
+      if: inputs.dotnet-install == 'true'
+      uses: actions/setup-dotnet@0f4a354dd5547a28c70b7853dbd95d5b67886e73 # v6.1.0
       with:
         dotnet-version: ${{ inputs.dotnet-version }}
         # Backed by the six packages.lock.json files under
@@ -121,8 +122,8 @@ runs:
 
     - name: 🐍 Setting up Python v${{ inputs.python-version }}...
       id: python
-      if: inputs.python == 'true'
-      uses: actions/setup-python@v7
+      if: inputs.python-install == 'true'
+      uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
       with:
         python-version: ${{ inputs.python-version }}
         cache: ${{ inputs.cache == 'true' && 'pip' || '' }}
@@ -131,9 +132,9 @@ runs:
     - name: 📋 Toolchain summary
       shell: bash
       env:
-        NODE_SUMMARY: ${{ inputs.node == 'true' && inputs.node-version || 'skipped' }}
-        DOTNET_SUMMARY: ${{ inputs.dotnet == 'true' && inputs.dotnet-version || 'skipped' }}
-        PYTHON_SUMMARY: ${{ inputs.python == 'true' && inputs.python-version || 'skipped' }}
+        NODE_SUMMARY: ${{ inputs.node-install == 'true' && inputs.node-version || 'skipped' }}
+        DOTNET_SUMMARY: ${{ inputs.dotnet-install == 'true' && inputs.dotnet-version || 'skipped' }}
+        PYTHON_SUMMARY: ${{ inputs.python-install == 'true' && inputs.python-version || 'skipped' }}
         CACHE_ENABLED: ${{ inputs.cache }}
       run: |
         echo "::group::📋 Toolchain"

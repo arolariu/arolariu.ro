@@ -353,7 +353,8 @@ describe("CacheHelper", () => {
 describe("Playwright workspace cache", () => {
   it("uses different cache keys for different requested browsers", () => {
     const action = readFileSync(new URL("../../../actions/setup-workspace/action.yml", import.meta.url), "utf8");
-    const key = action.match(/id: cache-playwright[\s\S]*?\n\s+key: ([^\r\n]+)/)?.[1];
+    const match = action.match(/id: cache-playwright[\s\S]*?\n {8}key: (?:>-\r?\n((?: {10}[^\r\n]+\r?\n)+)|([^\r\n]+))/);
+    const key = match?.[1]?.trim().replace(/\s+/g, " ") ?? match?.[2];
     if (!key) throw new Error("Playwright cache key was not found");
 
     const keyFor = (browsers: string): string => key.replace(/\$\{\{\s*inputs\.playwright-browsers\s*\}\}/g, browsers);
