@@ -141,7 +141,7 @@ public readonly record struct InvoiceResponseDto(
   [property: JsonPropertyName("sharedWith")] IReadOnlyCollection<Guid> SharedWith,
   [property: JsonPropertyName("name")] string Name,
   [property: JsonPropertyName("description")] string Description,
-  [property: JsonPropertyName("category"), JsonIgnore(Condition = JsonIgnoreCondition.Never)] InvoiceCategory? Category,
+  [property: JsonPropertyName("category")] InvoiceCategory? Category,
   [property: JsonPropertyName("scans")] IReadOnlyCollection<InvoiceScanResponseDto> Scans,
   [property: JsonPropertyName("paymentInformation")] PaymentInformationResponseDto PaymentInformation,
   [property: JsonPropertyName("merchantReference")] Guid MerchantReference,

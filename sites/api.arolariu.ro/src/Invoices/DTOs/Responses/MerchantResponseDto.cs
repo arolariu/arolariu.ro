@@ -106,7 +106,7 @@ public readonly record struct MerchantResponseDto(
   [property: JsonPropertyName("id")] Guid Id,
   [property: JsonPropertyName("name")] string Name,
   [property: JsonPropertyName("description")] string Description,
-  [property: JsonPropertyName("category"), JsonIgnore(Condition = JsonIgnoreCondition.Never)] MerchantCategory? Category,
+  [property: JsonPropertyName("category")] MerchantCategory? Category,
   [property: JsonPropertyName("address")] ContactInformationResponseDto Address,
   [property: JsonPropertyName("parentCompanyId")] Guid ParentCompanyId,
   [property: JsonPropertyName("referencedInvoiceCount")] int ReferencedInvoiceCount,

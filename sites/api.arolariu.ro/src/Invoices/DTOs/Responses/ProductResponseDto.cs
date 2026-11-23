@@ -89,7 +89,7 @@ using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Products;
 [ExcludeFromCodeCoverage]
 public readonly record struct ProductResponseDto(
   [property: JsonPropertyName("name")] string Name,
-  [property: JsonPropertyName("category"), JsonIgnore(Condition = JsonIgnoreCondition.Never)] ProductCategory? Category,
+  [property: JsonPropertyName("category")] ProductCategory? Category,
   [property: JsonPropertyName("quantity")] decimal Quantity,
   [property: JsonPropertyName("quantityUnit")] string QuantityUnit,
   [property: JsonPropertyName("productCode")] string ProductCode,
