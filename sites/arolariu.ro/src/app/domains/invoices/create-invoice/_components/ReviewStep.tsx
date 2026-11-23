@@ -1,5 +1,6 @@
 "use client";
 
+import {invoiceCategoryLabel} from "@/lib/categories/categoryLabels";
 import {selectorFromPath, useTranslations} from "next-intl-selector";
 
 /**
@@ -51,8 +52,7 @@ const PAYMENT_TYPE_KEYS: Record<number, "unknown" | "cash" | "card" | "transfer"
  */
 export default function ReviewStep(): React.JSX.Element {
   const t = useTranslations();
-  const {selectedScans, invoiceDetails, classificationSelection, isCreating, partialOutcome, createInvoiceWithScans} =
-    useCreateInvoiceContext();
+  const {selectedScans, invoiceDetails, categorySelection, isCreating, partialOutcome, createInvoiceWithScans} = useCreateInvoiceContext();
   const format = useFormatter();
   let createButtonContent = (
     <>
@@ -163,14 +163,14 @@ export default function ReviewStep(): React.JSX.Element {
           <div className={styles["detailRow"]}>
             <div className={styles["detailLabel"]}>
               <TbCategory />
-              {t((m) => m.forms.invoices.createInvoice.reviewStep.sections.details.classification)}
+              {t((m) => m.forms.invoices.createInvoice.reviewStep.sections.details.category)}
             </div>
             <div className={styles["detailValue"]}>
-              {classificationSelection !== null ? (
-                <Badge variant='outline'>{classificationSelection.code}</Badge>
+              {categorySelection !== null ? (
+                <Badge variant='outline'>{invoiceCategoryLabel(t, categorySelection)}</Badge>
               ) : (
                 <span className={styles["noClassification"]}>
-                  {t((m) => m.forms.invoices.createInvoice.reviewStep.sections.details.noClassification)}
+                  {t((m) => m.forms.invoices.createInvoice.reviewStep.sections.details.noCategory)}
                 </span>
               )}
             </div>

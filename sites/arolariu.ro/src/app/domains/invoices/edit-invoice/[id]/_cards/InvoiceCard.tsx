@@ -2,6 +2,7 @@
 
 import {formatCurrency, formatDate} from "@/lib/utils.generic";
 import {PaymentType} from "@/types/invoices";
+import CategoryPicker from "@/app/domains/invoices/_components/category/CategoryPicker";
 import {
   Badge,
   Button,
@@ -46,7 +47,7 @@ import {getCalendarLocale} from "@/lib/calendarLocale";
  *
  * **Invoice Details Displayed**:
  * - **Date**: Transaction date with ISO timestamp tooltip
- * - **Category**: Invoice category badge (e.g., GROCERIES, DINING)
+ * - **Category**: Receipt category picker, saved with the other pending receipt changes
  * - **Payment Method**: Editable dropdown select with all payment types
  * - **Total Amount**: Formatted currency with locale-aware formatting
  * - **Description**: Merchant description text
@@ -78,7 +79,8 @@ export default function InvoiceCard(): React.JSX.Element {
   const locale = useLocale();
   const calendarLocale = getCalendarLocale(locale);
   const t = useTranslations();
-  const {invoice, merchant, pendingChanges, setPaymentType, setIsImportant, setDescription, setTransactionDate} = useEditInvoiceContext();
+  const {invoice, merchant, pendingChanges, setPaymentType, setIsImportant, setDescription, setTransactionDate, setCategory, isSaving} =
+    useEditInvoiceContext();
   const {paymentInformation, isImportant, description} = invoice;
 
   // Get the current values (pending change or original)
@@ -214,6 +216,13 @@ export default function InvoiceCard(): React.JSX.Element {
         </CardHeader>
         <CardContent className={styles["cardContent"]}>
           <div className={styles["detailsGrid"]}>
+            <CategoryPicker
+              domain='invoices'
+              label={t((m) => m.categories.ui.invoice)}
+              value={pendingChanges.category === undefined ? invoice.category : pendingChanges.category}
+              onValueChange={setCategory}
+              disabled={isSaving}
+            />
             <motion.div
               whileHover={{scale: 1.02}}
               transition={{type: "spring", stiffness: 400, damping: 10}}>

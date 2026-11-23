@@ -13,12 +13,12 @@ const TOTAL_LABEL_KEY = "cards.invoices.statistics.categoryBreakdown.totalLabel"
 const TOOLTIP_COUNT_KEY = "cards.invoices.statistics.categoryBreakdown.tooltip.invoiceCount";
 
 const groups: ClassificationGroupAggregate[] = [
-  {category: "Food", amount: 600, count: 9, percentage: 48.6},
-  {category: "Transport", amount: 300.5, count: 4, percentage: 24.34},
-  {category: "Housing", amount: 150, count: 2, percentage: 12.15},
-  {category: "Health", amount: 100, count: 2, percentage: 8.1},
-  {category: "Leisure", amount: 50, count: 1, percentage: 4.05},
-  {category: "Education", amount: 34, count: 1, percentage: 2.76},
+  {category: 3001, amount: 600, count: 9, percentage: 48.6},
+  {category: 3063, amount: 300.5, count: 4, percentage: 24.34},
+  {category: 3024, amount: 150, count: 2, percentage: 12.15},
+  {category: 3045, amount: 100, count: 2, percentage: 8.1},
+  {category: 3081, amount: 50, count: 1, percentage: 4.05},
+  {category: 3039, amount: 34, count: 1, percentage: 2.76},
 ];
 
 /**
@@ -103,7 +103,7 @@ describe("ClassificationBreakdownChart", () => {
     );
 
     expect(screen.getByText("0.00 RON")).toBeInTheDocument();
-    expect(screen.queryByText("Food")).not.toBeInTheDocument();
+    expect(screen.queryByText("categories.invoices.groceries")).not.toBeInTheDocument();
   });
 
   it("renders a legend entry per group with palette colours that wrap after five groups", () => {
@@ -117,10 +117,10 @@ describe("ClassificationBreakdownChart", () => {
     const dotColour = (category: string): string | undefined =>
       (getLegendLabel(category).previousElementSibling as HTMLElement | null)?.style.backgroundColor;
 
-    expect(dotColour("Food")).toBe("var(--ac-chart-1)");
-    expect(dotColour("Transport")).toBe("var(--ac-chart-2)");
-    expect(dotColour("Leisure")).toBe("var(--ac-chart-5)");
-    expect(dotColour("Education")).toBe("var(--ac-chart-1)");
+    expect(dotColour("categories.invoices.groceries")).toBe("var(--ac-chart-1)");
+    expect(dotColour("categories.invoices.vehicleFuel")).toBe("var(--ac-chart-2)");
+    expect(dotColour("categories.invoices.cinema")).toBe("var(--ac-chart-5)");
+    expect(dotColour("categories.invoices.schoolSupplies")).toBe("var(--ac-chart-1)");
   });
 
   it("does not render tooltip content before a sector is hovered", () => {
@@ -145,7 +145,7 @@ describe("ClassificationBreakdownChart", () => {
 
     await hoverSector(container, 1);
 
-    expect(getTooltip().textContent).toBe(`Transport300.50 EUR24.3%${TOOLTIP_COUNT_KEY}`);
+    expect(getTooltip().textContent).toBe(`categories.invoices.vehicleFuel300.50 EUR24.3%${TOOLTIP_COUNT_KEY}`);
     expect(screen.queryByText("600.00 EUR")).not.toBeInTheDocument();
   });
 
@@ -159,7 +159,7 @@ describe("ClassificationBreakdownChart", () => {
 
     await hoverSector(container, 5);
 
-    expect(getTooltip().textContent).toBe(`Education34.00 EUR2.8%${TOOLTIP_COUNT_KEY}`);
+    expect(getTooltip().textContent).toBe(`categories.invoices.schoolSupplies34.00 EUR2.8%${TOOLTIP_COUNT_KEY}`);
     expect(screen.queryByText("300.50 EUR")).not.toBeInTheDocument();
   });
 });

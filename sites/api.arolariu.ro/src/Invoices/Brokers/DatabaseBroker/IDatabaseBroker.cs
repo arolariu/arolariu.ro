@@ -33,7 +33,7 @@ using arolariu.Backend.Domain.Invoices.DDD.Entities.Merchants;
 ///   <item><description>Soft-delete operations are idempotent (repeated calls yield same terminal state).</description></item>
 ///   <item><description>Read operations are naturally idempotent.</description></item>
 /// </list></para>
-/// <para><b>Concurrency:</b> No optimistic concurrency (ETag) handling is implemented yet (backlog: introduce access conditions to prevent lost updates).</para>
+/// <para><b>Concurrency:</b> Snapshot writes use a matching ETag. Ordinary CRUD retains its existing upsert semantics.</para>
 /// <para><b>Performance Notes:</b> Prefer partition-aware overloads. Cross-partition queries should be monitored (add RU telemetry in higher layers).
 /// Upsert patterns may incur additional RU vs targeted replace (evaluate once concurrency tokens introduced).</para>
 /// <para><b>Thread Safety:</b> Implementations (e.g., EF Core DbContext wrapper) are typically NOT thread-safe; consumers should scope instances per unit-of-work.</para>
@@ -71,6 +71,12 @@ public interface IDatabaseBroker
   /// <returns>The matching invoice or null.</returns>
   /// <exception cref="OperationCanceledException">Thrown if the operation is cancelled.</exception>
   ValueTask<Invoice?> ReadInvoiceAsync(Guid invoiceIdentifier, Guid? userIdentifier, CancellationToken cancellationToken);
+
+  /// <summary>Reads an invoice and its storage version from the owning partition.</summary>
+  ValueTask<(Invoice Resource, string ETag)> ReadInvoiceSnapshotAsync(Guid invoiceId, Guid userIdentifier, CancellationToken cancellationToken);
+
+  /// <summary>Replaces an existing invoice; returns false if its storage version has changed.</summary>
+  ValueTask<bool> TryReplaceInvoiceSnapshotAsync(Invoice invoice, string expectedETag, CancellationToken cancellationToken);
 
   /// <summary>
   /// Lists all non soft-deleted invoices for a specific user/partition.
@@ -161,6 +167,12 @@ public interface IDatabaseBroker
   /// <returns>The merchant or null if not found or soft-deleted (if soft-delete introduced later).</returns>
   /// <exception cref="OperationCanceledException">Thrown if the operation is cancelled.</exception>
   ValueTask<Merchant?> ReadMerchantAsync(Guid merchantIdentifier, Guid? parentCompanyId, CancellationToken cancellationToken);
+
+  /// <summary>Reads a merchant and its storage version from the resolved parent-company partition.</summary>
+  ValueTask<(Merchant Resource, string ETag)> ReadMerchantSnapshotAsync(Guid merchantId, Guid parentCompanyId, CancellationToken cancellationToken);
+
+  /// <summary>Replaces an existing merchant; returns false if its storage version has changed.</summary>
+  ValueTask<bool> TryReplaceMerchantSnapshotAsync(Merchant merchant, string expectedETag, CancellationToken cancellationToken);
 
   /// <summary>
   /// Lists merchants filtered by parent company partition.

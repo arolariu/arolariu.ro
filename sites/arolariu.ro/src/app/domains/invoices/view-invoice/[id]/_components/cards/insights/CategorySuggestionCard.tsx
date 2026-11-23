@@ -1,119 +1,38 @@
 "use client";
 
-import {Button, Card, CardContent, CardHeader, CardTitle, Progress} from "@arolariu/components";
+import {invoiceCategoryLabel} from "@/lib/categories/categoryLabels";
+import {InvoiceCategory} from "@/types/invoices";
+import {Badge, Card, CardContent, CardHeader, CardTitle} from "@arolariu/components";
 import {useTranslations} from "next-intl-selector";
-import {useCallback, useState} from "react";
-import {TbGift, TbHelpCircle} from "react-icons/tb";
-import {extendedCategories, mainCategories} from "../../../_utils/categories";
+import Link from "next/link";
+import {TbHelpCircle} from "react-icons/tb";
 import styles from "./CategorySuggestionCard.module.scss";
 
-type CategoryButtonProps = {
-  category: (typeof mainCategories)[number] | (typeof extendedCategories)[number];
-  isSelected: boolean;
-  onSelect: (id: string) => void;
-  variant: "main" | "extended";
-};
+const examples = [InvoiceCategory.Groceries, InvoiceCategory.RestaurantDining, InvoiceCategory.MixedPurchases] as const;
 
-function CategoryButton({category, isSelected, onSelect, variant}: Readonly<CategoryButtonProps>): React.JSX.Element {
-  const handleClick = useCallback(() => {
-    onSelect(category.id);
-  }, [category.id, onSelect]);
-
-  if (variant === "main") {
-    return (
-      <Button
-        variant='outline'
-        onClick={handleClick}
-        className={`${styles["mainCategoryButton"]} ${category.color} ${isSelected ? styles["mainCategoryButtonSelected"] : ""}`}>
-        {category.icon}
-        <span className={styles["categoryLabel"]}>{category.name}</span>
-      </Button>
-    );
-  }
-
-  return (
-    <Button
-      variant='outline'
-      onClick={handleClick}
-      className={`${styles["extendedCategoryButton"]} ${isSelected ? styles["extendedCategoryButtonSelected"] : ""}`}>
-      {category.icon}
-      <span>{category.name}</span>
-    </Button>
-  );
-}
-
-export function CategorySuggestionCard(): React.JSX.Element {
-  const [selected, setSelected] = useState<string | null>(null);
+/** Shows real category examples and offers the existing editor to the owner. */
+export function CategorySuggestionCard({editHref}: Readonly<{editHref?: string}>): React.JSX.Element {
   const t = useTranslations();
-
-  // Gamification progress (mock)
-  const categorizedCount = 8;
-  const goal = 10;
-
-  const handleSelect = useCallback((id: string) => {
-    setSelected(id);
-  }, []);
-
   return (
     <Card>
       <CardHeader>
-        <CardTitle>
-          <span className={styles["titleRow"]}>
-            <TbHelpCircle className={styles["titleIcon"]} />
-            {t((m) => m.cards.invoices.categorySuggestionCard.title)}
-          </span>
+        <CardTitle className={styles["titleRow"]}>
+          <TbHelpCircle className={styles["titleIcon"]} />
+          {t((m) => m.cards.invoices.categorySuggestionCard.title)}
         </CardTitle>
       </CardHeader>
-      <CardContent>
-        <div className={styles["contentSpaced"]}>
-          {/* Explanation */}
-          <p className={styles["description"]}>{t((m) => m.cards.invoices.categorySuggestionCard.description)}</p>
-
-          {/* Main Categories Grid */}
-          <div className={styles["mainGrid"]}>
-            {mainCategories.map((category) => (
-              <CategoryButton
-                key={category.id}
-                category={category}
-                isSelected={selected === category.id}
-                onSelect={handleSelect}
-                variant='main'
-              />
-            ))}
-          </div>
-
-          {/* More Categories Grid */}
-          <div className={styles["moreSection"]}>
-            <p className={styles["moreLabel"]}>{t((m) => m.cards.invoices.categorySuggestionCard.moreCategories)}</p>
-            <div className={styles["moreGrid"]}>
-              {extendedCategories.map((category) => (
-                <CategoryButton
-                  key={category.id}
-                  category={category}
-                  isSelected={selected === category.id}
-                  onSelect={handleSelect}
-                  variant='extended'
-                />
-              ))}
-            </div>
-          </div>
-
-          {/* Gamification */}
-          <div className={styles["gamificationBox"]}>
-            <div className={styles["gamificationHeader"]}>
-              <TbGift className={styles["gamificationGiftIcon"]} />
-              <span className={styles["gamificationLabel"]}>
-                {t((m) => m.cards.invoices.categorySuggestionCard.gamification, {goal: String(goal)})}
-              </span>
-            </div>
-            <div className={styles["gamificationProgress"]}>
-              <Progress value={(categorizedCount / goal) * 100} />
-              <span className={styles["gamificationCount"]}>
-                {categorizedCount}/{goal}
-              </span>
-            </div>
-          </div>
+      <CardContent className={styles["contentSpaced"]}>
+        <p className={styles["description"]}>{t((m) => m.cards.invoices.categorySuggestionCard.description)}</p>
+        <div className={styles["mainGrid"]}>
+          {examples.map((category) => (
+            <Badge
+              key={category}
+              variant='outline'>
+              {invoiceCategoryLabel(t, category)}
+            </Badge>
+          ))}
         </div>
+        {editHref === undefined ? null : <Link href={editHref}>{t((m) => m.categories.ui.choose)}</Link>}
       </CardContent>
     </Card>
   );

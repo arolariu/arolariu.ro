@@ -1,6 +1,11 @@
 "use client";
 
-import {type Merchant} from "@/types/invoices";
+import {updateMerchant} from "@/app/domains/invoices/_actions/merchants/updateMerchant";
+import CategoryPicker from "@/app/domains/invoices/_components/category/CategoryPicker";
+import {merchantCategoryLabel} from "@/lib/categories/categoryLabels";
+import {notify} from "@/lib/notify";
+import {useMerchantsStore} from "@/stores/merchantsStore";
+import type {Merchant, MerchantCategory} from "@/types/invoices";
 import {
   Badge,
   Button,
@@ -15,67 +20,47 @@ import {
   TableRow,
 } from "@arolariu/components";
 import {useTranslations} from "next-intl-selector";
+import {useRouter} from "next/navigation";
+import {useCallback, useRef, useState} from "react";
 import {TbBuilding, TbMapPin, TbPhone} from "react-icons/tb";
 import {useDialog} from "../../../_contexts/DialogContext";
 import styles from "./MerchantDialog.module.scss";
 
-/**
- * Dialog displaying detailed merchant information for the current invoice.
- *
- * @remarks
- * **Rendering Context**: Client Component (uses `useDialog` hook).
- *
- * **Merchant Details Displayed**:
- * - **Name**: Business name with category badge
- * - **Address**: Physical location with map pin icon
- * - **Phone**: Contact number with phone icon
- *
- * **Actions**:
- * - **Open in Maps**: Placeholder for map integration (not yet implemented)
- *
- * **Visual Design**:
- * - Profile-style header with merchant icon in primary-tinted circle
- * - Table layout for structured detail presentation
- * - Classification badge showing merchant sector
- *
- * **Dialog Integration**: Uses `useDialog` hook with `INVOICE_MERCHANT` type.
- * Payload contains the full `Merchant` object.
- *
- * **Domain Context**: Provides merchant context for invoice editing,
- * helping users verify merchant details and navigate to related data.
- *
- * @returns Client-rendered dialog with merchant details table
- *
- * @example
- * ```tsx
- * // Opened via MerchantCard "View Merchant Details" button:
- * const {open} = useDialog("INVOICE_MERCHANT", "view", merchant);
- * <Button onClick={open}>View Merchant Details</Button>
- * ```
- *
- * @see {@link MerchantCard} - Parent component that opens this dialog
- * @see {@link Merchant} - Merchant type definition
- */
-export default function MerchantDialog(): React.JSX.Element | null {
+function MerchantDetails({merchant, isOpen, close}: Readonly<{merchant: Merchant; isOpen: boolean; close: () => void}>): React.JSX.Element {
   const t = useTranslations();
-  const {
-    currentDialog: {payload = null},
-    isOpen,
-    close,
-  } = useDialog("EDIT_INVOICE__MERCHANT");
+  const router = useRouter();
+  const [saved, setSaved] = useState(merchant.category);
+  const [draft, setDraft] = useState<MerchantCategory | null | undefined>(undefined);
+  const [saving, setSaving] = useState(false);
+  const saveInFlightRef = useRef(false);
+  const value = draft === undefined ? saved : draft;
 
-  // `payload` is `null` at runtime whenever the dialog has not been opened yet
-  // (e.g. Storybook mounting this component directly, ahead of `DialogContainer`'s
-  // production gate which only renders this component once `open()` has already
-  // set a real merchant payload). No hooks are declared below this point, so
-  // returning early here is hook-order-safe.
-  const merchant: Merchant | null = payload;
-
-  if (!merchant) {
-    return null;
-  }
-
-  const merchantClassification = merchant.classification?.officialLabel ?? t((m) => m.shared.invoices.classification.unclassified);
+  const finishSaving = useCallback(() => {
+    saveInFlightRef.current = false;
+    setSaving(false);
+  }, []);
+  const save = useCallback(async (): Promise<void> => {
+    if (saveInFlightRef.current || value === saved) return;
+    saveInFlightRef.current = true;
+    setSaving(true);
+    try {
+      const result = await updateMerchant({merchantId: merchant.id, category: value});
+      if (!result.success) {
+        notify.error(t((m) => m.categories.ui.failed));
+        return;
+      }
+      const store = useMerchantsStore.getState();
+      store.updateEntity(merchant.id, {category: result.data.category});
+      setSaved(result.data.category);
+      setDraft(undefined);
+      notify.success(t((m) => m.categories.ui.saved));
+      router.refresh();
+    } catch {
+      notify.error(t((m) => m.categories.ui.failed));
+    } finally {
+      finishSaving();
+    }
+  }, [finishSaving, merchant.id, router, saved, t, value]);
 
   return (
     <Dialog
@@ -101,7 +86,7 @@ export default function MerchantDialog(): React.JSX.Element | null {
               <Badge
                 variant='outline'
                 className={styles["categoryBadge"]}>
-                {merchantClassification}
+                {merchantCategoryLabel(t, saved)}
               </Badge>
             </div>
           </div>
@@ -128,6 +113,20 @@ export default function MerchantDialog(): React.JSX.Element | null {
               </TableRow>
             </TableBody>
           </Table>
+          <CategoryPicker
+            domain='merchants'
+            label={t((m) => m.categories.ui.merchant)}
+            value={value}
+            onValueChange={setDraft}
+            disabled={saving}
+          />
+          <Button
+            type='button'
+            variant='outline'
+            onClick={save}
+            disabled={saving || value === saved}>
+            {t((m) => m.categories.ui.save)}
+          </Button>
         </div>
 
         <div className={styles["footer"]}>
@@ -139,5 +138,23 @@ export default function MerchantDialog(): React.JSX.Element | null {
         </div>
       </DialogContent>
     </Dialog>
+  );
+}
+
+/** Displays merchant information and edits its category from the invoice edit route. */
+export default function MerchantDialog(): React.JSX.Element | null {
+  const {
+    currentDialog: {payload = null},
+    isOpen,
+    close,
+  } = useDialog("EDIT_INVOICE__MERCHANT");
+
+  return payload === null ? null : (
+    <MerchantDetails
+      key={payload.id}
+      merchant={payload}
+      isOpen={isOpen}
+      close={close}
+    />
   );
 }

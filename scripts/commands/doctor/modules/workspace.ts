@@ -8,8 +8,7 @@
  * `context.inspection.inspect(...)` (Nx workspace projects/graph, and both npm dependency trees),
  * opaque allowlisted probes executed through `context.probes.run(...)` (Git, node/npm runtime
  * versions, npm cache/audit/outdated), or narrowly-scoped reads issued through the injected
- * read-only `ReadOnlyFiles` service for repository-wide configuration files and generated
- * taxonomy artifacts that no fact model represents. This module never imports a Node filesystem
+ * read-only `ReadOnlyFiles` service for repository-wide configuration files that no fact model represents. This module never imports a Node filesystem
  * API, never imports a process runner, and never requires the mutating `FileSystem` or the
  * unrestricted `HttpClient`; it consumes only the typed `ProbeOutcome` data produced by probe
  * execution, and classifies every one of its variants
@@ -18,10 +17,9 @@
 
 import {join, resolve} from "node:path";
 
-import {Clock, Effect, type PlatformError} from "effect";
+import {Effect, type PlatformError} from "effect";
 
 import {formatVersionRequirement, parseVersion, satisfiesMinimum, type MinimumVersion} from "../../../common/requirements.ts";
-import {inspectTaxonomySnapshots} from "../../../common/taxonomy-snapshots.ts";
 import {ReadOnlyFiles} from "../../../platform/Files.ts";
 import type {Process} from "../../../platform/Process.ts";
 import {
@@ -846,42 +844,6 @@ function diagnoseConfigFiles(context: Readonly<ModuleRunContext>): Effect.Effect
   });
 }
 
-function diagnoseGeneratedArtifacts(context: Readonly<ModuleRunContext>): Effect.Effect<DiagnosticResult, never, ReadOnlyFiles> {
-  return Effect.gen(function* () {
-    const startedAt = context.monotonicNow();
-    const now = new Date(yield* Clock.currentTimeMillis);
-    const {issues, snapshots} = yield* inspectTaxonomySnapshots(context.paths.root, now);
-    if (issues.length > 0) {
-      return issueDiagnostic(context, startedAt, {
-        id: "workspace.generated-artifacts",
-        name: "Pinned taxonomy snapshots",
-        status: "fail",
-        summary: "Required pinned taxonomy snapshots are incomplete, inconsistent, or invalid.",
-        evidence: boundEvidence(
-          issues.map(({message}) => normalizeErrorForReport(message, "Snapshot validation failed.")),
-          context.options.verbose,
-        ),
-        rootCause: "The checkout does not contain a valid, identical API and Website copy of each required taxonomy.",
-        fixes: [
-          {
-            description: "Recover both approved copies from version control and verify them.",
-            command: "npm run generate -- --check-taxonomies",
-          },
-        ],
-      });
-    }
-
-    return passDiagnostic(
-      context,
-      startedAt,
-      "workspace.generated-artifacts",
-      "Pinned taxonomy snapshots",
-      "API and Website taxonomy snapshots are valid and byte-identical.",
-      snapshots.map(({fileName, generatedAt}) => `${fileName}: generated at ${generatedAt}.`),
-    );
-  });
-}
-
 function formatBytes(bytes: number): string {
   return `${(bytes / GIBIBYTE).toFixed(2)} GiB`;
 }
@@ -1202,7 +1164,6 @@ export const workspaceDoctorModule: DiagnosticModule = {
         diagnoseNxProjects(context, workspaceOutcome),
         diagnoseNxGraph(context, workspaceOutcome),
         yield* diagnoseConfigFiles(context),
-        yield* diagnoseGeneratedArtifacts(context),
         yield* diagnoseHostCapacity(context),
         yield* diagnoseNpmAudit(context),
         yield* diagnoseNpmOutdated(context),

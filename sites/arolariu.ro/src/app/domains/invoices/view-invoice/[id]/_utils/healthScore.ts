@@ -43,7 +43,7 @@ export function calculateHealthScorePercentage(invoice: Invoice): number {
     && (invoice.paymentInformation.currency?.code?.length ?? 0) > 0;
   const paymentPoints = hasCompletePayment ? 15 : 0;
 
-  const categorizedProducts = items.filter((item) => item.classification !== null).length;
+  const categorizedProducts = items.filter((item) => item.category !== null).length;
   const categoryRatio = totalItems > 0 ? categorizedProducts / totalItems : 0;
   const categoryPoints = Math.round(categoryRatio * 10);
 

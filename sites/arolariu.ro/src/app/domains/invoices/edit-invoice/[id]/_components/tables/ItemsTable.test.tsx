@@ -16,7 +16,10 @@ function renderItems(invoice: Invoice): ReturnType<typeof render> {
   return render(
     <NextIntlClientProvider
       locale='en'
-      messages={{pages: {invoices: {editInvoice: {itemsTable: messages.pages.invoices.editInvoice.itemsTable}}}}}>
+      messages={{
+        categories: messages.categories,
+        pages: {invoices: {editInvoice: {itemsTable: messages.pages.invoices.editInvoice.itemsTable}}},
+      }}>
       <DialogProvider>
         <ItemsTable invoice={invoice} />
       </DialogProvider>
@@ -109,5 +112,22 @@ describe("ItemsTable", () => {
     expect(screen.queryByRole("cell", {name: "Rice"})).not.toBeInTheDocument();
     expect(screen.getByRole("cell", {name: "Milk"})).toBeInTheDocument();
     expect(screen.queryByRole("button", {name: "Delete Selected"})).not.toBeInTheDocument();
+  });
+
+  it("does not treat a locally renamed row as the persisted row with that name", async () => {
+    renderItems(buildInvoice({items: [buildProduct({name: "Oats"}), buildProduct({name: "Milk"})]}));
+    fireEvent.click(screen.getByRole("checkbox", {name: "Select Milk"}));
+    fireEvent.click(screen.getByRole("button", {name: "Delete Selected"}));
+    fireEvent.click(within(screen.getByRole("alertdialog")).getByRole("button", {name: "Delete"}));
+    await waitFor(() => expect(screen.queryByRole("alertdialog")).not.toBeInTheDocument());
+
+    fireEvent.click(screen.getByText("Oats"));
+    const input = screen.getByRole("textbox", {name: "Edit Name for Oats"});
+    fireEvent.change(input, {target: {value: "Milk"}});
+    fireEvent.keyDown(input, {key: "Enter"});
+
+    const renamed = within(screen.getByRole("row", {name: /Select Milk/}));
+    expect(renamed.getByText("Milk")).toBeInTheDocument();
+    expect(renamed.queryByRole("button", {name: "Product category: Milk"})).not.toBeInTheDocument();
   });
 });

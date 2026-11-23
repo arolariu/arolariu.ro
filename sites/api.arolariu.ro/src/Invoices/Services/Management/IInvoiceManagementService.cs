@@ -71,15 +71,16 @@ public interface IInvoiceManagementService
   /// <param name="invoiceIdentifier">The target invoice identifier.</param>
   /// <param name="userIdentifier">The owning user partition, or <see langword="null"/> when resolved downstream.</param>
   /// <param name="product">The product value to add.</param>
-  /// <param name="classificationCode">The optional GS1 GPC code to resolve canonically.</param>
   /// <param name="cancellationToken">The token that cancels the asynchronous operation.</param>
   /// <returns>A task that represents the add operation.</returns>
   Task AddProduct(
     Guid invoiceIdentifier,
     Guid? userIdentifier,
     Product product,
-    string? classificationCode,
     CancellationToken cancellationToken);
+
+  /// <summary>Updates one unambiguously named product with an explicit category assignment or clear.</summary>
+  Task<Product> UpdateProductWithCategory(Guid invoiceIdentifier, Guid userIdentifier, UpdateProductRequestDto request, CancellationToken cancellationToken);
 
   /// <summary>Retrieves every product line from an invoice.</summary>
   /// <param name="invoiceIdentifier">The target invoice identifier.</param>
@@ -167,10 +168,9 @@ public interface IInvoiceManagementService
   /// <summary>Creates a merchant in its parent-company partition.</summary>
   /// <param name="merchant">The merchant entity to persist.</param>
   /// <param name="parentCompanyId">The parent-company partition, or <see langword="null"/> when derived from the entity.</param>
-  /// <param name="classificationCode">The optional NACE 2.1 code to resolve canonically.</param>
   /// <param name="cancellationToken">The token that cancels the asynchronous operation.</param>
   /// <returns>A task that represents the create operation.</returns>
-  Task CreateMerchant(Merchant merchant, Guid? parentCompanyId, string? classificationCode, CancellationToken cancellationToken);
+  Task CreateMerchant(Merchant merchant, Guid? parentCompanyId, CancellationToken cancellationToken);
 
   /// <summary>Retrieves one merchant by identifier and optional parent-company partition.</summary>
   /// <param name="identifier">The merchant identifier.</param>
@@ -201,14 +201,14 @@ public interface IInvoiceManagementService
   /// <param name="identifier">The persisted merchant identifier.</param>
   /// <param name="parentCompanyId">The parent-company partition, or <see langword="null"/> when resolved downstream.</param>
   /// <param name="updatedMerchant">The transient merchant carrying replacement values.</param>
-  /// <param name="classificationCode">The optional NACE 2.1 code to resolve canonically.</param>
+  /// <param name="fields">The details and category fields to update.</param>
   /// <param name="cancellationToken">The token that cancels the asynchronous operation.</param>
   /// <returns>The updated merchant entity.</returns>
   Task<Merchant> UpdateMerchant(
     Guid identifier,
     Guid? parentCompanyId,
     Merchant updatedMerchant,
-    string? classificationCode,
+    MerchantUpdateFields fields,
     CancellationToken cancellationToken);
 
   /// <summary>Removes one merchant from active use.</summary>

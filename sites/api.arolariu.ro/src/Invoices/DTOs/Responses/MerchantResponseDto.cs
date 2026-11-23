@@ -8,7 +8,7 @@ using System.Text.Json.Serialization;
 
 using arolariu.Backend.Common.DDD.ValueObjects;
 using arolariu.Backend.Domain.Invoices.DDD.Entities.Merchants;
-using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Classifications;
+using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Categories;
 
 /// <summary>
 /// Response DTO representing a merchant entity returned from the API.
@@ -42,10 +42,7 @@ using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Classifications;
 /// <param name="Description">
 /// A detailed description of the merchant. May be empty if not provided.
 /// </param>
-/// <param name="Classification">
-/// The standardised NACE classification assigned to this merchant.
-/// Null when the merchant has not been classified yet.
-/// </param>
+/// <param name="Category">The selected merchant category, or null if uncategorized.</param>
 /// <param name="Address">
 /// Structured contact and address information including street, city, postal code,
 /// country, phone, and email.
@@ -96,13 +93,12 @@ using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Classifications;
 /// MerchantResponseDto dto = MerchantResponseDto.FromMerchant(domainMerchant);
 ///
 /// // Displaying merchant summary
-/// Console.WriteLine($"Merchant: {dto.Name} ({dto.Classification?.OfficialLabel})");
+/// Console.WriteLine($"Merchant: {dto.Name} ({dto.Category})");
 /// Console.WriteLine($"Invoices: {dto.ReferencedInvoiceCount}");
 /// Console.WriteLine($"Last updated: {dto.LastUpdatedAt:u}");
 /// </code>
 /// </example>
 /// <seealso cref="Merchant"/>
-/// <seealso cref="StandardClassification"/>
 /// <seealso cref="ContactInformation"/>
 [Serializable]
 [ExcludeFromCodeCoverage]
@@ -110,7 +106,7 @@ public readonly record struct MerchantResponseDto(
   [property: JsonPropertyName("id")] Guid Id,
   [property: JsonPropertyName("name")] string Name,
   [property: JsonPropertyName("description")] string Description,
-  [property: JsonPropertyName("classification")] StandardClassificationResponseDto? Classification,
+  [property: JsonPropertyName("category"), JsonIgnore(Condition = JsonIgnoreCondition.Never)] MerchantCategory? Category,
   [property: JsonPropertyName("address")] ContactInformationResponseDto Address,
   [property: JsonPropertyName("parentCompanyId")] Guid ParentCompanyId,
   [property: JsonPropertyName("referencedInvoiceCount")] int ReferencedInvoiceCount,
@@ -153,7 +149,7 @@ public readonly record struct MerchantResponseDto(
       Id: merchant.id,
       Name: merchant.Name,
       Description: merchant.Description,
-      Classification: StandardClassificationResponseDto.FromStandardClassification(merchant.Classification),
+      Category: merchant.Category,
       Address: ContactInformationResponseDto.FromContactInformation(merchant.Address),
       ParentCompanyId: merchant.ParentCompanyId,
       ReferencedInvoiceCount: merchant.ReferencedInvoices.Count,
@@ -205,7 +201,7 @@ public readonly record struct MerchantResponseDto(
       Id: merchant.id,
       Name: merchant.Name,
       Description: merchant.Description,
-      Classification: StandardClassificationResponseDto.FromStandardClassification(merchant.Classification),
+      Category: merchant.Category,
       Address: ContactInformationResponseDto.FromContactInformation(merchant.Address),
       ParentCompanyId: merchant.ParentCompanyId,
       ReferencedInvoiceCount: visibleInvoiceIdentifiers.Count,

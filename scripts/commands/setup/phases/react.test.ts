@@ -1490,7 +1490,7 @@ describe("react characterization (pre-Effect migration)", () => {
         evidence: [
           "Verified 8 locked React workspace package(s) and the @arolariu/components registry dependency from shared facts.",
           "Verified the website message dictionary and framework configuration contracts.",
-          "Verified every generated website taxonomy, license, and locale artifact.",
+          "Verified every website category catalog, license, and locale input.",
           "Preserved setup-owned environment keys: SITE_ENV, SITE_NAME, SITE_URL, NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY, CLERK_SECRET_KEY.",
           "Wrote setup-owned environment keys: none.",
           "Playwright Chromium is installed for locked version 1.62.1.",
@@ -1521,7 +1521,7 @@ describe("react characterization (pre-Effect migration)", () => {
         evidence: [
           "Verified 8 locked React workspace package(s) and the @arolariu/components registry dependency from shared facts.",
           "Verified the website message dictionary and framework configuration contracts.",
-          "Verified every generated website taxonomy, license, and locale artifact.",
+          "Verified every website category catalog, license, and locale input.",
           "Preserved setup-owned environment keys: SITE_ENV, SITE_NAME, SITE_URL, NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY, CLERK_SECRET_KEY.",
           "Wrote setup-owned environment keys: none.",
           "The installed Playwright browser inventory has no Chromium browser entry.",
@@ -1554,7 +1554,7 @@ describe("react characterization (pre-Effect migration)", () => {
         evidence: [
           "Verified 8 locked React workspace package(s) and the @arolariu/components registry dependency from shared facts.",
           "Verified the website message dictionary and framework configuration contracts.",
-          "Verified every generated website taxonomy, license, and locale artifact.",
+          "Verified every website category catalog, license, and locale input.",
           "Preserved setup-owned environment keys: SITE_ENV, SITE_NAME, SITE_URL, NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY, CLERK_SECRET_KEY.",
           "Wrote setup-owned environment keys: none.",
           "The installed Playwright browser inventory has no Chromium browser entry.",

@@ -100,14 +100,30 @@ public partial class MerchantOrchestrationService : IMerchantOrchestrationServic
 
   #region Update Merchant API
   /// <inheritdoc/>
-  public async Task<Merchant> UpdateMerchantObject(Merchant updatedMerchant, Guid merchantIdentifier, Guid? parentCompanyId, CancellationToken cancellationToken) =>
+  public async Task<Merchant> UpdateMerchantObject(Merchant updatedMerchant, Guid merchantIdentifier, Guid? parentCompanyId, CancellationToken cancellationToken, MerchantUpdateFields fields = MerchantUpdateFields.Details) =>
   await TryCatchAsync(async () =>
   {
     using var activity = InvoicePackageTracing.StartActivity(nameof(UpdateMerchantObject));
     var newMerchant = await merchantStorage
-      .UpdateMerchantObject(updatedMerchant, merchantIdentifier, parentCompanyId, cancellationToken)
+      .UpdateMerchantObject(updatedMerchant, merchantIdentifier, parentCompanyId, cancellationToken, fields)
       .ConfigureAwait(false);
     return newMerchant;
+  }).ConfigureAwait(false);
+
+  /// <inheritdoc/>
+  public async Task<(Merchant Resource, string ETag)> ReadMerchantSnapshotAsync(Guid merchantId, Guid parentCompanyId, CancellationToken cancellationToken) =>
+  await TryCatchAsync(async () =>
+  {
+    using var activity = InvoicePackageTracing.StartActivity(nameof(ReadMerchantSnapshotAsync));
+    return await merchantStorage.ReadMerchantSnapshotAsync(merchantId, parentCompanyId, cancellationToken).ConfigureAwait(false);
+  }).ConfigureAwait(false);
+
+  /// <inheritdoc/>
+  public async Task<bool> TryReplaceMerchantSnapshotAsync(Merchant merchant, string expectedETag, CancellationToken cancellationToken) =>
+  await TryCatchAsync(async () =>
+  {
+    using var activity = InvoicePackageTracing.StartActivity(nameof(TryReplaceMerchantSnapshotAsync));
+    return await merchantStorage.TryReplaceMerchantSnapshotAsync(merchant, expectedETag, cancellationToken).ConfigureAwait(false);
   }).ConfigureAwait(false);
   #endregion
 }

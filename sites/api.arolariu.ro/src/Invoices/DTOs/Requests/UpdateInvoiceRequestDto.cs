@@ -7,6 +7,7 @@ using System.Diagnostics.CodeAnalysis;
 using System.Text.Json.Serialization;
 
 using arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices;
+using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Categories;
 using arolariu.Backend.Domain.Invoices.DDD.ValueObjects;
 
 /// <summary>
@@ -39,7 +40,6 @@ using arolariu.Backend.Domain.Invoices.DDD.ValueObjects;
 /// A detailed description of the invoice. Required, but may be empty.
 /// Useful for notes, context, or search purposes.
 /// </param>
-/// <param name="ClassificationCode">Optional taxonomy code for the manual invoice classification.</param>
 /// <param name="PaymentInformation">
 /// Payment details including currency, total amount, tax, and payment method.
 /// Required for proper financial tracking and reporting.
@@ -67,7 +67,6 @@ using arolariu.Backend.Domain.Invoices.DDD.ValueObjects;
 /// var request = new UpdateInvoiceRequestDto(
 ///     Name: "Updated Invoice Name",
 ///     Description: "Monthly groceries",
-///     ClassificationCode: "01.1.1",
 ///     PaymentInformation: new PaymentInformation(Currency.RON, 150.50m, 28.60m, PaymentMethod.Card),
 ///     MerchantReference: merchantId,
 ///     IsImportant: true,
@@ -86,13 +85,28 @@ using arolariu.Backend.Domain.Invoices.DDD.ValueObjects;
 public readonly record struct UpdateInvoiceRequestDto(
   [Required] string Name,
   [Required] string Description,
-  string? ClassificationCode,
   PaymentInformation PaymentInformation,
   Guid? MerchantReference,
   bool IsImportant,
   [property: JsonPropertyName("possibleRecipes")] IReadOnlyList<RecipeSuggestionRequestDto>? PossibleRecipes,
   IDictionary<string, object>? AdditionalMetadata)
 {
+  private readonly InvoiceCategory? category;
+
+  /// <summary>Gets the category to assign, or null to clear an explicit selection.</summary>
+  public InvoiceCategory? Category
+  {
+    get => category;
+    init
+    {
+      category = value;
+      HasCategory = true;
+    }
+  }
+
+  [JsonIgnore]
+  internal bool HasCategory { get; private init; }
+
   /// <summary>
   /// Converts this DTO to an <see cref="Invoice"/> domain aggregate.
   /// </summary>
@@ -128,7 +142,7 @@ public readonly record struct UpdateInvoiceRequestDto(
       UserIdentifier = userIdentifier,
       Name = Name,
       Description = Description,
-      ClassificationCode = ClassificationCode,
+      Category = Category,
       PaymentInformation = PaymentInformation,
       MerchantReference = MerchantReference ?? Guid.Empty,
       IsImportant = IsImportant,

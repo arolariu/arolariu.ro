@@ -1,5 +1,5 @@
 /**
- * @fileoverview Read-only React, Next.js, i18n, taxonomy, license, Playwright, and framework-config diagnostics.
+ * @fileoverview Read-only React, Next.js, i18n, category, license, Playwright, and framework-config diagnostics.
  * @module scripts/commands/doctor/modules/react
  *
  * @remarks
@@ -343,7 +343,7 @@ function diagnoseI18n(context: Readonly<ModuleRunContext>, facts: Readonly<React
   });
 }
 
-function diagnoseTaxonomyAndLicenses(context: Readonly<ModuleRunContext>, facts: Readonly<ReactFacts>): DiagnosticResult {
+function diagnoseCategoriesAndLicenses(context: Readonly<ModuleRunContext>, facts: Readonly<ReactFacts>): DiagnosticResult {
   const startedAt = context.monotonicNow();
   const issues = facts.artifactIssues;
 
@@ -351,29 +351,24 @@ function diagnoseTaxonomyAndLicenses(context: Readonly<ModuleRunContext>, facts:
     return passDiagnostic(
       context,
       startedAt,
-      "react.taxonomy-and-licenses",
-      "React taxonomy and licenses",
-      "Website taxonomy artifacts and license metadata are present and valid.",
-      ["Website taxonomy artifacts are present and metadata-valid.", "licenses.json production entries are present and valid."],
+      "react.categories-and-licenses",
+      "React categories and licenses",
+      "Website category catalogs and license metadata are present and valid.",
+      ["Website category catalogs are present and complete.", "licenses.json production entries are present and valid."],
     );
   }
 
   const evidence = boundedIssues(issues);
   return issueDiagnostic(context, startedAt, {
-    id: "react.taxonomy-and-licenses",
-    name: "React taxonomy and licenses",
+    id: "react.categories-and-licenses",
+    name: "React categories and licenses",
     status: "fail",
-    summary: "Website taxonomy artifacts or license metadata are incomplete or invalid.",
+    summary: "Website category catalogs or license metadata are incomplete or invalid.",
     evidence,
     ...buildIssueDiagnosis(issues),
     fixes: [
-      ...(issues.some((issue) => issue.includes(".min.json"))
-        ? [
-            {
-              description: "Recover both approved taxonomy copies from version control, then verify them.",
-              command: "npm run generate -- --check-taxonomies",
-            },
-          ]
+      ...(issues.some((issue) => issue.startsWith("Category catalog "))
+        ? [{description: "Restore the tracked category catalog inputs and run the category mirror test."}]
         : []),
       ...(issues.some((issue) => issue.startsWith("messages/"))
         ? [{description: "Restore the missing or unreadable locale dictionaries from version control, then rerun doctor."}]
@@ -526,7 +521,7 @@ function degradedResults(context: Readonly<ModuleRunContext>, issues: readonly s
     genericFail("react.workspace-link", "Website components registry dependency"),
     genericFail("react.environment", "React environment"),
     genericFail("react.i18n", "React i18n dictionaries"),
-    genericFail("react.taxonomy-and-licenses", "React taxonomy and licenses"),
+    genericFail("react.categories-and-licenses", "React categories and licenses"),
     playwrightResult,
     genericFail("react.framework-config", "React framework configuration"),
   ];
@@ -554,7 +549,7 @@ export const reactDoctorModule: DiagnosticModule = {
         diagnoseWorkspaceLink(context, facts),
         diagnoseEnvironment(context, facts),
         diagnoseI18n(context, facts),
-        diagnoseTaxonomyAndLicenses(context, facts),
+        diagnoseCategoriesAndLicenses(context, facts),
         diagnosePlaywright(context, facts),
         diagnoseFrameworkConfig(context, facts),
       ];

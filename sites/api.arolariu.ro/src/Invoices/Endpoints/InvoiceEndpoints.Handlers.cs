@@ -274,13 +274,17 @@ public static partial class InvoiceEndpoints
         }
       }
 
-      // Preserve the resolved classification when no manual code is supplied. Without this the
-      // full-document upsert would drop an analysis-derived classification, including its origin,
-      // confidence and evidence, on every unrelated edit such as renaming the invoice.
-      if (string.IsNullOrWhiteSpace(invoicePayload.ClassificationCode))
+      if (!invoicePayload.HasCategory)
       {
-        updatedInvoiceEntity.Classification = possibleInvoice.Classification;
+        updatedInvoiceEntity.Category = possibleInvoice.Category;
       }
+
+      // Product lines are not part of this write DTO.
+      updatedInvoiceEntity.Items = possibleInvoice.Items;
+      updatedInvoiceEntity.ReceiptType = possibleInvoice.ReceiptType;
+      updatedInvoiceEntity.CountryRegion = possibleInvoice.CountryRegion;
+      updatedInvoiceEntity.TaxDetails = possibleInvoice.TaxDetails;
+      updatedInvoiceEntity.Payments = possibleInvoice.Payments;
 
       var updatedInvoice = await invoiceManagementService
         .UpdateInvoice(
@@ -358,7 +362,7 @@ public static partial class InvoiceEndpoints
               possibleMerchant.id,
               possibleMerchant.ParentCompanyId,
               possibleMerchant,
-              classificationCode: null,
+              fields: MerchantUpdateFields.Details,
               cancellationToken: writeScope.Token)
             .ConfigureAwait(false);
         }
@@ -474,7 +478,6 @@ public static partial class InvoiceEndpoints
           id,
           potentialUserIdentifier,
           productEntity,
-          product.ClassificationCode,
           cancellationToken: writeScope.Token)
         .ConfigureAwait(false);
 
@@ -602,6 +605,20 @@ public static partial class InvoiceEndpoints
 
       var potentialUserIdentifier = RetrieveUserIdentifierClaimFromPrincipal(httpContext);
       activity?.SetInvoiceContext(id, potentialUserIdentifier);
+      if (!productInformation.IsValid)
+      {
+        return TypedResults.BadRequest("Provide a product name and category, or complete product details.");
+      }
+
+      if (productInformation.HasCategory)
+      {
+        var saved = await invoiceManagementService
+          .UpdateProductWithCategory(id, potentialUserIdentifier, productInformation, writeScope.Token)
+          .ConfigureAwait(false);
+        activity?.RecordSuccess("Product category updated");
+        return TypedResults.Accepted($"/rest/v1/invoices/{id}/products", value: ProductResponseDto.FromProduct(saved));
+      }
+
       var persistedProduct = await invoiceManagementService
         .GetProduct(
           id,
@@ -624,7 +641,6 @@ public static partial class InvoiceEndpoints
           id,
           potentialUserIdentifier,
           updatedProduct,
-          productInformation.ClassificationCode,
           writeScope.Token)
         .ConfigureAwait(false);
 
@@ -744,6 +760,11 @@ public static partial class InvoiceEndpoints
         return TypedResults.Conflict();
       }
 
+      if (merchantDto.Category is null)
+      {
+        return TypedResults.BadRequest("A merchant category is required.");
+      }
+
       var merchant = merchantDto.ToMerchant();
       activity?.SetMerchantContext(merchant.id);
       activity?.SetTag("merchant.parent_company_id", merchant.ParentCompanyId.ToString());
@@ -760,7 +781,7 @@ public static partial class InvoiceEndpoints
         .ConfigureAwait(false);
 
       await invoiceManagementService
-        .CreateMerchant(merchant, null, merchantDto.ClassificationCode, writeScope.Token)
+        .CreateMerchant(merchant, null, writeScope.Token)
         .ConfigureAwait(false);
 
       activity?.RecordSuccess("Merchant added to invoice");
@@ -842,7 +863,7 @@ public static partial class InvoiceEndpoints
           possibleMerchant.id,
           possibleMerchant.ParentCompanyId,
           possibleMerchant,
-          classificationCode: null,
+          fields: MerchantUpdateFields.Details,
           cancellationToken: writeScope.Token)
         .ConfigureAwait(false);
 
@@ -1207,7 +1228,7 @@ public static partial class InvoiceEndpoints
       activity?.SetMerchantContext(merchant.id);
 
       await invoiceManagementService
-          .CreateMerchant(merchant, null, classificationCode: null, writeScope.Token)
+          .CreateMerchant(merchant, null, writeScope.Token)
           .ConfigureAwait(false);
 
       activity?.RecordSuccess("Merchant created");
@@ -1419,13 +1440,20 @@ public static partial class InvoiceEndpoints
         return TypedResults.NotFound();
       }
 
+      if (!merchantPayload.IsValid)
+      {
+        return TypedResults.BadRequest("Provide a category alone or complete merchant details.");
+      }
+
       Merchant updatedMerchant = merchantPayload.ToMerchant(id);
       Merchant persistedMerchant = await invoiceManagementService
         .UpdateMerchant(
           id,
           existingMerchant.ParentCompanyId,
           updatedMerchant,
-          merchantPayload.ClassificationCode,
+          merchantPayload.IsCategoryOnly
+            ? MerchantUpdateFields.Category
+            : MerchantUpdateFields.Details | (merchantPayload.HasCategory ? MerchantUpdateFields.Category : MerchantUpdateFields.None),
           cancellationToken: writeScope.Token)
         .ConfigureAwait(false);
 
@@ -1637,7 +1665,7 @@ public static partial class InvoiceEndpoints
           possibleMerchant.id,
           possibleMerchant.ParentCompanyId,
           possibleMerchant,
-          classificationCode: null,
+          fields: MerchantUpdateFields.Details,
           cancellationToken: writeScope.Token)
         .ConfigureAwait(false);
 
@@ -1719,7 +1747,7 @@ public static partial class InvoiceEndpoints
           possibleMerchant.id,
           possibleMerchant.ParentCompanyId,
           possibleMerchant,
-          classificationCode: null,
+          fields: MerchantUpdateFields.Details,
           cancellationToken: writeScope.Token)
         .ConfigureAwait(false);
 

@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 
 using arolariu.Backend.Common.DDD.ValueObjects;
 using arolariu.Backend.Domain.Invoices.DDD.Analysis.Exceptions.Inner;
+using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Categories;
 using arolariu.Backend.Domain.Invoices.DDD.Analysis.Exceptions.Outer.Foundation;
 using arolariu.Backend.Domain.Invoices.DDD.Analysis.Results;
 using arolariu.Backend.Domain.Invoices.DDD.Entities.Merchants;
@@ -139,7 +140,7 @@ public sealed class GenerativeAnalysisMerchantDescriptionTests
     {
       Name = "Corner Shop",
       Description = hasDescription ? "Neighborhood grocery retailer." : string.Empty,
-      Classification = hasClassification ? ClassificationTestData.Nace("47.11", "Retail sale in non-specialised stores") : null,
+      Category = hasClassification ? MerchantCategory.Supermarket : null,
       Address = contactInformation,
       ReferencedInvoices = hasReferencedInvoice ? [Guid.NewGuid()] : [],
       AdditionalMetadata = hasMetadata ? new Dictionary<string, string>(StringComparer.Ordinal) { ["source"] = "receipt" } : new Dictionary<string, string>(StringComparer.Ordinal),

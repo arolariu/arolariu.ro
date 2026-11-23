@@ -21,7 +21,6 @@ import {
   type AnalysisProfile,
   type InvoiceAnalysisCapabilities,
 } from "@/types/invoices/Analysis";
-import {ClassificationOrigin} from "@/types/invoices/Classification";
 import {Button, Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, Spinner} from "@arolariu/components";
 import {useTranslations} from "next-intl-selector";
 import {useCallback, useState} from "react";
@@ -38,9 +37,7 @@ import styles from "./AnalyzeDialog.module.scss";
  * The dialog never claims analysis has completed: the backend returns
  * `202 Accepted` (queued), never a synchronous completion signal.
  *
- * **Decision D4**: `manualClassificationPresent` is set when the invoice
- * already has a user-supplied manual classification. InvoiceAnalysisControls
- * surfaces an overwrite warning when the user enables `invoiceClassification`.
+ * Analysis fills empty categories and preserves existing choices.
  *
  * @returns The AnalyzeDialog component.
  */
@@ -54,7 +51,7 @@ export default function AnalyzeDialog(): React.JSX.Element {
 
   // payload is typed as {invoice: Invoice} only when the dialog is open;
   // at runtime it is null when the dialog is closed — use optional chaining to guard.
-  const invoice = (payload as {invoice: {id: string; classification: {origin: string} | null} | null} | null)?.invoice ?? null;
+  const invoice = (payload as {invoice: {id: string; category: number | null} | null} | null)?.invoice ?? null;
 
   const [profile, setProfile] = useState<AnalysisProfile>("comprehensive");
   const [capabilities, setCapabilities] = useState<InvoiceAnalysisCapabilities>(() =>
@@ -67,8 +64,7 @@ export default function AnalyzeDialog(): React.JSX.Element {
     scheduleRefresh: true,
   });
 
-  /** D4: warn when enabling invoiceClassification would overwrite a manual classification. */
-  const manualClassificationPresent = invoice?.classification?.origin === ClassificationOrigin.Manual;
+  const categoryAssigned = (invoice?.category ?? null) !== null;
 
   const handleChange = useCallback((newProfile: AnalysisProfile, newCapabilities: InvoiceAnalysisCapabilities): void => {
     setProfile(newProfile);
@@ -119,7 +115,7 @@ export default function AnalyzeDialog(): React.JSX.Element {
             <InvoiceAnalysisControls
               profile={profile}
               value={capabilities}
-              manualClassificationPresent={manualClassificationPresent}
+              categoryAssigned={categoryAssigned}
               onChange={handleChange}
               disabled={status === "submitting"}
             />

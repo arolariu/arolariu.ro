@@ -27,7 +27,7 @@
  */
 
 import type {NamedEntity} from "../DDD";
-import type {StandardClassification} from "./Classification";
+import type {InvoiceCategory} from "./Category";
 import type {PaymentDetail, PaymentInformation, TaxDetail} from "./Payment";
 import type {Product} from "./Product";
 import type {RecipeSuggestion} from "./Recipe";
@@ -266,10 +266,10 @@ export interface Invoice extends NamedEntity<string> {
   possibleRecipes: readonly RecipeSuggestion[];
 
   /**
-   * The standard taxonomy classification for this invoice.
-   * @remarks Expected system is ECOICOP v2. Null when the invoice has not been classified.
+   * The selected category.
+   * @remarks Null means uncategorized.
    */
-  classification: StandardClassification | null;
+  category: InvoiceCategory | null;
 
   /**
    * Additional metadata for the invoice.

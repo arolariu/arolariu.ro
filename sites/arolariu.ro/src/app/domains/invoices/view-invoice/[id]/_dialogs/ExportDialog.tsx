@@ -29,6 +29,7 @@
  * - Blob generation happens on-demand, not during render
  */
 
+import {invoiceCategoryLabel, productCategoryLabel} from "@/lib/categories/categoryLabels";
 import {notify} from "@/lib/notify";
 import {formatAmount, formatDate} from "@/lib/utils.generic";
 import {Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle} from "@arolariu/components";
@@ -110,7 +111,7 @@ export function ExportDialog(): React.JSX.Element {
   const handleExportCSV = useCallback((): void => {
     try {
       // CSV Headers
-      const headers = ["Product Name", "Quantity", "Price", "Total", "Category"];
+      const headers = ["Product Name", "Quantity", "Price", "Total", t((m) => m.categories.ui.product)];
       const csvRows = [headers.join(",")];
 
       // CSV Rows - one per product
@@ -120,7 +121,7 @@ export function ExportDialog(): React.JSX.Element {
           item.quantity.toString(),
           formatAmount(item.price),
           formatAmount(item.totalPrice),
-          `"${(item.classification?.officialLabel ?? "").replaceAll('"', '""')}"`,
+          `"${productCategoryLabel(t, item.category).replaceAll('"', '""')}"`,
         ];
         csvRows.push(row.join(","));
       }
@@ -248,8 +249,13 @@ Items: ${invoice.items.length}
           invoice={invoice}
           merchant={merchant}
           messages={{
-            classification: t((m) => m.pages.invoices.viewInvoice.export.pdf.labels.classification),
-            unclassified: t((m) => m.shared.invoices.classification.unclassified),
+            invoiceCategory: t((m) => m.categories.ui.invoice),
+            invoiceCategoryValue: invoiceCategoryLabel(t, invoice.category),
+            productCategory: t((m) => m.pages.invoices.viewInvoice.itemAnalytics.columns.category),
+            productCategoryLabels: Object.fromEntries(
+              invoice.items.map((product) => [String(product.category), productCategoryLabel(t, product.category)]),
+            ),
+            unclassified: t((m) => m.categories.ui.unclassified),
           }}
         />,
       ).toBlob();

@@ -5,26 +5,11 @@
 
 import {InvoiceBuilder} from "@/data/mocks";
 import type {Invoice} from "@/types/invoices";
-import {ClassificationOrigin, ClassificationSystem, PaymentType} from "@/types/invoices";
-import type {StandardClassification} from "@/types/invoices";
+import {PaymentType} from "@/types/invoices";
 import {renderHook} from "@testing-library/react";
 import {describe, expect, it} from "vitest";
 import {useFilteredInvoices} from "./useFilteredInvoices";
 import type {FilterState} from "./useInvoiceFilters";
-
-/** Builds a minimal StandardClassification whose root node has the given label. */
-function makeClassification(rootLabel: string): StandardClassification {
-  return {
-    system: ClassificationSystem.EcoicopV2,
-    version: "2024",
-    code: "test-code",
-    officialLabel: `${rootLabel} — leaf`,
-    hierarchy: [{level: "division", code: "test-code", officialLabel: rootLabel}],
-    origin: ClassificationOrigin.Analysis,
-    confidence: 0.9,
-    evidence: [],
-  };
-}
 
 /**
  * Helper to create a default filter state for testing.
@@ -35,7 +20,7 @@ const createDefaultFilters = (): FilterState => ({
   dateTo: null,
   amountMin: null,
   amountMax: null,
-  classificationGroups: [],
+  categoryFilters: [],
   paymentTypes: [],
   currencies: [],
   sortBy: "date",
@@ -773,15 +758,15 @@ describe("useFilteredInvoices", () => {
     it("filters by single taxonomy root group", () => {
       // Arrange
       const foodInvoice = new InvoiceBuilder().withName("Food Invoice").build();
-      foodInvoice.classification = makeClassification("Food and non-alcoholic beverages");
+      foodInvoice.category = 3001;
 
       const transportInvoice = new InvoiceBuilder().withName("Transport Invoice").build();
-      transportInvoice.classification = makeClassification("Transport");
+      transportInvoice.category = 3063;
 
       const invoices = [foodInvoice, transportInvoice];
       const filters: FilterState = {
         ...createDefaultFilters(),
-        classificationGroups: ["Food and non-alcoholic beverages"],
+        categoryFilters: [3001],
       };
 
       // Act
@@ -795,18 +780,18 @@ describe("useFilteredInvoices", () => {
     it("filters by multiple taxonomy root groups (OR logic)", () => {
       // Arrange
       const foodInvoice = new InvoiceBuilder().withName("Food Invoice").build();
-      foodInvoice.classification = makeClassification("Food and non-alcoholic beverages");
+      foodInvoice.category = 3001;
 
       const transportInvoice = new InvoiceBuilder().withName("Transport Invoice").build();
-      transportInvoice.classification = makeClassification("Transport");
+      transportInvoice.category = 3063;
 
       const housingInvoice = new InvoiceBuilder().withName("Housing Invoice").build();
-      housingInvoice.classification = makeClassification("Housing");
+      housingInvoice.category = 3024;
 
       const invoices = [foodInvoice, transportInvoice, housingInvoice];
       const filters: FilterState = {
         ...createDefaultFilters(),
-        classificationGroups: ["Food and non-alcoholic beverages", "Transport"],
+        categoryFilters: [3001, 3063],
       };
 
       // Act
@@ -822,15 +807,15 @@ describe("useFilteredInvoices", () => {
     it("excludes invoices with null classification from a specific-group filter", () => {
       // Arrange
       const classifiedInvoice = new InvoiceBuilder().withName("Classified").build();
-      classifiedInvoice.classification = makeClassification("Food and non-alcoholic beverages");
+      classifiedInvoice.category = 3001;
 
       const unclassifiedInvoice = new InvoiceBuilder().withName("Unclassified").build();
-      // unclassifiedInvoice.classification is null by default
+      // unclassifiedInvoice.category is null by default
 
       const invoices = [classifiedInvoice, unclassifiedInvoice];
       const filters: FilterState = {
         ...createDefaultFilters(),
-        classificationGroups: ["Food and non-alcoholic beverages"],
+        categoryFilters: [3001],
       };
 
       // Act
@@ -843,12 +828,12 @@ describe("useFilteredInvoices", () => {
 
     it("returns null-classification invoices when the unclassified group is selected", () => {
       const classifiedInvoice = new InvoiceBuilder().withName("Classified").build();
-      classifiedInvoice.classification = makeClassification("Food and non-alcoholic beverages");
+      classifiedInvoice.category = 3001;
       const unclassifiedInvoice = new InvoiceBuilder().withName("Unclassified").build();
 
       const filters: FilterState = {
         ...createDefaultFilters(),
-        classificationGroups: ["unclassified"],
+        categoryFilters: ["uncategorized"],
       };
 
       const {result} = renderHook(() => useFilteredInvoices([classifiedInvoice, unclassifiedInvoice], filters));
@@ -859,15 +844,15 @@ describe("useFilteredInvoices", () => {
     it("includes invoices with null classification when filter is empty (All)", () => {
       // Arrange
       const classifiedInvoice = new InvoiceBuilder().withName("Classified").build();
-      classifiedInvoice.classification = makeClassification("Food and non-alcoholic beverages");
+      classifiedInvoice.category = 3001;
 
       const unclassifiedInvoice = new InvoiceBuilder().withName("Unclassified").build();
-      // unclassifiedInvoice.classification is null by default
+      // unclassifiedInvoice.category is null by default
 
       const invoices = [classifiedInvoice, unclassifiedInvoice];
       const filters: FilterState = {
         ...createDefaultFilters(),
-        classificationGroups: [], // empty = All
+        categoryFilters: [], // empty = All
       };
 
       // Act
@@ -880,12 +865,12 @@ describe("useFilteredInvoices", () => {
     it("returns no results when no invoices match group", () => {
       // Arrange
       const foodInvoice = new InvoiceBuilder().withName("Food Invoice").build();
-      foodInvoice.classification = makeClassification("Food and non-alcoholic beverages");
+      foodInvoice.category = 3001;
 
       const invoices = [foodInvoice];
       const filters: FilterState = {
         ...createDefaultFilters(),
-        classificationGroups: ["Transport"],
+        categoryFilters: [3063],
       };
 
       // Act
@@ -1169,19 +1154,19 @@ describe("useFilteredInvoices", () => {
     it("should apply search and classification group filters together", () => {
       // Arrange
       const invoice1 = new InvoiceBuilder().withName("Apple Food").build();
-      invoice1.classification = makeClassification("Food and non-alcoholic beverages");
+      invoice1.category = 3001;
 
       const invoice2 = new InvoiceBuilder().withName("Banana Food").build();
-      invoice2.classification = makeClassification("Food and non-alcoholic beverages");
+      invoice2.category = 3001;
 
       const invoice3 = new InvoiceBuilder().withName("Apple Transport").build();
-      invoice3.classification = makeClassification("Transport");
+      invoice3.category = 3063;
 
       const invoices = [invoice1, invoice2, invoice3];
       const filters: FilterState = {
         ...createDefaultFilters(),
         search: "apple",
-        classificationGroups: ["Food and non-alcoholic beverages"],
+        categoryFilters: [3001],
       };
 
       // Act
@@ -1274,7 +1259,7 @@ describe("useFilteredInvoices", () => {
           currency: {code: "RON", name: "Romanian Leu", symbol: "lei"},
         })
         .build();
-      foodA.classification = makeClassification("Food and non-alcoholic beverages");
+      foodA.category = 3001;
 
       const foodB = new InvoiceBuilder()
         .withName("B Food")
@@ -1288,13 +1273,13 @@ describe("useFilteredInvoices", () => {
           currency: {code: "RON", name: "Romanian Leu", symbol: "lei"},
         })
         .build();
-      foodB.classification = makeClassification("Food and non-alcoholic beverages");
+      foodB.category = 3001;
 
       const invoices = [foodB, foodA];
       const filters: FilterState = {
         ...createDefaultFilters(),
         search: "food",
-        classificationGroups: ["Food and non-alcoholic beverages"],
+        categoryFilters: [3001],
         paymentTypes: [PaymentType.Card],
         dateFrom: "2024-02-01",
         amountMin: 50,
@@ -1338,12 +1323,12 @@ describe("useFilteredInvoices", () => {
           currency: {code: "RON", name: "Romanian Leu", symbol: "lei"},
         })
         .build();
-      invoice.classification = makeClassification("Food and non-alcoholic beverages");
+      invoice.category = 3001;
 
       const invoices = [invoice];
       const filters: FilterState = {
         ...createDefaultFilters(),
-        classificationGroups: ["Transport"], // Won't match
+        categoryFilters: [3063], // Won't match
       };
 
       // Act

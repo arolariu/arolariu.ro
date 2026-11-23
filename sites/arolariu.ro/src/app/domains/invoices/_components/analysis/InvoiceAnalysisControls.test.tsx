@@ -9,7 +9,7 @@
  * 3. A "Custom" indicator appears when capabilities diverge from the active preset.
  * 4. The maximumRecipes spinbutton is disabled when recipeGeneration is off.
  * 5. The sole remaining enabled capability checkbox cannot be unchecked.
- * 6. When manualClassificationPresent is true, invoiceClassification is unchecked and
+ * 6. When categoryAssigned is true, invoiceClassification is unchecked and
  *    clicking it surfaces a role="alert" whose text mentions overwriting.
  *
  * All queries use accessible roles to simultaneously prove accessibility.
@@ -160,9 +160,9 @@ describe("InvoiceAnalysisControls", () => {
     expect(documentExtractionCheckbox).toBeDisabled();
   });
 
-  // ── 6. manualClassificationPresent: unchecked + overwrite alert ─────────────
+  // ── 6. categoryAssigned: unchecked + overwrite alert ─────────────
 
-  it("renders invoiceClassification as unchecked when manualClassificationPresent is true", () => {
+  it("renders invoiceClassification as unchecked when categoryAssigned is true", () => {
     const value: InvoiceAnalysisCapabilities = {
       ...resolveAnalysisCapabilities("invoice", "fast"),
       invoiceClassification: false,
@@ -172,7 +172,7 @@ describe("InvoiceAnalysisControls", () => {
       <InvoiceAnalysisControls
         profile='fast'
         value={value}
-        manualClassificationPresent
+        categoryAssigned
         onChange={vi.fn()}
       />,
     );
@@ -183,7 +183,7 @@ describe("InvoiceAnalysisControls", () => {
     expect(classificationCheckbox).not.toBeChecked();
   });
 
-  it("surfaces a role=alert mentioning overwriting when invoiceClassification is clicked with manualClassificationPresent", async () => {
+  it("surfaces a status explaining fill-empty behavior when invoiceClassification is clicked with categoryAssigned", async () => {
     const value: InvoiceAnalysisCapabilities = {
       ...resolveAnalysisCapabilities("invoice", "fast"),
       invoiceClassification: false,
@@ -193,7 +193,7 @@ describe("InvoiceAnalysisControls", () => {
       <InvoiceAnalysisControls
         profile='fast'
         value={value}
-        manualClassificationPresent
+        categoryAssigned
         onChange={vi.fn()}
       />,
     );
@@ -203,8 +203,8 @@ describe("InvoiceAnalysisControls", () => {
     });
     await userEvent.click(classificationCheckbox);
 
-    const alert = screen.getByRole("alert");
-    expect(alert.textContent).toMatch(/overwrite/i);
+    const alert = screen.getByRole("status");
+    expect(alert).toHaveTextContent("categories.ui.fillEmpty");
   });
 
   it("emits the parsed maximumRecipes when the spinbutton changes and ignores a cleared (NaN) value", () => {

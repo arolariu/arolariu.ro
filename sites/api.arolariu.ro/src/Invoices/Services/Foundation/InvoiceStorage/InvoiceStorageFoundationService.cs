@@ -100,6 +100,25 @@ public partial class InvoiceStorageFoundationService : IInvoiceStorageFoundation
 
   #region Delete Invoice Object API
   /// <inheritdoc/>
+  public async Task<(Invoice Resource, string ETag)> ReadInvoiceSnapshotAsync(Guid invoiceId, Guid userIdentifier, CancellationToken cancellationToken) =>
+    await TryCatchAsync(async () =>
+    {
+      using var activity = InvoicePackageTracing.StartActivity(nameof(ReadInvoiceSnapshotAsync));
+      ValidateIdentifierIsSet(invoiceId);
+      ValidateIdentifierIsSet(userIdentifier);
+      return await invoiceNoSqlBroker.ReadInvoiceSnapshotAsync(invoiceId, userIdentifier, cancellationToken).ConfigureAwait(false);
+    }).ConfigureAwait(false);
+
+  /// <inheritdoc/>
+  public async Task<bool> TryReplaceInvoiceSnapshotAsync(Invoice invoice, string expectedETag, CancellationToken cancellationToken) =>
+    await TryCatchAsync(async () =>
+    {
+      using var activity = InvoicePackageTracing.StartActivity(nameof(TryReplaceInvoiceSnapshotAsync));
+      ValidateInvoiceInformationIsValid(invoice);
+      return await invoiceNoSqlBroker.TryReplaceInvoiceSnapshotAsync(invoice, expectedETag, cancellationToken).ConfigureAwait(false);
+    }).ConfigureAwait(false);
+
+  /// <inheritdoc/>
   public async Task DeleteInvoiceObject(Guid identifier, Guid? userIdentifier, CancellationToken cancellationToken) =>
   await TryCatchAsync(async () =>
   {

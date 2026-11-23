@@ -1,5 +1,7 @@
 "use client";
 
+import {productCategoryLabel} from "@/lib/categories/categoryLabels";
+import {isProductCategory} from "@/lib/categories/categoryCatalog";
 import {toRON} from "@/lib/currency";
 import {formatCurrency, toSafeDate} from "@/lib/utils.generic";
 import {useInvoicesStore} from "@/stores";
@@ -25,7 +27,7 @@ type SeasonalTranslateFn = (key: string, values?: TranslationValues) => string;
 function calculateCategorySpending(invoice: Invoice): Record<string, number> {
   const categorySpending: Record<string, number> = {};
   for (const item of invoice.items) {
-    const key = item.classification?.code ?? "unclassified";
+    const key = String(item.category);
     categorySpending[key] = (categorySpending[key] || 0) + item.totalPrice;
   }
   return categorySpending;
@@ -37,7 +39,7 @@ function calculateHistoricalAverage(invoices: ReadonlyArray<Invoice>): Record<st
   for (const inv of invoices) {
     for (const item of inv.items) {
       if (!item.metadata.isSoftDeleted) {
-        const key = item.classification?.code ?? "unclassified";
+        const key = String(item.category);
         if (!historicalAvg[key]) {
           historicalAvg[key] = {total: 0, count: 0};
         }
@@ -56,6 +58,7 @@ function detectSpendingSpikes(
   categorySpending: Record<string, number>,
   historicalAvg: Record<string, {total: number; count: number}>,
   translate: SeasonalTranslateFn,
+  getCategoryLabel: (key: string) => string,
 ): Insight[] {
   const insights: Insight[] = [];
   for (const [cat, amount] of Object.entries(categorySpending)) {
@@ -71,7 +74,7 @@ function detectSpendingSpikes(
         insights.push({
           id: `spike-${cat}`,
           icon: <TbTrendingUp className={styles["iconSm"]} />,
-          title: translate("insights.spike.title", {category: cat}),
+          title: translate("insights.spike.title", {category: getCategoryLabel(cat)}),
           description: translate("insights.spike.description", {percent: percentChange.toFixed(0)}),
           type: "warning",
         });
@@ -121,14 +124,19 @@ function getDefaultInsight(translate: SeasonalTranslateFn): Insight {
   };
 }
 
-function detectSeasonalInsights(invoice: Invoice, allInvoices: ReadonlyArray<Invoice>, translate: SeasonalTranslateFn): Insight[] {
+function detectSeasonalInsights(
+  invoice: Invoice,
+  allInvoices: ReadonlyArray<Invoice>,
+  translate: SeasonalTranslateFn,
+  getCategoryLabel: (key: string) => string,
+): Insight[] {
   const insights: Insight[] = [];
   const date = toSafeDate(invoice.paymentInformation.transactionDate);
   const month = date.getMonth();
 
   const categorySpending = calculateCategorySpending(invoice);
   const historicalAvg = calculateHistoricalAverage(allInvoices);
-  const spendingSpikes = detectSpendingSpikes(categorySpending, historicalAvg, translate);
+  const spendingSpikes = detectSpendingSpikes(categorySpending, historicalAvg, translate, getCategoryLabel);
   insights.push(...spendingSpikes);
 
   const isDecember = month === 11;
@@ -211,7 +219,14 @@ export function SeasonalInsightsCard(): React.JSX.Element {
     };
   }, [invoice, allInvoices]);
 
-  const insights = useMemo(() => detectSeasonalInsights(invoice, allInvoices, translate), [invoice, allInvoices, translate]);
+  const insights = useMemo(
+    () =>
+      detectSeasonalInsights(invoice, allInvoices, translate, (key) => {
+        const id = Number(key);
+        return productCategoryLabel(t, isProductCategory(id) ? id : null);
+      }),
+    [invoice, allInvoices, t, translate],
+  );
 
   // If we don't have enough historical data, show a placeholder
   const hasInsufficientData = allInvoices.length < 2;

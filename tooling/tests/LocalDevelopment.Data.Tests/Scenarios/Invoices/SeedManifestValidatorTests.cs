@@ -1,6 +1,7 @@
 namespace LocalDevelopment.Data.Tests.Scenarios.Invoices;
 
 using System.Text.Json.Nodes;
+using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Categories;
 using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Allergens;
 using global::LocalDevelopment.Data.Scenarios.Invoices;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
@@ -256,58 +257,13 @@ public sealed class SeedManifestValidatorTests
       : invoice with { PaymentType = "invented" })));
   }
 
-  /// <summary>A selected leaf alone is not the complete canonical classification path.</summary>
+  /// <summary>A category from another domain cannot be used to materialize a seed record.</summary>
   [TestMethod]
-  [DataRow("merchant")]
-  [DataRow("invoice")]
-  [DataRow("product")]
-  public void Validate_TruncatedCanonicalHierarchy_Throws(string target)
+  public void Validate_WrongDomainCategory_Throws()
   {
     SeedScenarioManifest manifest = Load();
-    if (target == "merchant")
-    {
-      SeedMerchantDefinition merchant = manifest.Merchants[0];
-      AssertInvalid(manifest with
-      {
-        Merchants = [merchant with { ClassificationPath = [merchant.ClassificationPath[^1]] }, .. manifest.Merchants.Skip(1)],
-      }, "canonical");
-      return;
-    }
-
-    SeedInvoiceDefinition invoice = manifest.Invoices.First(candidate => target == "invoice"
-      ? candidate.ClassificationPath?.Count > 1
-      : candidate.Products.Any(product => product.ClassificationPath?.Count > 1));
-    if (target == "invoice")
-    {
-      var path = invoice.ClassificationPath ?? throw new InvalidDataException();
-      AssertInvalid(Replace(manifest, invoice with { ClassificationPath = [path[^1]] }), "canonical");
-    }
-    else
-    {
-      SeedProductDefinition product = invoice.Products.First(candidate => candidate.ClassificationPath?.Count > 1);
-      var path = product.ClassificationPath ?? throw new InvalidDataException();
-      AssertInvalid(Replace(manifest, invoice with
-      {
-        Products = invoice.Products.Select(candidate => candidate.ProductCode == product.ProductCode
-          ? candidate with { ClassificationPath = [path[^1]] } : candidate).ToArray(),
-      }), "canonical");
-    }
-  }
-
-  /// <summary>The selected code cannot validate fabricated ancestor labels.</summary>
-  [TestMethod]
-  public void Validate_NoncanonicalAncestorLabel_Throws()
-  {
-    SeedScenarioManifest manifest = Load();
-    SeedMerchantDefinition merchant = manifest.Merchants[0];
-    var ancestor = merchant.ClassificationPath[0];
-    AssertInvalid(manifest with
-    {
-      Merchants = [merchant with
-      {
-        ClassificationPath = [new(ancestor.Level, ancestor.Code, "Fabricated ancestor label"), .. merchant.ClassificationPath.Skip(1)],
-      }, .. manifest.Merchants.Skip(1)],
-    }, "canonical");
+    SeedInvoiceDefinition invoice = manifest.Invoices[0];
+    AssertInvalid(Replace(manifest, invoice with { Category = (InvoiceCategory)1001 }), "category");
   }
 
   /// <summary>Day-zero checkout times cannot become future transactions on an early startup.</summary>

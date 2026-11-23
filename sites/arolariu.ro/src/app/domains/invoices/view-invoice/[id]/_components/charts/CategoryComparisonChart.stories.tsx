@@ -6,7 +6,7 @@ import {CategoryComparisonChart} from "./CategoryComparisonChart";
 faker.seed(42);
 
 function generateMockCategoryTrendData(count: number): CategoryTrendData[] {
-  const categories = ["Dairy", "Fruits", "Meat", "Beverages", "Baked Goods", "Vegetables", "Groceries", "Fish"];
+  const categories = [1014, 1001, 1020, 1048, 1039, 1002, 1007, 1025] as const;
   return categories.slice(0, count).map((category) => ({
     category,
     current: faker.number.float({min: 10, max: 200, fractionDigits: 2}),
@@ -72,7 +72,7 @@ export const EmptyData: Story = {
 /** Single data point — only one category. */
 export const SingleDataPoint: Story = {
   args: {
-    data: [{category: "Dairy", current: 45.99, average: 38.5}],
+    data: [{category: 1014, current: 45.99, average: 38.5}],
     currency: "RON",
   },
 };
@@ -82,20 +82,7 @@ export const HighVolume: Story = {
   args: {
     data: [
       ...generateMockCategoryTrendData(8),
-      ...[
-        "Snacks",
-        "Cleaning",
-        "Personal Care",
-        "Frozen",
-        "Condiments",
-        "Pasta",
-        "Canned Goods",
-        "Spices",
-        "Baby",
-        "Pet Food",
-        "Bakery",
-        "Deli",
-      ].map((category) => ({
+      ...([1043, 1071, 1062, 1036, 1033, 1006, 1035, 1031, 1053, 1054, 1007, 1027] as const).map((category) => ({
         category,
         current: faker.number.float({min: 10, max: 200, fractionDigits: 2}),
         average: faker.number.float({min: 10, max: 200, fractionDigits: 2}),

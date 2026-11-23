@@ -2,18 +2,19 @@ namespace arolariu.Backend.Domain.Invoices.DTOs.Requests;
 
 using System;
 using System.Collections.Generic;
-using System.ComponentModel.DataAnnotations;
+using System.Text.Json.Serialization;
 using System.Diagnostics.CodeAnalysis;
 
 using arolariu.Backend.Common.DDD.ValueObjects;
 using arolariu.Backend.Domain.Invoices.DDD.Entities.Merchants;
+using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Categories;
 
 /// <summary>
 /// Request DTO for updating client-editable merchant fields.
 /// </summary>
 /// <remarks>
 /// <para>
-/// <b>Purpose:</b> Updates contact, description, metadata, and an optional manual NACE
+/// <b>Purpose:</b> Updates contact, description, metadata, and an optional manual
 /// selection without replacing relationships, audit state, or the Cosmos partition identity.
 /// </para>
 /// <para>
@@ -35,7 +36,6 @@ using arolariu.Backend.Domain.Invoices.DDD.Entities.Merchants;
 /// <param name="Description">
 /// The new detailed description. Required. Replaces the existing description.
 /// </param>
-/// <param name="ClassificationCode">Optional taxonomy code for the manual merchant classification.</param>
 /// <param name="Address">
 /// The new structured contact and address information.
 /// Null creates an empty <see cref="ContactInformation"/> instance.
@@ -53,7 +53,6 @@ using arolariu.Backend.Domain.Invoices.DDD.Entities.Merchants;
 /// var request = new UpdateMerchantRequestDto(
 ///     Name: "Kaufland Iasi Pacurari",
 ///     Description: "Updated description with new hours",
-///     ClassificationCode: "47.11",
 ///     Address: new ContactInformation { City = "Iasi", Country = "Romania" },
 ///     ParentCompanyId: parentId,
 ///     AdditionalMetadata: new Dictionary&lt;string, string&gt; { ["storeCode"] = "IS001" });
@@ -67,13 +66,33 @@ using arolariu.Backend.Domain.Invoices.DDD.Entities.Merchants;
 [Serializable]
 [ExcludeFromCodeCoverage]
 public readonly record struct UpdateMerchantRequestDto(
-  [Required] string Name,
-  [Required] string Description,
-  string? ClassificationCode,
+  string? Name,
+  string? Description,
   ContactInformation? Address,
   Guid? ParentCompanyId,
   IDictionary<string, string>? AdditionalMetadata)
 {
+  private readonly MerchantCategory? category;
+
+  /// <summary>Gets the selected category. An explicit null clears the saved category.</summary>
+  public MerchantCategory? Category
+  {
+    get => category;
+    init
+    {
+      category = value;
+      HasCategory = true;
+    }
+  }
+
+  [JsonIgnore]
+  internal bool HasCategory { get; private init; }
+
+  internal bool IsCategoryOnly => HasCategory && Name is null && Description is null
+    && Address is null && ParentCompanyId is null && AdditionalMetadata is null;
+
+  internal bool IsValid => IsCategoryOnly || (!string.IsNullOrWhiteSpace(Name) && !string.IsNullOrWhiteSpace(Description));
+
   /// <summary>
   /// Converts this DTO to a <see cref="Merchant"/> domain entity.
   /// </summary>
@@ -106,8 +125,9 @@ public readonly record struct UpdateMerchantRequestDto(
     var merchant = new Merchant
     {
       id = merchantId,
-      Name = Name,
-      Description = Description,
+      Name = Name ?? string.Empty,
+      Description = Description ?? string.Empty,
+      Category = Category,
       Address = Address ?? new ContactInformation(),
     };
 

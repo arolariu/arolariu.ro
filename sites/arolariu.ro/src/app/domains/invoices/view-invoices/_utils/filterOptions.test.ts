@@ -3,29 +3,14 @@
  * @module sites/arolariu.ro/src/app/domains/invoices/view-invoices/_utils/filterOptions.test
  */
 
+import {type InvoiceCategory} from "@/types/invoices/Category";
 import {InvoiceBuilder} from "@/data/mocks";
 import type {Invoice} from "@/types/invoices";
-import {ClassificationOrigin, ClassificationSystem} from "@/types/invoices";
 import {PaymentType} from "@/types/invoices";
-import type {StandardClassification} from "@/types/invoices";
 import {describe, expect, it} from "vitest";
-import {computeAvailableClassificationGroups, computeAvailableCurrencies, computeAvailablePaymentTypes} from "./filterOptions";
+import {computeAvailableCategories, computeAvailableCurrencies, computeAvailablePaymentTypes} from "./filterOptions";
 
-/** Builds a minimal StandardClassification for test use. */
-function makeClassification(rootLabel: string, code = "01"): StandardClassification {
-  return {
-    system: ClassificationSystem.EcoicopV2,
-    version: "2024",
-    code,
-    officialLabel: `${rootLabel} sub-item`,
-    hierarchy: [{level: "division", code, officialLabel: rootLabel}],
-    origin: ClassificationOrigin.Analysis,
-    confidence: 0.9,
-    evidence: [],
-  };
-}
-
-function makeInvoice(opts: {currency?: string; classificationGroup?: string; paymentType?: PaymentType}): Invoice {
+function makeInvoice(opts: {currency?: string; category?: InvoiceCategory; paymentType?: PaymentType}): Invoice {
   const b = new InvoiceBuilder();
   if (opts.currency !== undefined) {
     b.withPaymentInformation({
@@ -49,8 +34,8 @@ function makeInvoice(opts: {currency?: string; classificationGroup?: string; pay
     });
   }
   const invoice = b.build();
-  if (opts.classificationGroup !== undefined) {
-    invoice.classification = makeClassification(opts.classificationGroup);
+  if (opts.category !== undefined) {
+    invoice.category = opts.category;
   }
   return invoice;
 }
@@ -97,48 +82,41 @@ describe("computeAvailableCurrencies", () => {
   });
 });
 
-describe("computeAvailableClassificationGroups", () => {
+describe("computeAvailableCategories", () => {
   it("returns an empty list for no invoices", () => {
-    expect(computeAvailableClassificationGroups([])).toEqual([]);
+    expect(computeAvailableCategories([])).toEqual([]);
   });
 
   it("returns 'unclassified' for invoices with null classification", () => {
-    const invoice = new InvoiceBuilder().build(); // classification: null by default
-    expect(computeAvailableClassificationGroups([invoice])).toEqual(["unclassified"]);
+    const invoice = new InvoiceBuilder().build(); // category: null by default
+    expect(computeAvailableCategories([invoice])).toEqual(["uncategorized"]);
   });
 
   it("returns a single taxonomy root label for one classified invoice", () => {
-    const invoices = [makeInvoice({classificationGroup: "Food and non-alcoholic beverages"})];
-    expect(computeAvailableClassificationGroups(invoices)).toEqual(["Food and non-alcoholic beverages"]);
+    const invoices = [makeInvoice({category: 3001})];
+    expect(computeAvailableCategories(invoices)).toEqual([3001]);
   });
 
   it("dedupes repeated groups", () => {
-    const invoices = [
-      makeInvoice({classificationGroup: "Food and non-alcoholic beverages"}),
-      makeInvoice({classificationGroup: "Food and non-alcoholic beverages"}),
-    ];
-    expect(computeAvailableClassificationGroups(invoices)).toEqual(["Food and non-alcoholic beverages"]);
+    const invoices = [makeInvoice({category: 3001}), makeInvoice({category: 3001})];
+    expect(computeAvailableCategories(invoices)).toEqual([3001]);
   });
 
   it("orders by frequency descending", () => {
     const invoices = [
-      makeInvoice({classificationGroup: "Transport"}),
-      makeInvoice({classificationGroup: "Food and non-alcoholic beverages"}),
-      makeInvoice({classificationGroup: "Food and non-alcoholic beverages"}),
-      makeInvoice({classificationGroup: "Food and non-alcoholic beverages"}),
-      makeInvoice({classificationGroup: "Housing"}),
-      makeInvoice({classificationGroup: "Housing"}),
+      makeInvoice({category: 3063}),
+      makeInvoice({category: 3001}),
+      makeInvoice({category: 3001}),
+      makeInvoice({category: 3001}),
+      makeInvoice({category: 3024}),
+      makeInvoice({category: 3024}),
     ];
-    expect(computeAvailableClassificationGroups(invoices)).toEqual(["Food and non-alcoholic beverages", "Housing", "Transport"]);
+    expect(computeAvailableCategories(invoices)).toEqual([3001, 3024, 3063]);
   });
 
   it("breaks ties alphabetically", () => {
-    const invoices = [
-      makeInvoice({classificationGroup: "Transport"}),
-      makeInvoice({classificationGroup: "Housing"}),
-      makeInvoice({classificationGroup: "Food and non-alcoholic beverages"}),
-    ];
-    expect(computeAvailableClassificationGroups(invoices)).toEqual(["Food and non-alcoholic beverages", "Housing", "Transport"]);
+    const invoices = [makeInvoice({category: 3063}), makeInvoice({category: 3024}), makeInvoice({category: 3001})];
+    expect(computeAvailableCategories(invoices)).toEqual([3001, 3024, 3063]);
   });
 });
 

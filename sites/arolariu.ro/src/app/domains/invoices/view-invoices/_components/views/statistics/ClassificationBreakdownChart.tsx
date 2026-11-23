@@ -5,6 +5,7 @@
  * @module app/domains/invoices/view-invoices/_components/views/statistics/ClassificationBreakdownChart
  */
 
+import {invoiceCategoryLabel} from "@/lib/categories/categoryLabels";
 import {formatAmount} from "@/lib/utils.generic";
 import {
   Card,
@@ -34,7 +35,7 @@ type LegendEntry = {
 };
 
 type TooltipPayloadItem = {
-  payload: ClassificationGroupAggregate & {fill: string};
+  payload: ClassificationGroupAggregate & {fill: string; categoryLabel: string};
 };
 
 type CustomTooltipProps = {
@@ -58,7 +59,7 @@ function CustomTooltip({active, payload, currency}: CustomTooltipProps): React.J
 
   return (
     <div className={styles["tooltip"]}>
-      <p className={styles["tooltipCategory"]}>{data.category}</p>
+      <p className={styles["tooltipCategory"]}>{data.categoryLabel}</p>
       <p className={styles["tooltipAmount"]}>
         {formatAmount(data.amount)} {currency}
       </p>
@@ -103,14 +104,15 @@ export function ClassificationBreakdownChart({data, currency}: Props): React.JSX
 
   const chartConfig: Record<string, {label: string; color: string}> = {};
   for (const [index, item] of data.entries()) {
-    chartConfig[item.category] = {
-      label: item.category,
+    chartConfig[String(item.category)] = {
+      label: invoiceCategoryLabel(t, item.category),
       color: `var(--ac-chart-${(index % 5) + 1})`,
     };
   }
 
   const coloredData = data.map((item, index) => ({
     ...item,
+    categoryLabel: invoiceCategoryLabel(t, item.category),
     fill: `var(--ac-chart-${(index % 5) + 1})`,
   }));
 
@@ -135,7 +137,7 @@ export function ClassificationBreakdownChart({data, currency}: Props): React.JSX
               <Pie
                 data={coloredData}
                 dataKey='amount'
-                nameKey='category'
+                nameKey='categoryLabel'
                 cx='50%'
                 cy='50%'
                 innerRadius={50}

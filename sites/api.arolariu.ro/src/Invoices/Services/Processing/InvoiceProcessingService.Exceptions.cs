@@ -4,6 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices;
+using arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices.Exceptions.Inner;
 using arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices.Exceptions.Outer.Orchestration;
 using arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices.Exceptions.Outer.Processing;
 using arolariu.Backend.Domain.Invoices.DDD.Analysis.Exceptions.Outer.Orchestration;
@@ -11,8 +12,8 @@ using arolariu.Backend.Domain.Invoices.DDD.Entities.Merchants;
 using arolariu.Backend.Domain.Invoices.DDD.Entities.Merchants.Exceptions.Inner;
 using arolariu.Backend.Domain.Invoices.DDD.Entities.Merchants.Exceptions.Outer.Orchestration;
 using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Products;
+using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Products.Exceptions;
 using arolariu.Backend.Domain.Invoices.DDD.Analysis.Exceptions.Inner;
-using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Classifications.Exceptions.Inner;
 using arolariu.Backend.Domain.Invoices.Modules;
 public sealed partial class InvoiceProcessingService
 {
@@ -83,6 +84,8 @@ public sealed partial class InvoiceProcessingService
       => CreateAndLogServiceException(analysisService.InnerException ?? analysisService),
     ArgumentException
       => CreateAndLogValidationException(exception),
+    InvoiceAlreadyExistsException or ProductNotFoundException
+      => CreateAndLogDependencyValidationException(exception),
     _ => CreateAndLogServiceException(exception),
   };
   #endregion
@@ -357,7 +360,6 @@ public sealed partial class InvoiceProcessingService
       => exception,
 
     AnalysisOrchestrationValidationException
-      or TaxonomyCodeNotFoundException
       or InvalidAnalysisOptionsException
       or ArgumentException
       => LogAndWrapValidation(exception),

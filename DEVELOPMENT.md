@@ -362,43 +362,26 @@ npm run build:components # Build component library
 ### Code Generation
 
 ```bash
-npm run generate -- artifacts gql i18n  # Verify pinned taxonomies and prepare Website licenses, GraphQL types, and i18n
+npm run generate -- artifacts gql i18n  # Prepare Website licenses, GraphQL types, and i18n
 npm run generate:env     # ⚠️ Destructive manual regeneration — rewrites root .env and overwrites sites/arolariu.ro/.env; not a routine post-setup step
 npm run generate:i18n    # i18n translation sync
 npm run generate:gql     # GraphQL type generation
 ```
 
-### Taxonomy snapshot maintenance
+### Invoice domain category catalogs
 
-The API and Website use the same Git-tracked GPC, ECOICOP, and NACE snapshots. The API embeds its copies at publish time; Next.js bundles
-its copies into the standalone build. Setup and CI never fetch these taxonomies. If validation fails, recover the approved copies from
-version control; do not download replacements to make a build pass.
+The API and website ship matching flat JSON catalogs for products, merchants, and receipts. The API embeds its copies from
+`sites/api.arolariu.ro/src/Invoices/Resources/Categories/`; Next.js bundles its copies from `sites/arolariu.ro/src/data/categories/`. No
+publisher or lookup request is needed.
 
-`npm run generate -- --check-taxonomies` verifies both copies of each snapshot. In the regular Hygiene workflow, **Review due** (yellow)
-starts six UTC calendar months after capture and **Refresh overdue** (red) starts at twelve. Neither advisory fails CI. The date comes from
-the approved snapshot, not checkout time or the last failed refresh.
+Each domain has 100 explicit numeric IDs including Other. Null means uncategorized. Never renumber or reuse a released ID. Update both
+copies byte-for-byte and align the C# and TypeScript definitions and the English, Romanian and French dictionaries. Run
+`npm exec --no -- vitest run category-catalog-parity.test.ts --coverage.enabled=false` from the root with the applicable API and website
+checks. Product entries marked `isFood` can be used as purchased recipe ingredients.
 
-1. Run `npm run generate -- --refresh-taxonomies --output-dir <new-directory>` from the repository root. Choose a new directory outside the
-   API and Website taxonomy directories, preferably outside the checkout. Its parent must exist. A failed or partial run is not promotable:
-   require a successful exit and `taxonomy-review.json`. No live mirror or Website license file is written by this command.
-2. Read the report for the pinned and candidate provenance, SHA-256 hashes, and code-level changes. Review removed/added codes, label edits
-   (including affected descendants), moves, and other metadata. The same publisher edition can change without changing its version. Never
-   assume a replacement for a removed, split, or merged code. A successful no-change refresh may advance the capture date only when that
-   candidate is reviewed and adopted.
-3. Before promotion, use synthetic data or an approved read-only export to summarize impact by entity (`Merchant`, `Invoice`, `Product`),
-   system, stored version, code, change kind, and count. Keep saved classifications and their label/hierarchy evidence by default; only new
-   selections use the new snapshot. Test historical reads and unrelated edits: forms must not resubmit a retired code accidentally. Check
-   label-based filters and analytics for mixed versions. Review removed/remapped codes and coordinate API/Website rollout so the UI does not
-   offer codes the API rejects.
-4. Promote both byte-identical copies and any needed seed fixture changes together in a reviewed PR. Reconcile affected labels and hierarchy
-   paths in the Alice, Bob, Charlie, and Dmitryi seed fixtures from the candidate graph; leave strict validation intact. Verify the check,
-   Website taxonomy lookup tests and typecheck, and `dotnet test arolariu.slnx --configuration Release --nologo`. If an edition or filename
-   changes, update the generator identity, .NET embedded resource list and broker, Website imports, verification paths, and fixtures
-   together. Keep the prior commit and matching image digests for a coordinated rollback.
-
-Reverting a promotion restores both mirrors and matching fixtures. Updating local fixtures does not authorize rewriting stored business
-data. If a separate backfill is justified, require an approved mapping, backup/restore and rollback plan, a nonproduction dry run, and
-idempotent writes that protect partition ownership and use optimistic concurrency.
+The initial cutover assumes fresh invoice and merchant stores, empty analysis queues, and controlled empty browser caches. There is no
+automatic migration or legacy reader. Release matched API and website artifacts with writes paused. A rollback to the previous contract
+needs an empty store; a live reset or release requires separate approval.
 
 ### Root tooling scripts
 

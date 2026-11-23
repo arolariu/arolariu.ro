@@ -6,13 +6,14 @@ using System.Text.Json.Serialization;
 
 using arolariu.Backend.Common.DDD.Contracts;
 using arolariu.Backend.Common.DDD.ValueObjects;
-using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Classifications;
+using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Categories;
+using arolariu.Backend.Domain.Invoices.Serialization;
 
 /// <summary>
 /// Represents a merchant (vendor / store) referenced by one or more invoices within the invoicing bounded context.
 /// </summary>
 /// <remarks>
-/// <para>Encapsulates classification (<c>Classification</c>), the inherited generated <c>Description</c>, location/contact data
+/// <para>Encapsulates classification (<c>Category</c>), the inherited generated <c>Description</c>, location/contact data
 /// (<c>Address</c>), hierarchical grouping (<c>ParentCompanyId</c>) and reverse references from invoices
 /// (<c>ReferencedInvoices</c>) for analytic aggregation.</para>
 /// <para><b>Identity:</b> Assigned at creation time (random GUID). Future optimization may migrate to Version 7 GUID for chronological sorting.</para>
@@ -31,13 +32,10 @@ public sealed class Merchant : NamedEntity<Guid>
   [JsonPropertyOrder(0)]
   public override Guid id { get; init; } = Guid.NewGuid();
 
-  /// <summary>Standardised classification used for analytics, grouping and analysis heuristics.</summary>
-  /// <remarks>
-  /// <para><b>Expected system:</b> <see cref="ClassificationSystem.Nace21"/>. Processing resolves every manual selection canonically before persistence.</para>
-  /// <para><see langword="null"/> means the merchant has not been classified yet.</para>
-  /// </remarks>
+  /// <summary>The selected merchant category, or null if uncategorized.</summary>
   [JsonPropertyOrder(3)]
-  public StandardClassification? Classification { get; set; }
+  [Newtonsoft.Json.JsonConverter(typeof(StrictStoredCategoryConverter<MerchantCategory>))]
+  public MerchantCategory? Category { get; set; }
 
   /// <summary>Structured contact / address information.</summary>
   /// <remarks><para>Represents a value object snapshot. Entire object is typically replaced on update; no deep merge semantics currently.</para></remarks>

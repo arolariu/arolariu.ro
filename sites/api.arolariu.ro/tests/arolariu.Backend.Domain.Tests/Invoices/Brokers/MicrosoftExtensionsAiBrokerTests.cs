@@ -9,6 +9,7 @@ using System.Threading.Tasks;
 
 using arolariu.Backend.Domain.Invoices.Brokers.GenerativeAnalysisBroker;
 using arolariu.Backend.Domain.Invoices.DDD.Analysis.Exceptions.Inner;
+using arolariu.Backend.Domain.Invoices.Services.Foundation.Analysis;
 
 using Microsoft.Extensions.AI;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -27,6 +28,37 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 [TestClass]
 public sealed class AzureFoundryBrokerTests
 {
+  /// <summary>Category null is explicit; omitting it cannot silently become a valid abstention.</summary>
+  [TestMethod]
+  public async Task GenerateStructuredAsync_CategorySchema_RequiresNullableNumericCategory()
+  {
+    using var chat = new ScriptedChatClient("""{"selections":[{"correlationToken":"product:0","category":null}]}""", null);
+    var broker = new AzureFoundryBroker(chat, NullLoggerFactory.Instance);
+    var request = new GenerativeAnalysisRequest("Choose a category.", new { });
+
+    var response = await broker.GenerateStructuredAsync<AnalysisFoundationService.CategorySelectionBatch>(request, CancellationToken.None)
+      .ConfigureAwait(false);
+
+    Assert.HasCount(1, response.Value.Selections);
+    Assert.IsNull(response.Value.Selections[0].Category);
+    Assert.IsTrue(chat.UsedJsonSchemaResponseFormat);
+  }
+
+  /// <summary>Missing or string-valued category outputs are not valid abstentions.</summary>
+  [TestMethod]
+  [DataRow("""{"selections":[{"correlationToken":"product:0"}]}""")]
+  [DataRow("""{"selections":[{"correlationToken":"product:0","category":"1014"}]}""")]
+  public async Task GenerateStructuredAsync_InvalidCategoryJson_IsRejected(string json)
+  {
+    using var chat = new ScriptedChatClient(json, null);
+    var broker = new AzureFoundryBroker(chat, NullLoggerFactory.Instance);
+    var request = new GenerativeAnalysisRequest("Choose a category.", new { });
+
+    await Assert.ThrowsExactlyAsync<InvalidStructuredOutputException>(async () =>
+      await broker.GenerateStructuredAsync<AnalysisFoundationService.CategorySelectionBatch>(request, CancellationToken.None)
+        .ConfigureAwait(false)).ConfigureAwait(false);
+  }
+
   /// <summary>
   /// Verifies the broker rejects a missing logger factory at its construction boundary.
   /// </summary>

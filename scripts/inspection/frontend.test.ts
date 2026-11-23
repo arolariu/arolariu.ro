@@ -200,14 +200,8 @@ function svelteProjectJsonSource(name: string, siteRelativeRoot: string): string
   });
 }
 
-function taxonomyArtifactSource(): string {
-  return JSON.stringify({
-    system: "gpc",
-    version: "2026-05",
-    sourceUrl: "https://example.test/taxonomy",
-    attribution: "Example attribution",
-    generatedAt: new Date().toISOString(),
-  });
+function categoryCatalogFixture(): string {
+  return JSON.stringify(Array.from({length: 100}, (_, index) => ({id: index + 1, key: "example", label: "Example"})));
 }
 
 function healthyLicensesSource(): string {
@@ -266,7 +260,7 @@ async function createFrontendFixture(
     messagesFr?: string | null;
     messagesDeclaration?: string | null;
     licensesContents?: string | null;
-    skipTaxonomyArtifact?: boolean;
+    skipCategoryCatalog?: boolean;
     websitePackageJsonContents?: string | null;
     websiteProjectJsonContents?: string | null;
     cv?: Readonly<{
@@ -289,7 +283,7 @@ async function createFrontendFixture(
   fixtureRoots.push(root);
   const paths = createRepositoryPaths(root);
 
-  const websiteTaxonomyRoot = resolve(paths.websiteRoot, "src", "data", "taxonomies");
+  const websiteCategoryRoot = resolve(paths.websiteRoot, "src", "data", "categories");
 
   const writes: Promise<void>[] = [];
   if (input.websitePackageJsonContents !== null) {
@@ -352,10 +346,10 @@ async function createFrontendFixture(
   if (input.licensesContents !== null) {
     writes.push(writeFixtureFile(resolve(paths.websiteRoot, "licenses.json"), input.licensesContents ?? healthyLicensesSource()));
   }
-  if (input.skipTaxonomyArtifact !== true) {
-    writes.push(writeFixtureFile(resolve(websiteTaxonomyRoot, "gpc-2026-05.min.json"), taxonomyArtifactSource()));
-    writes.push(writeFixtureFile(resolve(websiteTaxonomyRoot, "ecoicop-v2.min.json"), taxonomyArtifactSource()));
-    writes.push(writeFixtureFile(resolve(websiteTaxonomyRoot, "nace-2.1.min.json"), taxonomyArtifactSource()));
+  if (input.skipCategoryCatalog !== true) {
+    for (const name of ["products.json", "merchants.json", "invoices.json"]) {
+      writes.push(writeFixtureFile(resolve(websiteCategoryRoot, name), categoryCatalogFixture()));
+    }
   }
 
   const svelteRoots: Readonly<Record<SvelteProjectId, string>> = {cv: paths.cvRoot, status: paths.statusRoot};
@@ -675,14 +669,14 @@ describe("createReactProvider", () => {
     expect(facts.i18nIssues).toEqual(["messages/en.d.json.ts was not found."]);
   });
 
-  it("reports an artifact issue when a website taxonomy artifact is missing", async () => {
-    const fixture = await createFrontendFixture({skipTaxonomyArtifact: true});
+  it("reports an artifact issue when a website category catalog is missing", async () => {
+    const fixture = await createFrontendFixture({skipCategoryCatalog: true});
 
     const outcome = await fixture.invoke(createReactProvider(fixture.input));
 
     expect(outcome.kind).toBe("available");
     const facts = (outcome as Extract<typeof outcome, {kind: "available"}>).value as ReactFacts;
-    expect(facts.artifactIssues).toContain("gpc-2026-05.min.json is missing.");
+    expect(facts.artifactIssues).toContain("Category catalog products.json is missing.");
   });
 
   it("reports an artifact issue when licenses.json is malformed", async () => {

@@ -3,22 +3,20 @@ namespace arolariu.Backend.Domain.Invoices.DTOs.Requests;
 using System;
 using System.ComponentModel.DataAnnotations;
 using System.Diagnostics.CodeAnalysis;
+using System.Text.Json.Serialization;
 
 using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Allergens;
+using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Categories;
 using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Products;
 
 /// <summary>
-/// Represents a full client-editable replacement for the first invoice product matching
-/// <see cref="OriginalProductName"/>.
+/// Represents a category change or a full product edit addressed by its current name.
 /// </summary>
 /// <remarks>
-/// The original name identifies the persisted line item. Commercial values, an optional canonical classification
-/// selection, and an optional structured allergen assessment are applied while server-owned enrichment and workflow
-/// metadata are preserved by <see cref="ToProduct(Product)"/>.
+/// A category-only edit preserves commercial data. With category present, the name must identify exactly one product.
 /// </remarks>
-/// <param name="OriginalProductName">The current product name used to locate the first matching line item.</param>
+/// <param name="OriginalProductName">The current name used to locate the product by case-insensitive exact match.</param>
 /// <param name="Name">The replacement product name.</param>
-/// <param name="ClassificationCode">Optional GS1 GPC classification code.</param>
 /// <param name="Quantity">The required replacement quantity.</param>
 /// <param name="QuantityUnit">The optional replacement unit of measure.</param>
 /// <param name="ProductCode">The optional replacement SKU or barcode.</param>
@@ -30,14 +28,35 @@ using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Products;
 [ExcludeFromCodeCoverage]
 public readonly record struct UpdateProductRequestDto(
   [Required] string OriginalProductName,
-  [Required] string Name,
-  string? ClassificationCode,
-  [Required] decimal Quantity,
+  string? Name,
+  decimal? Quantity,
   string? QuantityUnit,
   string? ProductCode,
-  [Required] decimal Price,
+  decimal? Price,
   AllergenAssessment? AllergenAssessment)
 {
+  private readonly ProductCategory? category;
+
+  /// <summary>Gets the selected category. An explicit null clears the saved category.</summary>
+  public ProductCategory? Category
+  {
+    get => category;
+    init
+    {
+      category = value;
+      HasCategory = true;
+    }
+  }
+
+  [JsonIgnore]
+  internal bool HasCategory { get; private init; }
+
+  private bool IsCategoryOnly => HasCategory && Name is null && Quantity is null && Price is null
+    && QuantityUnit is null && ProductCode is null && AllergenAssessment is null;
+
+  internal bool IsValid => !string.IsNullOrWhiteSpace(OriginalProductName)
+    && (IsCategoryOnly || (!string.IsNullOrWhiteSpace(Name) && Quantity.HasValue && Price.HasValue));
+
   /// <summary>Maps client-editable fields onto a replacement while preserving server-owned product state.</summary>
   /// <param name="persistedProduct">The persisted product returned by the Management read operation.</param>
   /// <returns>A replacement product suitable for the Management delete-and-add workflow.</returns>
@@ -51,12 +70,12 @@ public readonly record struct UpdateProductRequestDto(
 
     return new Product
     {
-      Name = Name?.Trim() ?? string.Empty,
-      Classification = persistedProduct.Classification,
-      Quantity = Quantity,
-      QuantityUnit = QuantityUnit?.Trim() ?? string.Empty,
-      ProductCode = ProductCode?.Trim() ?? string.Empty,
-      Price = Price,
+      Name = IsCategoryOnly ? persistedProduct.Name : Name?.Trim() ?? string.Empty,
+      Category = HasCategory ? Category : persistedProduct.Category,
+      Quantity = Quantity ?? persistedProduct.Quantity,
+      QuantityUnit = IsCategoryOnly ? persistedProduct.QuantityUnit : QuantityUnit?.Trim() ?? string.Empty,
+      ProductCode = IsCategoryOnly ? persistedProduct.ProductCode : ProductCode?.Trim() ?? string.Empty,
+      Price = Price ?? persistedProduct.Price,
       AllergenAssessment = AllergenAssessment ?? persistedProduct.AllergenAssessment,
       Metadata = metadata,
     };

@@ -47,7 +47,6 @@ export const diagnosticWeights: Readonly<Record<string, number>> = Object.freeze
   "workspace.nx-projects": 9,
   "workspace.nx-graph": 8,
   "workspace.config-files": 10,
-  "workspace.generated-artifacts": 9,
   "workspace.host-capacity": 8,
   "workspace.npm-audit": 4,
   "workspace.npm-outdated": 3,
@@ -67,7 +66,7 @@ export const diagnosticWeights: Readonly<Record<string, number>> = Object.freeze
   "react.workspace-link": 10,
   "react.environment": 10,
   "react.i18n": 8,
-  "react.taxonomy-and-licenses": 7,
+  "react.categories-and-licenses": 7,
   "react.playwright": 9,
   "react.framework-config": 9,
 
@@ -104,7 +103,7 @@ export const diagnosticWeights: Readonly<Record<string, number>> = Object.freeze
   // Module-crash normalization rows. Each is weighted as the sum of its module's ordinary
   // weights above so that a crashed module is scored as a complete module loss rather than
   // shrinking the denominator used to compute the overall health score.
-  "workspace.module-error": 135,
+  "workspace.module-error": 126,
   "dotnet.module-error": 92,
   "react.module-error": 64,
   "svelte.module-error": 84,

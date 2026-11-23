@@ -16,7 +16,7 @@
  * @see {@link generateRandomMerchant} - Quick random generation
  */
 
-import {type Merchant, type StandardClassification} from "@/types/invoices";
+import {type Merchant, type MerchantCategory} from "@/types/invoices";
 import {faker} from "@faker-js/faker";
 
 /**
@@ -43,7 +43,7 @@ import {faker} from "@faker-js/faker";
  * // Basic usage
  * const merchant = new MerchantBuilder()
  *   .withName("SuperMart")
- *   .withClassification(supermarketClassification)
+ *   .withCategory(supermarketClassification)
  *   .withAddress("123 Main St")
  *   .build();
  * ```
@@ -54,7 +54,7 @@ import {faker} from "@faker-js/faker";
  * const parentId = faker.string.uuid();
  * const merchants = new MerchantBuilder()
  *   .withParentCompanyId(parentId)
- *   .withClassification(restaurantClassification)
+ *   .withCategory(restaurantClassification)
  *   .buildMany(5); // 5 locations of same chain
  * ```
  */
@@ -101,7 +101,7 @@ export class MerchantBuilder {
         website: faker.internet.url(),
       },
       parentCompanyId: faker.string.uuid(),
-      classification: null,
+      category: null,
     };
   }
 
@@ -300,13 +300,13 @@ export class MerchantBuilder {
   }
 
   /**
-   * Sets the merchant's standard taxonomy classification.
+   * Sets the merchant's category.
    *
-   * @param classification - Canonical classification, or `null` for an unclassified merchant.
+   * @param category - Category, or `null` for an unclassified merchant.
    * @returns The MerchantBuilder instance for method chaining.
    */
-  withClassification(classification: StandardClassification | null): this {
-    this.merchant.classification = classification;
+  withCategory(category: MerchantCategory | null): this {
+    this.merchant.category = category;
     return this;
   }
 
@@ -375,7 +375,7 @@ export function createMerchantBuilder(): MerchantBuilder {
  * // Result: {
  * //   id: "uuid...",
  * //   name: "Johnson Group",
- * //   classification: null,
+ * //   category: null,
  * //   address: "123 Oak St, Denver CO",
  * //   ...
  * // }
@@ -468,7 +468,7 @@ export const mockMerchant = new MerchantBuilder().withId("merchant-1").withName(
  * ```typescript
  * // Test filtering
  * const classifiedMerchants = mockMerchantList.filter(
- *   (merchant) => merchant.classification !== null,
+ *   (merchant) => merchant.category !== null,
  * );
  * ```
  */

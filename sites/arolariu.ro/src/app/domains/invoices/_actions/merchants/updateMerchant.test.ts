@@ -29,50 +29,15 @@ describe("updateMerchant", () => {
     const body = JSON.parse(String(init?.body)) as Record<string, unknown>;
     expect(body).toHaveProperty("name");
     expect(body).toHaveProperty("description");
-    expect(body).toHaveProperty("classificationCode");
     expect(body).not.toHaveProperty("id");
     expect(body).not.toHaveProperty("category");
     expect(body).not.toHaveProperty("totalSpent");
   });
 
-  it("emits classificationCode: null when origin is Analysis (provenance protection)", async () => {
-    const analysisMerchant = TestDataBuilder.build("merchant", {
-      id: merchantId,
-      classification: {
-        origin: "Analysis" as const,
-        system: "NACE_2_1" as const,
-        code: "47.11",
-        version: "2.1",
-        officialLabel: "Retail sale in non-specialised stores",
-        hierarchy: [],
-        confidence: 0.9,
-        evidence: [],
-      },
-    });
-    await updateMerchant({merchantId, merchant: analysisMerchant});
+  it.each([2001, null] as const)("saves only explicit category intent (%s)", async (category) => {
+    await updateMerchant({merchantId, category});
     const [, init] = fetchMock.mock.calls[0]!;
-    const body = JSON.parse(String(init?.body)) as {classificationCode: unknown};
-    expect(body.classificationCode).toBeNull();
-  });
-
-  it("emits the manual classificationCode when origin is Manual", async () => {
-    const manualMerchant = TestDataBuilder.build("merchant", {
-      id: merchantId,
-      classification: {
-        origin: "Manual" as const,
-        system: "NACE_2_1" as const,
-        code: "47.11",
-        version: "2.1",
-        officialLabel: "Retail sale in non-specialised stores",
-        hierarchy: [],
-        confidence: null,
-        evidence: [],
-      },
-    });
-    await updateMerchant({merchantId, merchant: manualMerchant});
-    const [, init] = fetchMock.mock.calls[0]!;
-    const body = JSON.parse(String(init?.body)) as {classificationCode: unknown};
-    expect(body.classificationCode).toBe("47.11");
+    expect(JSON.parse(String(init?.body))).toEqual({category});
   });
 
   it("uses PUT and targets the merchant route", async () => {

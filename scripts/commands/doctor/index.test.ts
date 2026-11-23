@@ -722,7 +722,6 @@ describe("doctor characterization (legacy baseline for the effect migration)", (
         "workspace.nx-projects:fail",
         "workspace.nx-graph:fail",
         "workspace.config-files:fail",
-        "workspace.generated-artifacts:fail",
         "workspace.host-capacity:skipped",
         "workspace.npm-audit:skipped",
         "workspace.npm-outdated:skipped",
@@ -744,7 +743,7 @@ describe("doctor characterization (legacy baseline for the effect migration)", (
         "react.workspace-link:fail",
         "react.environment:fail",
         "react.i18n:fail",
-        "react.taxonomy-and-licenses:fail",
+        "react.categories-and-licenses:fail",
         "react.playwright:skipped",
         "react.framework-config:fail",
       ],
@@ -826,7 +825,7 @@ describe("doctor characterization (legacy baseline for the effect migration)", (
       expect({score: report.score, grade: report.grade, summary: report.summary, timestamp: report.timestamp}).toEqual({
         score: 3,
         grade: "F",
-        summary: {passed: 1, warnings: 0, failed: 40, skipped: 18},
+        summary: {passed: 1, warnings: 0, failed: 39, skipped: 18},
         timestamp: "2025-01-01T00:00:00.000Z",
       });
       for (const moduleId of expectedModuleOrder) {
@@ -862,7 +861,7 @@ describe("doctor characterization (legacy baseline for the effect migration)", (
       expect(output.slice(0, 6)).toEqual(
         stdoutLines([
           "🩺 arolariu.ro Workspace Doctor",
-          "Summary: 1 passed, 0 warnings, 40 failures, 18 skipped",
+          "Summary: 1 passed, 0 warnings, 39 failures, 18 skipped",
           "",
           "╭─────────────────────────────────────────╮",
           "│  🏥 Health Score: 3/100  Grade: F  │",
@@ -909,7 +908,7 @@ describe("module-error weighting", () => {
     const expectedWeight = workspaceOrdinaryIds.reduce((total, id) => total + (diagnosticWeights[id] ?? 0), 0);
 
     expect(diagnosticWeights["workspace.module-error"]).toBe(expectedWeight);
-    expect(diagnosticWeights["workspace.module-error"]).toBe(135);
+    expect(diagnosticWeights["workspace.module-error"]).toBe(126);
     expect(diagnosticWeights["dotnet.module-error"]).toBe(92);
     expect(diagnosticWeights["react.module-error"]).toBe(64);
     expect(diagnosticWeights["svelte.module-error"]).toBe(84);

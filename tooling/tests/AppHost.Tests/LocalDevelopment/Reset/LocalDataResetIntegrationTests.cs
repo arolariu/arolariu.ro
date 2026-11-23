@@ -370,7 +370,7 @@ public sealed class LocalDataResetIntegrationTests
     {
       JObject receipt = (await stateClient.GetContainer("primary", "local-development").ReadItemAsync<JObject>(
         "invoice-scenario", new PartitionKey("invoice-scenario"), cancellationToken: token)).Resource;
-      Assert.AreEqual("v3", receipt.Value<string>("manifestVersion"));
+      Assert.AreEqual("v4", receipt.Value<string>("manifestVersion"));
       Assert.IsTrue(receipt.Value<bool>("completed"));
     }
     Assert.AreEqual(18000, invoices.Where(invoice =>

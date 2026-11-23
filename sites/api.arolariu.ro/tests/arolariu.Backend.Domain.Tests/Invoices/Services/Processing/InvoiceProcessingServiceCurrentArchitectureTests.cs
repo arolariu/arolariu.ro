@@ -4,9 +4,11 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
 
+using arolariu.Backend.Domain.Invoices.Brokers.DataBrokers.DatabaseBroker;
 using arolariu.Backend.Domain.Invoices.Brokers.QueueBroker;
 using arolariu.Backend.Domain.Invoices.DDD.Analysis.Contracts;
 using arolariu.Backend.Domain.Invoices.DDD.Analysis.Enums;
@@ -14,17 +16,19 @@ using arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices;
 using arolariu.Backend.Domain.Invoices.DDD.Analysis.Exceptions.Outer.Orchestration;
 using arolariu.Backend.Domain.Invoices.DDD.Entities.Merchants;
 using arolariu.Backend.Domain.Invoices.DDD.Entities.Merchants.Exceptions.Inner;
-using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Classifications;
+using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Categories;
 using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Products;
 using arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices.Exceptions.Outer.Orchestration;
 using arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices.Exceptions.Outer.Processing;
 using arolariu.Backend.Domain.Invoices.DTOs.Requests;
+using arolariu.Backend.Domain.Invoices.Services.Foundation.MerchantStorage;
 using arolariu.Backend.Domain.Invoices.Services.Orchestration.AnalysisService;
 using arolariu.Backend.Domain.Invoices.Services.Orchestration.InvoiceService;
 using arolariu.Backend.Domain.Invoices.Services.Orchestration.MerchantService;
 using arolariu.Backend.Domain.Invoices.Services.Processing;
 using arolariu.Backend.Domain.Tests.Invoices.Helpers;
 
+using Microsoft.Azure.Cosmos;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
@@ -188,12 +192,12 @@ public sealed class InvoiceProcessingServiceCurrentArchitectureTests
     {
       id = invoiceId,
       UserIdentifier = userId,
-      Classification = null,
+      Category = null,
     };
     var invoiceOrchestration = new Mock<IInvoiceOrchestrationService>(MockBehavior.Strict);
     var analysis = new Mock<IAnalysisOrchestrationService>(MockBehavior.Strict);
     invoiceOrchestration.Setup(service => service.UpdateInvoiceObject(
-        It.Is<Invoice>(invoice => invoice.Classification == null),
+        It.Is<Invoice>(invoice => invoice.Category == null),
         invoiceId,
         userId,
         It.IsAny<CancellationToken>()))
@@ -210,83 +214,8 @@ public sealed class InvoiceProcessingServiceCurrentArchitectureTests
       updatedInvoice,
       CancellationToken.None);
 
-    Assert.IsNull(result.Classification);
+    Assert.IsNull(result.Category);
     analysis.VerifyNoOtherCalls();
-  }
-
-  /// <summary>
-  /// Verifies product creation persists a canonical GS1 classification.
-  /// </summary>
-  [TestMethod]
-  public async Task AddProduct_ManualClassification_PersistsCanonicalClassification()
-  {
-    Guid invoiceId = Guid.NewGuid();
-    Guid userId = Guid.NewGuid();
-    StandardClassification selection = CreateClassification(
-      ClassificationSystem.Gs1Gpc,
-      "10000001",
-      "Client supplied label");
-    StandardClassification canonical = CreateClassification(
-      ClassificationSystem.Gs1Gpc,
-      "10000001",
-      "Milk");
-    var product = new Product { Name = "Milk", Classification = selection };
-    var invoice = new Invoice { id = invoiceId, UserIdentifier = userId };
-    var invoiceOrchestration = new Mock<IInvoiceOrchestrationService>(MockBehavior.Strict);
-    var analysis = new Mock<IAnalysisOrchestrationService>(MockBehavior.Strict);
-    analysis.Setup(service => service.ResolveManualClassificationAsync(
-        selection.Code,
-        ClassificationSystem.Gs1Gpc,
-        It.IsAny<CancellationToken>()))
-      .ReturnsAsync(canonical);
-    invoiceOrchestration.Setup(service => service.ReadInvoiceObject(
-        invoiceId,
-        userId,
-        It.IsAny<CancellationToken>()))
-      .ReturnsAsync(invoice);
-    invoiceOrchestration.Setup(service => service.UpdateInvoiceObject(
-        It.Is<Invoice>(updated => ReferenceEquals(updated.Items.Single().Classification, canonical)),
-        invoiceId,
-        userId,
-        It.IsAny<CancellationToken>()))
-      .ReturnsAsync(invoice);
-    var service = new InvoiceProcessingService(
-      invoiceOrchestration.Object,
-      Mock.Of<IMerchantOrchestrationService>(),
-      analysis.Object,
-      NullLoggerFactory.Instance);
-
-    await service.AddProduct(invoiceId, userId, product, selection.Code, CancellationToken.None);
-
-    analysis.VerifyAll();
-    invoiceOrchestration.VerifyAll();
-  }
-
-  /// <summary>
-  /// Verifies an invalid product classification code is rejected before resource persistence.
-  /// </summary>
-  [TestMethod]
-  public async Task AddProduct_InvalidClassificationCode_DoesNotPersist()
-  {
-    Guid invoiceId = Guid.NewGuid();
-    Guid userId = Guid.NewGuid();
-    var product = new Product { Name = "Milk" };
-    var invoiceOrchestration = new Mock<IInvoiceOrchestrationService>(MockBehavior.Strict);
-    var analysis = new Mock<IAnalysisOrchestrationService>(MockBehavior.Strict);
-    analysis.Setup(service => service.ResolveManualClassificationAsync(
-        "invalid",
-        ClassificationSystem.Gs1Gpc,
-        It.IsAny<CancellationToken>()))
-      .ThrowsAsync(new AnalysisOrchestrationValidationException(new ArgumentException("wrong system")));
-    var service = new InvoiceProcessingService(
-      invoiceOrchestration.Object,
-      Mock.Of<IMerchantOrchestrationService>(),
-      analysis.Object,
-      NullLoggerFactory.Instance);
-
-    await Assert.ThrowsExactlyAsync<InvoiceProcessingServiceValidationException>(
-      () => service.AddProduct(invoiceId, userId, product, "invalid", CancellationToken.None));
-    invoiceOrchestration.VerifyNoOtherCalls();
   }
 
   /// <summary>
@@ -315,12 +244,12 @@ public sealed class InvoiceProcessingServiceCurrentArchitectureTests
         It.IsAny<CancellationToken>()))
       .Callback(() => operations.Add("receive"))
       .ReturnsAsync(receipt);
-    invoiceOrchestration.Setup(service => service.ReadInvoiceObject(
+    invoiceOrchestration.Setup(service => service.ReadInvoiceSnapshotAsync(
       invoice.id,
       invoice.UserIdentifier,
       It.IsAny<CancellationToken>()))
     .Callback(() => operations.Add("read-target"))
-    .ReturnsAsync(invoice);
+    .ReturnsAsync((invoice, "observed"));
     analysis.Setup(service => service.AnalyzeInvoiceAsync(
       invoice,
       receipt.Message!.InvoiceOptions!,
@@ -328,13 +257,12 @@ public sealed class InvoiceProcessingServiceCurrentArchitectureTests
       It.IsAny<CancellationToken>()))
     .Callback(() => operations.Add("analyze"))
     .ReturnsAsync((invoice, null));
-    invoiceOrchestration.Setup(service => service.UpdateInvoiceObject(
+    invoiceOrchestration.Setup(service => service.TryReplaceInvoiceSnapshotAsync(
         invoice,
-        invoice.id,
-        invoice.UserIdentifier,
+        "observed",
         It.IsAny<CancellationToken>()))
       .Callback(() => operations.Add("persist"))
-      .ReturnsAsync(invoice);
+      .ReturnsAsync(true);
     analysis.Setup(service => service.DeleteAnalysisAsync(
         receipt,
         It.IsAny<CancellationToken>()))
@@ -357,6 +285,82 @@ public sealed class InvoiceProcessingServiceCurrentArchitectureTests
     Assert.AreEqual(parentContext.SpanId, consumer.ParentSpanId);
   }
 
+  /// <summary>A stale analysis must not overwrite an intervening edit or queue a retry for that result.</summary>
+  [TestMethod]
+  public async Task ProcessAnalysisAsync_InvoiceSnapshotConflict_AcknowledgesWithoutAnotherAttempt()
+  {
+    AnalysisQueueReceipt receipt = CreateReceipt(dequeueCount: 1);
+    QueueAnalysisMessage message = receipt.Message!;
+    var invoice = new Invoice { id = message.TargetId, UserIdentifier = message.RequestedBy };
+    var invoices = new Mock<IInvoiceOrchestrationService>(MockBehavior.Strict);
+    invoices.Setup(service => service.ReadInvoiceSnapshotAsync(invoice.id, invoice.UserIdentifier, It.IsAny<CancellationToken>()))
+      .ReturnsAsync((invoice, "\"observed\""));
+    invoices.Setup(service => service.TryReplaceInvoiceSnapshotAsync(invoice, "\"observed\"", It.IsAny<CancellationToken>()))
+      .ReturnsAsync(false);
+    var analysis = new Mock<IAnalysisOrchestrationService>(MockBehavior.Strict);
+    analysis.Setup(service => service.ReceiveAnalysisAsync(It.IsAny<TimeSpan>(), It.IsAny<CancellationToken>())).ReturnsAsync(receipt);
+    analysis.Setup(service => service.AnalyzeInvoiceAsync(invoice, message.InvoiceOptions!, message.CorrelationId, It.IsAny<CancellationToken>()))
+      .ReturnsAsync((invoice, message.InvoiceOptions));
+    analysis.Setup(service => service.DeleteAnalysisAsync(receipt, It.IsAny<CancellationToken>())).Returns(Task.CompletedTask);
+    var processing = new InvoiceProcessingService(invoices.Object, Mock.Of<IMerchantOrchestrationService>(), analysis.Object, NullLoggerFactory.Instance);
+
+    Assert.IsTrue(await processing.ProcessAnalysisAsync(CancellationToken.None));
+    invoices.VerifyAll();
+    analysis.VerifyAll();
+    analysis.Verify(service => service.EnqueueAnalysisAsync(It.IsAny<QueueAnalysisMessage>(), It.IsAny<CancellationToken>()), Times.Never);
+  }
+
+  /// <summary>A merchant worker uses the original ETag and parent-company partition even when independent.</summary>
+  [TestMethod]
+  [DataRow(false)]
+  [DataRow(true)]
+  public async Task ProcessAnalysisAsync_MerchantSnapshotConflict_DoesNotRetryOrUpsert(bool independent)
+  {
+    Guid requester = Guid.NewGuid();
+    var merchant = new Merchant
+    {
+      id = Guid.NewGuid(),
+      ParentCompanyId = independent ? Guid.Empty : Guid.NewGuid(),
+      Name = "Corner Shop",
+      Category = MerchantCategory.Other,
+    };
+    var options = MerchantAnalysisOptions.Comprehensive();
+    var message = QueueAnalysisMessage.CreateMerchantMessage(
+      merchant.id, requester, Guid.NewGuid(), merchant.ParentCompanyId, options,
+      "00-4bf92f3577b34da6a3ce929d0e0e4736-00f067aa0ba902b7-01");
+    var receipt = new AnalysisQueueReceipt(message, "message-1", "receipt-1", 1, null);
+    var partition = new PartitionKey(merchant.ParentCompanyId.ToString());
+    const string eTag = "\"observed\"";
+    var item = new Mock<ItemResponse<Merchant>>();
+    item.Setup(response => response.Resource).Returns(merchant);
+    item.Setup(response => response.ETag).Returns(eTag);
+    var container = new Mock<Container>(MockBehavior.Strict);
+    container.Setup(client => client.ReadItemAsync<Merchant>(merchant.id.ToString(), partition, null, It.IsAny<CancellationToken>()))
+      .ReturnsAsync(item.Object);
+    container.Setup(client => client.ReplaceItemAsync(
+        merchant, merchant.id.ToString(), partition,
+        It.Is<ItemRequestOptions>(request => request.IfMatchEtag == eTag),
+        It.IsAny<CancellationToken>()))
+      .ThrowsAsync(new CosmosException("Stale ETag", HttpStatusCode.PreconditionFailed, 0, string.Empty, 0));
+    var database = Mock.Of<Database>(value => value.GetContainer("merchants") == container.Object);
+    var cosmos = Mock.Of<CosmosClient>(value => value.GetDatabase("primary") == database);
+    using var broker = new CosmosDatabaseBroker(cosmos);
+    var logger = NullLoggerFactory.Instance;
+    var merchants = new MerchantOrchestrationService(new MerchantStorageFoundationService(broker, logger), logger);
+    var analysis = new Mock<IAnalysisOrchestrationService>(MockBehavior.Strict);
+    analysis.Setup(service => service.ReceiveAnalysisAsync(It.IsAny<TimeSpan>(), It.IsAny<CancellationToken>())).ReturnsAsync(receipt);
+    analysis.Setup(service => service.AnalyzeMerchantAsync(merchant, options, message.CorrelationId, It.IsAny<CancellationToken>()))
+      .ReturnsAsync((merchant, options));
+    analysis.Setup(service => service.DeleteAnalysisAsync(receipt, It.IsAny<CancellationToken>())).Returns(Task.CompletedTask);
+    var processing = new InvoiceProcessingService(Mock.Of<IInvoiceOrchestrationService>(), merchants, analysis.Object, logger);
+
+    Assert.IsTrue(await processing.ProcessAnalysisAsync(CancellationToken.None));
+    container.VerifyAll();
+    container.VerifyNoOtherCalls();
+    analysis.VerifyAll();
+    analysis.VerifyNoOtherCalls();
+  }
+
   /// <summary>
   /// Verifies a persistence failure is log-only and replacement queue policy continues.
   /// </summary>
@@ -375,11 +379,11 @@ public sealed class InvoiceProcessingServiceCurrentArchitectureTests
         TimeSpan.FromMinutes(2),
         It.IsAny<CancellationToken>()))
       .ReturnsAsync(receipt);
-    invoiceOrchestration.Setup(service => service.ReadInvoiceObject(
+    invoiceOrchestration.Setup(service => service.ReadInvoiceSnapshotAsync(
         invoice.id,
         invoice.UserIdentifier,
         It.IsAny<CancellationToken>()))
-      .ReturnsAsync(invoice);
+      .ReturnsAsync((invoice, "observed"));
     InvoiceAnalysisOptions failedOptions = new(
       AnalysisProfile.Custom,
       documentExtraction: false,
@@ -395,10 +399,9 @@ public sealed class InvoiceProcessingServiceCurrentArchitectureTests
         receipt.Message.CorrelationId,
         It.IsAny<CancellationToken>()))
       .ReturnsAsync((invoice, failedOptions));
-    invoiceOrchestration.Setup(service => service.UpdateInvoiceObject(
+    invoiceOrchestration.Setup(service => service.TryReplaceInvoiceSnapshotAsync(
         invoice,
-        invoice.id,
-        invoice.UserIdentifier,
+        "observed",
         It.IsAny<CancellationToken>()))
       .ThrowsAsync(new InvoiceOrchestrationDependencyException(new TimeoutException()));
     analysis.Setup(service => service.DeleteAnalysisAsync(
@@ -448,23 +451,22 @@ public sealed class InvoiceProcessingServiceCurrentArchitectureTests
         TimeSpan.FromMinutes(2),
         It.IsAny<CancellationToken>()))
       .ReturnsAsync(receipt);
-    invoiceOrchestration.Setup(service => service.ReadInvoiceObject(
+    invoiceOrchestration.Setup(service => service.ReadInvoiceSnapshotAsync(
         invoice.id,
         invoice.UserIdentifier,
         It.IsAny<CancellationToken>()))
-      .ReturnsAsync(invoice);
+      .ReturnsAsync((invoice, "observed"));
     analysis.Setup(service => service.AnalyzeInvoiceAsync(
         invoice,
         receipt.Message.InvoiceOptions!,
         receipt.Message.CorrelationId,
         It.IsAny<CancellationToken>()))
       .ReturnsAsync((invoice, failedOptions));
-    invoiceOrchestration.Setup(service => service.UpdateInvoiceObject(
+    invoiceOrchestration.Setup(service => service.TryReplaceInvoiceSnapshotAsync(
         invoice,
-        invoice.id,
-        invoice.UserIdentifier,
+        "observed",
         It.IsAny<CancellationToken>()))
-      .ReturnsAsync(invoice);
+      .ReturnsAsync(true);
     analysis.Setup(service => service.DeleteAnalysisAsync(
         receipt,
         It.IsAny<CancellationToken>()))
@@ -510,23 +512,22 @@ public sealed class InvoiceProcessingServiceCurrentArchitectureTests
         TimeSpan.FromMinutes(2),
         It.IsAny<CancellationToken>()))
       .ReturnsAsync(receipt);
-    invoiceOrchestration.Setup(service => service.ReadInvoiceObject(
+    invoiceOrchestration.Setup(service => service.ReadInvoiceSnapshotAsync(
         invoice.id,
         invoice.UserIdentifier,
         It.IsAny<CancellationToken>()))
-      .ReturnsAsync(invoice);
+      .ReturnsAsync((invoice, "observed"));
     analysis.Setup(service => service.AnalyzeInvoiceAsync(
         invoice,
         receipt.Message.InvoiceOptions!,
         receipt.Message.CorrelationId,
         It.IsAny<CancellationToken>()))
       .ReturnsAsync((invoice, failedOptions));
-    invoiceOrchestration.Setup(service => service.UpdateInvoiceObject(
+    invoiceOrchestration.Setup(service => service.TryReplaceInvoiceSnapshotAsync(
         invoice,
-        invoice.id,
-        invoice.UserIdentifier,
+        "observed",
         It.IsAny<CancellationToken>()))
-      .ReturnsAsync(invoice);
+      .ReturnsAsync(true);
     analysis.Setup(service => service.DeleteAnalysisAsync(
         receipt,
         It.IsAny<CancellationToken>()))
@@ -615,99 +616,6 @@ public sealed class InvoiceProcessingServiceCurrentArchitectureTests
 
     Assert.IsTrue(result);
     analysis.VerifyAll();
-  }
-
-  /// <summary>
-  /// Verifies invoice updates replace client taxonomy data with the canonical taxonomy snapshot.
-  /// </summary>
-  [TestMethod]
-  public async Task UpdateInvoice_ManualClassification_PersistsCanonicalClassification()
-  {
-    Guid invoiceId = Guid.NewGuid();
-    Guid userId = Guid.NewGuid();
-    StandardClassification selection = CreateClassification(
-      ClassificationSystem.EcoicopV2,
-      "01.1",
-      "Client supplied label");
-    StandardClassification canonical = CreateClassification(
-      ClassificationSystem.EcoicopV2,
-      "01.1",
-      "Food");
-    var updatedInvoice = new Invoice
-    {
-      id = invoiceId,
-      UserIdentifier = userId,
-      ClassificationCode = selection.Code,
-    };
-    var invoiceOrchestration = new Mock<IInvoiceOrchestrationService>(MockBehavior.Strict);
-    var analysis = new Mock<IAnalysisOrchestrationService>(MockBehavior.Strict);
-    analysis.Setup(service => service.ResolveManualClassificationAsync(
-        selection.Code,
-        ClassificationSystem.EcoicopV2,
-        It.IsAny<CancellationToken>()))
-      .ReturnsAsync(canonical);
-    invoiceOrchestration.Setup(service => service.UpdateInvoiceObject(
-        It.Is<Invoice>(invoice =>
-          ReferenceEquals(invoice.Classification, canonical) &&
-          invoice.ClassificationCode == null),
-        invoiceId,
-        userId,
-        It.IsAny<CancellationToken>()))
-      .ReturnsAsync(updatedInvoice);
-    var service = new InvoiceProcessingService(
-      invoiceOrchestration.Object,
-      Mock.Of<IMerchantOrchestrationService>(),
-      analysis.Object,
-      NullLoggerFactory.Instance);
-
-    Invoice result = await service
-      .UpdateInvoice(invoiceId, userId, updatedInvoice, CancellationToken.None)
-      .ConfigureAwait(false);
-
-    Assert.AreSame(canonical, result.Classification);
-    Assert.IsNull(result.ClassificationCode);
-  }
-
-  /// <summary>
-  /// Verifies merchant updates replace client taxonomy data with the canonical taxonomy snapshot.
-  /// </summary>
-  [TestMethod]
-  public async Task UpdateMerchant_ManualClassification_PersistsCanonicalClassification()
-  {
-    Guid merchantId = Guid.NewGuid();
-    StandardClassification selection = CreateClassification(
-      ClassificationSystem.Nace21,
-      "47.11",
-      "Client supplied label");
-    StandardClassification canonical = CreateClassification(
-      ClassificationSystem.Nace21,
-      "47.11",
-      "Retail sale");
-    var updatedMerchant = new Merchant { Classification = selection };
-    var merchantOrchestration = new Mock<IMerchantOrchestrationService>(MockBehavior.Strict);
-    var analysis = new Mock<IAnalysisOrchestrationService>(MockBehavior.Strict);
-    analysis.Setup(service => service.ResolveManualClassificationAsync(
-        selection.Code,
-        ClassificationSystem.Nace21,
-        It.IsAny<CancellationToken>()))
-      .ReturnsAsync(canonical);
-    merchantOrchestration.Setup(service => service.UpdateMerchantObject(
-        It.Is<Merchant>(merchant => ReferenceEquals(merchant.Classification, canonical)),
-        merchantId,
-        null,
-        It.IsAny<CancellationToken>()))
-      .ReturnsAsync(updatedMerchant);
-    var service = new InvoiceProcessingService(
-      Mock.Of<IInvoiceOrchestrationService>(),
-      merchantOrchestration.Object,
-      analysis.Object,
-      NullLoggerFactory.Instance);
-
-    Merchant result = await service
-      .UpdateMerchant(merchantId, null, updatedMerchant, selection.Code, CancellationToken.None)
-      .ConfigureAwait(false);
-
-    Assert.AreSame(canonical, result.Classification);
   }
 
   /// <summary>
@@ -986,17 +894,4 @@ public sealed class InvoiceProcessingServiceCurrentArchitectureTests
     return new AnalysisQueueReceipt(message, "message-1", "receipt-1", dequeueCount, null);
   }
 
-  private static StandardClassification CreateClassification(
-    ClassificationSystem system,
-    string code,
-    string label) =>
-    new(
-      system,
-      "test-version",
-      code,
-      label,
-      [new ClassificationNode("leaf", code, label)],
-      ClassificationOrigin.Manual,
-      confidence: null,
-      evidence: []);
 }

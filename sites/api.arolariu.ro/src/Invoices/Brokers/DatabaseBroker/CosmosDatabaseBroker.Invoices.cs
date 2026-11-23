@@ -115,6 +115,54 @@ public partial class CosmosDatabaseBroker
   }
 
   /// <inheritdoc/>
+  public async ValueTask<(Invoice Resource, string ETag)> ReadInvoiceSnapshotAsync(Guid invoiceId, Guid userIdentifier, CancellationToken cancellationToken)
+  {
+    using var activity = InvoicePackageTracing.StartActivity(nameof(ReadInvoiceSnapshotAsync));
+    var container = CosmosClient.GetDatabase("primary").GetContainer("invoices");
+    var response = await TranslateInvoiceCosmosAsync(
+      () => container.ReadItemAsync<Invoice>(invoiceId.ToString(), new PartitionKey(userIdentifier.ToString()), cancellationToken: cancellationToken),
+      invoiceId).ConfigureAwait(false);
+
+    InvoiceMetrics.RecordCosmosDbCharge(response.RequestCharge, "read", "invoices");
+    Invoice invoice = response.Resource ?? throw new InvoiceNotFoundException(invoiceId);
+    if (invoice.IsSoftDeleted)
+    {
+      throw new InvoiceLockedException(invoiceId);
+    }
+
+    activity?.RecordSuccess();
+    return (invoice, response.ETag);
+  }
+
+  /// <inheritdoc/>
+  public async ValueTask<bool> TryReplaceInvoiceSnapshotAsync(Invoice invoice, string expectedETag, CancellationToken cancellationToken)
+  {
+    using var activity = InvoicePackageTracing.StartActivity(nameof(TryReplaceInvoiceSnapshotAsync));
+    ArgumentNullException.ThrowIfNull(invoice);
+    ArgumentException.ThrowIfNullOrWhiteSpace(expectedETag);
+
+    var container = CosmosClient.GetDatabase("primary").GetContainer("invoices");
+    try
+    {
+      var response = await container.ReplaceItemAsync(
+        invoice, invoice.id.ToString(), new PartitionKey(invoice.UserIdentifier.ToString()),
+        new ItemRequestOptions { IfMatchEtag = expectedETag }, cancellationToken).ConfigureAwait(false);
+      InvoiceMetrics.RecordCosmosDbCharge(response.RequestCharge, "replace", "invoices");
+      activity?.RecordSuccess();
+      return true;
+    }
+    catch (CosmosException exception) when (exception.StatusCode == HttpStatusCode.PreconditionFailed)
+    {
+      activity?.SetTag("result.conflict", true);
+      return false;
+    }
+    catch (CosmosException exception)
+    {
+      throw TranslateInvoiceCosmos(exception, invoice.id);
+    }
+  }
+
+  /// <inheritdoc/>
   public async ValueTask<IEnumerable<Invoice>> ReadInvoicesAsync(Guid userIdentifier, CancellationToken cancellationToken)
   {
     using var activity = InvoicePackageTracing.StartActivity(nameof(ReadInvoicesAsync));

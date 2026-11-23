@@ -11,7 +11,7 @@ using System.Text.Json.Serialization;
 
 using arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices;
 using arolariu.Backend.Domain.Invoices.DDD.ValueObjects;
-using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Classifications;
+using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Categories;
 using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Recipes;
 using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Products;
 
@@ -62,10 +62,7 @@ using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Products;
 /// <param name="Description">
 /// A detailed description of the invoice contents. Never null; may be empty string.
 /// </param>
-/// <param name="Classification">
-/// The standardised ECOICOP classification assigned to this invoice. Null until a manual selection or an analysis
-/// run categorizes the invoice.
-/// </param>
+/// <param name="Category">The selected invoice category, or null if uncategorized.</param>
 /// <param name="Scans">
 /// Collection of invoice scan references (photos, PDFs). Each scan includes only the format and authorized location;
 /// raw scan metadata is not returned.
@@ -144,7 +141,7 @@ public readonly record struct InvoiceResponseDto(
   [property: JsonPropertyName("sharedWith")] IReadOnlyCollection<Guid> SharedWith,
   [property: JsonPropertyName("name")] string Name,
   [property: JsonPropertyName("description")] string Description,
-  [property: JsonPropertyName("classification")] StandardClassificationResponseDto? Classification,
+  [property: JsonPropertyName("category"), JsonIgnore(Condition = JsonIgnoreCondition.Never)] InvoiceCategory? Category,
   [property: JsonPropertyName("scans")] IReadOnlyCollection<InvoiceScanResponseDto> Scans,
   [property: JsonPropertyName("paymentInformation")] PaymentInformationResponseDto PaymentInformation,
   [property: JsonPropertyName("merchantReference")] Guid MerchantReference,
@@ -215,7 +212,7 @@ public readonly record struct InvoiceResponseDto(
       SharedWith: invoice.SharedWith.ToList().AsReadOnly(),
       Name: invoice.Name,
       Description: invoice.Description,
-      Classification: StandardClassificationResponseDto.FromStandardClassification(invoice.Classification),
+      Category: invoice.Category,
       Scans: invoice.Scans.Select(InvoiceScanResponseDto.FromInvoiceScan).ToList().AsReadOnly(),
       PaymentInformation: PaymentInformationResponseDto.FromPaymentInformation(invoice.PaymentInformation),
       MerchantReference: invoice.MerchantReference,

@@ -53,8 +53,8 @@ describe("plan-aware hygiene workflow contract", () => {
     expect(workflow.match(/^\s+name: hygiene-plan$/gm)).toHaveLength(3);
   });
 
-  it("checks the selected pinned snapshots once between setup and planning", () => {
-    const command = "node scripts/cli.ts generate --check-taxonomies";
+  it("checks the category mirrors once between setup and planning", () => {
+    const command = "npm exec --no -- vitest run category-catalog-parity.test.ts --coverage.enabled=false";
     const detect = job("detect");
     const setup = detect.indexOf('node-scripts-install: "true"');
     const check = detect.indexOf(command);
@@ -66,14 +66,17 @@ describe("plan-aware hygiene workflow contract", () => {
   });
 });
 
-describe("API taxonomy workflow contract", () => {
+describe("API category catalog workflow contract", () => {
   const workflow = readFileSync(resolve(ciRoot, "..", "workflows", "official-api-trigger.yml"), "utf8");
 
-  it.each(["test", "build-azure"])("runs the %s integrity check from the checkout root", (jobName) => {
-    const job = new RegExp(`^  ${jobName}:\\r?\\n([\\s\\S]*?)(?=^  [a-z][a-z-]*:|$(?![\\s\\S]))`, "m").exec(workflow)?.[1];
-    expect(job).toMatch(
-      /^      - name: Check pinned taxonomy integrity\r?\n        working-directory: \.\r?\n        run: node scripts\/cli\.ts generate --check-taxonomies --json$/m,
-    );
+  it("runs one shared API catalog integrity check from the checkout root", () => {
+    const jobs = workflow.replaceAll("\r\n", "\n").split(/^  (?=test:|build-local:|build-azure:|deploy-azure:)/mu);
+    const test = jobs.find((job) => job.startsWith("test:"));
+    expect(test).toMatch(/^      - &verify_catalog_assets\n(?:        .*\n)*?        working-directory: \.\n        run: \|$/mu);
+    expect(test).toContain("npm exec --no -- vitest run category-catalog-parity.test.ts --coverage.enabled=false");
+    for (const name of ["build-local:", "build-azure:"]) {
+      expect(jobs.find((job) => job.startsWith(name))).toMatch(/^      - \*verify_catalog_assets$/mu);
+    }
   });
 });
 

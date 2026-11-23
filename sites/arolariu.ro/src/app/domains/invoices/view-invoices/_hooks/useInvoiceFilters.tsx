@@ -1,5 +1,7 @@
 "use client";
 
+import {isInvoiceCategory} from "@/lib/categories/categoryCatalog";
+import type {InvoiceCategory} from "@/types/invoices/Category";
 import {usePathname, useRouter, useSearchParams} from "next/navigation";
 import {useCallback, useMemo} from "react";
 
@@ -16,20 +18,23 @@ import {useCallback, useMemo} from "react";
  * @property dateTo - End date for date range filter (ISO string)
  * @property amountMin - Minimum amount for amount range filter
  * @property amountMax - Maximum amount for amount range filter
- * @property classificationGroups - Selected taxonomy root-group labels (repeated URL key `grp`)
+ * @property categoryFilters - Selected category IDs or the uncategorized bucket (repeated URL key `cat`)
  * @property paymentTypes - Selected payment types (comma-separated enum values)
  * @property currencies - Selected ISO 4217 currency codes (comma-separated, URL key `cur`)
  * @property sortBy - Sort field. Defaults to `"date"`.
  * @property sortOrder - Sort direction. Defaults to `"desc"`.
  * @property view - Current view mode (table or grid)
  */
+/** The special empty bucket is URL-only, not a category ID. */
+export type CategoryFilterValue = InvoiceCategory | "uncategorized";
+
 export type FilterState = {
   search: string;
   dateFrom: string | null;
   dateTo: string | null;
   amountMin: number | null;
   amountMax: number | null;
-  classificationGroups: string[];
+  categoryFilters: CategoryFilterValue[];
   paymentTypes: number[];
   currencies: string[];
   sortBy: "date" | "amount" | "name" | null;
@@ -96,7 +101,7 @@ function setSortParameters(params: URLSearchParams, sortBy: FilterState["sortBy"
  * - `to` (ISO date): End date for date range filter (e.g., `2026-03-28`)
  * - `min` (number): Minimum amount for amount range filter
  * - `max` (number): Maximum amount for amount range filter
- * - `grp` (repeated string): Selected taxonomy root-group labels (e.g., `grp=Food%2C+beverages&grp=Transport`)
+ * - `cat` (repeated): numeric receipt category IDs or `uncategorized`.
  * - `pay` (comma-separated numbers): Selected payment type IDs (e.g., `200,300`)
  * - `sortBy` (string): Sort field - `date`, `amount`, `name`, or null for no sorting
  * - `sortOrder` (string): Sort direction - `asc`, `desc`, or null for no sorting
@@ -147,6 +152,19 @@ function setSortParameters(params: URLSearchParams, sortBy: FilterState["sortBy"
  * @see {@link FilterState} - Type definition for filter state
  * @see {@link UseInvoiceFiltersReturn} - Type definition for hook return value
  */
+function parseCategoryFilters(values: readonly string[]): CategoryFilterValue[] {
+  const filters = new Set<CategoryFilterValue>();
+  for (const value of values) {
+    if (value === "uncategorized") {
+      filters.add(value);
+    } else if (/^\d+$/u.test(value)) {
+      const id = Number(value);
+      if (isInvoiceCategory(id)) filters.add(id);
+    }
+  }
+  return [...filters];
+}
+
 export function useInvoiceFilters(): UseInvoiceFiltersReturn {
   const searchParams = useSearchParams();
   const router = useRouter();
@@ -173,7 +191,7 @@ export function useInvoiceFilters(): UseInvoiceFiltersReturn {
       dateTo: searchParams.get("to"),
       amountMin: searchParams.has("min") ? Number(searchParams.get("min")) : null,
       amountMax: searchParams.has("max") ? Number(searchParams.get("max")) : null,
-      classificationGroups: searchParams.getAll("grp").filter((group) => group.length > 0),
+      categoryFilters: parseCategoryFilters(searchParams.getAll("cat")),
       paymentTypes:
         searchParams
           .get("pay")
@@ -222,7 +240,8 @@ export function useInvoiceFilters(): UseInvoiceFiltersReturn {
       setOptionalParameter(params, "to", merged.dateTo);
       setOptionalParameter(params, "min", merged.amountMin === null ? null : String(merged.amountMin));
       setOptionalParameter(params, "max", merged.amountMax === null ? null : String(merged.amountMax));
-      setRepeatedParameters(params, "grp", merged.classificationGroups);
+      params.delete("grp");
+      setRepeatedParameters(params, "cat", merged.categoryFilters.map(String));
       setOptionalParameter(params, "pay", merged.paymentTypes.join(","));
       setOptionalParameter(params, "cur", merged.currencies.join(","));
       setSortParameters(params, merged.sortBy, merged.sortOrder);
@@ -273,7 +292,7 @@ export function useInvoiceFilters(): UseInvoiceFiltersReturn {
     if (filters.search) count++;
     if (filters.dateFrom || filters.dateTo) count++;
     if (filters.amountMin !== null || filters.amountMax !== null) count++;
-    if (filters.classificationGroups.length > 0) count++;
+    if (filters.categoryFilters.length > 0) count++;
     if (filters.paymentTypes.length > 0) count++;
     if (filters.currencies.length > 0) count++;
     // Sort is "active" when not the default (date/desc). Matches the Sort card's

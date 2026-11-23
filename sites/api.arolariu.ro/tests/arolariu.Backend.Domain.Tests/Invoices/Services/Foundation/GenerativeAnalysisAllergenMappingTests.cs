@@ -10,7 +10,7 @@ using arolariu.Backend.Domain.Invoices.DDD.Analysis.Exceptions.Inner;
 using arolariu.Backend.Domain.Invoices.DDD.Analysis.Exceptions.Outer.Foundation;
 using arolariu.Backend.Domain.Invoices.DDD.Analysis.Results;
 using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Allergens;
-using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Classifications;
+using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Categories;
 using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Products;
 using arolariu.Backend.Domain.Tests.Invoices.Helpers;
 
@@ -219,21 +219,10 @@ public sealed class GenerativeAnalysisAllergenMappingTests
   private static List<ProductAnalysisInput> CreateProducts() =>
     [new ProductAnalysisInput("item-0001", new Product { Name = "lapte", Quantity = 1, QuantityUnit = "l" })];
 
-  private static Dictionary<string, StandardClassification> CreateProductClassifications() =>
-    new Dictionary<string, StandardClassification>(StringComparer.Ordinal)
+  private static Dictionary<string, ProductCategory?> CreateProductClassifications() =>
+    new Dictionary<string, ProductCategory?>(StringComparer.Ordinal)
     {
-      ["item-0001"] = new StandardClassification(
-        ClassificationSystem.Gs1Gpc,
-        "2026-05",
-        "10000025",
-        "Milk (Perishable)",
-        [
-          new ClassificationNode("segment", "50000000", "Food/Beverage"),
-          new ClassificationNode("brick", "10000025", "Milk (Perishable)"),
-        ],
-        ClassificationOrigin.Analysis,
-        0.9,
-        [new ClassificationEvidence("subject.description", "lapte")]),
+      ["item-0001"] = ProductCategory.Milk,
     };
 
   private static async Task AssertInvalidStructuredOutputAsync(Func<Task> action)

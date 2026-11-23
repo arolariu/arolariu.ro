@@ -6,7 +6,6 @@ using System.Threading;
 using System.Threading.Tasks;
 
 using arolariu.Backend.Domain.Invoices.DDD.Analysis.Exceptions.Inner;
-using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Classifications.Exceptions.Inner;
 
 using Azure;
 
@@ -20,8 +19,7 @@ using Azure;
 /// <para><b>Retryable failures:</b> Only transient dependency failures are retried: <see cref="RequestFailedException"/>
 /// with HTTP status 408, 429, or any 5xx status; <see cref="HttpRequestException"/>; and <see cref="TimeoutException"/>.</para>
 /// <para><b>Non-retryable failures:</b> Cancellation, content-filter/refusal or invalid-schema failures
-/// (<see cref="InvalidStructuredOutputException"/>), invalid taxonomy codes (<see cref="TaxonomyCodeNotFoundException"/>),
-/// caller validation failures (<see cref="ArgumentException"/>), and non-transient <see cref="RequestFailedException"/>
+/// (<see cref="InvalidStructuredOutputException"/>), caller validation failures (<see cref="ArgumentException"/>), and non-transient <see cref="RequestFailedException"/>
 /// statuses are never retried.</para>
 /// </remarks>
 public sealed class GenerativeAnalysisRetryPolicy
@@ -113,7 +111,6 @@ public sealed class GenerativeAnalysisRetryPolicy
   {
     OperationCanceledException => false,
     InvalidStructuredOutputException => false,
-    TaxonomyCodeNotFoundException => false,
     ArgumentException => false,
     RequestFailedException requestFailedException => IsTransientStatus(requestFailedException.Status),
     HttpRequestException => true,

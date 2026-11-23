@@ -6,6 +6,7 @@ using System.Diagnostics.CodeAnalysis;
 
 using arolariu.Backend.Common.DDD.ValueObjects;
 using arolariu.Backend.Domain.Invoices.DDD.Entities.Merchants;
+using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Categories;
 
 /// <summary>
 /// Request DTO for creating and associating a new merchant with an invoice.
@@ -38,7 +39,7 @@ using arolariu.Backend.Domain.Invoices.DDD.Entities.Merchants;
 /// A detailed description of the merchant. Required.
 /// May include operating hours, specialties, or other relevant information.
 /// </param>
-/// <param name="ClassificationCode">The required NACE 2.1 code for the manual merchant classification.</param>
+/// <param name="Category">The merchant category selection.</param>
 /// <param name="Address">
 /// Optional structured contact and address information including street,
 /// city, postal code, country, phone, and email.
@@ -52,7 +53,7 @@ using arolariu.Backend.Domain.Invoices.DDD.Entities.Merchants;
 /// var request = new AddMerchantToInvoiceRequestDto(
 ///     Name: "Kaufland Iasi Pacurari",
 ///     Description: "Hypermarket in Iasi, open 07:00-22:00",
-///     ClassificationCode: "47.11",
+///     Category: MerchantCategory.Supermarket,
 ///     Address: new ContactInformation { City = "Iasi", Country = "Romania" },
 ///     ParentCompanyId: parentCompanyGuid);
 ///
@@ -67,7 +68,7 @@ using arolariu.Backend.Domain.Invoices.DDD.Entities.Merchants;
 public readonly record struct AddMerchantToInvoiceRequestDto(
   [Required] string Name,
   [Required] string Description,
-  [Required] string ClassificationCode,
+  MerchantCategory? Category,
   ContactInformation? Address,
   Guid? ParentCompanyId)
 {
@@ -97,6 +98,7 @@ public readonly record struct AddMerchantToInvoiceRequestDto(
   {
     id = Guid.NewGuid(),
     Name = Name,
+    Category = Category,
     Description = Description,
     Address = Address ?? new ContactInformation(),
     ParentCompanyId = ParentCompanyId ?? Guid.Empty,

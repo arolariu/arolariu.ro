@@ -5,7 +5,7 @@ using System.Linq;
 
 using arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices;
 using arolariu.Backend.Domain.Invoices.DDD.ValueObjects;
-using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Classifications;
+using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Categories;
 using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Recipes;
 using arolariu.Backend.Domain.Invoices.DTOs.Requests;
 
@@ -83,7 +83,6 @@ public sealed class InvoiceRecipeWriteContractTests
     var dto = new PatchInvoiceRequestDto(
       Name: null,
       Description: null,
-      ClassificationCode: null,
       PaymentInformation: null,
       MerchantReference: null,
       IsImportant: null,
@@ -109,7 +108,6 @@ public sealed class InvoiceRecipeWriteContractTests
     var dto = new PatchInvoiceRequestDto(
       Name: null,
       Description: null,
-      ClassificationCode: null,
       PaymentInformation: null,
       MerchantReference: null,
       IsImportant: null,
@@ -136,7 +134,6 @@ public sealed class InvoiceRecipeWriteContractTests
     var dto = new PatchInvoiceRequestDto(
       Name: null,
       Description: null,
-      ClassificationCode: null,
       PaymentInformation: null,
       MerchantReference: null,
       IsImportant: null,
@@ -166,7 +163,6 @@ public sealed class InvoiceRecipeWriteContractTests
     var dto = new UpdateInvoiceRequestDto(
       Name: "Invoice",
       Description: "desc",
-      ClassificationCode: null,
       PaymentInformation: new PaymentInformation(),
       MerchantReference: null,
       IsImportant: false,
@@ -198,7 +194,6 @@ public sealed class InvoiceRecipeWriteContractTests
     var dto = new UpdateInvoiceRequestDto(
       Name: "Invoice",
       Description: "desc",
-      ClassificationCode: null,
       PaymentInformation: new PaymentInformation(),
       MerchantReference: null,
       IsImportant: false,
@@ -221,7 +216,6 @@ public sealed class InvoiceRecipeWriteContractTests
     var dto = new UpdateInvoiceRequestDto(
       Name: "Invoice",
       Description: "desc",
-      ClassificationCode: null,
       PaymentInformation: new PaymentInformation(),
       MerchantReference: null,
       IsImportant: false,
@@ -247,24 +241,11 @@ public sealed class InvoiceRecipeWriteContractTests
   public void Put_NullClassificationCode_HandlerPreservesExistingClassification()
   {
     var existing = MakeExistingInvoice();
-    existing.Classification = new StandardClassification(
-      ClassificationSystem.EcoicopV2,
-      "2.0",
-      "01.1.1",
-      "Bread and cereals",
-      [
-        new ClassificationNode("division", "01", "Food and non-alcoholic beverages"),
-        new ClassificationNode("group", "01.1", "Food"),
-        new ClassificationNode("class", "01.1.1", "Bread and cereals"),
-      ],
-      ClassificationOrigin.Analysis,
-      0.87,
-      []);
+    existing.Category = InvoiceCategory.Groceries;
 
     var dto = new UpdateInvoiceRequestDto(
       Name: "Renamed invoice",
       Description: "desc",
-      ClassificationCode: null,   // null → preserve (handler-level)
       PaymentInformation: new PaymentInformation(),
       MerchantReference: null,
       IsImportant: false,
@@ -274,17 +255,15 @@ public sealed class InvoiceRecipeWriteContractTests
     var updatedEntity = dto.ToInvoice(InvoiceId, UserId);
 
     // Without the handler step the replacement entity carries no classification at all.
-    Assert.IsNull(updatedEntity.Classification);
+    Assert.IsNull(updatedEntity.Category);
 
     // Replicate what UpdateSpecificInvoiceAsync does when ClassificationCode is null:
-    if (dto.ClassificationCode is null)
+    if (!dto.HasCategory)
     {
-      updatedEntity.Classification = existing.Classification;
+      updatedEntity.Category = existing.Category;
     }
 
-    Assert.IsNotNull(updatedEntity.Classification);
-    Assert.AreEqual("01.1.1", updatedEntity.Classification!.Code);
-    Assert.AreEqual(ClassificationOrigin.Analysis, updatedEntity.Classification.Origin);
-    Assert.AreEqual(0.87, updatedEntity.Classification.Confidence);
+    Assert.IsNotNull(updatedEntity.Category);
+    Assert.AreEqual(InvoiceCategory.Groceries, updatedEntity.Category);
   }
 }

@@ -14,7 +14,7 @@ using arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices;
 using arolariu.Backend.Domain.Invoices.DDD.Entities.Merchants;
 using arolariu.Backend.Domain.Invoices.DDD.ValueObjects;
 using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Allergens;
-using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Classifications;
+using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Categories;
 using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Products;
 using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Recipes;
 using arolariu.Backend.Domain.Invoices.DTOs.Responses;
@@ -59,7 +59,6 @@ public sealed class InvoiceResponseTransportContractTests
     // Act
     using JsonDocument document = JsonDocument.Parse(JsonSerializer.Serialize(response, ApiJsonOptions));
     JsonElement root = document.RootElement;
-    JsonElement classification = root.GetProperty("classification");
     JsonElement product = root.GetProperty("items")[0];
     JsonElement allergenAssessment = product.GetProperty("allergenAssessment");
     JsonElement recipe = root.GetProperty("possibleRecipes")[0];
@@ -72,7 +71,7 @@ public sealed class InvoiceResponseTransportContractTests
       "sharedWith",
       "name",
       "description",
-      "classification",
+      "category",
       "scans",
       "paymentInformation",
       "merchantReference",
@@ -90,27 +89,11 @@ public sealed class InvoiceResponseTransportContractTests
       "lastUpdatedAt",
       "lastUpdatedBy",
       "numberOfUpdates");
-    Assert.IsFalse(root.TryGetProperty("category", out _), "Legacy invoice category must not be transported.");
+    Assert.AreEqual(3004, root.GetProperty("category").GetInt32());
 
-    AssertPropertyNames(
-      classification,
-      "system",
-      "version",
-      "code",
-      "officialLabel",
-      "hierarchy",
-      "origin",
-      "confidence",
-      "evidence");
-    Assert.AreEqual("ECOICOP_V2", classification.GetProperty("system").GetString());
-    Assert.AreEqual("Analysis", classification.GetProperty("origin").GetString());
-    AssertPropertyNames(classification.GetProperty("hierarchy")[0], "level", "code", "officialLabel");
-    AssertPropertyNames(classification.GetProperty("evidence")[0], "source", "value");
-
-    AssertPropertyNames(product, "name", "classification", "quantity", "quantityUnit", "productCode", "price", "totalPrice", "allergenAssessment", "metadata");
-    Assert.IsFalse(product.TryGetProperty("category", out _), "Legacy product category must not be transported.");
+    AssertPropertyNames(product, "name", "category", "quantity", "quantityUnit", "productCode", "price", "totalPrice", "allergenAssessment", "metadata");
     Assert.IsFalse(product.TryGetProperty("detectedAllergens", out _), "Legacy allergen arrays must not be transported.");
-    AssertPropertyNames(product.GetProperty("classification"), "system", "version", "code", "officialLabel", "hierarchy", "origin", "confidence", "evidence");
+    Assert.AreEqual(1007, product.GetProperty("category").GetInt32());
     AssertPropertyNames(product.GetProperty("metadata"), "isEdited", "isComplete", "isSoftDeleted", "confidence");
 
     AssertPropertyNames(allergenAssessment, "status", "signals");
@@ -169,7 +152,7 @@ public sealed class InvoiceResponseTransportContractTests
       id = Guid.Parse("88888888-8888-7888-8888-888888888888"),
       Name = "Independent merchant",
       Description = string.Empty,
-      Classification = null,
+      Category = null,
       Address = new ContactInformation
       {
         FullName = "Independent merchant SRL",
@@ -194,8 +177,8 @@ public sealed class InvoiceResponseTransportContractTests
     JsonElement merchantRoot = merchantDocument.RootElement;
 
     // Assert
-    AssertPropertyNames(productRoot, "name", "classification", "quantity", "quantityUnit", "productCode", "price", "totalPrice", "allergenAssessment", "metadata");
-    Assert.AreEqual(JsonValueKind.Null, productRoot.GetProperty("classification").ValueKind);
+    AssertPropertyNames(productRoot, "name", "category", "quantity", "quantityUnit", "productCode", "price", "totalPrice", "allergenAssessment", "metadata");
+    Assert.AreEqual(JsonValueKind.Null, productRoot.GetProperty("category").ValueKind);
     Assert.AreEqual(JsonValueKind.Null, productRoot.GetProperty("allergenAssessment").ValueKind);
 
     AssertPropertyNames(
@@ -203,7 +186,7 @@ public sealed class InvoiceResponseTransportContractTests
       "id",
       "name",
       "description",
-      "classification",
+      "category",
       "address",
       "parentCompanyId",
       "referencedInvoiceCount",
@@ -216,8 +199,7 @@ public sealed class InvoiceResponseTransportContractTests
       "lastUpdatedAt",
       "lastUpdatedBy",
       "numberOfUpdates");
-    Assert.IsFalse(merchantRoot.TryGetProperty("category", out _), "Legacy merchant category must not be transported.");
-    Assert.AreEqual(JsonValueKind.Null, merchantRoot.GetProperty("classification").ValueKind);
+    Assert.AreEqual(JsonValueKind.Null, merchantRoot.GetProperty("category").ValueKind);
     AssertPropertyNames(merchantRoot.GetProperty("address"), "fullName", "address", "phoneNumber", "emailAddress", "website");
     Assert.AreEqual(1, merchantRoot.GetProperty("referencedInvoiceCount").GetInt32());
   }
@@ -267,7 +249,7 @@ public sealed class InvoiceResponseTransportContractTests
       "sharedWith",
       "name",
       "description",
-      "classification",
+      "category",
       "scans",
       "paymentInformation",
       "merchantReference",
@@ -285,7 +267,6 @@ public sealed class InvoiceResponseTransportContractTests
       "lastUpdatedAt",
       "lastUpdatedBy",
       "numberOfUpdates");
-    Assert.IsFalse(document.RootElement.TryGetProperty("category", out _));
     Assert.IsFalse(document.RootElement.GetProperty("items")[0].GetProperty("allergenAssessment").TryGetProperty("sourceRunId", out _));
     processingService.Verify(
       service => service.ReadInvoice(invoice.id, invoice.UserIdentifier, It.IsAny<CancellationToken>()),
@@ -297,18 +278,6 @@ public sealed class InvoiceResponseTransportContractTests
     Guid invoiceIdentifier = Guid.Parse("22222222-2222-7222-8222-222222222222");
     Guid userIdentifier = Guid.Parse("33333333-3333-7333-8333-333333333333");
     Guid updaterIdentifier = Guid.Parse("44444444-4444-7444-8444-444444444444");
-    StandardClassification invoiceClassification = CreateClassification(
-      ClassificationSystem.EcoicopV2,
-      "01.1",
-      "Food",
-      ClassificationOrigin.Analysis,
-      0.97d);
-    StandardClassification productClassification = CreateClassification(
-      ClassificationSystem.Gs1Gpc,
-      "10000045",
-      "Bread",
-      ClassificationOrigin.Manual,
-      null);
     AllergenAssessment assessment = AllergenAssessment.Detected(
       [
         new AllergenSignal(
@@ -338,7 +307,7 @@ public sealed class InvoiceResponseTransportContractTests
       SharedWith = [Guid.Parse("55555555-5555-7555-8555-555555555555")],
       Name = "Bakery receipt",
       Description = "Wholemeal bread",
-      Classification = invoiceClassification,
+      Category = InvoiceCategory.BakeryPurchases,
       Scans =
       [
         new InvoiceScan(
@@ -362,7 +331,7 @@ public sealed class InvoiceResponseTransportContractTests
         new Product
         {
           Name = "Wholemeal bread",
-          Classification = productClassification,
+          Category = ProductCategory.Bread,
           Quantity = 1m,
           QuantityUnit = "pcs",
           ProductCode = "5940000000001",
@@ -407,22 +376,6 @@ public sealed class InvoiceResponseTransportContractTests
 
     return invoice;
   }
-
-  private static StandardClassification CreateClassification(
-    ClassificationSystem system,
-    string code,
-    string label,
-    ClassificationOrigin origin,
-    double? confidence) =>
-    new(
-      system,
-      "2026.08",
-      code,
-      label,
-      [new ClassificationNode("class", code, label)],
-      origin,
-      confidence,
-      [new ClassificationEvidence("receipt", label)]);
 
   private static void AssertPropertyNames(JsonElement element, params string[] expectedPropertyNames)
   {

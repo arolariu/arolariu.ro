@@ -8,7 +8,6 @@ using System.Threading.Tasks;
 
 using arolariu.Backend.Domain.Invoices.DDD.Analysis.Exceptions.Inner;
 using arolariu.Backend.Domain.Invoices.DDD.Analysis.Exceptions.Outer.Foundation;
-using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Classifications.Exceptions.Inner;
 
 using Azure;
 
@@ -48,8 +47,7 @@ public sealed partial class AnalysisFoundationService
     InvalidStructuredOutputException
       => LogAndWrapDependency(exception),
 
-    TaxonomyCodeNotFoundException
-      or KeyNotFoundException
+    KeyNotFoundException
       => LogAndWrapDependencyValidation(exception),
 
     RequestFailedException

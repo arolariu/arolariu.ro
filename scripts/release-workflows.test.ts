@@ -112,6 +112,46 @@ describe("manual deployment revision contract", () => {
       return body;
     }
 
+    it("runs the catalog check belonging to the validated API revision and fails if none applies", () => {
+      const workflow = readFileSync(join(workflows, "official-api-trigger.yml"), "utf8").replaceAll("\r\n", "\n");
+      const script = job(workflow, "test")
+        .match(/^      - &verify_catalog_assets\n(?:.*\n)*?        run: \|\n((?: {10}.*\n)+)/mu)?.[1]
+        ?.replace(/^ {10}/gmu, "");
+      if (!script) throw new Error("Missing API catalog verification script");
+      const temp = mkdtempSync(join(tmpdir(), "api-catalog-gate-"));
+      const parity = join(temp, "scripts", "common", "category-catalog-parity.test.ts");
+      const oldGate = join(temp, "scripts", "commands", "generate", "taxonomy-check.ts");
+      try {
+        const run = (selected: string, expectedStatus: number, checkerStatus = 0) => {
+          const {status, stdout} = spawnSync(bash, ["-eo", "pipefail", "-s"], {
+            cwd: temp,
+            encoding: "utf8",
+            input: `npm() { echo flat; return ${checkerStatus}; }\nnode() { echo pinned; return ${checkerStatus}; }\n${script}`,
+            env: {...process.env, COMMIT_SHA: selected, GITHUB_SHA: "workflow-sha", GITHUB_EVENT_NAME: "workflow_dispatch"},
+          });
+          expect(status).toBe(expectedStatus);
+          return stdout;
+        };
+        mkdirSync(join(temp, "scripts", "common"), {recursive: true});
+        mkdirSync(join(temp, "scripts", "commands", "generate"), {recursive: true});
+        expect(run("older-sha", 1)).not.toMatch(/flat|pinned/u);
+        writeFileSync(oldGate, "");
+        expect(run("older-sha", 0)).toContain("pinned");
+        expect(run("older-sha", 7, 7)).toContain("pinned");
+        expect(run("workflow-sha", 1)).not.toMatch(/^pinned$/mu);
+        writeFileSync(parity, "");
+        expect(run("workflow-sha", 0)).toContain("flat");
+        expect(run("older-sha", 7, 7)).toContain("flat");
+        for (const id of ["build-local", "build-azure"]) {
+          const build = job(workflow, id);
+          expect(build).toContain("*verify_catalog_assets");
+          expect(build.indexOf("*verify_catalog_assets")).toBeLessThan(build.indexOf("docker build"));
+        }
+      } finally {
+        rmSync(temp, {recursive: true, force: true});
+      }
+    });
+
     it.each(["api", "exp"])("isolates LOCAL %s from cloud jobs and exports only the built image", (service) => {
       const workflow = readFileSync(join(workflows, `official-${service}-trigger.yml`), "utf8").replaceAll("\r\n", "\n");
       const local = job(workflow, "build-local");
@@ -137,7 +177,7 @@ describe("manual deployment revision contract", () => {
 
       const tests =
         service === "api"
-          ? ["generate --check-taxonomies --json", "dotnet test --configuration Release", '--collect:"XPlat Code Coverage"']
+          ? ["*verify_catalog_assets", "dotnet test --configuration Release", '--collect:"XPlat Code Coverage"']
           : ["python -m ruff check .", "python -m bandit", "python -m pytest"];
       for (const command of tests) {
         expect(local.indexOf(command)).toBeGreaterThan(-1);

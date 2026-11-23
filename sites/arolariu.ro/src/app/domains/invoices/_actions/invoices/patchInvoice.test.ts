@@ -44,7 +44,7 @@ describe("patchInvoice", () => {
     fetchAtHttp.mockResolvedValue(Response.json(invoice));
     const payload = {
       description: "Weekly groceries",
-      classificationCode: "01.1.1",
+      category: null,
       paymentInformation: invoice.paymentInformation,
       merchantReference: invoice.merchantReference,
       isImportant: false,
@@ -52,7 +52,6 @@ describe("patchInvoice", () => {
       additionalMetadata: {source: "test"},
       items: [buildProduct()],
       id: "client-only",
-      category: "legacy",
       createdAt: invoice.createdAt,
     };
 
@@ -61,7 +60,7 @@ describe("patchInvoice", () => {
     expect(result).toMatchObject({success: true});
     expect(requestBody()).toEqual({
       description: payload.description,
-      classificationCode: payload.classificationCode,
+      category: payload.category,
       paymentInformation: {...invoice.paymentInformation, transactionDate: invoice.paymentInformation.transactionDate.toISOString()},
       merchantReference: payload.merchantReference,
       isImportant: false,

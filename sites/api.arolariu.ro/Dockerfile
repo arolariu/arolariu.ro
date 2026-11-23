@@ -61,10 +61,10 @@ RUN --mount=type=secret,id=nuget_config,target=/src/NuGet.Config dotnet restore 
 # 4. Copy the full source tree AFTER restore
 COPY . .
 
-# Fail fast if the build context omitted a Git-tracked taxonomy snapshot.
-RUN test "$(find src/Invoices/Resources/Taxonomies -maxdepth 1 -type f -name 'gpc-*.min.json' -size +0c | wc -l)" -eq 1 \
-  && test "$(find src/Invoices/Resources/Taxonomies -maxdepth 1 -type f -name 'ecoicop-*.min.json' -size +0c | wc -l)" -eq 1 \
-  && test "$(find src/Invoices/Resources/Taxonomies -maxdepth 1 -type f -name 'nace-*.min.json' -size +0c | wc -l)" -eq 1
+# Verify the inputs embedded by the Invoices assembly.
+RUN test -s src/Invoices/Resources/Categories/products.json \
+  && test -s src/Invoices/Resources/Categories/merchants.json \
+  && test -s src/Invoices/Resources/Categories/invoices.json
 
 RUN dotnet build src/Core/arolariu.Backend.Core.csproj \
   --no-restore \

@@ -1,5 +1,5 @@
 # Test the API and build its image. Azure runs push to ACR and deploy; LOCAL runs upload a Docker archive.
-# Runs on main pushes touching the API directory or on manual dispatch. Tests and taxonomy checks gate the image build.
+# Runs on main pushes touching the API directory or on manual dispatch. Tests and category parity gate the image build.
 # Publishes TRX and coverage artifacts; does not build the website or provision Azure resources.
 # Azure login uses environment-scoped OIDC (id-token: write); deploy targets the API app.
 # Manual runs from main can pin all source checkouts to an optional full commit SHA.
@@ -144,10 +144,23 @@ jobs:
           dotnet-install: "true"
           install-dotnet-deps: "true"
 
-      # Fail before tests if the API and website taxonomy mirrors no longer match their manifest.
-      - name: Check pinned taxonomy integrity
+      - &verify_catalog_assets
+        name: Verify the selected revision's catalog assets
+        shell: bash
         working-directory: .
-        run: node scripts/cli.ts generate --check-taxonomies --json
+        run: |
+          if [[ -f scripts/common/category-catalog-parity.test.ts ]]; then
+            npm exec --no -- vitest run category-catalog-parity.test.ts --coverage.enabled=false
+          elif [[ "$GITHUB_EVENT_NAME" == workflow_dispatch && "$COMMIT_SHA" != "$GITHUB_SHA" \
+            && -f scripts/commands/generate/taxonomy-check.ts \
+            && ! -d sites/api.arolariu.ro/src/Invoices/Resources/Categories \
+            && ! -d sites/arolariu.ro/src/data/categories ]]; then
+            # An explicitly pinned pre-cutover checkout still owns its historical offline check.
+            node scripts/cli.ts generate --check-taxonomies --json
+          else
+            echo "::error::The selected API revision has no supported catalog check."
+            exit 1
+          fi
 
       - name: 🧪 Running unit tests...
         working-directory: .
@@ -225,9 +238,7 @@ jobs:
           dotnet-install: "true"
           install-dotnet-deps: "true"
 
-      - name: Check pinned taxonomy integrity
-        working-directory: .
-        run: node scripts/cli.ts generate --check-taxonomies --json
+      - *verify_catalog_assets
 
       - name: Test the selected source
         working-directory: .
@@ -330,10 +341,7 @@ jobs:
           node-install: "true"
           node-deps-install: "true"
 
-      # Keep the container phase independently protected against building with invalid taxonomy inputs.
-      - name: Check pinned taxonomy integrity
-        working-directory: .
-        run: node scripts/cli.ts generate --check-taxonomies --json
+      - *verify_catalog_assets
 
       - name: 🔒 Performing auth against Azure Public Cloud...
         uses: Azure/login@a641126d1b8aa4d1fa005f4f92df94a3a4c4c906 # v3.1.0

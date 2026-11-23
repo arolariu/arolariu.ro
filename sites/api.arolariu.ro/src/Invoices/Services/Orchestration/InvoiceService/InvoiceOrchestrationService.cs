@@ -126,4 +126,20 @@ public partial class InvoiceOrchestrationService : IInvoiceOrchestrationService
         .UpdateInvoiceObject(updatedInvoice, invoiceIdentifier, userIdentifier, cancellationToken)
         .ConfigureAwait(false);
     }).ConfigureAwait(false);
+
+  /// <inheritdoc/>
+  public async Task<(Invoice Resource, string ETag)> ReadInvoiceSnapshotAsync(Guid invoiceId, Guid userIdentifier, CancellationToken cancellationToken) =>
+    await TryCatchAsync(async () =>
+    {
+      using var activity = InvoicePackageTracing.StartActivity(nameof(ReadInvoiceSnapshotAsync));
+      return await invoiceStorageFoundationService.ReadInvoiceSnapshotAsync(invoiceId, userIdentifier, cancellationToken).ConfigureAwait(false);
+    }).ConfigureAwait(false);
+
+  /// <inheritdoc/>
+  public async Task<bool> TryReplaceInvoiceSnapshotAsync(Invoice invoice, string expectedETag, CancellationToken cancellationToken) =>
+    await TryCatchAsync(async () =>
+    {
+      using var activity = InvoicePackageTracing.StartActivity(nameof(TryReplaceInvoiceSnapshotAsync));
+      return await invoiceStorageFoundationService.TryReplaceInvoiceSnapshotAsync(invoice, expectedETag, cancellationToken).ConfigureAwait(false);
+    }).ConfigureAwait(false);
 }

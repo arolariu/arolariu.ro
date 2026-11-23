@@ -43,7 +43,7 @@ public sealed class RecipeGenerationTests
             new GenerativeService.RecipeStructuredIngredient(
               "lapte",
               "500 ml",
-              null)
+              null, CorrelationToken: "item-0001")
           ],
           [
             new GenerativeService.RecipeStructuredIngredient(
@@ -101,7 +101,7 @@ public sealed class RecipeGenerationTests
             new GenerativeService.RecipeStructuredIngredient(
               "lapte",
               "500 ml",
-              null)
+              null, CorrelationToken: "item-0001")
           ],
           [
             new GenerativeService.RecipeStructuredIngredient(
@@ -151,7 +151,7 @@ public sealed class RecipeGenerationTests
             new GenerativeService.RecipeStructuredIngredient(
               "lapte",
               "500 ml",
-              null)
+              null, CorrelationToken: "item-0001")
           ],
           [],
           [],
@@ -196,7 +196,7 @@ public sealed class RecipeGenerationTests
             new GenerativeService.RecipeStructuredIngredient(
               "lapte",
               "500 ml",
-              null)
+              null, CorrelationToken: "item-0001")
           ],
           [],
           [],
@@ -241,7 +241,7 @@ public sealed class RecipeGenerationTests
             new GenerativeService.RecipeStructuredIngredient(
               "lapte",
               "500 ml",
-              null)
+              null, CorrelationToken: "item-0001")
           ],
           [],
           [],
@@ -286,7 +286,7 @@ public sealed class RecipeGenerationTests
             new GenerativeService.RecipeStructuredIngredient(
               "lapte",
               "500 ml",
-              null)
+              null, CorrelationToken: "item-0001")
           ],
           [],
           [],
@@ -333,7 +333,7 @@ public sealed class RecipeGenerationTests
             new GenerativeService.RecipeStructuredIngredient(
               "lapte",
               "500 ml",
-              null)
+              null, CorrelationToken: "item-0001")
           ],
           [],
           [],

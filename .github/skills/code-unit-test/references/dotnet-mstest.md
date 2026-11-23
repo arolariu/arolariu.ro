@@ -76,7 +76,7 @@ generally promise uncategorized cancellation rather than a domain failure.
 
 Prefer a live builder when it encodes domain invariants without obscuring the condition:
 
-- `ClassificationTestData` deterministically maintains `StandardClassification` hierarchy/code invariants.
+- Use the invoice domain's named category enum members rather than arbitrary numeric casts in valid fixtures.
 - `InvoiceScanTestData` and `ReceiptDocumentTestData` provide focused scan and provider-record fixtures.
 - Fixed inline aggregates are appropriate when exact ownership, ordering, serialization, dates, or exception evidence is the subject.
 

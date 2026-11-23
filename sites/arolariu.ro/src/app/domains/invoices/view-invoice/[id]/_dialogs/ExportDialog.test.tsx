@@ -13,7 +13,7 @@ import {InvoiceContextProvider} from "../_context/InvoiceContext";
 
 const invoice = buildInvoice({
   id: "11111111-1111-4111-8111-111111111111",
-  items: [buildProduct({name: 'Oats, "rolled"', quantity: 2, price: 3.5})],
+  items: [buildProduct({name: 'Oats, "rolled"', category: 1010, quantity: 2, price: 3.5})],
 });
 
 function ExportTrigger(): React.JSX.Element {
@@ -25,7 +25,11 @@ async function openExportDialog(): Promise<HTMLElement> {
   render(
     <NextIntlClientProvider
       locale='en'
-      messages={{pages: {invoices: {viewInvoice: {export: messages.pages.invoices.viewInvoice.export}}}, shared: messages.shared}}>
+      messages={{
+        pages: {invoices: {viewInvoice: {export: messages.pages.invoices.viewInvoice.export}}},
+        shared: messages.shared,
+        categories: messages.categories,
+      }}>
       <InvoiceContextProvider
         invoice={invoice}
         merchant={null}>
@@ -66,7 +70,7 @@ describe("single invoice CSV export", () => {
     const blob = createUrl.mock.calls[0]?.[0];
     if (!(blob instanceof Blob)) throw new TypeError("Expected the export to generate a CSV Blob");
     expect(blob.type).toBe("text/csv;charset=utf-8;");
-    await expect(blob.text()).resolves.toBe(`Product Name,Quantity,Price,Total,Category\n"Oats, ""rolled""",2,3.50,7.00,""`);
+    await expect(blob.text()).resolves.toBe(`Product Name,Quantity,Price,Total,Product category\n"Oats, ""rolled""",2,3.50,7.00,"Oats"`);
     expect(revokeUrl).toHaveBeenCalledExactlyOnceWith(downloads[0]?.href);
     await waitFor(() => expect(screen.queryByRole("dialog", {name: "Export Invoice"})).not.toBeInTheDocument());
   });

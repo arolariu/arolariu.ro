@@ -1,5 +1,6 @@
 "use client";
 
+import {invoiceCategoryLabel} from "@/lib/categories/categoryLabels";
 import {toRONDetailed} from "@/lib/currency";
 import {formatCurrency, formatDate, formatEnum, toSafeDate} from "@/lib/utils.generic";
 import {PaymentType, getAllergenEvidenceLevelLabelKey, getAllergenLabelKey} from "@/types/invoices";
@@ -117,9 +118,7 @@ export function InvoiceDetailsCard(): React.JSX.Element {
             </div>
             <div className={styles["infoItem"]}>
               <p className={styles["infoLabelPlain"]}>{t((m) => m.cards.invoices.invoiceDetailsCard.labels.category)}</p>
-              <Badge variant='outline'>
-                {invoice.classification?.officialLabel ?? t((m) => m.shared.invoices.classification.unclassified)}
-              </Badge>
+              <Badge variant='outline'>{invoiceCategoryLabel(t, invoice.category)}</Badge>
             </div>
             <div className={styles["infoItem"]}>
               <div className={styles["infoLabel"]}>

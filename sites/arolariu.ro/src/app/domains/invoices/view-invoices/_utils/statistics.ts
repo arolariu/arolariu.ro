@@ -1,10 +1,10 @@
 /** @fileoverview Pure, RON-normalized cross-invoice aggregate statistics. */
 
+import type {InvoiceCategory, ProductCategory} from "@/types/invoices/Category";
 import {formatDate, toSafeDate} from "@/lib/utils.generic";
 import type {Invoice, Product} from "@/types/invoices";
 import {AllergenAssessmentStatus, type AllergenCode} from "@/types/invoices/Allergen";
 import {getTransactionYear, toRON} from "../../../../../lib/currency";
-import {getClassificationGroup} from "../../_utils/labelUtilities";
 
 /** Empty GUID used to filter placeholder merchant references. */
 const EMPTY_GUID = "00000000-0000-0000-0000-000000000000";
@@ -42,9 +42,9 @@ export type MonthlySpending = {
   invoices: ReadonlyArray<{id: string; name: string; amount: number}>;
 };
 
-/** Invoice spending grouped by canonical taxonomy root. */
+/** Invoice spending grouped by flat category ID. */
 export type ClassificationGroupAggregate = {
-  category: string;
+  category: InvoiceCategory | null;
   amount: number;
   count: number;
   percentage: number;
@@ -211,13 +211,13 @@ export function computeMonthlySpending(invoices: ReadonlyArray<Invoice>): Monthl
   return result.toSorted((a, b) => a.monthKey.localeCompare(b.monthKey));
 }
 
-/** Groups invoice spending by canonical taxonomy root, including unclassified invoices. */
+/** Groups invoice spending by flat category ID, including unclassified invoices. */
 export function computeClassificationGroupAggregates(invoices: ReadonlyArray<Invoice>): ClassificationGroupAggregate[] {
-  const groupMap = new Map<string, {amount: number; count: number}>();
+  const groupMap = new Map<InvoiceCategory | null, {amount: number; count: number}>();
   let totalSpending = 0;
 
   for (const invoice of invoices) {
-    const group = getClassificationGroup(invoice.classification ?? null) ?? "unclassified";
+    const group = invoice.category;
     const amount = getAmountInRON(invoice);
     totalSpending += amount;
 
@@ -669,9 +669,9 @@ export function computeMerchantVisitFrequency(invoices: ReadonlyArray<Invoice>):
   return result.toSorted((a, b) => b.totalVisits - a.totalVisits);
 }
 
-/** Product spending grouped by canonical taxonomy root. */
+/** Product spending grouped by flat category ID. */
 export type ProductClassificationSpending = {
-  category: string;
+  category: ProductCategory | null;
   totalSpent: number;
   productCount: number;
   percentage: number;
@@ -693,9 +693,9 @@ export type AllergenFrequency = {
   percentage: number;
 };
 
-/** Groups non-deleted product spending by canonical taxonomy root. */
+/** Groups non-deleted product spending by flat category ID. */
 export function computeProductClassificationSpending(invoices: ReadonlyArray<Invoice>): ProductClassificationSpending[] {
-  const groupMap = new Map<string, {totalSpent: number; productCount: number}>();
+  const groupMap = new Map<ProductCategory | null, {totalSpent: number; productCount: number}>();
   let grandTotal = 0;
 
   for (const invoice of invoices) {
@@ -705,7 +705,7 @@ export function computeProductClassificationSpending(invoices: ReadonlyArray<Inv
     const items = invoice.items ?? [];
     for (const product of items) {
       if (!product.metadata?.isSoftDeleted) {
-        const group = getClassificationGroup(product.classification ?? null) ?? "unclassified";
+        const group = product.category;
         const productPriceRON = toRON(product.totalPrice, currencyCode, year);
 
         const existing = groupMap.get(group) ?? {totalSpent: 0, productCount: 0};

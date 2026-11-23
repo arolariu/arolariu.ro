@@ -6,7 +6,7 @@ import {SpendingByCategoryChart} from "./SpendingByCategoryChart";
 faker.seed(42);
 
 function generateMockCategorySpending(count: number): CategorySpending[] {
-  const categories = ["Dairy", "Fruits", "Meat", "Beverages", "Baked Goods", "Vegetables", "Cleaning", "Fish"];
+  const categories = [1014, 1001, 1020, 1048, 1039, 1002, 1071, 1025] as const;
   return categories.slice(0, count).map((category, index) => ({
     category,
     amount: faker.number.float({min: 15, max: 250, fractionDigits: 2}),
@@ -59,9 +59,9 @@ export const ManyCategories: Story = {
 export const DominantCategory: Story = {
   args: {
     data: [
-      {category: "Groceries", amount: 450.0, count: 25, fill: "var(--ac-chart-1)"},
-      {category: "Dairy", amount: 30.5, count: 3, fill: "var(--ac-chart-2)"},
-      {category: "Beverages", amount: 18.0, count: 2, fill: "var(--ac-chart-3)"},
+      {category: 1007, amount: 450.0, count: 25, fill: "var(--ac-chart-1)"},
+      {category: 1014, amount: 30.5, count: 3, fill: "var(--ac-chart-2)"},
+      {category: 1048, amount: 18.0, count: 2, fill: "var(--ac-chart-3)"},
     ],
     currency: "RON",
   },
@@ -77,7 +77,7 @@ export const EmptyData: Story = {
 /** Single data point — only one category. */
 export const SingleDataPoint: Story = {
   args: {
-    data: [{category: "Groceries", amount: 156.75, count: 8, fill: "var(--ac-chart-1)"}],
+    data: [{category: 1007, amount: 156.75, count: 8, fill: "var(--ac-chart-1)"}],
     currency: "RON",
   },
 };
@@ -87,20 +87,7 @@ export const HighVolume: Story = {
   args: {
     data: [
       ...generateMockCategorySpending(8),
-      ...[
-        "Snacks",
-        "Frozen",
-        "Personal Care",
-        "Condiments",
-        "Pasta",
-        "Canned",
-        "Spices",
-        "Baby",
-        "Pet Food",
-        "Bakery",
-        "Deli",
-        "Sweets",
-      ].map((category, index) => ({
+      ...([1043, 1036, 1062, 1033, 1006, 1035, 1031, 1053, 1054, 1007, 1027, 1042] as const).map((category, index) => ({
         category,
         amount: faker.number.float({min: 15, max: 250, fractionDigits: 2}),
         count: faker.number.int({min: 1, max: 12}),

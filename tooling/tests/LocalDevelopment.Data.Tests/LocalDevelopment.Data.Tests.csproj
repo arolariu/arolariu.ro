@@ -17,7 +17,5 @@
     <Compile Include="..\LocalDataTestFixture.cs" Link="TestInfrastructure\LocalDataTestFixture.cs" />
     <Content Include="..\..\src\LocalDevelopment.Bootstrap\SeedData\*.json"
       Link="SeedData\%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
-    <Content Include="..\..\..\sites\api.arolariu.ro\src\Invoices\Resources\Taxonomies\*.json"
-      Link="Taxonomies\%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 </Project>

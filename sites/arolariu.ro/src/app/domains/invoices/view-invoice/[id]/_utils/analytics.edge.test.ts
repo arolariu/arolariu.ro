@@ -2,22 +2,13 @@
  * @fileoverview Edge-case tests for analytics utilities using the real currency module (RON-only fixtures).
  */
 
+import {ProductCategory} from "@/types/invoices/Category";
 import {InvoiceBuilder, ProductBuilder} from "@/data/mocks";
 import type {Invoice, Product} from "@/types/invoices";
-import {ClassificationOrigin, ClassificationSystem, type StandardClassification} from "@/types/invoices/Classification";
 import {describe, expect, it} from "vitest";
 import {computeShoppingPatterns, getClassificationGroupComparison, getComparisonStats} from "./analytics";
 
-const FOOD_CLASS: StandardClassification = {
-  system: ClassificationSystem.Gs1Gpc,
-  code: "50000000",
-  officialLabel: "Food/Beverage",
-  version: "2026-05",
-  hierarchy: [{level: "segment", code: "50000000", officialLabel: "Food/Beverage"}],
-  origin: ClassificationOrigin.Analysis,
-  confidence: 0.9,
-  evidence: [],
-};
+const FOOD_CLASS = ProductCategory.Milk;
 
 function ronInvoice(id: string, amount: number, items: Product[] = []): Invoice {
   return new InvoiceBuilder()
@@ -89,20 +80,20 @@ describe("getClassificationGroupComparison — unclassified items", () => {
 
     const result = getClassificationGroupComparison(current, [current, other]);
 
-    expect(result).toEqual([{category: "unclassified", current: 40, average: 20}]);
+    expect(result).toEqual([{category: null, current: 40, average: 20}]);
   });
 
   it("keeps classified and unclassified groups apart", () => {
     const current = ronInvoice("current", 50, [
-      new ProductBuilder().withClassification(FOOD_CLASS).withTotalPrice(30).build(),
+      new ProductBuilder().withCategory(FOOD_CLASS).withTotalPrice(30).build(),
       new ProductBuilder().withTotalPrice(20).build(),
     ]);
     const other = ronInvoice("other", 10, [new ProductBuilder().withTotalPrice(10).build()]);
 
     const result = getClassificationGroupComparison(current, [current, other]);
 
-    expect(result.find((entry) => entry.category === "Food/Beverage")).toEqual({category: "Food/Beverage", current: 30, average: 0});
-    expect(result.find((entry) => entry.category === "unclassified")).toEqual({category: "unclassified", current: 20, average: 10});
+    expect(result.find((entry) => entry.category === 1014)).toEqual({category: 1014, current: 30, average: 0});
+    expect(result.find((entry) => entry.category === null)).toEqual({category: null, current: 20, average: 10});
   });
 });
 

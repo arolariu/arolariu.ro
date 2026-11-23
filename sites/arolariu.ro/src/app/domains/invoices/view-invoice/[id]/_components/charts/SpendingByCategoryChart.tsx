@@ -1,5 +1,6 @@
 "use client";
 
+import {productCategoryLabel} from "@/lib/categories/categoryLabels";
 import {
   Card,
   CardContent,
@@ -28,7 +29,7 @@ type LegendEntry = {
 };
 
 type TooltipPayloadItem = {
-  payload: {category: string; amount: number; count: number};
+  payload: {categoryLabel: string; amount: number; count: number};
 };
 
 type CustomTooltipProps = {
@@ -48,7 +49,7 @@ function CustomTooltip({active, payload, currency}: CustomTooltipProps): React.J
   const data = firstItem.payload;
   return (
     <div className={styles["tooltip"]}>
-      <p className={styles["tooltipCategory"]}>{data.category}</p>
+      <p className={styles["tooltipCategory"]}>{data.categoryLabel}</p>
       <p className={styles["tooltipAmount"]}>
         {data.amount.toFixed(2)} {currency}
       </p>
@@ -81,8 +82,8 @@ export function SpendingByCategoryChart({data, currency}: Props): React.JSX.Elem
   const t = useTranslations();
   const chartConfig: Record<string, {label: string; color: string}> = {};
   for (const [index, item] of data.entries()) {
-    chartConfig[item.category] = {
-      label: item.category,
+    chartConfig[String(item.category)] = {
+      label: productCategoryLabel(t, item.category),
       color: `var(--ac-chart-${(index % 5) + 1})`,
     };
   }
@@ -94,6 +95,7 @@ export function SpendingByCategoryChart({data, currency}: Props): React.JSX.Elem
 
   const coloredData = data.map((item, index) => ({
     ...item,
+    categoryLabel: productCategoryLabel(t, item.category),
     fill: `var(--ac-chart-${(index % 5) + 1})`,
   }));
 
@@ -116,7 +118,7 @@ export function SpendingByCategoryChart({data, currency}: Props): React.JSX.Elem
               <Pie
                 data={coloredData}
                 dataKey='amount'
-                nameKey='category'
+                nameKey='categoryLabel'
                 cx='50%'
                 cy='50%'
                 innerRadius={40}

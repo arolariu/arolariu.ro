@@ -950,7 +950,7 @@ describe("workspace characterization (pre-Effect migration)", () => {
         {
           id: "workspace.generators",
           status: "succeeded",
-          summary: "Nx metadata, pinned taxonomies, and generated checkout artifacts are ready.",
+          summary: "Nx metadata and generated checkout artifacts are ready.",
           evidence: ["Nx reported 1 project(s).", "Executed action: workspace.generators.generate", "Verified 2 generated artifact(s)."],
           nextActions: [],
           durationMs: 1,
@@ -1101,7 +1101,7 @@ describe("workspace characterization (pre-Effect migration)", () => {
       ],
       actionLines: [
         "stdout: [arolariu::setup] ℹ️ Planned setup action 'workspace.github-scripts-dependencies.npm-ci' (repository): Restore .github scripts dependencies from the lockfile.",
-        "stdout: [arolariu::setup] ℹ️ Planned setup action 'workspace.generators.generate' (repository): Verify pinned taxonomies and prepare Website licenses, GraphQL, and internationalization artifacts.",
+        "stdout: [arolariu::setup] ℹ️ Planned setup action 'workspace.generators.generate' (repository): Prepare Website licenses, GraphQL, and internationalization artifacts.",
       ],
       executed: [],
       commands: [

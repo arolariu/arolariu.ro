@@ -16,7 +16,6 @@ import {basename, relative, resolve} from "node:path";
 import {Effect, Result, Schema} from "effect";
 
 import type {RepositoryPaths} from "../common/repository-paths.ts";
-import {getExpectedTaxonomyArtifactPaths} from "../common/taxonomy-artifacts.ts";
 import type {ReadOnlyFiles} from "../platform/Files.ts";
 import type {Process} from "../platform/Process.ts";
 import {fileErrorCode, inspectPath, readText} from "./files.ts";
@@ -49,7 +48,7 @@ export interface ReactFacts {
   readonly environment: EnvironmentFacts;
   /** Deterministic issues comparing `en`, `ro`, and `fr` message dictionaries and their declaration. */
   readonly i18nIssues: readonly string[];
-  /** Deterministic issues for generated website taxonomy, license, and message artifacts. */
+  /** Deterministic issues for website category, license, and message inputs. */
   readonly artifactIssues: readonly string[];
   /** Installed Playwright browser inventory for the locked Playwright package version. */
   readonly playwright: Readonly<{version?: string; browsers: readonly string[]}>;
@@ -423,22 +422,6 @@ function inspectI18n(paths: RepositoryPaths): Effect.Effect<readonly string[], n
   });
 }
 
-function isValidTaxonomyMetadata(value: UnknownRecord): boolean {
-  const {system, version, sourceUrl, attribution, generatedAt} = value;
-  return (
-    typeof system === "string"
-    && system.trim() !== ""
-    && typeof version === "string"
-    && version.trim() !== ""
-    && typeof sourceUrl === "string"
-    && sourceUrl.trim() !== ""
-    && typeof attribution === "string"
-    && attribution.trim() !== ""
-    && typeof generatedAt === "string"
-    && !Number.isNaN(Date.parse(generatedAt))
-  );
-}
-
 function isValidLicenseEntry(entry: unknown): boolean {
   return (
     isRecord(entry)
@@ -454,18 +437,21 @@ function isValidLicenseEntry(entry: unknown): boolean {
 function inspectArtifacts(paths: RepositoryPaths): Effect.Effect<readonly string[], never, ReadOnlyFiles> {
   return Effect.gen(function* () {
     const issues: string[] = [];
-    const websiteTaxonomyDirectory = resolve(paths.websiteRoot, "src", "data", "taxonomies");
-    const taxonomyPaths = getExpectedTaxonomyArtifactPaths(paths.root).filter((path) => resolve(path, "..") === websiteTaxonomyDirectory);
-
-    for (const path of taxonomyPaths) {
-      const name = basename(path);
-      const outcome = yield* readJsonRecord(path);
-      if (outcome.kind === "missing") {
-        issues.push(`${name} is missing.`);
-      } else if (outcome.kind === "error") {
-        issues.push(`${name} could not be read or parsed.`);
-      } else if (!isValidTaxonomyMetadata(outcome.value)) {
-        issues.push(`${name} has missing or invalid required taxonomy metadata.`);
+    for (const name of ["products.json", "merchants.json", "invoices.json"]) {
+      const input = yield* Effect.result(readText(resolve(paths.websiteRoot, "src", "data", "categories", name)));
+      if (Result.isFailure(input)) {
+        issues.push(
+          fileErrorCode(input.failure) === "ENOENT"
+            ? `Category catalog ${name} is missing.`
+            : `Category catalog ${name} could not be read.`,
+        );
+        continue;
+      }
+      try {
+        const parsed: unknown = JSON.parse(input.success);
+        if (!Array.isArray(parsed) || parsed.length !== 100) issues.push(`Category catalog ${name} must have 100 entries.`);
+      } catch {
+        issues.push(`Category catalog ${name} is not valid JSON.`);
       }
     }
 

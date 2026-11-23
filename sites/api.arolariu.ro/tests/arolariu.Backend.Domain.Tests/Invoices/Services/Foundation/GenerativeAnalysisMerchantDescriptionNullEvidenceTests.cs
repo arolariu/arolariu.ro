@@ -37,7 +37,7 @@ public sealed class GenerativeAnalysisMerchantDescriptionNullEvidenceTests
     {
       Name = "Sparse Market",
       Description = string.Empty,
-      Classification = null,
+      Category = null,
       Address = null!,
       ReferencedInvoices = null!,
       AdditionalMetadata = null!,

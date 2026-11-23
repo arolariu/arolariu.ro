@@ -15,9 +15,9 @@ const EMPTY_KEY = "cards.invoices.statistics.productClassification.empty";
 const TOOLTIP_COUNT_KEY = "cards.invoices.statistics.productClassification.tooltip.productCount";
 
 const spending: ProductClassificationSpending[] = [
-  {category: "Food", totalSpent: 1234.5, productCount: 18, percentage: 61.234},
-  {category: "Household", totalSpent: 500, productCount: 6, percentage: 24.8},
-  {category: "Personal care", totalSpent: 280.25, productCount: 4, percentage: 13.966},
+  {category: 1014, totalSpent: 1234.5, productCount: 18, percentage: 61.234},
+  {category: 1071, totalSpent: 500, productCount: 6, percentage: 24.8},
+  {category: 1062, totalSpent: 280.25, productCount: 4, percentage: 13.966},
 ];
 
 /**
@@ -69,9 +69,9 @@ describe("ProductClassificationChart", () => {
     preferReducedMotion();
     const sixGroups: ProductClassificationSpending[] = [
       ...spending,
-      {category: "Electronics", totalSpent: 90, productCount: 1, percentage: 3},
-      {category: "Clothing", totalSpent: 60, productCount: 1, percentage: 2},
-      {category: "Garden", totalSpent: 30, productCount: 1, percentage: 1},
+      {category: 1080, totalSpent: 90, productCount: 1, percentage: 3},
+      {category: 1087, totalSpent: 60, productCount: 1, percentage: 2},
+      {category: 1096, totalSpent: 30, productCount: 1, percentage: 1},
     ];
 
     const {container} = render(
@@ -117,7 +117,7 @@ describe("ProductClassificationChart", () => {
     await hoverChart(container, {x: 300, y: 40});
 
     const tooltip = getTooltip();
-    expect(tooltip.textContent).toBe(`Food1,234.50 EUR61.2%${TOOLTIP_COUNT_KEY}`);
+    expect(tooltip.textContent).toBe(`categories.products.milk1,234.50 EUR61.2%${TOOLTIP_COUNT_KEY}`);
     expect(screen.queryByText("280.25 EUR")).not.toBeInTheDocument();
   });
 
@@ -132,7 +132,7 @@ describe("ProductClassificationChart", () => {
     await hoverChart(container, {x: 300, y: 330});
 
     const tooltip = getTooltip();
-    expect(tooltip.textContent).toBe(`Personal care280.25 EUR14.0%${TOOLTIP_COUNT_KEY}`);
+    expect(tooltip.textContent).toBe(`categories.products.skinCare280.25 EUR14.0%${TOOLTIP_COUNT_KEY}`);
     expect(screen.queryByText("1,234.50 EUR")).not.toBeInTheDocument();
   });
 });

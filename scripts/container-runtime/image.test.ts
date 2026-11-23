@@ -5,7 +5,7 @@
  *
  * @remarks
  * Every case runs on `makeTestLayer`: an in-memory filesystem seeded with the workspace manifests,
- * scripted preflight and engine processes, pinned taxonomy fixtures, and a recording sink.
+ * scripted preflight and engine processes, and a recording sink.
  * Frontend/backend builds run the real pinned snapshot verifier, not the publisher clients. The
  * characterization cases drive the real `containers build` CLI path (`runCli`); no module is mocked.
  */
@@ -17,21 +17,12 @@ import {describe, expect, it} from "vitest";
 
 import {makeRootCommand, runCli} from "../cli.ts";
 import {makeContainersCommand} from "../commands/containers/cli.ts";
-import {getExpectedTaxonomyArtifactPaths} from "../commands/generate/artifacts.ts";
-import {pinnedTaxonomyFixtureFiles} from "../common/taxonomy-fixtures.testing.ts";
 import type {ProbeOutcome} from "../inspection/probes.ts";
 import {Environment} from "../platform/Environment.ts";
 import {exitCodeFor} from "../platform/exit.ts";
-import {
-  effectTest,
-  makeTestLayer,
-  repositoryFixtureRoot,
-  scriptedOutcomes,
-  type ScriptedProcess,
-  type TestHarness,
-} from "../platform/testing.ts";
+import {effectTest, makeTestLayer, repositoryFixtureRoot, scriptedOutcomes, type TestHarness} from "../platform/testing.ts";
 import {getContainerAdapter} from "./adapters.ts";
-import {buildImageBuildCommand, buildImageRunCommand, runImage, shouldGenerateTaxonomyArtifacts} from "./image.ts";
+import {buildImageBuildCommand, buildImageRunCommand, runImage} from "./image.ts";
 
 /** Workspace manifests the engine selection and the artifact generation read. */
 const WORKSPACE_FILES: Readonly<Record<string, string>> = {
@@ -40,26 +31,6 @@ const WORKSPACE_FILES: Readonly<Record<string, string>> = {
   "sites/arolariu.ro/.env": "NEXT_PUBLIC_SERVICE_KEY=public-fixture\nRUNTIME_API_KEY=private-runtime-only\n",
   "sites/exp.arolariu.ro/config.docker.json": "{}",
 };
-
-/** Exact archive entry the GPC generator extracts. */
-const GPC_ENTRY = "GPC as of May 2026 (2026-05-20) EN.json";
-
-/** Valid English GPC source document. */
-const GPC_DOCUMENT = {
-  LanguageCode: "EN",
-  DateUtc: "2026-05-01",
-  Schema: [
-    {
-      Level: 1,
-      Code: 50000000,
-      Title: "Food",
-      Definition: null,
-      DefinitionExcludes: null,
-      Active: true,
-      Childs: [{Level: 4, Code: 10000266, Title: "Bread", Definition: null, DefinitionExcludes: null, Active: true, Childs: []}],
-    },
-  ],
-} as const;
 
 function succeeded(stdout = ""): ProbeOutcome {
   return {kind: "succeeded", exitCode: 0, stdout, stderr: "", durationMs: 0};
@@ -72,70 +43,18 @@ function exited(code: number): ProbeOutcome {
 /** One `succeeded` outcome per Podman preflight probe: tool, Docker Desktop rejection, backend x2, compose, existing containers. */
 const podmanPreflightOutcomes: readonly ProbeOutcome[] = [succeeded(), succeeded(), succeeded(), succeeded(), succeeded(), succeeded()];
 
-/** Harness filesystem the scripted `unzip` writes into; bound when a run starts. */
-interface ExtractionState {
-  fs?: FileSystem.FileSystem;
-}
-
-/**
- * Scripts `unzip`: writes the GPC entry into the requested directory.
- *
- * @param state - The bound harness filesystem.
- * @returns The scripted process.
- */
-function archiveExtraction(state: ExtractionState): ScriptedProcess {
-  return {
-    match: (request) => request.command === "unzip",
-    respond: (request) => {
-      const outputDirectory = request.args[request.args.indexOf("-d") + 1];
-      const fs = state.fs;
-      if (outputDirectory === undefined || fs === undefined) {
-        return Effect.die(new Error("The archive extraction fixture is not bound."));
-      }
-      return Effect.orDie(fs.writeFileString(join(outputDirectory, GPC_ENTRY), JSON.stringify(GPC_DOCUMENT))).pipe(
-        Effect.as({stdout: "", stderr: "", durationMs: 0}),
-      );
-    },
-  };
-}
-
-/** One image harness plus the extraction state it scripts. */
-interface ImageFixture {
-  readonly harness: TestHarness;
-  readonly extraction: ExtractionState;
-}
-
-/**
- * Builds a harness for one image run.
- *
- * @param outcomes - Scripted preflight and engine outcomes in call order (`unzip` is answered separately).
- * @param withPinnedTaxonomies - Whether to seed both tracked mirrors.
- * @returns The harness and its extraction state.
- */
-function imageFixture(outcomes: readonly ProbeOutcome[] = [], withPinnedTaxonomies = true): ImageFixture {
-  const extraction: ExtractionState = {};
+function imageFixture(outcomes: readonly ProbeOutcome[] = [], withWebsiteManifest = true): {readonly harness: TestHarness} {
   const queue = [...outcomes];
-  const harness = makeTestLayer({
-    context: "image",
-    environment: {platform: "linux"},
-    files: {...WORKSPACE_FILES, ...(withPinnedTaxonomies ? pinnedTaxonomyFixtureFiles(repositoryFixtureRoot) : {})},
-    processes: [archiveExtraction(extraction), scriptedOutcomes(() => queue.shift() ?? succeeded())],
-  });
-  return {harness, extraction};
-}
-
-/**
- * Binds the scripted extraction to the harness filesystem, then runs the effect.
- *
- * @param extraction - The extraction state.
- * @param effect - The effect to run.
- * @returns The effect with the extraction bound.
- */
-function bound<A, E, R>(extraction: ExtractionState, effect: Effect.Effect<A, E, R>): Effect.Effect<A, E, R | FileSystem.FileSystem> {
-  return Effect.gen(function* () {
-    extraction.fs = yield* FileSystem.FileSystem;
-    return yield* effect;
-  });
+  const files = {...WORKSPACE_FILES};
+  if (!withWebsiteManifest) delete files["sites/arolariu.ro/package.json"];
+  return {
+    harness: makeTestLayer({
+      context: "image",
+      environment: {platform: "linux"},
+      files,
+      processes: [scriptedOutcomes(() => queue.shift() ?? succeeded())],
+    }),
+  };
 }
 
 /** Projects every recorded process call into plain values, naming the temporary extraction paths. */
@@ -231,135 +150,109 @@ describe("buildImageRunCommand", () => {
   });
 });
 
-describe("shouldGenerateTaxonomyArtifacts", () => {
-  it.each([
-    ["frontend", true],
-    ["backend", true],
-    ["cv", false],
-    ["exp", false],
-  ] as const)("gates the artifact prerequisite for %s", (target, expected) => {
-    expect(shouldGenerateTaxonomyArtifacts(target)).toBe(expected);
-  });
-});
-
 describe("runImage", () => {
   {
-    const {harness, extraction} = imageFixture();
+    const {harness} = imageFixture();
     effectTest(
       "preserves quoted and padded dotenv values through the private process environment",
       () =>
-        bound(
-          extraction,
-          Effect.gen(function* () {
-            const fs = yield* FileSystem.FileSystem;
-            yield* fs.writeFileString(
-              join(repositoryFixtureRoot, "sites", "arolariu.ro", ".env"),
-              'RUNTIME_API_KEY="private=literal"\nNEXT_PUBLIC_SERVICE_KEY="public-padded=="\n',
-            );
+        Effect.gen(function* () {
+          const fs = yield* FileSystem.FileSystem;
+          yield* fs.writeFileString(
+            join(repositoryFixtureRoot, "sites", "arolariu.ro", ".env"),
+            'RUNTIME_API_KEY="private=literal"\nNEXT_PUBLIC_SERVICE_KEY="public-padded=="\n',
+          );
 
-            yield* runImage({action: "run", target: "frontend", engine: "podman"});
+          yield* runImage({action: "run", target: "frontend", engine: "podman"});
 
-            const call = harness.processCalls().at(-1);
-            expect(call?.options.env).toEqual({
-              RUNTIME_API_KEY: "private=literal",
-              NEXT_PUBLIC_SERVICE_KEY: "public-padded==",
-            });
-            expect(call?.request.args).toContain("RUNTIME_API_KEY");
-            expect(JSON.stringify(call?.request)).not.toContain("private=literal");
-            expect(JSON.stringify(harness.output())).not.toContain("private=literal");
-            expect(call?.request.args).not.toContain("--env-file");
-          }),
-        ),
+          const call = harness.processCalls().at(-1);
+          expect(call?.options.env).toEqual({
+            RUNTIME_API_KEY: "private=literal",
+            NEXT_PUBLIC_SERVICE_KEY: "public-padded==",
+          });
+          expect(call?.request.args).toContain("RUNTIME_API_KEY");
+          expect(JSON.stringify(call?.request)).not.toContain("private=literal");
+          expect(JSON.stringify(harness.output())).not.toContain("private=literal");
+          expect(call?.request.args).not.toContain("--env-file");
+        }),
       harness.layer,
     );
   }
 
   {
-    const {harness, extraction} = imageFixture();
+    const {harness} = imageFixture();
     effectTest(
       "rejects a missing explicitly selected feed policy before image build",
       () =>
-        bound(
-          extraction,
-          Effect.gen(function* () {
-            const snapshot = yield* Environment;
-            const result = yield* Effect.flip(
-              runImage({action: "build", target: "exp", engine: "podman"}).pipe(
-                Effect.provideService(Environment, {
-                  ...snapshot,
-                  variables: {...snapshot.variables, AROLARIU_CONTAINER_PIP_CONFIG: "/private/missing-pip.conf"},
-                }),
-              ),
-            );
-            expect(result._tag).toBe("ContainerRuntimeError");
-            expect(harness.processCalls().some(({request}) => request.args[0] === "build")).toBe(false);
-          }),
-        ),
+        Effect.gen(function* () {
+          const snapshot = yield* Environment;
+          const result = yield* Effect.flip(
+            runImage({action: "build", target: "exp", engine: "podman"}).pipe(
+              Effect.provideService(Environment, {
+                ...snapshot,
+                variables: {...snapshot.variables, AROLARIU_CONTAINER_PIP_CONFIG: "/private/missing-pip.conf"},
+              }),
+            ),
+          );
+          expect(result._tag).toBe("ContainerRuntimeError");
+          expect(harness.processCalls().some(({request}) => request.args[0] === "build")).toBe(false);
+        }),
       harness.layer,
     );
   }
 
   {
-    const {harness, extraction} = imageFixture();
+    const {harness} = imageFixture();
     effectTest(
       "rejects a directory substituted for private exp configuration",
       () =>
-        bound(
-          extraction,
-          Effect.gen(function* () {
-            const fs = yield* FileSystem.FileSystem;
-            const path = join(repositoryFixtureRoot, "sites", "exp.arolariu.ro", "config.docker.json");
-            yield* fs.remove(path);
-            yield* fs.makeDirectory(path);
+        Effect.gen(function* () {
+          const fs = yield* FileSystem.FileSystem;
+          const path = join(repositoryFixtureRoot, "sites", "exp.arolariu.ro", "config.docker.json");
+          yield* fs.remove(path);
+          yield* fs.makeDirectory(path);
 
-            const error = yield* Effect.flip(runImage({action: "run", target: "exp", engine: "podman"}));
+          const error = yield* Effect.flip(runImage({action: "run", target: "exp", engine: "podman"}));
 
-            expect(error._tag).toBe("ContainerRuntimeError");
-            expect(harness.processCalls().some(({request}) => request.args[0] === "run")).toBe(false);
-          }),
-        ),
+          expect(error._tag).toBe("ContainerRuntimeError");
+          expect(harness.processCalls().some(({request}) => request.args[0] === "run")).toBe(false);
+        }),
       harness.layer,
     );
   }
 
   {
-    const {harness, extraction} = imageFixture();
+    const {harness} = imageFixture();
     effectTest(
       "delivers provider-independent website build configuration only through a secret file",
       () =>
-        bound(
-          extraction,
-          Effect.gen(function* () {
-            yield* runImage({action: "build", target: "frontend", engine: "podman"});
+        Effect.gen(function* () {
+          yield* runImage({action: "build", target: "frontend", engine: "podman"});
 
-            const command = harness.processCalls().at(-1)?.request;
-            expect(command?.args).toContain(`id=website_env,src=${join(repositoryFixtureRoot, "sites", "arolariu.ro", ".env")}`);
-            expect(JSON.stringify(command)).not.toContain("public-fixture");
-            expect(JSON.stringify(harness.processCalls())).not.toContain("private-runtime-only");
-            expect(JSON.stringify(harness.output())).not.toContain("private-runtime-only");
-          }),
-        ),
+          const command = harness.processCalls().at(-1)?.request;
+          expect(command?.args).toContain(`id=website_env,src=${join(repositoryFixtureRoot, "sites", "arolariu.ro", ".env")}`);
+          expect(JSON.stringify(command)).not.toContain("public-fixture");
+          expect(JSON.stringify(harness.processCalls())).not.toContain("private-runtime-only");
+          expect(JSON.stringify(harness.output())).not.toContain("private-runtime-only");
+        }),
       harness.layer,
     );
   }
 
   {
-    const {harness, extraction} = imageFixture();
+    const {harness} = imageFixture();
     effectTest(
       "rejects missing private exp configuration before launching its image",
       () =>
-        bound(
-          extraction,
-          Effect.gen(function* () {
-            const fs = yield* FileSystem.FileSystem;
-            yield* fs.remove(join(repositoryFixtureRoot, "sites", "exp.arolariu.ro", "config.docker.json"));
+        Effect.gen(function* () {
+          const fs = yield* FileSystem.FileSystem;
+          yield* fs.remove(join(repositoryFixtureRoot, "sites", "exp.arolariu.ro", "config.docker.json"));
 
-            const error = yield* Effect.flip(runImage({action: "run", target: "exp", engine: "podman"}));
+          const error = yield* Effect.flip(runImage({action: "run", target: "exp", engine: "podman"}));
 
-            expect(error._tag).toBe("ContainerRuntimeError");
-            expect(harness.processCalls().some(({request}) => request.args[0] === "run")).toBe(false);
-          }),
-        ),
+          expect(error._tag).toBe("ContainerRuntimeError");
+          expect(harness.processCalls().some(({request}) => request.args[0] === "run")).toBe(false);
+        }),
       harness.layer,
     );
   }
@@ -370,190 +263,163 @@ describe("runImage", () => {
     ["cv", false],
     ["exp", false],
   ] as const) {
-    const {harness, extraction} = imageFixture([], target === "frontend" || target === "backend");
+    const {harness} = imageFixture();
     effectTest(
       `gates the artifact prerequisite for ${target} builds`,
       () =>
-        bound(
-          extraction,
-          Effect.gen(function* () {
-            // Act
-            const result = yield* runImage({action: "build", target, engine: "podman"});
+        Effect.gen(function* () {
+          // Act
+          const result = yield* runImage({action: "build", target, engine: "podman"});
 
-            // Assert
-            expect(result).toEqual({engine: "podman", action: "build", target});
-            expect(harness.processCalls().some((call) => call.request.command === "unzip")).toBe(false);
-            expect(harness.httpCalls()).toEqual([]);
-            const fs = yield* FileSystem.FileSystem;
-            expect(yield* fs.exists(join(repositoryFixtureRoot, "sites", "arolariu.ro", "licenses.json"))).toBe(hasLicenses);
-            expect(harness.processCalls().at(-1)?.request.args.slice(0, 3)).toEqual([
-              "build",
-              "-f",
-              `infra/containers/Dockerfile.${target}`,
-            ]);
-          }),
-        ),
+          // Assert
+          expect(result).toEqual({engine: "podman", action: "build", target});
+          expect(harness.processCalls().some((call) => call.request.command === "unzip")).toBe(false);
+          expect(harness.httpCalls()).toEqual([]);
+          const fs = yield* FileSystem.FileSystem;
+          expect(yield* fs.exists(join(repositoryFixtureRoot, "sites", "arolariu.ro", "licenses.json"))).toBe(hasLicenses);
+          expect(harness.processCalls().at(-1)?.request.args.slice(0, 3)).toEqual(["build", "-f", `infra/containers/Dockerfile.${target}`]);
+        }),
       harness.layer,
     );
   }
 
   {
-    const {harness, extraction} = imageFixture([...podmanPreflightOutcomes, succeeded("built\n")]);
+    const {harness} = imageFixture([...podmanPreflightOutcomes, succeeded("built\n")]);
     effectTest(
-      "validates the pinned snapshots silently after preflight and before the backend build",
+      "runs the backend build without publisher preparation after preflight",
       () =>
-        bound(
-          extraction,
-          Effect.gen(function* () {
-            // Act
-            yield* runImage({action: "build", target: "backend", engine: "podman"});
+        Effect.gen(function* () {
+          // Act
+          yield* runImage({action: "build", target: "backend", engine: "podman"});
 
-            // Assert
-            const commands = harness.processCalls().map((call) => `${call.request.command} ${call.request.args[0] ?? ""}`);
-            expect(commands).toEqual([
-              "podman --version",
-              "docker version",
-              "podman --version",
-              "podman compose",
-              "podman compose",
-              "podman ps",
-              "podman build",
-            ]);
-            const fs = yield* FileSystem.FileSystem;
-            const written = yield* Effect.forEach(getExpectedTaxonomyArtifactPaths(repositoryFixtureRoot), (path) => fs.exists(path));
-            expect(written.every(Boolean)).toBe(true);
-            expect(projectOutput(harness)).toEqual([
-              {
-                stream: "stdout",
-                text: "$ podman build -f infra/containers/Dockerfile.backend -t arolariu-backend --build-arg VERSION=local --format docker .",
-              },
-              {stream: "stdout", text: "built"},
-            ]);
-          }),
-        ),
+          // Assert
+          const commands = harness.processCalls().map((call) => `${call.request.command} ${call.request.args[0] ?? ""}`);
+          expect(commands).toEqual([
+            "podman --version",
+            "docker version",
+            "podman --version",
+            "podman compose",
+            "podman compose",
+            "podman ps",
+            "podman build",
+          ]);
+          expect(projectOutput(harness)).toEqual([
+            {
+              stream: "stdout",
+              text: "$ podman build -f infra/containers/Dockerfile.backend -t arolariu-backend --build-arg VERSION=local --format docker .",
+            },
+            {stream: "stdout", text: "built"},
+          ]);
+        }),
       harness.layer,
     );
   }
 
   {
-    const {harness, extraction} = imageFixture();
+    const {harness} = imageFixture();
     effectTest(
       "never generates artifacts for run actions",
       () =>
-        bound(
-          extraction,
-          Effect.gen(function* () {
-            // Act
-            const result = yield* runImage({action: "run", target: "frontend", engine: "podman"});
+        Effect.gen(function* () {
+          // Act
+          const result = yield* runImage({action: "run", target: "frontend", engine: "podman"});
 
-            // Assert
-            expect(result).toEqual({engine: "podman", action: "run", target: "frontend"});
-            expect(harness.httpCalls()).toHaveLength(0);
-            expect(harness.processCalls().map((call) => call.request.command)).not.toContain("unzip");
-          }),
-        ),
+          // Assert
+          expect(result).toEqual({engine: "podman", action: "run", target: "frontend"});
+          expect(harness.httpCalls()).toHaveLength(0);
+          expect(harness.processCalls().map((call) => call.request.command)).not.toContain("unzip");
+        }),
       harness.layer,
     );
   }
 
   {
-    const {harness, extraction} = imageFixture();
+    const {harness} = imageFixture();
     effectTest(
       "runs the exact engine-owned run command with tee output",
       () =>
-        bound(
-          extraction,
-          Effect.gen(function* () {
-            // Act
-            yield* runImage({action: "run", target: "exp", engine: "podman"});
+        Effect.gen(function* () {
+          // Act
+          yield* runImage({action: "run", target: "exp", engine: "podman"});
 
-            // Assert
-            expect(harness.processCalls().at(-1)).toEqual({
-              request: {
-                command: "podman",
-                args: [
-                  "run",
-                  "--rm",
-                  "-p",
-                  "5002:8080",
-                  "--mount",
-                  `type=bind,source=${join(repositoryFixtureRoot, "sites", "exp.arolariu.ro", "config.docker.json")},target=/app/config.docker.json,readonly`,
-                  "-e",
-                  "INFRA=local",
-                  "-e",
-                  "EXP_LOCAL_CONFIG_PATH=/app/config.docker.json",
-                  "arolariu-exp",
-                ],
-              },
-              options: {output: "tee", echo: false},
-            });
-          }),
-        ),
+          // Assert
+          expect(harness.processCalls().at(-1)).toEqual({
+            request: {
+              command: "podman",
+              args: [
+                "run",
+                "--rm",
+                "-p",
+                "5002:8080",
+                "--mount",
+                `type=bind,source=${join(repositoryFixtureRoot, "sites", "exp.arolariu.ro", "config.docker.json")},target=/app/config.docker.json,readonly`,
+                "-e",
+                "INFRA=local",
+                "-e",
+                "EXP_LOCAL_CONFIG_PATH=/app/config.docker.json",
+                "arolariu-exp",
+              ],
+            },
+            options: {output: "tee", echo: false},
+          });
+        }),
       harness.layer,
     );
   }
 
   {
-    const {harness, extraction} = imageFixture([...podmanPreflightOutcomes, exited(1)]);
+    const {harness} = imageFixture([...podmanPreflightOutcomes, exited(1)]);
     effectTest(
       "fails with ProcessExited when the build exits with a nonzero code",
       () =>
-        bound(
-          extraction,
-          Effect.gen(function* () {
-            // Act
-            const error = yield* Effect.flip(runImage({action: "build", target: "cv", engine: "podman"}));
+        Effect.gen(function* () {
+          // Act
+          const error = yield* Effect.flip(runImage({action: "build", target: "cv", engine: "podman"}));
 
-            // Assert
-            expect(error._tag).toBe("ProcessExited");
-          }),
-        ),
+          // Assert
+          expect(error._tag).toBe("ProcessExited");
+        }),
       harness.layer,
     );
   }
 
   {
-    const {harness, extraction} = imageFixture([], false);
+    const {harness} = imageFixture([], false);
     effectTest(
-      "does not build or write licenses when a pinned snapshot is missing",
+      "does not build when the frontend dependency manifest is missing",
       () =>
-        bound(
-          extraction,
-          Effect.gen(function* () {
-            // Act
-            const error = yield* Effect.flip(runImage({action: "build", target: "frontend", engine: "podman"}));
+        Effect.gen(function* () {
+          // Act
+          const error = yield* Effect.flip(runImage({action: "build", target: "frontend", engine: "podman"}));
 
-            // Assert
-            expect(error._tag).toBe("ArtifactGenerationFailed");
-            const fs = yield* FileSystem.FileSystem;
-            expect(yield* fs.exists(join(repositoryFixtureRoot, "sites", "arolariu.ro", "licenses.json"))).toBe(false);
-            const engineCalls = harness
-              .processCalls()
-              .filter((call) => call.request.command === "podman" && call.request.args[0] === "build");
-            expect(engineCalls).toEqual([]);
-            expect(harness.processCalls().map((call) => call.request.command)).toEqual([
-              "podman",
-              "docker",
-              "podman",
-              "podman",
-              "podman",
-              "podman",
-            ]);
-            expect(harness.httpCalls()).toEqual([]);
-          }),
-        ),
+          // Assert
+          expect(error._tag).toBe("ArtifactGenerationFailed");
+          const fs = yield* FileSystem.FileSystem;
+          expect(yield* fs.exists(join(repositoryFixtureRoot, "sites", "arolariu.ro", "licenses.json"))).toBe(false);
+          const engineCalls = harness
+            .processCalls()
+            .filter((call) => call.request.command === "podman" && call.request.args[0] === "build");
+          expect(engineCalls).toEqual([]);
+          expect(harness.processCalls().map((call) => call.request.command)).toEqual([
+            "podman",
+            "docker",
+            "podman",
+            "podman",
+            "podman",
+            "podman",
+          ]);
+          expect(harness.httpCalls()).toEqual([]);
+        }),
       harness.layer,
     );
   }
 
   {
-    const extraction: ExtractionState = {};
     const preflight = [...podmanPreflightOutcomes];
     const harness = makeTestLayer({
       files: WORKSPACE_FILES,
       processes: [
         {match: (request) => request.args[0] === "run", respond: () => Effect.never},
-        archiveExtraction(extraction),
         scriptedOutcomes(() => preflight.shift() ?? succeeded()),
       ],
     });
@@ -598,12 +464,10 @@ async function characterizeImageBuild(
   outcomes: readonly ProbeOutcome[],
   json = false,
 ): Promise<unknown> {
-  const {harness, extraction} = imageFixture(outcomes);
+  const {harness} = imageFixture(outcomes);
   const argv = ["containers", "build", "--target", target, "--engine", engine, ...(json ? ["--json"] : [])];
 
-  const exit = await Effect.runPromiseExit(
-    bound(extraction, runCli(argv, makeRootCommand([makeContainersCommand()]))).pipe(Effect.provide(harness.layer)),
-  );
+  const exit = await Effect.runPromiseExit(runCli(argv, makeRootCommand([makeContainersCommand()])).pipe(Effect.provide(harness.layer)));
 
   return {
     exitCode: exitCodeFor(exit, undefined),

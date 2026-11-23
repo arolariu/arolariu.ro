@@ -131,7 +131,7 @@ public static partial class InvoiceEndpoints
   [SwaggerOperation(
     Summary = "Updates a specific invoice in the system.",
     Description = "This endpoint updates an existing invoice in the Invoice Management System by replacing it entirely with the provided payload. " +
-    "The operation validates the new invoice data and resolves any supplied ClassificationCode against ECOICOP v2. " +
+    "The operation validates the new invoice data and validates any supplied invoice category. " +
     "If the invoice exists and the user has permission, the update is performed.",
     OperationId = nameof(UpdateSpecificInvoiceAsync),
     Tags = [EndpointNameTag])]
@@ -164,7 +164,7 @@ public static partial class InvoiceEndpoints
   [SwaggerOperation(
     Summary = "Patches a specific invoice in the system.",
     Description = "This endpoint applies partial updates to an existing invoice in the Invoice Management System. " +
-    "It allows modifying specific fields without replacing the entire resource and resolves any supplied ClassificationCode against ECOICOP v2. " +
+    "It allows modifying specific fields without replacing the entire resource and validates any supplied invoice category. " +
     "The operation validates the partial data and applies the changes if the invoice exists and the user is authorized.",
     OperationId = nameof(PatchSpecificInvoiceAsync),
     Tags = [EndpointNameTag])]
@@ -258,7 +258,7 @@ public static partial class InvoiceEndpoints
   [SwaggerOperation(
     Summary = "Adds a product to a specific invoice in the system.",
     Description = "This endpoint adds a new product to an existing invoice in the Invoice Management System. " +
-    "The operation validates the product data, resolves any supplied ClassificationCode against GS1 GPC, and checks if the invoice exists. " +
+    "The operation validates the product data, validates any supplied product category, and checks if the invoice exists. " +
     "If successful, the product is appended to the invoice's product list.",
     OperationId = nameof(AddProductToInvoiceAsync),
     Tags = [EndpointNameTag])]
@@ -360,9 +360,9 @@ public static partial class InvoiceEndpoints
   /// <returns>A task representing the asynchronous operation, indicating the result of the update.</returns>
   [SwaggerOperation(
     Summary = "Updates a product in a specific invoice in the system.",
-    Description = "This endpoint updates the details of a specific product within an invoice. " +
-    "It identifies the product by name and composes the Management get, delete, and add operations in that order. " +
-    "The operation validates the new product data, resolves any supplied ClassificationCode against GS1 GPC, and ensures the product exists in the invoice.",
+    Description = "Selects the product by its exact, case-insensitive original name. " +
+    "Supplying category alone changes only that field; null clears it. A full edit without category preserves the current category. " +
+    "When category is supplied, a unique match is required and the invoice is replaced once against the observed version.",
     OperationId = nameof(UpdateProductInInvoiceAsync),
     Tags = [EndpointNameTag])]
   [SwaggerResponse(StatusCodes.Status202Accepted, "The product was successfully updated in the invoice.", typeof(ProductResponseDto))]
@@ -370,7 +370,7 @@ public static partial class InvoiceEndpoints
   [SwaggerResponse(StatusCodes.Status401Unauthorized, "The user is not authorized to perform this operation.", typeof(ProblemDetails))]
   [SwaggerResponse(StatusCodes.Status403Forbidden, "The user is not authenticated. Please provide valid credentials.", typeof(ProblemDetails))]
   [SwaggerResponse(StatusCodes.Status404NotFound, "The invoice or the product was not found.", typeof(ProblemDetails))]
-  [SwaggerResponse(StatusCodes.Status409Conflict, "The product is not associated with the invoice.", typeof(ProblemDetails))]
+  [SwaggerResponse(StatusCodes.Status409Conflict, "The invoice changed during the update. Refresh it before trying again.", typeof(ProblemDetails))]
   [SwaggerResponse(StatusCodes.Status413PayloadTooLarge, "The request payload exceeds the maximum allowed size (1MB).", typeof(ProblemDetails))]
   [SwaggerResponse(StatusCodes.Status429TooManyRequests, "The user has exceeded the rate limit. Please try again later.", typeof(ProblemDetails))]
   [SwaggerResponse(StatusCodes.Status500InternalServerError, "An internal server error occurred while processing the request.", typeof(ProblemDetails))]
@@ -429,7 +429,7 @@ public static partial class InvoiceEndpoints
   [SwaggerOperation(
     Summary = "Adds a merchant to an invoice in the system.",
     Description = "This endpoint associates a merchant with a specific invoice in the Invoice Management System. " +
-    "It validates the merchant data, resolves the required ClassificationCode against NACE 2.1, and checks if the invoice exists. " +
+    "It validates the merchant data, requires a valid merchant category, and checks if the invoice exists. " +
     "If successful, the merchant is linked to the invoice.",
     OperationId = nameof(AddMerchantToInvoiceAsync),
     Tags = [EndpointNameTag])]
@@ -800,7 +800,7 @@ public static partial class InvoiceEndpoints
   [SwaggerOperation(
     Summary = "Updates a specific merchant in the system.",
     Description = "This endpoint updates a specific merchant in the Invoice Management System. " +
-    "It validates the updated merchant data, resolves any supplied ClassificationCode against NACE 2.1, and ensures the merchant exists. " +
+    "It validates the updated merchant data, validates any supplied merchant category, and ensures the merchant exists. " +
     "If successful, the merchant is updated.",
     OperationId = nameof(UpdateSpecificMerchantAsync),
     Tags = [EndpointNameTag])]

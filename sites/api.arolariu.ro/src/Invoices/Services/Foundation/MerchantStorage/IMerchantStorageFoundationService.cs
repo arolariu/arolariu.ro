@@ -101,7 +101,14 @@ public interface IMerchantStorageFoundationService
   /// <param name="cancellationToken">Cancellation token to abort the operation (required).</param>
   /// <returns>Updated merchant.</returns>
   /// <exception cref="OperationCanceledException">Thrown if the operation is cancelled.</exception>
-  Task<Merchant> UpdateMerchantObject(Merchant updatedMerchant, Guid merchantIdentifier, Guid? parentCompanyId, CancellationToken cancellationToken);
+  /// <param name="fields">The explicitly supplied editable fields.</param>
+  Task<Merchant> UpdateMerchantObject(Merchant updatedMerchant, Guid merchantIdentifier, Guid? parentCompanyId, CancellationToken cancellationToken, MerchantUpdateFields fields = MerchantUpdateFields.Details);
+
+  /// <summary>Reads a merchant and its opaque version from its resolved partition.</summary>
+  Task<(Merchant Resource, string ETag)> ReadMerchantSnapshotAsync(Guid merchantId, Guid parentCompanyId, CancellationToken cancellationToken);
+
+  /// <summary>Validates and conditionally replaces an existing merchant.</summary>
+  Task<bool> TryReplaceMerchantSnapshotAsync(Merchant merchant, string expectedETag, CancellationToken cancellationToken);
   #endregion
 
   #region Delete Merchant Object API

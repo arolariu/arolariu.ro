@@ -98,7 +98,7 @@ public sealed partial class InvoiceManagementService : IInvoiceManagementService
   /// <param name="cancellationToken">The token used to cancel the operation.</param>
   /// <returns>The persisted invoice aggregate.</returns>
   /// <exception cref="arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices.Exceptions.Outer.Management.InvoiceManagementValidationException">
-  /// Thrown when replacement input or a manual classification code is invalid.
+  /// Thrown when replacement input or a category is invalid.
   /// </exception>
   /// <exception cref="arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices.Exceptions.Outer.Management.InvoiceManagementDependencyException">
   /// Thrown when a downstream classification or persistence dependency fails.
@@ -152,7 +152,6 @@ public sealed partial class InvoiceManagementService : IInvoiceManagementService
   /// <param name="product">The product line to add.</param>
   /// <param name="invoiceIdentifier">The target invoice identifier.</param>
   /// <param name="userIdentifier">The optional owning user partition.</param>
-  /// <param name="classificationCode">The optional GS1 GPC code to resolve canonically.</param>
   /// <param name="cancellationToken">The token used to cancel the operation.</param>
   /// <returns>A task that completes after persistence.</returns>
   /// <exception cref="arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices.Exceptions.Outer.Management.InvoiceManagementValidationException">
@@ -163,13 +162,12 @@ public sealed partial class InvoiceManagementService : IInvoiceManagementService
     Guid invoiceIdentifier,
     Guid? userIdentifier,
     Product product,
-    string? classificationCode,
     CancellationToken cancellationToken) =>
     await TryCatchAsync(async () =>
     {
       using var activity = InvoicePackageTracing.StartActivity(nameof(AddProduct));
       await invoiceProcessingService
-        .AddProduct(invoiceIdentifier, userIdentifier, product, classificationCode, cancellationToken)
+        .AddProduct(invoiceIdentifier, userIdentifier, product, cancellationToken)
         .ConfigureAwait(false);
     }).ConfigureAwait(false);
 
@@ -187,6 +185,16 @@ public sealed partial class InvoiceManagementService : IInvoiceManagementService
     {
       using var activity = InvoicePackageTracing.StartActivity(nameof(GetProducts));
       return await invoiceProcessingService.GetProducts(invoiceIdentifier, userIdentifier, cancellationToken).ConfigureAwait(false);
+    }).ConfigureAwait(false);
+
+  /// <inheritdoc/>
+  public async Task<Product> UpdateProductWithCategory(
+    Guid invoiceIdentifier, Guid userIdentifier, UpdateProductRequestDto request, CancellationToken cancellationToken) =>
+    await TryCatchAsync(async () =>
+    {
+      using var activity = InvoicePackageTracing.StartActivity(nameof(UpdateProductWithCategory));
+      return await invoiceProcessingService.UpdateProductWithCategory(invoiceIdentifier, userIdentifier, request, cancellationToken)
+        .ConfigureAwait(false);
     }).ConfigureAwait(false);
 
   /// <summary>Returns the first product whose name contains the supplied text.</summary>
@@ -370,7 +378,6 @@ public sealed partial class InvoiceManagementService : IInvoiceManagementService
   /// <summary>Creates a merchant through the unified Processing boundary.</summary>
   /// <param name="merchant">The merchant entity to persist.</param>
   /// <param name="parentCompanyId">The optional parent-company partition.</param>
-  /// <param name="classificationCode">The optional NACE 2.1 code to resolve canonically.</param>
   /// <param name="cancellationToken">The token used to cancel the operation.</param>
   /// <returns>A task that completes after persistence.</returns>
   /// <exception cref="arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices.Exceptions.Outer.Management.InvoiceManagementValidationException">
@@ -380,13 +387,12 @@ public sealed partial class InvoiceManagementService : IInvoiceManagementService
   public async Task CreateMerchant(
     Merchant merchant,
     Guid? parentCompanyId,
-    string? classificationCode,
     CancellationToken cancellationToken) =>
     await TryCatchAsync(async () =>
     {
       using var activity = InvoicePackageTracing.StartActivity(nameof(CreateMerchant));
       await invoiceProcessingService
-        .CreateMerchant(merchant, parentCompanyId, classificationCode, cancellationToken)
+        .CreateMerchant(merchant, parentCompanyId, cancellationToken)
         .ConfigureAwait(false);
     }).ConfigureAwait(false);
 
@@ -442,27 +448,27 @@ public sealed partial class InvoiceManagementService : IInvoiceManagementService
   /// <param name="updatedMerchant">The replacement merchant fields.</param>
   /// <param name="identifier">The persisted merchant identifier.</param>
   /// <param name="parentCompanyId">The optional parent-company partition.</param>
-  /// <param name="classificationCode">The optional NACE 2.1 code to resolve canonically.</param>
+  /// <param name="fields">The details and category fields to update.</param>
   /// <param name="cancellationToken">The token used to cancel the operation.</param>
   /// <returns>The persisted merchant entity.</returns>
   /// <exception cref="arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices.Exceptions.Outer.Management.InvoiceManagementValidationException">
-  /// Thrown when replacement input or a manual classification code is invalid.
+  /// Thrown when replacement input or a category is invalid.
   /// </exception>
   /// <exception cref="arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices.Exceptions.Outer.Management.InvoiceManagementDependencyException">
-  /// Thrown when classification or merchant persistence fails.
+  /// Thrown when merchant persistence fails.
   /// </exception>
   /// <inheritdoc/>
   public async Task<Merchant> UpdateMerchant(
     Guid identifier,
     Guid? parentCompanyId,
     Merchant updatedMerchant,
-    string? classificationCode,
+    MerchantUpdateFields fields,
     CancellationToken cancellationToken) =>
     await TryCatchAsync(async () =>
     {
       using var activity = InvoicePackageTracing.StartActivity(nameof(UpdateMerchant));
       return await invoiceProcessingService
-        .UpdateMerchant(identifier, parentCompanyId, updatedMerchant, classificationCode, cancellationToken)
+        .UpdateMerchant(identifier, parentCompanyId, updatedMerchant, fields, cancellationToken)
         .ConfigureAwait(false);
     }).ConfigureAwait(false);
 

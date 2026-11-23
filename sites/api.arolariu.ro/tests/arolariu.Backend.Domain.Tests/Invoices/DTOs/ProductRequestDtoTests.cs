@@ -6,6 +6,7 @@ using System.Linq;
 using System.Reflection;
 
 using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Allergens;
+using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Categories;
 using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Products;
 using arolariu.Backend.Domain.Invoices.DTOs.Requests;
 using arolariu.Backend.Domain.Tests.Builders;
@@ -23,7 +24,7 @@ public sealed class ProductRequestDtoTests
     AllergenAssessment assessment = AllergenAssessment.NoSignals();
     var request = new CreateProductRequestDto(
       "Milk",
-      ClassificationCode: " 10000025 ",
+      Category: ProductCategory.FreshFruit,
       Quantity: 1m,
       QuantityUnit: "pcs",
       ProductCode: null,
@@ -33,7 +34,7 @@ public sealed class ProductRequestDtoTests
     Product product = request.ToProduct();
 
     Assert.AreSame(assessment, product.AllergenAssessment);
-    Assert.IsNull(product.Classification);
+    Assert.AreEqual(ProductCategory.FreshFruit, product.Category);
   }
 
   /// <summary>Verifies update mapping carries client data and preserves server-owned product state.</summary>
@@ -44,7 +45,6 @@ public sealed class ProductRequestDtoTests
     var request = new UpdateProductRequestDto(
       "Old milk",
       "Milk",
-      ClassificationCode: null,
       Quantity: 1m,
       QuantityUnit: "pcs",
       ProductCode: null,
@@ -53,32 +53,32 @@ public sealed class ProductRequestDtoTests
 
     var persistedProduct = new Product
     {
-      Classification = ClassificationTestData.Gpc("10000025", "Milk"),
+      Category = ProductCategory.Milk,
       Metadata = new ProductMetadata { IsComplete = true },
     };
     Product product = request.ToProduct(persistedProduct);
 
     Assert.AreSame(assessment, product.AllergenAssessment);
-    Assert.AreSame(persistedProduct.Classification, product.Classification);
+    Assert.AreEqual(persistedProduct.Category, product.Category);
     Assert.IsTrue(product.Metadata.IsEdited);
     Assert.IsTrue(product.Metadata.IsComplete);
     Assert.IsFalse(persistedProduct.Metadata.IsEdited);
   }
 
-  /// <summary>Verifies product mapping leaves classification resolution to Processing.</summary>
+  /// <summary>Verifies product creation can leave the category unset.</summary>
   [TestMethod]
-  public void CreateProductRequestDto_WhitespaceClassificationCode_DoesNotCreateClassification()
+  public void CreateProductRequestDto_NullCategory_LeavesCategoryUnset()
   {
     var request = new CreateProductRequestDto(
       "Milk",
-      ClassificationCode: " ",
+      Category: null,
       Quantity: 1m,
       QuantityUnit: "pcs",
       ProductCode: null,
       Price: 8m,
       AllergenAssessment: null);
 
-    Assert.IsNull(request.ToProduct().Classification);
+    Assert.IsNull(request.ToProduct().Category);
   }
 
   /// <summary>Verifies quantity and price are non-nullable required contract values.</summary>
@@ -87,8 +87,6 @@ public sealed class ProductRequestDtoTests
   {
     AssertRequiredDecimal<CreateProductRequestDto>(nameof(CreateProductRequestDto.Quantity));
     AssertRequiredDecimal<CreateProductRequestDto>(nameof(CreateProductRequestDto.Price));
-    AssertRequiredDecimal<UpdateProductRequestDto>(nameof(UpdateProductRequestDto.Quantity));
-    AssertRequiredDecimal<UpdateProductRequestDto>(nameof(UpdateProductRequestDto.Price));
   }
 
   private static void AssertRequiredDecimal<TRequest>(string propertyName)

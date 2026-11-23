@@ -54,25 +54,7 @@ export {
   type AllergenSignal,
 } from "./Allergen";
 
-/** Canonical taxonomy classification contracts and runtime guards. */
-export {
-  ClassificationOrigin,
-  ClassificationSystem,
-  isClassificationOrigin,
-  isClassificationSystem,
-  isSearchClassificationsInput,
-  isTaxonomyArtifact,
-  normalizeClassificationSearchQuery,
-  resolveClassificationCodeForWrite,
-  type ClassificationEvidence,
-  type ClassificationNode,
-  type ClassificationSearchResult,
-  type ClassificationSelection,
-  type SearchClassificationsInput,
-  type StandardClassification,
-  type TaxonomyArtifact,
-  type TaxonomyArtifactNode,
-} from "./Classification";
+export {InvoiceCategory, MerchantCategory, ProductCategory} from "./Category";
 
 /**
  * Invoice aggregate root and related types.
@@ -193,6 +175,5 @@ export {
   parseMerchantResponse,
   parseMerchantsResponse,
   parseProductResponse,
-  parseStandardClassification,
   tryParse,
 } from "./transport";

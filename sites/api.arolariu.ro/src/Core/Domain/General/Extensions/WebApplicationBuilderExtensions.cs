@@ -331,8 +331,7 @@ internal static class WebApplicationBuilderExtensions
           .AllowAnyHeader()));
 
     services.AddLocalization();
-    services.AddOpenApi();
-    services.AddSwaggerGen(SwaggerConfigurationService.GetSwaggerGenOptions());
+    SwaggerConfigurationService.AddApiDocumentation(services);
     services.AddHealthChecks();
     services.AddRateLimitingPolicies();
 

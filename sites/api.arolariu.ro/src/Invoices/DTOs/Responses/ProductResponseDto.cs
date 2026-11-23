@@ -6,7 +6,7 @@ using System.Text.Json.Serialization;
 
 using arolariu.Backend.Domain.Invoices.DDD.ValueObjects;
 using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Allergens;
-using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Classifications;
+using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Categories;
 using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Products;
 
 /// <summary>
@@ -39,10 +39,7 @@ using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Products;
 /// The name of the product as extracted from the invoice via OCR.
 /// Used for display, aggregation, allergen inference heuristics and recipe matching.
 /// </param>
-/// <param name="Classification">
-/// The standardised GPC classification assigned to this line item.
-/// Null when the line item has not been classified yet.
-/// </param>
+/// <param name="Category">The selected product category, or null if uncategorized.</param>
 /// <param name="Quantity">
 /// The quantity of product units purchased. Non-negative; zero may represent
 /// incomplete receipt extraction. Decimal supports fractional quantities (e.g., 1.5 kg of produce).
@@ -87,13 +84,12 @@ using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Products;
 /// </code>
 /// </example>
 /// <seealso cref="Product"/>
-/// <seealso cref="StandardClassification"/>
 /// <seealso cref="AllergenAssessment"/>
 [Serializable]
 [ExcludeFromCodeCoverage]
 public readonly record struct ProductResponseDto(
   [property: JsonPropertyName("name")] string Name,
-  [property: JsonPropertyName("classification")] StandardClassificationResponseDto? Classification,
+  [property: JsonPropertyName("category"), JsonIgnore(Condition = JsonIgnoreCondition.Never)] ProductCategory? Category,
   [property: JsonPropertyName("quantity")] decimal Quantity,
   [property: JsonPropertyName("quantityUnit")] string QuantityUnit,
   [property: JsonPropertyName("productCode")] string ProductCode,
@@ -133,7 +129,7 @@ public readonly record struct ProductResponseDto(
     ArgumentNullException.ThrowIfNull(product);
     return new(
       Name: product.Name,
-      Classification: StandardClassificationResponseDto.FromStandardClassification(product.Classification),
+      Category: product.Category,
       Quantity: product.Quantity,
       QuantityUnit: product.QuantityUnit,
       ProductCode: product.ProductCode,

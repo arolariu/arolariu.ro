@@ -1,5 +1,5 @@
 import {generateRandomMerchant, InvoiceBuilder, ProductBuilder} from "@/data/mocks";
-import {ClassificationOrigin, ClassificationSystem, type Invoice, type StandardClassification} from "@/types/invoices";
+import {ProductCategory, type Invoice} from "@/types/invoices";
 import type {Decorator, Meta, StoryObj} from "@storybook/react";
 import {InvoiceContextProvider} from "../../../../../../../../../.storybook/providers";
 import {HomeInventoryCard} from "./HomeInventoryCard";
@@ -13,17 +13,8 @@ import {HomeInventoryCard} from "./HomeInventoryCard";
  */
 const mockMerchant = generateRandomMerchant();
 
-/** GS1 GPC classification for the cleaning/hygiene segment, matching the component's own detection logic. */
-const cleaningHygieneClassification: StandardClassification = {
-  system: ClassificationSystem.Gs1Gpc,
-  code: "10000230",
-  version: "2025.1",
-  officialLabel: "Household Cleaning Products",
-  hierarchy: [{level: "segment", code: "47000000", officialLabel: "Cleaning/Hygiene Products"}],
-  origin: ClassificationOrigin.Analysis,
-  confidence: 0.92,
-  evidence: [],
-};
+/** Flat household-cleaning category, matching the component's own detection logic. */
+const cleaningCategory = ProductCategory.HouseholdCleaners;
 
 function withInvoice(invoice: Invoice): Decorator {
   return (Story) => (
@@ -52,8 +43,8 @@ export const WithSupplies: Story = {
     withInvoice(
       new InvoiceBuilder()
         .withItems([
-          new ProductBuilder().withName("Laundry Detergent").withClassification(cleaningHygieneClassification).build(),
-          new ProductBuilder().withName("Dish Soap").withClassification(cleaningHygieneClassification).build(),
+          new ProductBuilder().withName("Laundry Detergent").withCategory(cleaningCategory).build(),
+          new ProductBuilder().withName("Dish Soap").withCategory(cleaningCategory).build(),
         ])
         .build(),
     ),

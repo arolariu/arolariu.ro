@@ -15,7 +15,6 @@ import {Effect} from "effect";
 import {describe, expect, it} from "vitest";
 
 import {makeRootCommand, runCli} from "../../cli.ts";
-import {pinnedTaxonomyFixtureFiles} from "../../common/taxonomy-fixtures.testing.ts";
 import {exitCodeFor, type CommandExitCode} from "../../platform/exit.ts";
 import type {SinkRecord} from "../../platform/Output.ts";
 import {makeTestLayer, repositoryFixtureRoot, type TestHarness, type TestLayerOptions} from "../../platform/testing.ts";
@@ -54,46 +53,9 @@ async function run(argv: readonly string[], options: TestLayerOptions = {}): Pro
 }
 
 describe("generate command", () => {
-  it.each([
-    ["--check-taxonomies", "--refresh-taxonomies", "--output-dir", "candidate"],
-    ["--check-taxonomies", "artifacts"],
-    ["--refresh-taxonomies", "--output-dir", "candidate", "--website-licenses-only"],
-    ["--refresh-taxonomies"],
-    ["--output-dir", "candidate"],
-  ])("rejects incompatible or incomplete taxonomy options (%j)", async (...options) => {
-    const result = await run(["generate", ...options]);
-
+  it.each(["--check-taxonomies", "--refresh-taxonomies", "--output-dir"])("rejects the removed option %s", async (option) => {
+    const result = await run(["generate", option]);
     expect(result.code).toBe(2);
-    expect(result.texts.join("\n")).toMatch(/cannot be combined|requires|only valid with/u);
-  });
-
-  it.each([
-    ["1969-07-02T00:00:00.000Z", "Fresh", "", "🟢"],
-    ["1969-07-01T00:00:00.000Z", "Review due", "\u001b[33m", "🟡"],
-    ["1969-01-01T00:00:00.000Z", "Refresh overdue", "\u001b[31m", "🔴"],
-    ["1970-01-02T00:00:00.000Z", "Unknown age", "", "⚪"],
-  ] as const)("checks age %s without failing CI", async (generatedAt, label, color, marker) => {
-    const files = pinnedTaxonomyFixtureFiles(repositoryFixtureRoot, generatedAt);
-    const summary = join(repositoryFixtureRoot, "summary.md");
-
-    const result = await run(["generate", "--check-taxonomies"], {
-      files,
-      environment: {isCI: true, variables: {GITHUB_ACTIONS: "true", GITHUB_STEP_SUMMARY: summary}},
-    });
-
-    expect(result.code).toBe(0);
-    expect(result.texts.filter((line) => line.startsWith("::warning::"))).toHaveLength(label === "Fresh" ? 0 : 3);
-    expect(result.texts.join("\n")).toContain(`${color}${label}`);
-    const summaryFile = [...result.files()].find(([path]) => path.endsWith("summary.md"));
-    expect(summaryFile?.[1]).toContain(`| NACE_2_1 2.1 | ${generatedAt} | ${marker} ${label} |`);
-    if (label === "Refresh overdue") expect(result.texts.join("\n")).not.toContain("Review due");
-  });
-
-  it("fails integrity separately from age", async () => {
-    const result = await run(["generate", "--check-taxonomies"]);
-
-    expect(result.code).toBe(1);
-    expect(result.texts.join("\n")).toContain("Missing or unreadable taxonomy snapshot");
   });
 
   it("rejects mixing website-only attribution with unrelated generators", async () => {

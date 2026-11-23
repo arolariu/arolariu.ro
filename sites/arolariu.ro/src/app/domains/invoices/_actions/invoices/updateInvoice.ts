@@ -27,10 +27,10 @@
 
 import {addSpanEvent, logWithTrace, withSpan} from "@/instrumentation.server";
 import {fetchBFFUserFromAuthService} from "@/lib/actions/user/fetchUser";
+import {isInvoiceCategory} from "@/lib/categories/categoryCatalog";
 import {validateStringIsGuidType} from "@/lib/utils.generic";
 import {createErrorResult, createHttpErrorResult, fetchWithTimeout, type ServerActionResult} from "@/lib/utils.server";
-import type {Invoice} from "@/types/invoices";
-import {resolveClassificationCodeForWrite} from "@/types/invoices/Classification";
+import type {Invoice, InvoiceCategory} from "@/types/invoices";
 import {parseInvoiceResponse, tryParse} from "@/types/invoices/transport";
 
 type ServerActionInputType = Readonly<{
@@ -38,6 +38,7 @@ type ServerActionInputType = Readonly<{
   invoiceId: string;
   /** The complete invoice object to replace the existing one. */
   invoice: Invoice;
+  category?: InvoiceCategory | null;
 }>;
 
 type ServerActionOutputType = ServerActionResult<Readonly<Invoice>>;
@@ -99,7 +100,7 @@ type ServerActionOutputType = ServerActionResult<Readonly<Invoice>>;
  * @see {@link patchInvoice} for partial updates (when only changing a few fields)
  * @see {@link fetchInvoice} for retrieving invoice data before update
  */
-export async function updateInvoice({invoiceId, invoice}: ServerActionInputType): ServerActionOutputType {
+export async function updateInvoice({invoiceId, invoice, category}: ServerActionInputType): ServerActionOutputType {
   console.info(">>> Executing server action {{updateInvoice}}, with:", {invoiceId, invoiceName: invoice?.name});
 
   return withSpan("api.actions.invoices.updateInvoice", async () => {
@@ -107,6 +108,9 @@ export async function updateInvoice({invoiceId, invoice}: ServerActionInputType)
       // Step 0. Validate invoice identifier is valid GUID
       logWithTrace("info", "Validating invoice identifier is valid...", {invoiceId}, "server");
       validateStringIsGuidType(invoiceId, "invoiceId");
+      if (category !== undefined && category !== null && !isInvoiceCategory(category)) {
+        return createHttpErrorResult(400, "Invalid invoice category.");
+      }
 
       // Step 1. Fetch user JWT for authentication
       addSpanEvent("bff.user.jwt.fetch.start");
@@ -120,7 +124,7 @@ export async function updateInvoice({invoiceId, invoice}: ServerActionInputType)
       const requestDto = {
         name: invoice.name,
         description: invoice.description,
-        classificationCode: resolveClassificationCodeForWrite(invoice.classification),
+        ...(category !== undefined ? {category} : {}),
         paymentInformation: invoice.paymentInformation,
         merchantReference: invoice.merchantReference,
         isImportant: invoice.isImportant,

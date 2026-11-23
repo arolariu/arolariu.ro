@@ -1,4 +1,3 @@
-import type {StandardClassification} from "@/types/invoices/Classification";
 import {describe, expect, it} from "vitest";
 import {buildInvoice, buildRecipeSuggestion} from "../../../../../../tests/helpers/builders/domain";
 import {apiUrl, auth, fetchAtHttp} from "../../../../../../tests/setup/server-http";
@@ -15,27 +14,15 @@ describe("updateInvoice", () => {
     possibleRecipes: [buildRecipeSuggestion({description: "A quick meal from the receipt"})],
   });
 
-  it.each([
-    ["Manual", "01.1.1"],
-    ["Analysis", null],
-  ] as const)("sends only editable fields and preserves the classification policy for %s", async (origin, classificationCode) => {
-    const classification = {
-      system: "ECOICOP_V2",
-      code: "01.1.1",
-      officialLabel: "Cereals",
-      version: "2",
-      hierarchy: [],
-      origin,
-      confidence: origin === "Analysis" ? 0.9 : null,
-      evidence: [],
-    } satisfies StandardClassification;
-    fetchAtHttp.mockResolvedValue(Response.json({...invoice, classification, name: "Stored by the server"}));
+  it.each([undefined, null, 3004] as const)("serializes only explicit category intent (%s)", async (category) => {
+    const storedCategory = category === undefined ? 3001 : category;
+    fetchAtHttp.mockResolvedValue(Response.json({...invoice, category: storedCategory, name: "Stored by the server"}));
 
-    const result = await updateInvoice({invoiceId, invoice: {...invoice, classification}});
+    const result = await updateInvoice({invoiceId, invoice: {...invoice, category: 3001}, ...(category === undefined ? {} : {category})});
 
     expect(result).toMatchObject({
       success: true,
-      data: {id: invoiceId, name: "Stored by the server", classification, createdAt: expect.any(Date)},
+      data: {id: invoiceId, name: "Stored by the server", category: storedCategory, createdAt: expect.any(Date)},
     });
     expect(fetchAtHttp).toHaveBeenCalledExactlyOnceWith(
       `${apiUrl}/rest/v1/invoices/${invoiceId}`,
@@ -49,7 +36,7 @@ describe("updateInvoice", () => {
     expect(requestBody).toEqual({
       name: invoice.name,
       description: invoice.description,
-      classificationCode,
+      ...(category === undefined ? {} : {category}),
       paymentInformation: {...invoice.paymentInformation, transactionDate: invoice.paymentInformation.transactionDate.toISOString()},
       merchantReference: invoice.merchantReference,
       isImportant: invoice.isImportant,

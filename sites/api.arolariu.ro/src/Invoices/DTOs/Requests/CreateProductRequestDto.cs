@@ -5,6 +5,7 @@ using System.ComponentModel.DataAnnotations;
 using System.Diagnostics.CodeAnalysis;
 
 using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Allergens;
+using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Categories;
 using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Products;
 
 /// <summary>
@@ -32,7 +33,7 @@ using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Products;
 /// The product name as it appears on the receipt. Required.
 /// This will be used as the product's display name.
 /// </param>
-/// <param name="ClassificationCode">Optional taxonomy code for the manual product classification.</param>
+/// <param name="Category">The product category selection.</param>
 /// <param name="Quantity">
 /// The quantity of product units. Must be positive.
 /// Supports decimal for fractional quantities (e.g., 1.5 kg).
@@ -54,7 +55,7 @@ using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Products;
 /// <code>
 /// var request = new CreateProductRequestDto(
 ///     Name: "Milk 1L (LAPTE ZUZU)",
-///     ClassificationCode: "10000025",
+///     Category: ProductCategory.FreshFruit,
 ///     Quantity: 2,
 ///     QuantityUnit: "buc",
 ///     ProductCode: "5941234567890",
@@ -70,7 +71,7 @@ using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Products;
 [ExcludeFromCodeCoverage]
 public readonly record struct CreateProductRequestDto(
   [Required] string Name,
-  string? ClassificationCode,
+  ProductCategory? Category,
   [Required] decimal Quantity,
   string? QuantityUnit,
   string? ProductCode,
@@ -97,6 +98,7 @@ public readonly record struct CreateProductRequestDto(
     new()
     {
       Name = Name?.Trim() ?? string.Empty,
+      Category = Category,
       Quantity = Quantity,
       QuantityUnit = QuantityUnit?.Trim() ?? string.Empty,
       ProductCode = ProductCode?.Trim() ?? string.Empty,

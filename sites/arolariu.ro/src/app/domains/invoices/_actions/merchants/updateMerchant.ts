@@ -5,50 +5,47 @@
  * @module app/domains/invoices/_actions/merchants/updateMerchant
  *
  * @remarks
- * Performs a full PUT on a merchant resource, replacing name, description,
- * address, and optional manual classification. Analysis-derived classifications
- * are never echoed back — `resolveClassificationCodeForWrite` returns null for
- * them so the backend preserves the persisted classification untouched.
+ * Category-only edits do not echo unrelated merchant fields.
  */
 
 import {addSpanEvent, logWithTrace, withSpan} from "@/instrumentation.server";
 import {fetchBFFUserFromAuthService} from "@/lib/actions/user/fetchUser";
+import {isMerchantCategory} from "@/lib/categories/categoryCatalog";
 import {validateStringIsGuidType} from "@/lib/utils.generic";
 import {createErrorResult, createHttpErrorResult, fetchWithTimeout, type ServerActionResult} from "@/lib/utils.server";
-import type {Merchant} from "@/types/invoices";
-import {resolveClassificationCodeForWrite} from "@/types/invoices/Classification";
+import type {Merchant, MerchantCategory} from "@/types/invoices";
 import {parseMerchantResponse, tryParse} from "@/types/invoices/transport";
 
-type ServerActionInputType = Readonly<{
-  /** The identifier of the merchant to update. */
-  readonly merchantId: string;
-  /** The merchant data to apply. */
-  readonly merchant: Merchant;
-}>;
+type ServerActionInputType = Readonly<{merchantId: string}>
+  & (Readonly<{category: MerchantCategory | null; merchant?: never}> | Readonly<{category?: MerchantCategory | null; merchant: Merchant}>);
 
 type ServerActionOutputType = ServerActionResult<Readonly<Merchant>>;
 
 /**
- * Performs a full update (PUT) on a merchant resource.
+ * Updates a merchant, either with a category-only change or a full edit.
  *
  * @remarks
  * **HTTP Method**: PUT
  * **Endpoint**: `/rest/v1/merchants/{merchantId}`
  * **Response**: `202 Accepted` with the updated merchant body.
  *
- * Classification provenance is preserved: analysis-derived codes are sent as
- * null so the backend keeps its persisted value; only manual codes travel.
- *
- * @param input - The merchant id and updated merchant data.
+ * @param input - The merchant ID and the edit. Omit category to preserve it, or send null to clear it.
  * @returns A result object containing the updated merchant, or an error result.
  */
-export async function updateMerchant({merchantId, merchant}: ServerActionInputType): ServerActionOutputType {
+export async function updateMerchant({merchantId, merchant, category}: ServerActionInputType): ServerActionOutputType {
   console.info(">>> Executing server action {{updateMerchant}}, with:", {merchantId, merchantName: merchant?.name});
 
   return withSpan("api.actions.invoices.updateMerchant", async () => {
     try {
       logWithTrace("info", "Validating merchant identifier is valid...", {merchantId}, "server");
       validateStringIsGuidType(merchantId, "merchantId");
+      if (category !== undefined && category !== null && !isMerchantCategory(category)) {
+        return createHttpErrorResult(400, "Invalid merchant category.");
+      }
+
+      if (merchant === undefined && typeof category === "undefined") {
+        return createHttpErrorResult(400, "A merchant update is required.");
+      }
 
       addSpanEvent("bff.user.jwt.fetch.start");
       logWithTrace("info", "Fetching BFF user JWT for authentication...", {}, "server");
@@ -58,14 +55,15 @@ export async function updateMerchant({merchantId, merchant}: ServerActionInputTy
       addSpanEvent("bff.request.update-merchant.start");
       logWithTrace("info", "Making API request to update merchant...", {merchantId}, "server");
       const requestDto = {
-        name: merchant.name,
-        description: merchant.description,
-        classificationCode: resolveClassificationCodeForWrite(merchant.classification),
-        address: merchant.address,
-        parentCompanyId: merchant.parentCompanyId ?? null,
-        // Null preserves the persisted metadata; the frontend Merchant model does not
-        // carry additionalMetadata, so it must never be sent as an empty overwrite.
-        additionalMetadata: null,
+        ...(category !== undefined ? {category} : {}),
+        ...(merchant === undefined
+          ? {}
+          : {
+              name: merchant.name,
+              description: merchant.description,
+              address: merchant.address,
+              additionalMetadata: null,
+            }),
       };
       const response = await fetchWithTimeout(`/rest/v1/merchants/${merchantId}`, {
         method: "PUT",

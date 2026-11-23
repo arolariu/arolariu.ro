@@ -1,5 +1,5 @@
 {
-  "version": "v3",
+  "version": "v4",
   "personas": [
     {
       "key": "bob",
@@ -19,30 +19,7 @@
       "region": "Bucuresti-Ilfov",
       "city": "Bucharest",
       "streetAddress": "10 Amber Walk",
-      "classificationCode": "47.11",
-      "classificationLabel": "Non-specialised retail sale of predominately food, beverages or tobacco",
-      "classificationPath": [
-        {
-          "level": "section",
-          "code": "G",
-          "officialLabel": "WHOLESALE AND RETAIL TRADE"
-        },
-        {
-          "level": "division",
-          "code": "47",
-          "officialLabel": "Retail trade"
-        },
-        {
-          "level": "group",
-          "code": "47.1",
-          "officialLabel": "Non-specialised retail sale"
-        },
-        {
-          "level": "class",
-          "code": "47.11",
-          "officialLabel": "Non-specialised retail sale of predominately food, beverages or tobacco"
-        }
-      ]
+      "category": 2005
     },
     {
       "key": "merchant/bob/buc/bakery-001",
@@ -55,30 +32,7 @@
       "region": "Bucuresti-Ilfov",
       "city": "Bucharest",
       "streetAddress": "11 Birch Walk",
-      "classificationCode": "47.24",
-      "classificationLabel": "Retail sale of bread, cake and confectionery",
-      "classificationPath": [
-        {
-          "level": "section",
-          "code": "G",
-          "officialLabel": "WHOLESALE AND RETAIL TRADE"
-        },
-        {
-          "level": "division",
-          "code": "47",
-          "officialLabel": "Retail trade"
-        },
-        {
-          "level": "group",
-          "code": "47.2",
-          "officialLabel": "Retail sale of food, beverages and tobacco"
-        },
-        {
-          "level": "class",
-          "code": "47.24",
-          "officialLabel": "Retail sale of bread, cake and confectionery"
-        }
-      ]
+      "category": 2010
     },
     {
       "key": "merchant/bob/buc/household-002",
@@ -91,30 +45,7 @@
       "region": "Bucuresti-Ilfov",
       "city": "Bucharest",
       "streetAddress": "12 Cedar Walk",
-      "classificationCode": "47.52",
-      "classificationLabel": "Retail sale of hardware, building materials, paints and glass",
-      "classificationPath": [
-        {
-          "level": "section",
-          "code": "G",
-          "officialLabel": "WHOLESALE AND RETAIL TRADE"
-        },
-        {
-          "level": "division",
-          "code": "47",
-          "officialLabel": "Retail trade"
-        },
-        {
-          "level": "group",
-          "code": "47.5",
-          "officialLabel": "Retail sale of other household equipment"
-        },
-        {
-          "level": "class",
-          "code": "47.52",
-          "officialLabel": "Retail sale of hardware, building materials, paints and glass"
-        }
-      ]
+      "category": 2055
     },
     {
       "key": "merchant/bob/buc/cafe-003",
@@ -127,30 +58,7 @@
       "region": "Bucuresti-Ilfov",
       "city": "Bucharest",
       "streetAddress": "13 Copper Walk",
-      "classificationCode": "56.30",
-      "classificationLabel": "Beverage serving activities",
-      "classificationPath": [
-        {
-          "level": "section",
-          "code": "I",
-          "officialLabel": "ACCOMMODATION AND FOOD SERVICE ACTIVITIES"
-        },
-        {
-          "level": "division",
-          "code": "56",
-          "officialLabel": "Food and beverage service activities"
-        },
-        {
-          "level": "group",
-          "code": "56.3",
-          "officialLabel": "Beverage serving activities"
-        },
-        {
-          "level": "class",
-          "code": "56.30",
-          "officialLabel": "Beverage serving activities"
-        }
-      ]
+      "category": 2018
     }
   ],
   "invoices": [
@@ -172,332 +80,123 @@
       "products": [
         {
           "name": "Meadow Pantry Penne pasta 500 g",
-          "quantity": 3.0,
+          "quantity": 3,
           "quantityUnit": "pcs",
           "productCode": "PANTRY-PASTA-26-0",
           "price": 8.2,
           "allergenState": "detected",
           "isEdited": false,
-          "taxRate": 11.0,
+          "taxRate": 11,
           "allergenCodes": ["cerealsContainingGluten"],
-          "classificationCode": "10000242",
-          "classificationLabel": "Pasta/Noodles - Not Ready to Eat (Shelf Stable)",
-          "classificationPath": [
-            {
-              "level": "segment",
-              "code": "50000000",
-              "officialLabel": "Food/Beverage"
-            },
-            {
-              "level": "family",
-              "code": "50190000",
-              "officialLabel": "Prepared/Preserved Foods"
-            },
-            {
-              "level": "class",
-              "code": "50192900",
-              "officialLabel": "Pasta/Noodles"
-            },
-            {
-              "level": "brick",
-              "code": "10000242",
-              "officialLabel": "Pasta/Noodles - Not Ready to Eat (Shelf Stable)"
-            }
-          ]
+          "category": 1006
         },
         {
           "name": "Meadow Pantry Tomato passata 500 g",
-          "quantity": 1.0,
+          "quantity": 1,
           "quantityUnit": "pcs",
           "productCode": "PANTRY-CANNED-41-0",
           "price": 6.9,
           "allergenState": "none",
           "isEdited": false,
-          "taxRate": 11.0,
+          "taxRate": 11,
           "allergenCodes": [],
-          "classificationCode": "10000272",
-          "classificationLabel": "Vegetables - Prepared/Processed (Shelf Stable)",
-          "classificationPath": [
-            {
-              "level": "segment",
-              "code": "50000000",
-              "officialLabel": "Food/Beverage"
-            },
-            {
-              "level": "family",
-              "code": "50100000",
-              "officialLabel": "Fruits/Vegetables/Nuts/Seeds Prepared/Processed"
-            },
-            {
-              "level": "class",
-              "code": "50102100",
-              "officialLabel": "Vegetables - Prepared/Processed"
-            },
-            {
-              "level": "brick",
-              "code": "10000272",
-              "officialLabel": "Vegetables - Prepared/Processed (Shelf Stable)"
-            }
-          ]
+          "category": 1034
         },
         {
           "name": "Meadow Pantry Extra virgin olive oil 500 ml",
-          "quantity": 3.0,
+          "quantity": 3,
           "quantityUnit": "pcs",
           "productCode": "PANTRY-OIL-39-0",
           "price": 28.9,
           "allergenState": "none",
           "isEdited": false,
-          "taxRate": 11.0,
+          "taxRate": 11,
           "allergenCodes": [],
-          "classificationCode": null,
-          "classificationLabel": null,
-          "classificationPath": null
+          "category": null
         },
         {
           "name": "Meadow Pantry Whole milk",
-          "quantity": 3.0,
+          "quantity": 3,
           "quantityUnit": "l",
           "productCode": "MILK-001",
           "price": 8.5,
           "allergenState": "detected",
           "isEdited": false,
-          "taxRate": 11.0,
+          "taxRate": 11,
           "allergenCodes": ["milk"],
-          "classificationCode": "10000025",
-          "classificationLabel": "Milk (Perishable)",
-          "classificationPath": [
-            {
-              "level": "segment",
-              "code": "50000000",
-              "officialLabel": "Food/Beverage"
-            },
-            {
-              "level": "family",
-              "code": "50130000",
-              "officialLabel": "Milk/Butter/Cream/Yogurts/Cheese/Eggs/Substitutes"
-            },
-            {
-              "level": "class",
-              "code": "50131700",
-              "officialLabel": "Milk/Milk Substitutes"
-            },
-            {
-              "level": "brick",
-              "code": "10000025",
-              "officialLabel": "Milk (Perishable)"
-            }
-          ]
+          "category": 1014
         },
         {
           "name": "Meadow Pantry Sourdough bread",
-          "quantity": 2.0,
+          "quantity": 2,
           "quantityUnit": "pcs",
           "productCode": "BREAD-001",
-          "price": 15.0,
+          "price": 15,
           "allergenState": "detected",
           "isEdited": false,
-          "taxRate": 11.0,
+          "taxRate": 11,
           "allergenCodes": ["cerealsContainingGluten"],
-          "classificationCode": "10000164",
-          "classificationLabel": "Bread (Perishable)",
-          "classificationPath": [
-            {
-              "level": "segment",
-              "code": "50000000",
-              "officialLabel": "Food/Beverage"
-            },
-            {
-              "level": "family",
-              "code": "50180000",
-              "officialLabel": "Bread/Bakery Products"
-            },
-            {
-              "level": "class",
-              "code": "50181900",
-              "officialLabel": "Bread"
-            },
-            {
-              "level": "brick",
-              "code": "10000164",
-              "officialLabel": "Bread (Perishable)"
-            }
-          ]
+          "category": 1007
         },
         {
           "name": "Washing-up liquid 500 ml",
-          "quantity": 3.0,
+          "quantity": 3,
           "quantityUnit": "pcs",
           "productCode": "HOUSEHOLD-001",
           "price": 12.9,
           "allergenState": "unassessed",
           "isEdited": false,
-          "taxRate": 21.0,
+          "taxRate": 21,
           "allergenCodes": [],
-          "classificationCode": "10008145",
-          "classificationLabel": "Hand Dish - Detergent",
-          "classificationPath": [
-            {
-              "level": "segment",
-              "code": "47000000",
-              "officialLabel": "Cleaning/Hygiene Products"
-            },
-            {
-              "level": "family",
-              "code": "47100000",
-              "officialLabel": "Cleaning Products"
-            },
-            {
-              "level": "class",
-              "code": "47102100",
-              "officialLabel": "Dish Care"
-            },
-            {
-              "level": "brick",
-              "code": "10008145",
-              "officialLabel": "Hand Dish - Detergent"
-            }
-          ]
+          "category": 1070
         },
         {
           "name": "Stonefield Unsalted butter 200 g",
-          "quantity": 2.0,
+          "quantity": 2,
           "quantityUnit": "pcs",
           "productCode": "PANTRY-BUTTER-22-1",
           "price": 14.1,
           "allergenState": "detected",
           "isEdited": false,
-          "taxRate": 11.0,
+          "taxRate": 11,
           "allergenCodes": ["milk"],
-          "classificationCode": "10000168",
-          "classificationLabel": "Butter (Perishable)",
-          "classificationPath": [
-            {
-              "level": "segment",
-              "code": "50000000",
-              "officialLabel": "Food/Beverage"
-            },
-            {
-              "level": "family",
-              "code": "50130000",
-              "officialLabel": "Milk/Butter/Cream/Yogurts/Cheese/Eggs/Substitutes"
-            },
-            {
-              "level": "class",
-              "code": "50131900",
-              "officialLabel": "Butter/Butter Substitutes"
-            },
-            {
-              "level": "brick",
-              "code": "10000168",
-              "officialLabel": "Butter (Perishable)"
-            }
-          ]
+          "category": 1018
         },
         {
           "name": "Stonefield Orange juice 1 l",
-          "quantity": 2.0,
+          "quantity": 2,
           "quantityUnit": "pcs",
           "productCode": "PANTRY-JUICE-54-1",
           "price": 12.1,
           "allergenState": "none",
           "isEdited": false,
-          "taxRate": 11.0,
+          "taxRate": 11,
           "allergenCodes": [],
-          "classificationCode": "10000220",
-          "classificationLabel": "Fruit Juice - Ready to Drink (Shelf Stable)",
-          "classificationPath": [
-            {
-              "level": "segment",
-              "code": "50000000",
-              "officialLabel": "Food/Beverage"
-            },
-            {
-              "level": "family",
-              "code": "50200000",
-              "officialLabel": "Beverages"
-            },
-            {
-              "level": "class",
-              "code": "50202300",
-              "officialLabel": "Non Alcoholic Beverages - Ready to Drink"
-            },
-            {
-              "level": "brick",
-              "code": "10000220",
-              "officialLabel": "Fruit Juice - Ready to Drink (Shelf Stable)"
-            }
-          ]
+          "category": 1048
         },
         {
           "name": "Meadow Pantry Coffee beans 500 g",
-          "quantity": 3.0,
+          "quantity": 3,
           "quantityUnit": "pcs",
           "productCode": "PANTRY-COFFEEBEANS-49-0",
           "price": 38.9,
           "allergenState": "none",
           "isEdited": false,
-          "taxRate": 11.0,
+          "taxRate": 11,
           "allergenCodes": [],
-          "classificationCode": "10008178",
-          "classificationLabel": "Coffee - Whole Beans",
-          "classificationPath": [
-            {
-              "level": "segment",
-              "code": "50000000",
-              "officialLabel": "Food/Beverage"
-            },
-            {
-              "level": "family",
-              "code": "50200000",
-              "officialLabel": "Beverages"
-            },
-            {
-              "level": "class",
-              "code": "50202600",
-              "officialLabel": "Coffee/Coffee Substitutes"
-            },
-            {
-              "level": "brick",
-              "code": "10008178",
-              "officialLabel": "Coffee - Whole Beans"
-            }
-          ]
+          "category": 1045
         },
         {
           "name": "Orchard Lane Oat biscuits 200 g",
-          "quantity": 2.0,
+          "quantity": 2,
           "quantityUnit": "pcs",
           "productCode": "PANTRY-BISCUITS-55-3",
           "price": 8.5,
           "allergenState": "detected",
           "isEdited": false,
-          "taxRate": 11.0,
+          "taxRate": 11,
           "allergenCodes": ["cerealsContainingGluten", "milk"],
-          "classificationCode": "10000161",
-          "classificationLabel": "Biscuits/Cookies (Shelf Stable)",
-          "classificationPath": [
-            {
-              "level": "segment",
-              "code": "50000000",
-              "officialLabel": "Food/Beverage"
-            },
-            {
-              "level": "family",
-              "code": "50180000",
-              "officialLabel": "Bread/Bakery Products"
-            },
-            {
-              "level": "class",
-              "code": "50182100",
-              "officialLabel": "Biscuits/Cookies"
-            },
-            {
-              "level": "brick",
-              "code": "10000161",
-              "officialLabel": "Biscuits/Cookies (Shelf Stable)"
-            }
-          ]
+          "category": 1040
         }
       ],
       "recipe": {
@@ -539,9 +238,7 @@
       },
       "blobKey": null,
       "transactionTimeUtc": "10:51:00",
-      "classificationCode": null,
-      "classificationLabel": null,
-      "classificationPath": null
+      "category": null
     },
     {
       "key": "invoice/bob/0002",
@@ -561,57 +258,21 @@
       "products": [
         {
           "name": "Orchard Lane Oat biscuits 200 g",
-          "quantity": 1.0,
+          "quantity": 1,
           "quantityUnit": "pcs",
           "productCode": "PANTRY-BISCUITS-55-3",
           "price": 8.5,
           "allergenState": "detected",
           "isEdited": false,
-          "taxRate": 11.0,
+          "taxRate": 11,
           "allergenCodes": ["cerealsContainingGluten", "milk"],
-          "classificationCode": "10000161",
-          "classificationLabel": "Biscuits/Cookies (Shelf Stable)",
-          "classificationPath": [
-            {
-              "level": "segment",
-              "code": "50000000",
-              "officialLabel": "Food/Beverage"
-            },
-            {
-              "level": "family",
-              "code": "50180000",
-              "officialLabel": "Bread/Bakery Products"
-            },
-            {
-              "level": "class",
-              "code": "50182100",
-              "officialLabel": "Biscuits/Cookies"
-            },
-            {
-              "level": "brick",
-              "code": "10000161",
-              "officialLabel": "Biscuits/Cookies (Shelf Stable)"
-            }
-          ]
+          "category": 1040
         }
       ],
       "recipe": null,
       "blobKey": null,
       "transactionTimeUtc": "19:01:00",
-      "classificationCode": "01.1",
-      "classificationLabel": "Food",
-      "classificationPath": [
-        {
-          "level": "division",
-          "code": "01",
-          "officialLabel": "Food and non-alcoholic beverages"
-        },
-        {
-          "level": "group",
-          "code": "01.1",
-          "officialLabel": "Food"
-        }
-      ]
+      "category": 3001
     },
     {
       "key": "invoice/bob/0003",
@@ -631,99 +292,57 @@
       "products": [
         {
           "name": "Laundry stain remover 500 ml",
-          "quantity": 3.0,
+          "quantity": 3,
           "quantityUnit": "pcs",
           "productCode": "HOUSEHOLD-009",
           "price": 24.9,
           "allergenState": "unassessed",
           "isEdited": false,
-          "taxRate": 21.0,
+          "taxRate": 21,
           "allergenCodes": [],
-          "classificationCode": null,
-          "classificationLabel": null,
-          "classificationPath": null
+          "category": null
         },
         {
           "name": "Kitchen sponge six-pack",
-          "quantity": 2.0,
+          "quantity": 2,
           "quantityUnit": "pcs",
           "productCode": "HOUSEHOLD-003",
           "price": 8.9,
           "allergenState": "unassessed",
           "isEdited": false,
-          "taxRate": 21.0,
+          "taxRate": 21,
           "allergenCodes": [],
-          "classificationCode": null,
-          "classificationLabel": null,
-          "classificationPath": null
+          "category": null
         },
         {
           "name": "Toilet rolls eight-pack",
-          "quantity": 1.0,
+          "quantity": 1,
           "quantityUnit": "pcs",
           "productCode": "HOUSEHOLD-005",
           "price": 22.9,
           "allergenState": "unassessed",
           "isEdited": false,
-          "taxRate": 21.0,
+          "taxRate": 21,
           "allergenCodes": [],
-          "classificationCode": null,
-          "classificationLabel": null,
-          "classificationPath": null
+          "category": null
         },
         {
           "name": "Washing-up liquid 500 ml",
-          "quantity": 1.0,
+          "quantity": 1,
           "quantityUnit": "pcs",
           "productCode": "HOUSEHOLD-001",
           "price": 12.9,
           "allergenState": "unassessed",
           "isEdited": false,
-          "taxRate": 21.0,
+          "taxRate": 21,
           "allergenCodes": [],
-          "classificationCode": "10008145",
-          "classificationLabel": "Hand Dish - Detergent",
-          "classificationPath": [
-            {
-              "level": "segment",
-              "code": "47000000",
-              "officialLabel": "Cleaning/Hygiene Products"
-            },
-            {
-              "level": "family",
-              "code": "47100000",
-              "officialLabel": "Cleaning Products"
-            },
-            {
-              "level": "class",
-              "code": "47102100",
-              "officialLabel": "Dish Care"
-            },
-            {
-              "level": "brick",
-              "code": "10008145",
-              "officialLabel": "Hand Dish - Detergent"
-            }
-          ]
+          "category": 1070
         }
       ],
       "recipe": null,
       "blobKey": null,
       "transactionTimeUtc": "18:37:00",
-      "classificationCode": "05.6",
-      "classificationLabel": "Goods and services for routine household maintenance",
-      "classificationPath": [
-        {
-          "level": "division",
-          "code": "05",
-          "officialLabel": "Furnishings, household equipment and routine household maintenance"
-        },
-        {
-          "level": "group",
-          "code": "05.6",
-          "officialLabel": "Goods and services for routine household maintenance"
-        }
-      ]
+      "category": 3019
     },
     {
       "key": "invoice/bob/0004",
@@ -736,43 +355,28 @@
       "sharedWith": [],
       "currencyCode": "RON",
       "paymentType": "CASH",
-      "totalAmount": 19.0,
+      "totalAmount": 19,
       "taxAmount": 1.88,
       "isImportant": false,
       "isSoftDeleted": false,
       "products": [
         {
           "name": "Fresh orange juice glass",
-          "quantity": 1.0,
+          "quantity": 1,
           "quantityUnit": "pcs",
           "productCode": "CAFE-006",
-          "price": 19.0,
+          "price": 19,
           "allergenState": "none",
           "isEdited": false,
-          "taxRate": 11.0,
+          "taxRate": 11,
           "allergenCodes": [],
-          "classificationCode": null,
-          "classificationLabel": null,
-          "classificationPath": null
+          "category": null
         }
       ],
       "recipe": null,
       "blobKey": null,
       "transactionTimeUtc": "14:46:00",
-      "classificationCode": "11.1",
-      "classificationLabel": "Food and beverage serving services",
-      "classificationPath": [
-        {
-          "level": "division",
-          "code": "11",
-          "officialLabel": "Restaurants and accommodation services"
-        },
-        {
-          "level": "group",
-          "code": "11.1",
-          "officialLabel": "Food and beverage serving services"
-        }
-      ]
+      "category": 3010
     },
     {
       "key": "invoice/bob/0005",
@@ -792,267 +396,129 @@
       "products": [
         {
           "name": "Sunbrook Still mineral water 1.5 l",
-          "quantity": 3.0,
+          "quantity": 3,
           "quantityUnit": "pcs",
           "productCode": "PANTRY-WATER-51-2",
           "price": 3.9,
           "allergenState": "none",
           "isEdited": false,
-          "taxRate": 11.0,
+          "taxRate": 11,
           "allergenCodes": [],
-          "classificationCode": null,
-          "classificationLabel": null,
-          "classificationPath": null
+          "category": null
         },
         {
           "name": "Orchard Lane Tuna in spring water 160 g",
-          "quantity": 3.0,
+          "quantity": 3,
           "quantityUnit": "pcs",
           "productCode": "PANTRY-TUNA-37-3",
           "price": 11.5,
           "allergenState": "detected",
           "isEdited": false,
-          "taxRate": 11.0,
+          "taxRate": 11,
           "allergenCodes": ["fish"],
-          "classificationCode": null,
-          "classificationLabel": null,
-          "classificationPath": null
+          "category": null
         },
         {
           "name": "Stonefield Beef mince 500 g",
-          "quantity": 3.0,
+          "quantity": 3,
           "quantityUnit": "pcs",
           "productCode": "PANTRY-BEEF-34-1",
           "price": 29.1,
           "allergenState": "unassessed",
           "isEdited": false,
-          "taxRate": 11.0,
+          "taxRate": 11,
           "allergenCodes": [],
-          "classificationCode": "10005786",
-          "classificationLabel": "Beef - Unprepared/Unprocessed",
-          "classificationPath": [
-            {
-              "level": "segment",
-              "code": "50000000",
-              "officialLabel": "Food/Beverage"
-            },
-            {
-              "level": "family",
-              "code": "50240000",
-              "officialLabel": "Meat/Poultry/Other Animals"
-            },
-            {
-              "level": "class",
-              "code": "50240200",
-              "officialLabel": "Meat/Poultry/Other Animals - Unprepared/Unprocessed"
-            },
-            {
-              "level": "brick",
-              "code": "10005786",
-              "officialLabel": "Beef - Unprepared/Unprocessed"
-            }
-          ]
+          "category": 1020
         },
         {
           "name": "Meadow Pantry Orange juice 1 l",
-          "quantity": 1.0,
+          "quantity": 1,
           "quantityUnit": "pcs",
           "productCode": "PANTRY-JUICE-54-0",
           "price": 11.9,
           "allergenState": "none",
           "isEdited": false,
-          "taxRate": 11.0,
+          "taxRate": 11,
           "allergenCodes": [],
-          "classificationCode": "10000220",
-          "classificationLabel": "Fruit Juice - Ready to Drink (Shelf Stable)",
-          "classificationPath": [
-            {
-              "level": "segment",
-              "code": "50000000",
-              "officialLabel": "Food/Beverage"
-            },
-            {
-              "level": "family",
-              "code": "50200000",
-              "officialLabel": "Beverages"
-            },
-            {
-              "level": "class",
-              "code": "50202300",
-              "officialLabel": "Non Alcoholic Beverages - Ready to Drink"
-            },
-            {
-              "level": "brick",
-              "code": "10000220",
-              "officialLabel": "Fruit Juice - Ready to Drink (Shelf Stable)"
-            }
-          ]
+          "category": 1048
         },
         {
           "name": "Stonefield Peanut butter 350 g",
-          "quantity": 2.0,
+          "quantity": 2,
           "quantityUnit": "pcs",
           "productCode": "PANTRY-NUTBUTTER-47-1",
           "price": 18.1,
           "allergenState": "detected",
           "isEdited": false,
-          "taxRate": 11.0,
+          "taxRate": 11,
           "allergenCodes": ["peanuts"],
-          "classificationCode": null,
-          "classificationLabel": null,
-          "classificationPath": null
+          "category": null
         },
         {
           "name": "Stonefield Unsalted butter 200 g",
-          "quantity": 1.0,
+          "quantity": 1,
           "quantityUnit": "pcs",
           "productCode": "PANTRY-BUTTER-22-1",
           "price": 14.1,
           "allergenState": "detected",
           "isEdited": false,
-          "taxRate": 11.0,
+          "taxRate": 11,
           "allergenCodes": ["milk"],
-          "classificationCode": "10000168",
-          "classificationLabel": "Butter (Perishable)",
-          "classificationPath": [
-            {
-              "level": "segment",
-              "code": "50000000",
-              "officialLabel": "Food/Beverage"
-            },
-            {
-              "level": "family",
-              "code": "50130000",
-              "officialLabel": "Milk/Butter/Cream/Yogurts/Cheese/Eggs/Substitutes"
-            },
-            {
-              "level": "class",
-              "code": "50131900",
-              "officialLabel": "Butter/Butter Substitutes"
-            },
-            {
-              "level": "brick",
-              "code": "10000168",
-              "officialLabel": "Butter (Perishable)"
-            }
-          ]
+          "category": 1018
         },
         {
           "name": "Kitchen towels two-pack",
-          "quantity": 3.0,
+          "quantity": 3,
           "quantityUnit": "pcs",
           "productCode": "HOUSEHOLD-006",
           "price": 11.9,
           "allergenState": "unassessed",
           "isEdited": false,
-          "taxRate": 21.0,
+          "taxRate": 21,
           "allergenCodes": [],
-          "classificationCode": null,
-          "classificationLabel": null,
-          "classificationPath": null
+          "category": null
         },
         {
           "name": "Sunbrook Semi-skimmed milk",
-          "quantity": 1.0,
+          "quantity": 1,
           "quantityUnit": "l",
           "productCode": "PANTRY-MILK-17-2",
           "price": 8.3,
           "allergenState": "detected",
           "isEdited": false,
-          "taxRate": 11.0,
+          "taxRate": 11,
           "allergenCodes": ["milk"],
-          "classificationCode": "10000025",
-          "classificationLabel": "Milk (Perishable)",
-          "classificationPath": [
-            {
-              "level": "segment",
-              "code": "50000000",
-              "officialLabel": "Food/Beverage"
-            },
-            {
-              "level": "family",
-              "code": "50130000",
-              "officialLabel": "Milk/Butter/Cream/Yogurts/Cheese/Eggs/Substitutes"
-            },
-            {
-              "level": "class",
-              "code": "50131700",
-              "officialLabel": "Milk/Milk Substitutes"
-            },
-            {
-              "level": "brick",
-              "code": "10000025",
-              "officialLabel": "Milk (Perishable)"
-            }
-          ]
+          "category": 1014
         },
         {
           "name": "Meadow Pantry Sparkling mineral water 1 l",
-          "quantity": 3.0,
+          "quantity": 3,
           "quantityUnit": "pcs",
           "productCode": "PANTRY-WATER-52-0",
           "price": 3.9,
           "allergenState": "none",
           "isEdited": false,
-          "taxRate": 11.0,
+          "taxRate": 11,
           "allergenCodes": [],
-          "classificationCode": null,
-          "classificationLabel": null,
-          "classificationPath": null
+          "category": null
         },
         {
           "name": "Stonefield Orange juice 1 l",
-          "quantity": 1.0,
+          "quantity": 1,
           "quantityUnit": "pcs",
           "productCode": "PANTRY-JUICE-54-1",
           "price": 12.1,
           "allergenState": "none",
           "isEdited": true,
-          "taxRate": 11.0,
+          "taxRate": 11,
           "allergenCodes": [],
-          "classificationCode": "10000220",
-          "classificationLabel": "Fruit Juice - Ready to Drink (Shelf Stable)",
-          "classificationPath": [
-            {
-              "level": "segment",
-              "code": "50000000",
-              "officialLabel": "Food/Beverage"
-            },
-            {
-              "level": "family",
-              "code": "50200000",
-              "officialLabel": "Beverages"
-            },
-            {
-              "level": "class",
-              "code": "50202300",
-              "officialLabel": "Non Alcoholic Beverages - Ready to Drink"
-            },
-            {
-              "level": "brick",
-              "code": "10000220",
-              "officialLabel": "Fruit Juice - Ready to Drink (Shelf Stable)"
-            }
-          ]
+          "category": 1048
         }
       ],
       "recipe": null,
       "blobKey": null,
       "transactionTimeUtc": "08:58:00",
-      "classificationCode": "01.1",
-      "classificationLabel": "Food",
-      "classificationPath": [
-        {
-          "level": "division",
-          "code": "01",
-          "officialLabel": "Food and non-alcoholic beverages"
-        },
-        {
-          "level": "group",
-          "code": "01.1",
-          "officialLabel": "Food"
-        }
-      ]
+      "category": 3001
     }
   ],
   "blobs": []

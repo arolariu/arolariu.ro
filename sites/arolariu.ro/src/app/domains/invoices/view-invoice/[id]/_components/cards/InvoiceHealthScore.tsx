@@ -170,7 +170,7 @@ function calculateHealthMetrics(invoice: Invoice): HealthMetrics {
     Boolean(invoice.paymentInformation.transactionDate)
     && invoice.paymentInformation.totalCostAmount > 0
     && (invoice.paymentInformation.currency?.code?.length ?? 0) > 0;
-  const categorizedProducts = items.filter((item) => item.classification !== null).length;
+  const categorizedProducts = items.filter((item) => item.category !== null).length;
   const categoryRatio = hasProducts ? categorizedProducts / totalItems : 0;
 
   return {

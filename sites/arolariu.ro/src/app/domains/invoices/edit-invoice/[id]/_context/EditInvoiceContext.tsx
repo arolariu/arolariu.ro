@@ -19,7 +19,7 @@
  */
 
 import {notify} from "@/lib/notify";
-import type {Invoice, Merchant, PaymentType} from "@/types/invoices";
+import type {Invoice, InvoiceCategory, Merchant, PaymentType} from "@/types/invoices";
 
 import {useTranslations} from "next-intl-selector";
 import {createContext, use, useCallback, useMemo, useState} from "react";
@@ -38,6 +38,7 @@ interface PendingChanges {
   paymentType?: PaymentType;
   isImportant?: boolean;
   transactionDate?: Date;
+  category?: InvoiceCategory | null;
 }
 
 /**
@@ -61,6 +62,7 @@ interface EditInvoiceContextValue {
   setPaymentType: (paymentType: PaymentType) => void;
   setIsImportant: (isImportant: boolean) => void;
   setTransactionDate: (date: Date) => void;
+  setCategory: (category: InvoiceCategory | null) => void;
 
   // Actions
   saveChanges: () => Promise<boolean>;
@@ -137,6 +139,7 @@ export function EditInvoiceContextProvider({invoice, merchant, children}: Readon
   // Field setters using the generic helper
   const setName = useMemo(() => createFieldSetter("name", invoice.name), [createFieldSetter, invoice.name]);
   const setDescription = useMemo(() => createFieldSetter("description", invoice.description), [createFieldSetter, invoice.description]);
+  const setCategory = useMemo(() => createFieldSetter("category", invoice.category), [createFieldSetter, invoice.category]);
   const setPaymentType = useMemo(
     () => createFieldSetter("paymentType", invoice.paymentInformation.paymentType),
     [createFieldSetter, invoice.paymentInformation.paymentType],
@@ -166,6 +169,9 @@ export function EditInvoiceContextProvider({invoice, merchant, children}: Readon
       // Build the patch payload
       const payload: Record<string, unknown> = {};
 
+      if (pendingChanges.category !== undefined) {
+        payload["category"] = pendingChanges.category;
+      }
       if (pendingChanges.name !== undefined) {
         payload["name"] = pendingChanges.name;
       }
@@ -229,6 +235,7 @@ export function EditInvoiceContextProvider({invoice, merchant, children}: Readon
       setPaymentType,
       setIsImportant,
       setTransactionDate,
+      setCategory,
       saveChanges,
       discardChanges,
     }),
@@ -243,6 +250,7 @@ export function EditInvoiceContextProvider({invoice, merchant, children}: Readon
       setPaymentType,
       setIsImportant,
       setTransactionDate,
+      setCategory,
       saveChanges,
       discardChanges,
     ],

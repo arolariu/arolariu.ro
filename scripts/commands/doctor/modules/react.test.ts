@@ -227,7 +227,7 @@ describe("reactDoctorModule", () => {
       "react.workspace-link",
       "react.environment",
       "react.i18n",
-      "react.taxonomy-and-licenses",
+      "react.categories-and-licenses",
       "react.playwright",
       "react.framework-config",
     ]);
@@ -249,7 +249,7 @@ describe("reactDoctorModule", () => {
       "react.workspace-link",
       "react.environment",
       "react.i18n",
-      "react.taxonomy-and-licenses",
+      "react.categories-and-licenses",
       "react.playwright",
       "react.framework-config",
     ]);
@@ -390,9 +390,9 @@ describe("reactDoctorModule", () => {
 
     const results = await fixture.run();
 
-    const taxonomy = resultById(results, "react.taxonomy-and-licenses");
-    expect(taxonomy.status).toBe("fail");
-    expect(taxonomy.rootCause).toBe("licenses.json is missing a production entry for 'left-pad'.");
+    const catalogs = resultById(results, "react.categories-and-licenses");
+    expect(catalogs.status).toBe("fail");
+    expect(catalogs.rootCause).toBe("licenses.json is missing a production entry for 'left-pad'.");
   });
 
   it("detects Playwright version drift", async () => {

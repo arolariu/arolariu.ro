@@ -97,6 +97,54 @@ public partial class CosmosDatabaseBroker
   }
 
   /// <inheritdoc/>
+  public async ValueTask<(Merchant Resource, string ETag)> ReadMerchantSnapshotAsync(Guid merchantId, Guid parentCompanyId, CancellationToken cancellationToken)
+  {
+    using var activity = InvoicePackageTracing.StartActivity(nameof(ReadMerchantSnapshotAsync));
+    var container = CosmosClient.GetDatabase("primary").GetContainer("merchants");
+    var response = await TranslateMerchantCosmosAsync(
+      () => container.ReadItemAsync<Merchant>(merchantId.ToString(), new PartitionKey(parentCompanyId.ToString()), cancellationToken: cancellationToken),
+      merchantId).ConfigureAwait(false);
+
+    InvoiceMetrics.RecordCosmosDbCharge(response.RequestCharge, "read", "merchants");
+    Merchant merchant = response.Resource ?? throw new MerchantNotFoundException(merchantId);
+    if (merchant.IsSoftDeleted)
+    {
+      throw new MerchantLockedException(merchantId);
+    }
+
+    activity?.RecordSuccess();
+    return (merchant, response.ETag);
+  }
+
+  /// <inheritdoc/>
+  public async ValueTask<bool> TryReplaceMerchantSnapshotAsync(Merchant merchant, string expectedETag, CancellationToken cancellationToken)
+  {
+    using var activity = InvoicePackageTracing.StartActivity(nameof(TryReplaceMerchantSnapshotAsync));
+    ArgumentNullException.ThrowIfNull(merchant);
+    ArgumentException.ThrowIfNullOrWhiteSpace(expectedETag);
+
+    var container = CosmosClient.GetDatabase("primary").GetContainer("merchants");
+    try
+    {
+      var response = await container.ReplaceItemAsync(
+        merchant, merchant.id.ToString(), new PartitionKey(merchant.ParentCompanyId.ToString()),
+        new ItemRequestOptions { IfMatchEtag = expectedETag }, cancellationToken).ConfigureAwait(false);
+      InvoiceMetrics.RecordCosmosDbCharge(response.RequestCharge, "replace", "merchants");
+      activity?.RecordSuccess();
+      return true;
+    }
+    catch (CosmosException exception) when (exception.StatusCode == HttpStatusCode.PreconditionFailed)
+    {
+      activity?.SetTag("result.conflict", true);
+      return false;
+    }
+    catch (CosmosException exception)
+    {
+      throw TranslateMerchantCosmos(exception, merchant.id);
+    }
+  }
+
+  /// <inheritdoc/>
   public async ValueTask<IEnumerable<Merchant>> ReadMerchantsAsync(Guid parentCompanyId, CancellationToken cancellationToken)
   {
     using var activity = InvoicePackageTracing.StartActivity(nameof(ReadMerchantsAsync));

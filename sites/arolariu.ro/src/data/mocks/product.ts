@@ -18,7 +18,7 @@
  */
 
 import {type Product} from "@/types/invoices";
-import type {StandardClassification} from "@/types/invoices/Classification";
+import type {ProductCategory} from "@/types/invoices/Category";
 import {faker} from "@faker-js/faker";
 
 /**
@@ -49,7 +49,7 @@ import {faker} from "@faker-js/faker";
  * // Basic usage
  * const product = new ProductBuilder()
  *   .withName("Organic Bananas")
- *   .withClassification(foodClassification)
+ *   .withCategory(foodClassification)
  *   .withPrice(2.99)
  *   .withQuantity(5)
  *   .build();
@@ -106,7 +106,7 @@ export class ProductBuilder {
         isSoftDeleted: false,
         confidence: faker.number.float({min: 0.7, max: 1, multipleOf: 0.01}),
       },
-      classification: null,
+      category: null,
       allergenAssessment: null,
     };
   }
@@ -151,13 +151,13 @@ export class ProductBuilder {
   }
 
   /**
-   * Sets the standard taxonomy classification for the product.
+   * Sets the category for the product.
    *
-   * @param classification - StandardClassification or null when unclassified.
+   * @param category - ProductCategory or null when unclassified.
    * @returns The ProductBuilder instance for method chaining.
    */
-  withClassification(classification: StandardClassification | null): this {
-    this.product.classification = classification;
+  withCategory(category: ProductCategory | null): this {
+    this.product.category = category;
     return this;
   }
 
@@ -277,7 +277,7 @@ export class ProductBuilder {
    * ```typescript
    * const product = new ProductBuilder()
    *   .withName("Apple Juice")
-   *   .withClassification(beverageClassification)
+   *   .withCategory(beverageClassification)
    *   .build();
    * ```
    */
@@ -298,7 +298,7 @@ export class ProductBuilder {
    * @example
    * ```typescript
    * const products = new ProductBuilder()
-   *   .withClassification(foodClassification)
+   *   .withCategory(foodClassification)
    *   .withPrice(5.99)
    *   .buildMany(15); // 15 food products at $5.99 each
    * ```

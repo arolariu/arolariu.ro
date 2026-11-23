@@ -5,7 +5,7 @@ using System.Linq;
 
 using arolariu.Backend.Domain.Invoices.DDD.ValueObjects;
 using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Allergens;
-using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Classifications;
+using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Categories;
 using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Products;
 using arolariu.Backend.Domain.Tests.Builders;
 
@@ -546,7 +546,7 @@ public sealed class ProductExtendedTests
     var product = new Product
     {
       Name = "MONSTER ENERGY 500ML",
-      Classification = ClassificationTestData.Gpc("10000123", "Energy Drinks"),
+      Category = ProductCategory.SoftDrinks,
       Quantity = 2,
       QuantityUnit = "pcs",
       ProductCode = "5449000131805",
@@ -556,7 +556,7 @@ public sealed class ProductExtendedTests
 
     // Assert
     Assert.AreEqual("MONSTER ENERGY 500ML", product.Name);
-    Assert.AreEqual("10000123", product.Classification!.Code);
+    Assert.AreEqual(ProductCategory.SoftDrinks, product.Category);
     Assert.AreEqual(2, product.Quantity);
     Assert.AreEqual("pcs", product.QuantityUnit);
     Assert.AreEqual("5449000131805", product.ProductCode);

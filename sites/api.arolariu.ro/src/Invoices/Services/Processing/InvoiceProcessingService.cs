@@ -9,8 +9,8 @@ using System.Threading.Tasks;
 using arolariu.Backend.Domain.Invoices.Brokers.QueueBroker;
 using arolariu.Backend.Common.Telemetry.Tracing;
 using arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices;
+using arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices.Exceptions.Inner;
 using arolariu.Backend.Domain.Invoices.DDD.Entities.Merchants;
-using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Classifications;
 using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Products;
 using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Products.Exceptions;
 using arolariu.Backend.Domain.Invoices.Services.Orchestration.AnalysisService;
@@ -92,16 +92,16 @@ public sealed partial class InvoiceProcessingService : IInvoiceProcessingService
 
 
   #region Create Invoice API
-  /// <summary>Canonicalizes any manual ECOICOP code and persists a new invoice.</summary>
+  /// <summary>Persists a new invoice.</summary>
   /// <param name="invoice">The invoice aggregate to persist.</param>
   /// <param name="userIdentifier">The optional owning user partition.</param>
-  /// <param name="cancellationToken">The token used to cancel classification or persistence.</param>
+  /// <param name="cancellationToken">The token used to cancel persistence.</param>
   /// <returns>A task that completes after persistence.</returns>
   /// <exception cref="DDD.AggregatorRoots.Invoices.Exceptions.Outer.Processing.InvoiceProcessingServiceValidationException">
-  /// Thrown when invoice input or a manual classification code is invalid.
+  /// Thrown when invoice input or a category is invalid.
   /// </exception>
   /// <exception cref="DDD.AggregatorRoots.Invoices.Exceptions.Outer.Processing.InvoiceProcessingServiceDependencyException">
-  /// Thrown when classification or invoice persistence fails.
+  /// Thrown when invoice persistence fails.
   /// </exception>
   /// <inheritdoc/>
   public async Task CreateInvoice(Invoice invoice, Guid? userIdentifier, CancellationToken cancellationToken) =>
@@ -109,16 +109,6 @@ public sealed partial class InvoiceProcessingService : IInvoiceProcessingService
   {
     using var activity = InvoicePackageTracing.StartActivity(nameof(CreateInvoice));
     var sw = Stopwatch.StartNew();
-
-    if (invoice.Classification is not null)
-    {
-      invoice.Classification = await analysisOrchestrationService
-        .ResolveManualClassificationAsync(
-          invoice.Classification.Code,
-          ClassificationSystem.EcoicopV2,
-          cancellationToken)
-        .ConfigureAwait(false);
-    }
 
     await invoiceOrchestrationService
       .CreateInvoiceObject(invoice, userIdentifier, cancellationToken)
@@ -130,38 +120,26 @@ public sealed partial class InvoiceProcessingService : IInvoiceProcessingService
   #endregion
 
   #region Create Merchant API
-  /// <summary>Canonicalizes any manual NACE code and persists a new merchant.</summary>
+  /// <summary>Persists a new merchant.</summary>
   /// <param name="merchant">The merchant entity to persist.</param>
   /// <param name="parentCompanyId">The optional parent-company partition.</param>
-  /// <param name="classificationCode">The optional NACE 2.1 code to resolve canonically.</param>
-  /// <param name="cancellationToken">The token used to cancel classification or persistence.</param>
+  /// <param name="cancellationToken">The token used to cancel persistence.</param>
   /// <returns>A task that completes after persistence.</returns>
   /// <exception cref="DDD.AggregatorRoots.Invoices.Exceptions.Outer.Processing.InvoiceProcessingServiceValidationException">
-  /// Thrown when merchant input or a manual classification code is invalid.
+  /// Thrown when merchant input or a category is invalid.
   /// </exception>
   /// <exception cref="DDD.AggregatorRoots.Invoices.Exceptions.Outer.Processing.InvoiceProcessingServiceDependencyException">
-  /// Thrown when classification or merchant persistence fails.
+  /// Thrown when merchant persistence fails.
   /// </exception>
   /// <inheritdoc/>
   public async Task CreateMerchant(
     Merchant merchant,
     Guid? parentCompanyId,
-    string? classificationCode,
     CancellationToken cancellationToken) =>
   await TryCatchAsync(async () =>
   {
     using var activity = InvoicePackageTracing.StartActivity(nameof(CreateMerchant));
     var sw = Stopwatch.StartNew();
-
-    if (classificationCode is not null)
-    {
-      merchant.Classification = await analysisOrchestrationService
-        .ResolveManualClassificationAsync(
-          classificationCode,
-          ClassificationSystem.Nace21,
-          cancellationToken)
-        .ConfigureAwait(false);
-    }
 
     await merchantOrchestrationService
       .CreateMerchantObject(merchant, parentCompanyId, cancellationToken)
@@ -335,17 +313,17 @@ public sealed partial class InvoiceProcessingService : IInvoiceProcessingService
   #endregion
 
   #region Update Invoice API
-  /// <summary>Canonicalizes any manual ECOICOP code and replaces an invoice.</summary>
+  /// <summary>Replaces an invoice.</summary>
   /// <param name="updatedInvoice">The replacement invoice state.</param>
   /// <param name="invoiceIdentifier">The persisted invoice identifier.</param>
   /// <param name="userIdentifier">The optional owning user partition.</param>
-  /// <param name="cancellationToken">The token used to cancel classification or persistence.</param>
+  /// <param name="cancellationToken">The token used to cancel persistence.</param>
   /// <returns>The persisted invoice aggregate.</returns>
   /// <exception cref="DDD.AggregatorRoots.Invoices.Exceptions.Outer.Processing.InvoiceProcessingServiceValidationException">
-  /// Thrown when replacement input or a manual classification code is invalid.
+  /// Thrown when replacement input or a category is invalid.
   /// </exception>
   /// <exception cref="DDD.AggregatorRoots.Invoices.Exceptions.Outer.Processing.InvoiceProcessingServiceDependencyException">
-  /// Thrown when classification or invoice persistence fails.
+  /// Thrown when invoice persistence fails.
   /// </exception>
   /// <inheritdoc/>
   public async Task<Invoice> UpdateInvoice(
@@ -358,17 +336,6 @@ public sealed partial class InvoiceProcessingService : IInvoiceProcessingService
     using var activity = InvoicePackageTracing.StartActivity(nameof(UpdateInvoice));
     var sw = Stopwatch.StartNew();
 
-    if (!string.IsNullOrWhiteSpace(updatedInvoice.ClassificationCode))
-    {
-      updatedInvoice.Classification = await analysisOrchestrationService
-        .ResolveManualClassificationAsync(
-          updatedInvoice.ClassificationCode,
-          ClassificationSystem.EcoicopV2,
-          cancellationToken)
-        .ConfigureAwait(false);
-    }
-
-    updatedInvoice.ClassificationCode = null;
     var newInvoice = await invoiceOrchestrationService
       .UpdateInvoiceObject(updatedInvoice, invoiceIdentifier, userIdentifier, cancellationToken)
       .ConfigureAwait(false);
@@ -380,43 +347,33 @@ public sealed partial class InvoiceProcessingService : IInvoiceProcessingService
   #endregion
 
   #region Update Merchant API
-  /// <summary>Canonicalizes any manual NACE code and replaces a merchant.</summary>
+  /// <summary>Replaces a merchant.</summary>
   /// <param name="updatedMerchant">The replacement merchant fields.</param>
   /// <param name="identifier">The persisted merchant identifier.</param>
   /// <param name="parentCompanyId">The optional parent-company partition.</param>
-  /// <param name="classificationCode">The optional NACE 2.1 code to resolve canonically.</param>
-  /// <param name="cancellationToken">The token used to cancel classification or persistence.</param>
+  /// <param name="fields">The details and category fields to update.</param>
+  /// <param name="cancellationToken">The token used to cancel persistence.</param>
   /// <returns>The persisted merchant entity.</returns>
   /// <exception cref="DDD.AggregatorRoots.Invoices.Exceptions.Outer.Processing.InvoiceProcessingServiceValidationException">
-  /// Thrown when replacement input or a manual classification code is invalid.
+  /// Thrown when replacement input or a category is invalid.
   /// </exception>
   /// <exception cref="DDD.AggregatorRoots.Invoices.Exceptions.Outer.Processing.InvoiceProcessingServiceDependencyException">
-  /// Thrown when classification or merchant persistence fails.
+  /// Thrown when merchant persistence fails.
   /// </exception>
   /// <inheritdoc/>
   public async Task<Merchant> UpdateMerchant(
     Guid identifier,
     Guid? parentCompanyId,
     Merchant updatedMerchant,
-    string? classificationCode,
+    MerchantUpdateFields fields,
     CancellationToken cancellationToken) =>
   await TryCatchAsync(async () =>
   {
     using var activity = InvoicePackageTracing.StartActivity(nameof(UpdateMerchant));
     var sw = Stopwatch.StartNew();
 
-    if (classificationCode is not null)
-    {
-      updatedMerchant.Classification = await analysisOrchestrationService
-        .ResolveManualClassificationAsync(
-          classificationCode,
-          ClassificationSystem.Nace21,
-          cancellationToken)
-        .ConfigureAwait(false);
-    }
-
     var newMerchant = await merchantOrchestrationService
-      .UpdateMerchantObject(updatedMerchant, identifier, parentCompanyId, cancellationToken)
+      .UpdateMerchantObject(updatedMerchant, identifier, parentCompanyId, cancellationToken, fields)
       .ConfigureAwait(false);
 
     sw.Stop();
@@ -451,41 +408,29 @@ public sealed partial class InvoiceProcessingService : IInvoiceProcessingService
   #endregion
 
   #region Add Product API
-  /// <summary>Canonicalizes any manual GS1 GPC code and appends a product to an invoice.</summary>
+  /// <summary>Appends a product with its optional category to an invoice.</summary>
   /// <param name="product">The product to append.</param>
   /// <param name="invoiceIdentifier">The target invoice identifier.</param>
   /// <param name="userIdentifier">The optional owning user partition.</param>
-  /// <param name="classificationCode">The optional GS1 GPC code to resolve canonically.</param>
-  /// <param name="cancellationToken">The token used to cancel classification or persistence.</param>
+  /// <param name="cancellationToken">The token used to cancel persistence.</param>
   /// <returns>A task that completes after the aggregate update.</returns>
   /// <exception cref="DDD.AggregatorRoots.Invoices.Exceptions.Outer.Processing.InvoiceProcessingServiceValidationException">
   /// Thrown when the product is null or its manual classification code is invalid.
   /// </exception>
   /// <exception cref="DDD.AggregatorRoots.Invoices.Exceptions.Outer.Processing.InvoiceProcessingServiceDependencyException">
-  /// Thrown when classification or invoice persistence fails.
+  /// Thrown when invoice persistence fails.
   /// </exception>
   /// <inheritdoc/>
   public async Task AddProduct(
     Guid invoiceIdentifier,
     Guid? userIdentifier,
     Product product,
-    string? classificationCode,
     CancellationToken cancellationToken) =>
   await TryCatchAsync(async () =>
   {
     ArgumentNullException.ThrowIfNull(product);
 
     using var activity = InvoicePackageTracing.StartActivity(nameof(AddProduct));
-    if (classificationCode is not null)
-    {
-      product.Classification = await analysisOrchestrationService
-        .ResolveManualClassificationAsync(
-          classificationCode,
-          ClassificationSystem.Gs1Gpc,
-          cancellationToken)
-        .ConfigureAwait(false);
-    }
-
     var invoice = await invoiceOrchestrationService
       .ReadInvoiceObject(invoiceIdentifier, userIdentifier, cancellationToken)
       .ConfigureAwait(false);
@@ -497,6 +442,44 @@ public sealed partial class InvoiceProcessingService : IInvoiceProcessingService
       .ConfigureAwait(false);
   }).ConfigureAwait(false);
   #endregion
+
+  /// <inheritdoc/>
+  public async Task<Product> UpdateProductWithCategory(
+    Guid invoiceIdentifier, Guid userIdentifier, UpdateProductRequestDto request, CancellationToken cancellationToken) =>
+    await TryCatchAsync(async () =>
+    {
+      using var activity = InvoicePackageTracing.StartActivity(nameof(UpdateProductWithCategory));
+      if (!request.HasCategory || !request.IsValid || (request.Category is { } category && !Enum.IsDefined(category)))
+      {
+        throw new ArgumentException("A valid product and category update are required.", nameof(request));
+      }
+
+      var (invoice, etag) = await invoiceOrchestrationService
+        .ReadInvoiceSnapshotAsync(invoiceIdentifier, userIdentifier, cancellationToken).ConfigureAwait(false);
+      var items = invoice.Items.ToList();
+      int index = items.FindIndex(item => string.Equals(item.Name, request.OriginalProductName, StringComparison.OrdinalIgnoreCase));
+      if (index < 0)
+      {
+        throw new ProductNotFoundException(invoiceIdentifier);
+      }
+
+      if (items.FindIndex(index + 1, item => string.Equals(item.Name, request.OriginalProductName, StringComparison.OrdinalIgnoreCase)) >= 0)
+      {
+        throw new ArgumentException("More than one product matches this name.", nameof(request));
+      }
+
+      Product updated = request.ToProduct(items[index]);
+      items[index] = updated;
+      invoice.Items = items;
+      invoice.PerformUpdate(userIdentifier);
+
+      if (!await invoiceOrchestrationService.TryReplaceInvoiceSnapshotAsync(invoice, etag, cancellationToken).ConfigureAwait(false))
+      {
+        throw new InvoiceAlreadyExistsException("The invoice changed. Refresh it before trying again.");
+      }
+
+      return updated;
+    }).ConfigureAwait(false);
 
   #region Get Products API
   /// <summary>Returns every product currently stored on an invoice.</summary>
@@ -904,8 +887,8 @@ public sealed partial class InvoiceProcessingService : IInvoiceProcessingService
     QueueAnalysisMessage message,
     CancellationToken cancellationToken)
   {
-    Invoice invoice = await invoiceOrchestrationService
-      .ReadInvoiceObject(
+    var (invoice, etag) = await invoiceOrchestrationService
+      .ReadInvoiceSnapshotAsync(
         message.TargetId,
         message.TargetPartitionIdentifier ?? message.RequestedBy,
         cancellationToken)
@@ -920,9 +903,12 @@ public sealed partial class InvoiceProcessingService : IInvoiceProcessingService
 
     try
     {
-      _ = await invoiceOrchestrationService
-        .UpdateInvoiceObject(analyzed, analyzed.id, analyzed.UserIdentifier, cancellationToken)
-        .ConfigureAwait(false);
+      if (!await invoiceOrchestrationService.TryReplaceInvoiceSnapshotAsync(analyzed, etag, cancellationToken).ConfigureAwait(false))
+      {
+        logger.LogAnalysisTargetPersistenceFailed(message.CorrelationId);
+        InvoiceMetrics.RecordAnalysisTargetPersistenceFailure(AnalysisTargetType.Invoice);
+        return null;
+      }
     }
     catch (OperationCanceledException)
     {
@@ -945,8 +931,10 @@ public sealed partial class InvoiceProcessingService : IInvoiceProcessingService
     QueueAnalysisMessage message,
     CancellationToken cancellationToken)
   {
-    Merchant merchant = await merchantOrchestrationService
-      .ReadMerchantObject(message.TargetId, message.TargetPartitionIdentifier, cancellationToken)
+    Guid partition = message.TargetPartitionIdentifier
+      ?? throw new InvalidOperationException("The merchant analysis target partition is required.");
+    var (merchant, etag) = await merchantOrchestrationService
+      .ReadMerchantSnapshotAsync(message.TargetId, partition, cancellationToken)
       .ConfigureAwait(false);
 
     MerchantAnalysisOptions options = message.MerchantOptions
@@ -958,13 +946,12 @@ public sealed partial class InvoiceProcessingService : IInvoiceProcessingService
 
     try
     {
-      _ = await merchantOrchestrationService
-        .UpdateMerchantObject(
-          analyzed,
-          analyzed.id,
-          message.TargetPartitionIdentifier,
-          cancellationToken)
-        .ConfigureAwait(false);
+      if (!await merchantOrchestrationService.TryReplaceMerchantSnapshotAsync(analyzed, etag, cancellationToken).ConfigureAwait(false))
+      {
+        logger.LogAnalysisTargetPersistenceFailed(message.CorrelationId);
+        InvoiceMetrics.RecordAnalysisTargetPersistenceFailure(AnalysisTargetType.Merchant);
+        return null;
+      }
     }
     catch (OperationCanceledException)
     {

@@ -1,5 +1,6 @@
 "use client";
 
+import {productCategoryLabel} from "@/lib/categories/categoryLabels";
 import {
   Bar,
   BarChart,
@@ -25,7 +26,7 @@ type Props = {
 };
 
 type TooltipPayloadItem = {
-  payload: {category: string; current: number; average: number};
+  payload: {categoryLabel: string; current: number; average: number};
 };
 
 type CustomTooltipProps = {
@@ -42,7 +43,7 @@ function CustomTooltip({active, payload, currency, currentLabel, averageLabel}: 
   const data = firstItem.payload;
   return (
     <div className={styles["tooltip"]}>
-      <p className={styles["tooltipName"]}>{data.category}</p>
+      <p className={styles["tooltipName"]}>{data.categoryLabel}</p>
       <div className={styles["tooltipDetails"]}>
         <p className={styles["tooltipRow"]}>
           <span className={styles["tooltipLabel"]}>{currentLabel}: </span>
@@ -90,7 +91,7 @@ export function CategoryComparisonChart({data, currency}: Props): React.JSX.Elem
             width='100%'
             height='100%'>
             <BarChart
-              data={data}
+              data={data.map((entry) => ({...entry, categoryLabel: productCategoryLabel(t, entry.category)}))}
               layout='vertical'
               margin={{top: 4, right: 8, bottom: 4, left: 4}}>
               <XAxis
@@ -101,7 +102,7 @@ export function CategoryComparisonChart({data, currency}: Props): React.JSX.Elem
               />
               <YAxis
                 type='category'
-                dataKey='category'
+                dataKey='categoryLabel'
                 tick={{fontSize: 10}}
                 tickLine={false}
                 axisLine={false}

@@ -46,6 +46,7 @@ public partial class MerchantStorageFoundationService : IMerchantStorageFoundati
     using var activity = InvoicePackageTracing.StartActivity(nameof(CreateMerchantObject));
     ArgumentNullException.ThrowIfNull(merchant);
     ValidateMerchantIdentifierIsSet(merchant.id);
+    ValidateCategory(merchant.Category);
 
     await invoiceNoSqlBroker
       .CreateMerchantAsync(merchant, cancellationToken)
@@ -111,7 +112,27 @@ public partial class MerchantStorageFoundationService : IMerchantStorageFoundati
 
   #region Update Merchant Object API
   /// <inheritdoc/>
-  public async Task<Merchant> UpdateMerchantObject(Merchant updatedMerchant, Guid merchantIdentifier, Guid? parentCompanyId, CancellationToken cancellationToken) =>
+  public async Task<(Merchant Resource, string ETag)> ReadMerchantSnapshotAsync(Guid merchantId, Guid parentCompanyId, CancellationToken cancellationToken) =>
+    await TryCatchAsync(async () =>
+    {
+      using var activity = InvoicePackageTracing.StartActivity(nameof(ReadMerchantSnapshotAsync));
+      ValidateMerchantIdentifierIsSet(merchantId);
+      return await invoiceNoSqlBroker.ReadMerchantSnapshotAsync(merchantId, parentCompanyId, cancellationToken).ConfigureAwait(false);
+    }).ConfigureAwait(false);
+
+  /// <inheritdoc/>
+  public async Task<bool> TryReplaceMerchantSnapshotAsync(Merchant merchant, string expectedETag, CancellationToken cancellationToken) =>
+    await TryCatchAsync(async () =>
+    {
+      using var activity = InvoicePackageTracing.StartActivity(nameof(TryReplaceMerchantSnapshotAsync));
+      ArgumentNullException.ThrowIfNull(merchant);
+      ValidateMerchantIdentifierIsSet(merchant.id);
+      ValidateCategory(merchant.Category);
+      return await invoiceNoSqlBroker.TryReplaceMerchantSnapshotAsync(merchant, expectedETag, cancellationToken).ConfigureAwait(false);
+    }).ConfigureAwait(false);
+
+  /// <inheritdoc/>
+  public async Task<Merchant> UpdateMerchantObject(Merchant updatedMerchant, Guid merchantIdentifier, Guid? parentCompanyId, CancellationToken cancellationToken, MerchantUpdateFields fields = MerchantUpdateFields.Details) =>
   await TryCatchAsync(async () =>
   {
     using var activity = InvoicePackageTracing.StartActivity(nameof(UpdateMerchantObject));
@@ -123,16 +144,20 @@ public partial class MerchantStorageFoundationService : IMerchantStorageFoundati
       throw new MerchantNotFoundException(merchantIdentifier);
     }
 
-    currentMerchant.Name = updatedMerchant.Name;
-    currentMerchant.Description = updatedMerchant.Description;
-    currentMerchant.Address = updatedMerchant.Address;
-
-    if (updatedMerchant.Classification is not null)
+    if (fields.HasFlag(MerchantUpdateFields.Details))
     {
-      currentMerchant.Classification = updatedMerchant.Classification;
+      currentMerchant.Name = updatedMerchant.Name;
+      currentMerchant.Description = updatedMerchant.Description;
+      currentMerchant.Address = updatedMerchant.Address;
     }
 
-    if (updatedMerchant.AdditionalMetadata.Count > 0)
+    if (fields.HasFlag(MerchantUpdateFields.Category))
+    {
+      ValidateCategory(updatedMerchant.Category);
+      currentMerchant.Category = updatedMerchant.Category;
+    }
+
+    if (fields.HasFlag(MerchantUpdateFields.Details) && updatedMerchant.AdditionalMetadata.Count > 0)
     {
       currentMerchant.AdditionalMetadata.Clear();
 

@@ -11,7 +11,7 @@ using arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices;
 using arolariu.Backend.Domain.Invoices.DDD.Analysis.Contracts;
 using arolariu.Backend.Domain.Invoices.DDD.Entities.Merchants;
 using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Allergens;
-using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Classifications;
+using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Categories;
 using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Products;
 using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Recipes;
 using arolariu.Backend.Domain.Invoices.Endpoints;
@@ -51,7 +51,6 @@ public sealed class InvoiceUnifiedLayeringArchitectureTests
     Type analysisFoundation = RequireType($"{ServicesNamespace}.Foundation.Analysis.AnalysisFoundationService");
     Type documentBroker = RequireType($"{BrokersNamespace}.DocumentIntelligenceBroker.IDocumentIntelligenceBroker");
     Type generativeBroker = RequireType($"{BrokersNamespace}.GenerativeAnalysisBroker.IGenerativeAnalysisBroker");
-    Type taxonomyBroker = RequireType($"{BrokersNamespace}.TaxonomyBroker.ITaxonomyBroker");
 
     AssertConstructor(management, processingContract, typeof(ILoggerFactory));
     AssertConstructor(
@@ -69,7 +68,6 @@ public sealed class InvoiceUnifiedLayeringArchitectureTests
       analysisFoundation,
       documentBroker,
       generativeBroker,
-      taxonomyBroker,
       typeof(ILoggerFactory));
   }
 

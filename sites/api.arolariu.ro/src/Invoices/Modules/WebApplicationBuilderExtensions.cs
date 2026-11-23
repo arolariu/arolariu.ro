@@ -10,7 +10,6 @@ using arolariu.Backend.Domain.Invoices.Brokers.DataBrokers.DatabaseBroker;
 using arolariu.Backend.Domain.Invoices.Brokers.DocumentIntelligenceBroker;
 using arolariu.Backend.Domain.Invoices.Brokers.GenerativeAnalysisBroker;
 using arolariu.Backend.Domain.Invoices.Brokers.QueueBroker;
-using arolariu.Backend.Domain.Invoices.Brokers.TaxonomyBroker;
 using arolariu.Backend.Domain.Invoices.Services.Foundation.Analysis;
 using arolariu.Backend.Domain.Invoices.Services.Foundation.AnalysisQueue;
 using arolariu.Backend.Domain.Invoices.Services.Foundation.InvoiceStorage;
@@ -137,7 +136,6 @@ public static class WebApplicationBuilderExtensions
     services.AddScoped<IDatabaseBroker, CosmosDatabaseBroker>();
     services.AddScoped<IGenerativeAnalysisBroker, AzureFoundryBroker>();
     services.AddScoped<IQueueBroker, AzureStorageQueueBroker>();
-    services.AddSingleton<ITaxonomyBroker, JsonTaxonomyBroker>();
 
     // Foundation services:
     services.AddScoped<IAnalysisQueueFoundationService, AnalysisQueueFoundationService>();

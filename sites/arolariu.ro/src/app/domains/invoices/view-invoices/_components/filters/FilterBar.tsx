@@ -20,9 +20,9 @@ import {useTranslations} from "next-intl-selector";
 import {useCallback, useEffect, useMemo, useState} from "react";
 import {TbCards, TbFilter, TbSearch, TbTable, TbX} from "react-icons/tb";
 import type {FilterState} from "../../_hooks/useInvoiceFilters";
-import {computeAvailableClassificationGroups, computeAvailableCurrencies, computeAvailablePaymentTypes} from "../../_utils/filterOptions";
+import {computeAvailableCategories, computeAvailableCurrencies, computeAvailablePaymentTypes} from "../../_utils/filterOptions";
 import {AmountFilterCard} from "./AmountFilterCard";
-import {ClassificationFilterCard} from "./ClassificationFilterCard";
+import {CategoryFilterCard} from "./CategoryFilterCard";
 import {CurrencyFilterCard} from "./CurrencyFilterCard";
 import {DateFilterCard} from "./DateFilterCard";
 import styles from "./FilterBar.module.scss";
@@ -77,7 +77,7 @@ export default function FilterBar({
   }, [debouncedSearch, filters.search, onFiltersChange]);
 
   const availableCurrencies = useMemo(() => computeAvailableCurrencies(invoices), [invoices]);
-  const availableClassificationGroups = useMemo(() => computeAvailableClassificationGroups(invoices), [invoices]);
+  const availableCategories = useMemo(() => computeAvailableCategories(invoices), [invoices]);
   const availablePaymentTypes = useMemo(() => computeAvailablePaymentTypes(invoices), [invoices]);
 
   const handleSearchChange = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
@@ -92,7 +92,7 @@ export default function FilterBar({
       dateTo: null,
       amountMin: null,
       amountMax: null,
-      classificationGroups: [],
+      categoryFilters: [],
       paymentTypes: [],
       currencies: [],
       sortBy: "date",
@@ -136,9 +136,9 @@ export default function FilterBar({
           availableCurrencies={availableCurrencies}
           onFiltersChange={onFiltersChange}
         />
-        <ClassificationFilterCard
+        <CategoryFilterCard
           filters={filters}
-          availableClassificationGroups={availableClassificationGroups}
+          availableCategories={availableCategories}
           onFiltersChange={onFiltersChange}
         />
         <PaymentTypeFilterCard

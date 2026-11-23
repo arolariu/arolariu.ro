@@ -21,7 +21,7 @@
  */
 
 import type {NamedEntity} from "../DDD";
-import type {StandardClassification} from "./Classification";
+import type {MerchantCategory} from "./Category";
 
 /**
  * Contact information value object matching backend's ContactInformation.
@@ -89,7 +89,7 @@ export interface ContactInformation {
  *   description: "Lidl supermarket in Militari neighborhood",
  *   address: {fullName: "Lidl", address: "Str. Iuliu Maniu 220", phoneNumber: "", emailAddress: "", website: ""},
  *   parentCompanyId: "lidl-romania-uuid",
- *   classification: null,
+ *   category: null,
  * };
  * ```
  *
@@ -103,10 +103,10 @@ export interface Merchant extends NamedEntity<string> {
   parentCompanyId: string;
 
   /**
-   * The standard taxonomy classification for this merchant.
-   * @remarks Expected system is NACE 2.1. Null when the merchant has not been classified.
+   * The selected category.
+   * @remarks Null means uncategorized.
    */
-  classification: StandardClassification | null;
+  category: MerchantCategory | null;
 }
 
 /**

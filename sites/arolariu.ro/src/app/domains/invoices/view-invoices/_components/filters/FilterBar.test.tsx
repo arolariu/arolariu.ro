@@ -32,7 +32,7 @@ const RESET_PATCH: Partial<FilterState> = {
   dateTo: null,
   amountMin: null,
   amountMax: null,
-  classificationGroups: [],
+  categoryFilters: [],
   paymentTypes: [],
   currencies: [],
   sortBy: "date",
@@ -66,7 +66,7 @@ function makeFilters(overrides: Partial<FilterState> = {}): FilterState {
     dateTo: null,
     amountMin: null,
     amountMax: null,
-    classificationGroups: [],
+    categoryFilters: [],
     paymentTypes: [],
     currencies: [],
     sortBy: "date",
@@ -117,7 +117,7 @@ function expectEveryFilterCard(region: HTMLElement): void {
   expect(scope.getByText(`${FILTERS}.dateRange`)).toBeInTheDocument();
   expect(scope.getByText(`${FILTERS}.amountRange`)).toBeInTheDocument();
   expect(scope.getByText(/forms\.invoices\.filters\.currency$/)).toBeInTheDocument();
-  expect(scope.getByText(/forms\.invoices\.filters\.classificationGroups$/)).toBeInTheDocument();
+  expect(scope.getByText(/categories\.ui\.invoice$/)).toBeInTheDocument();
   expect(scope.getByText(/forms\.invoices\.filters\.paymentTypes$/)).toBeInTheDocument();
   expect(scope.getByText(/forms\.invoices\.filters\.sortBy$/)).toBeInTheDocument();
   for (const {label} of PAYMENT_TYPE_LABELS) {
@@ -125,7 +125,7 @@ function expectEveryFilterCard(region: HTMLElement): void {
   }
   expect(scope.getByRole("button", {name: "RON"})).toBeInTheDocument();
   expect(scope.getByRole("button", {name: "EUR"})).toBeInTheDocument();
-  expect(scope.getByRole("button", {name: "unclassified"})).toBeInTheDocument();
+  expect(scope.getByRole("button", {name: "categories.ui.unclassified"})).toBeInTheDocument();
 }
 
 describe("FilterBar", () => {

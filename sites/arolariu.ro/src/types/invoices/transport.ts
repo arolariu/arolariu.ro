@@ -30,13 +30,7 @@
 
 import {validateStringIsGuidType} from "@/lib/utils.generic";
 import {isAllergenAssessment} from "./Allergen";
-import {
-  isClassificationOrigin,
-  isClassificationSystem,
-  type ClassificationEvidence,
-  type ClassificationNode,
-  type StandardClassification,
-} from "./Classification";
+import {isInvoiceCategory, isMerchantCategory, isProductCategory} from "@/lib/categories/categoryCatalog";
 import {isFiniteNumber, isNonEmptyString, isRecord} from "../guards";
 import {InvoiceScanType, type Invoice, type InvoiceScan, type InvoiceScanMetadataValue} from "./Invoice";
 import {type ContactInformation, type Merchant} from "./Merchant";
@@ -55,7 +49,7 @@ import type {Currency} from "../DDD";
  *
  * @remarks
  * The `path` field encodes a dot-separated location within the parsed value
- * (e.g. `"invoice.classification.system"`) so that server logs can pinpoint
+ * (e.g. `"invoice.category"`) so that server logs can pinpoint
  * exactly which backend field caused the rejection.
  *
  * @example
@@ -136,10 +130,10 @@ function parseOptionalNumberOfUpdates(record: Readonly<Record<string, unknown>>,
   return value;
 }
 
-function parseNonEmptyStringField(record: Readonly<Record<string, unknown>>, field: string, path: string): string {
-  const value = record[field];
+function parseEntityName(record: Readonly<Record<string, unknown>>, path: string): string {
+  const value = record["name"];
   if (!isNonEmptyString(value)) {
-    throw new TransportValidationError(`${path}.${field}`, "expected non-empty string");
+    throw new TransportValidationError(`${path}.name`, "expected non-empty string");
   }
   return value;
 }
@@ -300,7 +294,7 @@ function parseContactInformation(value: unknown, path: string): ContactInformati
 function parseProductInternal(value: unknown, path: string): Product {
   if (!isRecord(value)) throw new TransportValidationError(path, "expected object");
 
-  const rawName = parseNonEmptyStringField(value, "name", path);
+  const rawName = parseEntityName(value, path);
 
   const rawQuantity = value["quantity"];
   if (!isFiniteNumber(rawQuantity)) {
@@ -330,9 +324,7 @@ function parseProductInternal(value: unknown, path: string): Product {
   // metadata (required)
   const metadata = parseProductMetadata(value["metadata"], `${path}.metadata`);
 
-  // classification (nullable — absent treated as null)
-  const rawClassification = value["classification"] ?? null;
-  const classification = parseStandardClassification(rawClassification, `${path}.classification`);
+  const category = parseCategory(value["category"], `${path}.category`, isProductCategory);
 
   // allergenAssessment (nullable — absent treated as null)
   const rawAllergenAssessment = value["allergenAssessment"];
@@ -352,7 +344,7 @@ function parseProductInternal(value: unknown, path: string): Product {
     price: rawPrice,
     totalPrice: rawTotalPrice,
     metadata,
-    classification,
+    category,
     allergenAssessment,
   };
 }
@@ -364,15 +356,14 @@ function parseMerchantInternal(value: unknown, path: string): Merchant {
   if (!isRecord(value)) throw new TransportValidationError(path, "expected object");
 
   const rawId = parseGuidField(value, "id", path);
-  const rawName = parseNonEmptyStringField(value, "name", path);
+  const rawName = parseEntityName(value, path);
   const description = parseOptionalStringField(value, "description", path);
 
   const address = parseContactInformation(value["address"], `${path}.address`);
 
   const parentCompanyId = parseOptionalStringField(value, "parentCompanyId", path);
 
-  const rawClassification = value["classification"] ?? null;
-  const classification = parseStandardClassification(rawClassification, `${path}.classification`);
+  const category = parseCategory(value["category"], `${path}.category`, isMerchantCategory);
 
   const createdAt = parseDate(value["createdAt"], `${path}.createdAt`);
   const lastUpdatedAt = parseDate(value["lastUpdatedAt"], `${path}.lastUpdatedAt`);
@@ -391,7 +382,7 @@ function parseMerchantInternal(value: unknown, path: string): Merchant {
     description,
     address,
     parentCompanyId,
-    classification,
+    category,
     createdAt,
     createdBy,
     lastUpdatedAt,
@@ -402,76 +393,14 @@ function parseMerchantInternal(value: unknown, path: string): Merchant {
   };
 }
 
-function parseClassificationNode(value: unknown, path: string): ClassificationNode {
-  if (!isRecord(value)) throw new TransportValidationError(path, "expected object");
-  return {
-    level: parseNonEmptyStringField(value, "level", path),
-    code: parseNonEmptyStringField(value, "code", path),
-    officialLabel: parseNonEmptyStringField(value, "officialLabel", path),
-  };
-}
-
-function parseClassificationEvidence(value: unknown, path: string): ClassificationEvidence {
-  if (!isRecord(value)) throw new TransportValidationError(path, "expected object");
-  return {
-    source: parseNonEmptyStringField(value, "source", path),
-    value: parseNonEmptyStringField(value, "value", path),
-  };
-}
-
-function parseClassificationConfidence(value: unknown, path: string): number | null {
-  if (value === null || value === undefined) return null;
-  if (!isFiniteNumber(value)) {
-    throw new TransportValidationError(path, "expected finite number or null");
-  }
-  return value;
-}
-
-// ============================================================
-// Public exports
-// ============================================================
-
-/**
- * Parses an unknown value as a {@link StandardClassification}, returning `null` when
- * the value is `null` or `undefined`.
- *
- * @remarks
- * This parser intentionally does NOT call `hasOnlyKeys` — additive backend fields on
- * the classification object are silently ignored. Only the fields required by the
- * {@link StandardClassification} interface are validated.
- *
- * @param value - The raw JSON value to validate (may be `null` for unclassified entities).
- * @param path - Dot-separated path used in error messages (e.g. `"invoice.classification"`).
- * @returns A valid {@link StandardClassification} or `null`.
- *
- * @throws {TransportValidationError} When `value` is non-null and fails structural validation.
- *   Common failure paths: `path.system` for unrecognised taxonomy systems,
- *   `path.origin` for unrecognised origins, `path.hierarchy[n].code` for malformed nodes.
- */
-export function parseStandardClassification(value: unknown, path: string): StandardClassification | null {
-  if (value === null || value === undefined) return null;
-  if (!isRecord(value)) {
-    throw new TransportValidationError(path, "expected an object or null");
-  }
-
-  const {origin, system} = value;
-  if (!isClassificationSystem(system)) {
-    throw new TransportValidationError(`${path}.system`, `unrecognised classification system: "${String(system)}"`);
-  }
-  if (!isClassificationOrigin(origin)) {
-    throw new TransportValidationError(`${path}.origin`, `unrecognised classification origin: "${String(origin)}"`);
-  }
-
-  return {
-    system,
-    version: parseNonEmptyStringField(value, "version", path),
-    code: parseNonEmptyStringField(value, "code", path),
-    officialLabel: parseNonEmptyStringField(value, "officialLabel", path),
-    hierarchy: parseArray(value["hierarchy"], `${path}.hierarchy`, parseClassificationNode),
-    origin,
-    confidence: parseClassificationConfidence(value["confidence"], `${path}.confidence`),
-    evidence: parseArray(value["evidence"], `${path}.evidence`, parseClassificationEvidence),
-  };
+function parseCategory<TCategory extends number>(
+  value: unknown,
+  path: string,
+  isCategory: (value: unknown) => value is TCategory,
+): TCategory | null {
+  if (value === null) return null;
+  if (isCategory(value)) return value;
+  throw new TransportValidationError(path, "expected a category ID from this domain or null");
 }
 
 function parseRecipe(value: unknown, path: string): RecipeSuggestion {
@@ -567,7 +496,7 @@ function parseInvoiceResponseInternal(value: unknown): Invoice {
     userIdentifier: parseGuidField(value, "userIdentifier", path),
     name: parseStringField(value, "name", path),
     description: parseOptionalStringField(value, "description", path),
-    classification: parseStandardClassification(value["classification"] ?? null, `${path}.classification`),
+    category: parseCategory(value["category"], `${path}.category`, isInvoiceCategory),
     scans: parseArray(value["scans"], `${path}.scans`, parseScan),
     paymentInformation: parsePaymentInformation(value["paymentInformation"], `${path}.paymentInformation`),
     merchantReference: parseGuidField(value, "merchantReference", path),
@@ -639,7 +568,7 @@ export function parseInvoicesResponse(value: unknown): readonly Invoice[] {
  *
  * @remarks
  * Additive backend properties on the product object are silently ignored.
- * The `allergenAssessment` and `classification` fields are nullable —
+ * The `allergenAssessment` and `category` fields are nullable —
  * absent or `null` values resolve to `null`.
  *
  * @param value - The raw JSON product object.

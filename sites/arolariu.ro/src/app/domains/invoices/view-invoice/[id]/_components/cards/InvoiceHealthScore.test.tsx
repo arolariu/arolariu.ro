@@ -1,7 +1,6 @@
 // @vitest-environment happy-dom
 
 import type {Invoice} from "@/types/invoices";
-import type {StandardClassification} from "@/types/invoices/Classification";
 import "@testing-library/jest-dom/vitest";
 import {fireEvent, render, screen} from "@testing-library/react";
 import {NextIntlClientProvider} from "next-intl";
@@ -11,16 +10,7 @@ import {buildInvoice, buildMerchant, buildProduct, buildRecipeSuggestion} from "
 import {InvoiceContextProvider} from "../../_context/InvoiceContext";
 import {InvoiceHealthScore} from "./InvoiceHealthScore";
 
-const classification = {
-  system: "ECOICOP_V2",
-  code: "01.1.1",
-  officialLabel: "Cereals",
-  version: "2",
-  hierarchy: [],
-  origin: "Manual",
-  confidence: null,
-  evidence: [],
-} satisfies StandardClassification;
+const category = 1007;
 const zeroPayment = {...buildInvoice().paymentInformation, totalCostAmount: 0};
 
 function renderScore(invoice: Invoice): ReturnType<typeof render> {
@@ -43,9 +33,9 @@ describe("InvoiceHealthScore", () => {
     const invoice = buildInvoice({
       id: "11111111-1111-4111-8111-111111111111",
       items: [
-        buildProduct({name: "Oats", classification, metadata: {...metadata, confidence: 0}}),
+        buildProduct({name: "Oats", category, metadata: {...metadata, confidence: 0}}),
         buildProduct({name: "Milk", metadata: {...metadata, isComplete: false, confidence: 0.6}}),
-        buildProduct({name: "Removed item", classification, metadata: {...metadata, isSoftDeleted: true}}),
+        buildProduct({name: "Removed item", category, metadata: {...metadata, isSoftDeleted: true}}),
       ],
       merchantReference: "",
       paymentInformation: zeroPayment,
@@ -66,7 +56,7 @@ describe("InvoiceHealthScore", () => {
 
   it("shows a complete score without repair links and lets the user inspect and hide the factor breakdown", () => {
     const invoice = buildInvoice({
-      items: [buildProduct({classification})],
+      items: [buildProduct({category})],
       possibleRecipes: [buildRecipeSuggestion({description: "A quick meal from the receipt"})],
     });
     renderScore(invoice);

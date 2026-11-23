@@ -17,20 +17,7 @@
  * - OpenTelemetry instrumentation for observability
  * - Structured error handling with user-friendly messages
  *
- * **Update Strategy:**
- * - The target product is located by `originalProductName` using a
- *   **case-insensitive substring match** on the backend
- *   (`String.Contains` with `InvariantCultureIgnoreCase`). Pass the full name
- *   to avoid matching the wrong item when names share a common substring.
- * - The backend implements "update" as a **delete + add** sequence: the matched
- *   product is removed and a brand-new product is constructed from the
- *   `updatedProduct` payload via `UpdateProductRequestDto.ToProduct()`. No
- *   server-side edit flag (`metadata.isEdited`) is set on this code path — the
- *   new product gets fresh default metadata.
- * - Therefore the payload must contain **all** product fields you want
- *   preserved; any field omitted will revert to its default value
- *   (empty string, `0`, empty allergen list, etc.).
- * - The endpoint responds with HTTP **202 Accepted** + the updated product.
+ * Category edits use one conditional write. Existing full edits retain their transport.
  *
  * @see {@link addInvoiceProduct} - Sibling action for adding products
  * @see {@link deleteInvoiceProduct} - Sibling action for deleting products
@@ -40,10 +27,10 @@
 
 import {addSpanEvent, logWithTrace, withSpan} from "@/instrumentation.server";
 import {fetchBFFUserFromAuthService} from "@/lib/actions/user/fetchUser";
+import {isProductCategory} from "@/lib/categories/categoryCatalog";
 import {validateStringIsGuidType} from "@/lib/utils.generic";
 import {createErrorResult, createHttpErrorResult, fetchWithTimeout, type ServerActionResult} from "@/lib/utils.server";
-import type {Product} from "@/types/invoices";
-import {resolveClassificationCodeForWrite} from "@/types/invoices/Classification";
+import type {Product, ProductCategory} from "@/types/invoices";
 import {parseProductResponse, tryParse} from "@/types/invoices/transport";
 import {revalidatePath} from "next/cache";
 
@@ -55,24 +42,12 @@ import {revalidatePath} from "next/cache";
  * The payload contains both the identifier (originalProductName) and the updated product data.
  */
 type ServerActionInputType = Readonly<{
-  /** The unique identifier of the invoice. Must be a valid UUIDv4 GUID. */
-  readonly invoiceId: string;
-  /** The product update payload containing identifier and new data. */
-  readonly payload: Readonly<{
-    /**
-     * The current name of the product to update. Backend performs a
-     * case-insensitive substring match (`String.Contains` with
-     * `InvariantCultureIgnoreCase`); pass the full product name to avoid
-     * accidentally matching an unrelated item.
-     */
-    readonly originalProductName: string;
-    /**
-     * The complete updated product data. All fields you want preserved must
-     * be present — the backend constructs a fresh product from this payload
-     * (delete + add), so omitted fields revert to defaults.
-     */
-    readonly updatedProduct: Product;
-  }>;
+  invoiceId: string;
+  payload: Readonly<{originalProductName: string}>
+    & (
+      | Readonly<{category: ProductCategory | null; updatedProduct?: never}>
+      | Readonly<{category?: ProductCategory | null; updatedProduct: Product}>
+    );
 }>;
 
 /**
@@ -85,129 +60,30 @@ type ServerActionInputType = Readonly<{
 type ServerActionOutputType = ServerActionResult<Readonly<Product>>;
 
 /**
- * Updates an existing product in an invoice's line items via the backend API.
- *
- * @remarks
- * **Execution Context:** Server-side only (Next.js server action).
- *
- * **Authentication:** Automatically fetches JWT token from auth service
- * via `fetchBFFUserFromAuthService`. Requires valid authenticated session.
- *
- * **Validation:** Validates invoice identifier is a valid GUID before
- * making API requests to prevent malformed requests.
- *
- * **API Communication:** Makes PUT request to `/rest/v1/invoices/{id}/products`
- * endpoint with both originalProductName and updatedProduct in request body as JSON.
- *
- * **Product Identification:**
- * Products are located by `originalProductName` using a **case-insensitive
- * substring match** on the backend (`String.Contains` with
- * `InvariantCultureIgnoreCase`). The first item whose name contains the
- * supplied string wins. Pass the full product name to avoid accidentally
- * targeting an unrelated item that shares a substring.
- *
- * **Update Strategy:**
- * - Backend implements update as **delete + add**: the matched product is
- *   removed from the invoice and a new product is built from the payload via
- *   `UpdateProductRequestDto.ToProduct()`, then added back.
- * - Because the new product is constructed from scratch, **all** fields you
- *   want preserved must be present in `updatedProduct`. Omitted fields land
- *   on their default values (empty string, `0`, empty allergen list).
- * - The new product carries fresh default metadata. There is no server-side
- *   `metadata.isEdited` flag set on this code path.
- * - Product name may change (`updatedProduct.name` can differ from
- *   `originalProductName`).
- * - The response status is HTTP **202 Accepted**.
- *
- * **Wire Format:**
- * The backend DTO (`UpdateProductRequestDto`) is **flat**, not nested. This
- * action flattens the input `payload` before sending so the wire body looks
- * like `{ originalProductName, name, quantity, quantityUnit, productCode, price }`.
- *
- * **Cache Revalidation:**
- * On successful update, automatically revalidates Next.js cache for:
- * - Edit invoice page: `/domains/invoices/edit-invoice/{id}`
- * - View invoice page: `/domains/invoices/view-invoice/{id}`
- *
- * **Observability:** Instrumented with OpenTelemetry spans and events:
- * - `api.actions.invoices.updateInvoiceProduct` - Parent span
- * - `bff.user.jwt.fetch.start/complete` - Auth events
- * - `bff.request.update-invoice-product.start/complete` - API request events
- * - `bff.request.update-invoice-product.error` - Error event
- *
- * **Error Handling:**
- * - GUID validation failures are caught and returned as error results
- * - HTTP 5xx errors return user message about server issues
- * - HTTP 4xx errors return validation/input error message
- * - Network/unexpected errors are caught and wrapped in ServerActionResult
- *
- * **Side Effects:**
- * - Removes the matched product and inserts the new payload in the backend database
- * - Revalidates Next.js cache for invoice pages
- * - Emits telemetry spans and logs
- *
- * @param params - The input parameters object.
- * @param params.invoiceId - The UUID of the invoice containing the product. Must be a valid UUIDv4 string.
- * @param params.payload - The update payload containing originalProductName and updatedProduct.
- * @param params.payload.originalProductName - The current product name used for the backend's case-insensitive substring match.
- * @param params.payload.updatedProduct - The complete updated product data; omitted fields are reset by the backend's delete-and-add flow.
- * @returns A result object containing the updated product on success, or an error result when validation, authorization, or the backend request fails.
- *
- * @example
- * ```typescript
- * // Update product allergens
- * const result = await updateInvoiceProduct({
- *   invoiceId: "123e4567-e89b-12d3-a456-426614174000",
- *   payload: {
- *     originalProductName: "Zuzu Milk 2% 1 Liter",
- *     updatedProduct: {
- *       name: "Zuzu Milk 2% 1 Liter",
- *       quantity: 2,
- *       quantityUnit: "pcs",
- *       price: 8.99,
- *     }
- *   }
- * });
- *
- * if (result.success) {
- *   console.log("Updated product:", result.data);
- * } else {
- *   console.error("Failed to update product:", result.error);
- * }
- * ```
- *
- * @example
- * ```typescript
- * // Update product category and price
- * const categoryResult = await updateInvoiceProduct({
- *   invoiceId: "123e4567-e89b-12d3-a456-426614174000",
- *   payload: {
- *     originalProductName: "Gala Apples",
- *     updatedProduct: {
- *       name: "Organic Gala Apples",
- *       quantity: 3,
- *       quantityUnit: "kg",
- *       price: 15.99,
- *     }
- *   }
- * });
- * ```
- *
- * @see {@link addInvoiceProduct} - Sibling action for adding products
- * @see {@link deleteInvoiceProduct} - Sibling action for deleting products
- * @see {@link fetchBFFUserFromAuthService} - Authentication token retrieval
- * @see {@link validateStringIsGuidType} - GUID validation utility
- * @see {@link ServerActionResult} - Result type wrapper
- * @see {@link Product} - Product type definition
+ * Updates the exact-name product selected by the current invoice owner.
+ * An explicit category, including null, uses the API's conditional write.
+ * @param input - Invoice, product name, and category or full product edit.
+ * @returns The saved product or the API's classified failure.
  */
 export async function updateInvoiceProduct({invoiceId, payload}: ServerActionInputType): ServerActionOutputType {
-  console.info(">>> Executing server action {{updateInvoiceProduct}}, with:", {invoiceId, payload});
+  console.info(">>> Executing server action {{updateInvoiceProduct}}, with:", {invoiceId});
 
   return withSpan("api.actions.invoices.updateInvoiceProduct", async () => {
     try {
       // Step 0. Validate input is correct
-      logWithTrace("info", "Validating input for updateInvoiceProduct", {invoiceId, payload}, "server");
+      logWithTrace("info", "Validating input for updateInvoiceProduct", {invoiceId}, "server");
       validateStringIsGuidType(invoiceId, "invoiceId");
+      if (payload.category !== undefined && payload.category !== null && !isProductCategory(payload.category)) {
+        return createHttpErrorResult(400, "Invalid product category.");
+      }
+
+      if (
+        typeof payload.originalProductName !== "string"
+        || payload.originalProductName.trim() === ""
+        || (payload.updatedProduct === undefined && typeof payload.category === "undefined")
+      ) {
+        return createHttpErrorResult(400, "A product name and update are required.");
+      }
 
       // Step 1. Fetch user JWT for authentication
       addSpanEvent("bff.user.jwt.fetch.start");
@@ -215,22 +91,21 @@ export async function updateInvoiceProduct({invoiceId, payload}: ServerActionInp
       const {userJwt: authToken} = await fetchBFFUserFromAuthService();
       addSpanEvent("bff.user.jwt.fetch.complete");
 
-      // Step 2. Make the API request to update the product.
-      // Backend `UpdateProductRequestDto` is a flat record — we must NOT send
-      // the nested `{ originalProductName, updatedProduct }` shape directly,
-      // because ASP.NET would silently drop `updatedProduct` (unknown member)
-      // and bind every other field to its default value, wiping out the product.
-      const {originalProductName, updatedProduct} = payload;
+      const {originalProductName, updatedProduct, category} = payload;
       const requestBody = {
         originalProductName,
-        name: updatedProduct.name,
-        classificationCode: resolveClassificationCodeForWrite(updatedProduct.classification),
-        quantity: updatedProduct.quantity,
-        quantityUnit: updatedProduct.quantityUnit,
-        productCode: updatedProduct.productCode,
-        price: updatedProduct.price,
-        allergenAssessment: updatedProduct.allergenAssessment,
-      } as const;
+        ...(category !== undefined ? {category} : {}),
+        ...(updatedProduct === undefined
+          ? {}
+          : {
+              name: updatedProduct.name,
+              quantity: updatedProduct.quantity,
+              quantityUnit: updatedProduct.quantityUnit,
+              productCode: updatedProduct.productCode,
+              price: updatedProduct.price,
+              allergenAssessment: updatedProduct.allergenAssessment,
+            }),
+      };
 
       addSpanEvent("bff.request.update-invoice-product.start");
       logWithTrace("info", "Making API request to update product in invoice", {invoiceId}, "server");

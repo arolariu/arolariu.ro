@@ -565,7 +565,7 @@
             },
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"id\": \"{{invoiceIdentifier}}\",\n  \"userIdentifier\": \"{{userIdentifier}}\",\n  \"isImportant\": true,\n  \"name\": \"Updated Test Invoice\",\n  \"description\": \"This invoice was updated via PUT request\",\n  \"category\": 3,\n  \"paymentInformation\": {\n    \"transactionDate\": \"2025-01-17T15:30:00Z\",\n    \"paymentType\": 0,\n    \"currency\": {\n      \"name\": \"Romanian Leu\",\n      \"code\": \"RON\",\n      \"symbol\": \"lei\"\n    },\n    \"totalCostAmount\": 150.50,\n    \"totalTaxAmount\": 28.60\n  },\n  \"items\": [\n    {\n      \"rawName\": \"Test Product 1\",\n      \"genericName\": \"Test Product\",\n      \"category\": 1,\n      \"quantity\": 2,\n      \"quantityUnit\": \"buc\",\n      \"productCode\": \"PRD001\",\n      \"price\": 75.25,\n      \"metadata\": {\n        \"isEdited\": true,\n        \"isComplete\": true,\n        \"isSoftDeleted\": false\n      }\n    }\n  ],\n  \"additionalMetadata\": {\n    \"updatedVia\": \"PUT\",\n    \"updateTimestamp\": \"2025-01-17T15:30:00Z\"\n  }\n}",
+              "raw": "{\n  \"isImportant\": true,\n  \"name\": \"Updated Test Invoice\",\n  \"description\": \"This invoice was updated via PUT request\",\n  \"category\": 3001,\n  \"paymentInformation\": {\n    \"transactionDate\": \"2025-01-17T15:30:00Z\",\n    \"paymentType\": 0,\n    \"currency\": {\n      \"name\": \"Romanian Leu\",\n      \"code\": \"RON\",\n      \"symbol\": \"lei\"\n    },\n    \"totalCostAmount\": 150.5,\n    \"totalTaxAmount\": 28.6\n  },\n  \"additionalMetadata\": {\n    \"updatedVia\": \"PUT\",\n    \"updateTimestamp\": \"2025-01-17T15:30:00Z\"\n  }\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -705,7 +705,7 @@
             },
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"name\": \"Mere Golden\",\n  \"category\": 1,\n  \"quantity\": 5,\n  \"quantityUnit\": \"kg\",\n  \"productCode\": \"APL001\",\n  \"price\": 12.50\n}",
+              "raw": "{\n  \"name\": \"Mere Golden\",\n  \"category\": 1001,\n  \"quantity\": 5,\n  \"quantityUnit\": \"kg\",\n  \"productCode\": \"APL001\",\n  \"price\": 12.5\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -780,7 +780,7 @@
             },
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"originalProductName\": \"Mere Golden\",\n  \"name\": \"Golden Apples - Updated\",\n  \"category\": 1,\n  \"quantity\": 10,\n  \"quantityUnit\": \"kg\",\n  \"productCode\": \"APL001\",\n  \"price\": 11.00\n}",
+              "raw": "{\n  \"originalProductName\": \"Mere Golden\",\n  \"name\": \"Golden Apples - Updated\",\n  \"category\": 1001,\n  \"quantity\": 10,\n  \"quantityUnit\": \"kg\",\n  \"productCode\": \"APL001\",\n  \"price\": 11\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -817,7 +817,7 @@
             },
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"name\": \"Lapte Zuzu\",\n  \"category\": 2,\n  \"quantity\": 2,\n  \"quantityUnit\": \"L\",\n  \"productCode\": \"MLK001\",\n  \"price\": 8.99\n}",
+              "raw": "{\n  \"name\": \"Lapte Zuzu\",\n  \"category\": 1014,\n  \"quantity\": 2,\n  \"quantityUnit\": \"L\",\n  \"productCode\": \"MLK001\",\n  \"price\": 8.99\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -982,7 +982,7 @@
             },
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"name\": \"Carrefour Hypermarket\",\n  \"description\": \"Large retail hypermarket chain\",\n  \"category\": 1,\n  \"address\": {\n    \"email\": \"contact@carrefour.ro\",\n    \"phone\": \"+40 21 123 4567\",\n    \"addressLine1\": \"Bulevardul Unirii 1\",\n    \"city\": \"Bucuresti\",\n    \"state\": \"Bucuresti\",\n    \"postalCode\": \"030167\",\n    \"country\": \"Romania\"\n  }\n}",
+              "raw": "{\n  \"name\": \"Carrefour Hypermarket\",\n  \"description\": \"Large retail hypermarket chain\",\n  \"category\": 2002,\n  \"address\": {\n    \"email\": \"contact@carrefour.ro\",\n    \"phone\": \"+40 21 123 4567\",\n    \"addressLine1\": \"Bulevardul Unirii 1\",\n    \"city\": \"Bucuresti\",\n    \"state\": \"Bucuresti\",\n    \"postalCode\": \"030167\",\n    \"country\": \"Romania\"\n  }\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -1555,7 +1555,7 @@
             },
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"name\": \"Lidl Romania - Updated\",\n  \"description\": \"German discount supermarket chain - Updated via PUT\",\n  \"category\": 1,\n  \"parentCompanyId\": \"aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee\",\n  \"address\": {\n    \"email\": \"contact@lidl.ro\",\n    \"phone\": \"+40 21 987 6543\",\n    \"addressLine1\": \"Strada Noua 456\",\n    \"city\": \"Bucuresti\",\n    \"state\": \"Bucuresti\",\n    \"postalCode\": \"012345\",\n    \"country\": \"Romania\"\n  },\n  \"additionalMetadata\": {\n    \"updatedVia\": \"PUT\",\n    \"storeCount\": \"300+\"\n  }\n}",
+              "raw": "{\n  \"name\": \"Lidl Romania - Updated\",\n  \"description\": \"German discount supermarket chain - Updated via PUT\",\n  \"category\": 2001,\n  \"parentCompanyId\": \"aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee\",\n  \"address\": {\n    \"email\": \"contact@lidl.ro\",\n    \"phone\": \"+40 21 987 6543\",\n    \"addressLine1\": \"Strada Noua 456\",\n    \"city\": \"Bucuresti\",\n    \"state\": \"Bucuresti\",\n    \"postalCode\": \"012345\",\n    \"country\": \"Romania\"\n  },\n  \"additionalMetadata\": {\n    \"updatedVia\": \"PUT\",\n    \"storeCount\": \"300+\"\n  }\n}",
               "options": {
                 "raw": {
                   "language": "json"

@@ -25,7 +25,7 @@ function makeProduct(overrides: Partial<Product>): Product {
     price: 10,
     totalPrice: 10,
     metadata: {isEdited: false, isComplete: true, isSoftDeleted: false, confidence: 1},
-    classification: null,
+    category: null,
     allergenAssessment: null,
     ...overrides,
   };
@@ -38,7 +38,7 @@ function makeInvoice(items: Product[]): Invoice {
     description: "",
     userIdentifier: "user_test",
     sharedWith: [],
-    classification: null,
+    category: null,
     scans: [{type: InvoiceScanType.JPEG, location: "", metadata: {}}],
     paymentInformation: {
       totalCostAmount: 100,

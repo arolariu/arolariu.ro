@@ -15,7 +15,7 @@ using arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices;
 using arolariu.Backend.Domain.Invoices.DDD.Analysis.Enums;
 using arolariu.Backend.Domain.Invoices.DDD.Entities.Merchants;
 using arolariu.Backend.Domain.Invoices.DDD.ValueObjects;
-using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Classifications;
+using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Categories;
 using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Products;
 using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Recipes;
 using arolariu.Backend.Domain.Invoices.DTOs.Requests;
@@ -649,15 +649,15 @@ public sealed class InvoiceEndpointsStatusCodeTests
   #endregion
 
   #region Product replacement workflow tests
-  /// <summary>Verifies a whitespace product classification code rejected by Management maps to bad request.</summary>
+  /// <summary>Verifies an invalid product category rejected by Management maps to bad request.</summary>
   [TestMethod]
-  public async Task AddProductToInvoiceAsync_WhitespaceClassificationCode_ReturnsBadRequest()
+  public async Task AddProductToInvoiceAsync_InvalidCategory_ReturnsBadRequest()
   {
     Guid invoiceId = Guid.NewGuid();
     Guid userId = Guid.NewGuid();
     var request = new CreateProductRequestDto(
       Name: "Milk",
-      ClassificationCode: " ",
+      Category: (ProductCategory)2001,
       Quantity: 1m,
       QuantityUnit: "pcs",
       ProductCode: null,
@@ -673,9 +673,8 @@ public sealed class InvoiceEndpointsStatusCodeTests
         invoiceId,
         userId,
         It.IsAny<Product>(),
-        " ",
         It.IsAny<CancellationToken>()))
-      .ThrowsAsync(new BadHttpRequestException("Classification code must not be whitespace."));
+      .ThrowsAsync(new BadHttpRequestException("The category was invalid."));
 
     IResult result = await InvoiceEndpoints.AddProductToInvoiceAsync(
       service.Object,
@@ -693,15 +692,10 @@ public sealed class InvoiceEndpointsStatusCodeTests
   {
     Guid invoiceId = Guid.NewGuid();
     Guid userId = Guid.NewGuid();
-    StandardClassification classification = CreateClassification(
-      ClassificationSystem.Gs1Gpc,
-      "2026-05",
-      "10000025",
-      "Food or beverage products");
+    var classification = ProductCategory.Milk;
     var request = new UpdateProductRequestDto(
       OriginalProductName: "Old Milk",
       Name: "New Milk",
-      ClassificationCode: classification.Code,
       Quantity: 2m,
       QuantityUnit: "pcs",
       ProductCode: string.Empty,
@@ -711,7 +705,7 @@ public sealed class InvoiceEndpointsStatusCodeTests
     var persistedProduct = new Product
     {
       Name = "Old Milk",
-      Classification = classification,
+      Category = classification,
       Metadata = new ProductMetadata { IsComplete = true },
     };
     Product? addedProduct = null;
@@ -735,10 +729,9 @@ public sealed class InvoiceEndpointsStatusCodeTests
         invoiceId,
         userId,
         It.IsAny<Product>(),
-        classification.Code,
         It.IsAny<CancellationToken>()))
-      .Callback<Guid, Guid?, Product, string?, CancellationToken>(
-        (_, _, product, _, _) => addedProduct = product)
+      .Callback<Guid, Guid?, Product, CancellationToken>(
+        (_, _, product, _) => addedProduct = product)
       .Returns(Task.CompletedTask);
 
     IResult result = await InvoiceEndpoints.UpdateProductInInvoiceAsync(
@@ -751,7 +744,7 @@ public sealed class InvoiceEndpointsStatusCodeTests
     Assert.IsNotNull(addedProduct);
     Assert.AreEqual("New Milk", addedProduct.Name);
     Assert.AreEqual(2m, addedProduct.Quantity);
-    Assert.AreSame(classification, addedProduct.Classification);
+    Assert.AreEqual(classification, addedProduct.Category);
     Assert.IsTrue(addedProduct.Metadata.IsEdited);
     Assert.IsTrue(addedProduct.Metadata.IsComplete);
     service.VerifyAll();
@@ -993,21 +986,16 @@ public sealed class InvoiceEndpointsStatusCodeTests
   {
     Guid invoiceId = Guid.NewGuid();
     Guid userId = Guid.NewGuid();
-    StandardClassification classification = CreateClassification(
-      ClassificationSystem.EcoicopV2,
-      "2",
-      "01.1",
-      "Food products");
+    var classification = InvoiceCategory.Groceries;
     var invoice = new Invoice
     {
       id = invoiceId,
       UserIdentifier = userId,
-      Classification = classification,
+      Category = classification,
     };
     var request = new UpdateInvoiceRequestDto(
       Name: "Groceries",
       Description: "Weekly shop",
-      ClassificationCode: null,
       PaymentInformation: new PaymentInformation(),
       MerchantReference: null,
       IsImportant: false,
@@ -1039,7 +1027,7 @@ public sealed class InvoiceEndpointsStatusCodeTests
 
     Assert.AreEqual(StatusCodes.Status202Accepted, GetStatusCode(result));
     Assert.IsNotNull(capturedInvoice);
-    Assert.AreSame(classification, capturedInvoice.Classification);
+    Assert.AreEqual(classification, capturedInvoice.Category);
   }
 
   /// <summary>Verifies invoice PUT treats a whitespace classification code as omission.</summary>
@@ -1048,21 +1036,16 @@ public sealed class InvoiceEndpointsStatusCodeTests
   {
     Guid invoiceId = Guid.NewGuid();
     Guid userId = Guid.NewGuid();
-    StandardClassification classification = CreateClassification(
-      ClassificationSystem.EcoicopV2,
-      "2",
-      "01.1",
-      "Food products");
+    var classification = InvoiceCategory.Groceries;
     var invoice = new Invoice
     {
       id = invoiceId,
       UserIdentifier = userId,
-      Classification = classification,
+      Category = classification,
     };
     var request = new UpdateInvoiceRequestDto(
       Name: "Groceries",
       Description: "Weekly shop",
-      ClassificationCode: "   ",
       PaymentInformation: new PaymentInformation(),
       MerchantReference: null,
       IsImportant: false,
@@ -1094,8 +1077,7 @@ public sealed class InvoiceEndpointsStatusCodeTests
 
     Assert.AreEqual(StatusCodes.Status202Accepted, GetStatusCode(result));
     Assert.IsNotNull(capturedInvoice);
-    Assert.AreSame(classification, capturedInvoice.Classification);
-    Assert.AreEqual("   ", capturedInvoice.ClassificationCode);
+    Assert.AreEqual(classification, capturedInvoice.Category);
     service.VerifyAll();
   }
 
@@ -1121,7 +1103,6 @@ public sealed class InvoiceEndpointsStatusCodeTests
     var request = new UpdateInvoiceRequestDto(
       Name: "Groceries",
       Description: "Weekly shop",
-      ClassificationCode: null,
       PaymentInformation: new PaymentInformation(),
       MerchantReference: null,
       IsImportant: false,
@@ -1153,21 +1134,16 @@ public sealed class InvoiceEndpointsStatusCodeTests
     Guid merchantId = Guid.NewGuid();
     Guid parentCompanyId = Guid.NewGuid();
     Guid userId = Guid.NewGuid();
-    StandardClassification classification = CreateClassification(
-      ClassificationSystem.Nace21,
-      "2.1",
-      "47.11",
-      "Retail sale in non-specialised stores");
+    var classification = MerchantCategory.Supermarket;
     var merchant = new Merchant
     {
       id = merchantId,
       ParentCompanyId = parentCompanyId,
-      Classification = classification,
+      Category = classification,
     };
     var request = new UpdateMerchantRequestDto(
       Name: "Store",
       Description: "Description",
-      ClassificationCode: null,
       Address: null,
       ParentCompanyId: parentCompanyId,
       AdditionalMetadata: null);
@@ -1189,9 +1165,9 @@ public sealed class InvoiceEndpointsStatusCodeTests
         merchantId,
         parentCompanyId,
         It.IsAny<Merchant>(),
-        null,
+        MerchantUpdateFields.Details,
         It.IsAny<CancellationToken>()))
-      .Callback<Guid, Guid?, Merchant, string?, CancellationToken>(
+      .Callback<Guid, Guid?, Merchant, MerchantUpdateFields, CancellationToken>(
         (_, _, updated, _, _) => capturedMerchant = updated)
       .ReturnsAsync(merchant);
 
@@ -1203,7 +1179,7 @@ public sealed class InvoiceEndpointsStatusCodeTests
 
     Assert.AreEqual(StatusCodes.Status202Accepted, GetStatusCode(result));
     Assert.IsNotNull(capturedMerchant);
-    Assert.IsNull(capturedMerchant.Classification);
+    Assert.IsNull(capturedMerchant.Category);
     service.VerifyAll();
   }
 
@@ -1216,7 +1192,6 @@ public sealed class InvoiceEndpointsStatusCodeTests
     var request = new UpdateMerchantRequestDto(
       Name: "Store",
       Description: "Description",
-      ClassificationCode: null,
       Address: null,
       ParentCompanyId: Guid.NewGuid(),
       AdditionalMetadata: null);
@@ -1243,24 +1218,10 @@ public sealed class InvoiceEndpointsStatusCodeTests
       It.IsAny<Guid>(),
       It.IsAny<Guid?>(),
       It.IsAny<Merchant>(),
-      It.IsAny<string?>(),
+      MerchantUpdateFields.Details,
       It.IsAny<CancellationToken>()), Times.Never);
   }
 
-  private static StandardClassification CreateClassification(
-    ClassificationSystem system,
-    string version,
-    string code,
-    string label) =>
-    new(
-      system,
-      version,
-      code,
-      label,
-      [new ClassificationNode("leaf", code, label)],
-      ClassificationOrigin.Manual,
-      null,
-      []);
   #endregion
 
   #region ProblemDetails traceId extension tests

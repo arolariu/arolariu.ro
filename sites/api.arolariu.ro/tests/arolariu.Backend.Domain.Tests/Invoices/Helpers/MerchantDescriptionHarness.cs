@@ -7,6 +7,7 @@ using System.Threading;
 using System.Threading.Tasks;
 
 using arolariu.Backend.Domain.Invoices.Brokers.DocumentIntelligenceBroker;
+using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Categories;
 using arolariu.Backend.Domain.Invoices.Brokers.GenerativeAnalysisBroker;
 using arolariu.Backend.Common.DDD.ValueObjects;
 using arolariu.Backend.Domain.Invoices.DDD.Entities.Merchants;
@@ -30,7 +31,6 @@ internal sealed class MerchantDescriptionHarness
     Service = new AnalysisFoundationService(
       Mock.Of<IDocumentIntelligenceBroker>(),
       broker,
-      TaxonomyBrokerTestFactory.Create(),
       NullLoggerFactory.Instance);
   }
 
@@ -100,7 +100,7 @@ internal sealed class MerchantDescriptionHarness
     {
       Name = "Corner Shop SRL",
       Description = "Neighborhood grocery retailer.",
-      Classification = ClassificationTestData.Nace("47.11", "Retail sale in non-specialised stores"),
+      Category = MerchantCategory.Supermarket,
       Address = new ContactInformation
       {
         FullName = "Corner Shop SRL",
@@ -118,7 +118,7 @@ internal sealed class MerchantDescriptionHarness
     {
       Name = "Market",
       Description = string.Empty,
-      Classification = null,
+      Category = null,
       Address = new ContactInformation(),
       ParentCompanyId = Guid.Empty,
       ReferencedInvoices = [],

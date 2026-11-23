@@ -5,7 +5,7 @@
  *
  * @remarks
  * Every case runs on the `selfhostFixture` harness (`./selfhost.testing.ts`): scripted preflight,
- * stack, and bootstrap processes, the real artifact generation over scripted taxonomy sources, scripted
+ * stack, and bootstrap processes, real website attribution preparation, scripted
  * Cosmos answers, a recording `LocalBlobStorage` layer, and an advancing test clock whose completed
  * sleeps are recorded. The characterization cases drive the real `dev selfhost` CLI path (`runCli`);
  * no module is mocked.
@@ -31,13 +31,7 @@ import {
   type SelfhostFixture,
   type SelfhostFixtureOptions,
 } from "./selfhost.testing.ts";
-import {
-  buildLocalStorageBootstrapCommand,
-  buildSelfhostPlan,
-  getRequiredSqlPassword,
-  runSelfhost,
-  shouldGenerateTaxonomyArtifacts,
-} from "./selfhost.ts";
+import {buildLocalStorageBootstrapCommand, buildSelfhostPlan, getRequiredSqlPassword, runSelfhost} from "./selfhost.ts";
 import type {SelfhostAction} from "./types.ts";
 
 const launcherCases = [
@@ -185,16 +179,6 @@ describe("buildLocalStorageBootstrapCommand", () => {
       command: "dotnet",
       args: ["run", "--project", "../../tooling/src/LocalDevelopment.Bootstrap", "--", "--ensure-storage-only"],
     });
-  });
-});
-
-describe("shouldGenerateTaxonomyArtifacts", () => {
-  it("generates artifacts before selfhost start", () => {
-    expect(shouldGenerateTaxonomyArtifacts("start")).toBe(true);
-  });
-
-  it.each(["stop", "logs"] as const)("does not generate artifacts for %s", (action: SelfhostAction) => {
-    expect(shouldGenerateTaxonomyArtifacts(action)).toBe(false);
   });
 });
 
@@ -350,7 +334,7 @@ describe("runSelfhost start", () => {
     }),
   );
 
-  selfhostTest("uses pinned snapshots and prepares licenses silently without calling publishers", {}, (fixture) =>
+  selfhostTest("prepares licenses silently without contacting a publisher", {}, (fixture) =>
     Effect.gen(function* () {
       // Act
       yield* runSelfhost({action: "start", engine: "podman"});
@@ -365,7 +349,7 @@ describe("runSelfhost start", () => {
     }),
   );
 
-  selfhostTest("stops before any stack command when a pinned snapshot is missing", {missingTaxonomies: true}, (fixture) =>
+  selfhostTest("stops before any stack command when website attribution cannot be prepared", {missingWebsiteManifest: true}, (fixture) =>
     Effect.gen(function* () {
       // Act
       const error = yield* Effect.flip(runSelfhost({action: "start", engine: "podman"}));
