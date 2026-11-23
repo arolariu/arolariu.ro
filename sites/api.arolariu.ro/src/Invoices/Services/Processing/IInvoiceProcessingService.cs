@@ -310,14 +310,12 @@ public interface IInvoiceProcessingService
   /// <param name="identifier">Merchant id.</param>
   /// <param name="parentCompanyId">Company / partition scope; pass null for a cross-partition operation.</param>
   /// <param name="updatedMerchant">New merchant state.</param>
-  /// <param name="fields">The details and category fields to update.</param>
   /// <param name="cancellationToken">Cancellation token to abort the operation (required).</param>
   /// <returns>Updated merchant.</returns>
   Task<Merchant> UpdateMerchant(
     Guid identifier,
     Guid? parentCompanyId,
     Merchant updatedMerchant,
-    MerchantUpdateFields fields,
     CancellationToken cancellationToken);
   #endregion
 

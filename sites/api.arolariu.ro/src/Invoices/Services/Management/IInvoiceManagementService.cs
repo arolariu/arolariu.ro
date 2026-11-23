@@ -193,14 +193,12 @@ public interface IInvoiceManagementService
   /// <param name="identifier">The persisted merchant identifier.</param>
   /// <param name="parentCompanyId">The parent-company partition, or <see langword="null"/> when resolved downstream.</param>
   /// <param name="updatedMerchant">The transient merchant carrying replacement values.</param>
-  /// <param name="fields">The details and category fields to update.</param>
   /// <param name="cancellationToken">The token that cancels the asynchronous operation.</param>
   /// <returns>The updated merchant entity.</returns>
   Task<Merchant> UpdateMerchant(
     Guid identifier,
     Guid? parentCompanyId,
     Merchant updatedMerchant,
-    MerchantUpdateFields fields,
     CancellationToken cancellationToken);
 
   /// <summary>Removes one merchant from active use.</summary>

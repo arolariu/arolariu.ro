@@ -17,7 +17,7 @@ using arolariu.Backend.Domain.Invoices.DDD.Entities.Merchants;
 /// business workflow branching, or exception classification beyond direct dependency errors.</para>
 /// <para><b>Responsibilities:</b>
 /// <list type="bullet">
-///   <item><description>Persist (create / upsert) invoice and merchant aggregates.</description></item>
+///   <item><description>Create and conditionally replace invoice and merchant aggregates.</description></item>
 ///   <item><description>Retrieve single or multiple aggregates (optionally partition-scoped for RU efficiency).</description></item>
 ///   <item><description>Apply soft delete semantics for invoices (and future merchants) by flagging rather than removing.</description></item>
 /// </list></para>
@@ -33,9 +33,9 @@ using arolariu.Backend.Domain.Invoices.DDD.Entities.Merchants;
 ///   <item><description>Soft-delete operations are idempotent (repeated calls yield same terminal state).</description></item>
 ///   <item><description>Read operations are naturally idempotent.</description></item>
 /// </list></para>
-/// <para><b>Concurrency:</b> Snapshot writes use a matching ETag. Ordinary CRUD retains its existing upsert semantics.</para>
+/// <para><b>Concurrency:</b> Replacements use the ETag from the original read and reject stale revisions.</para>
 /// <para><b>Performance Notes:</b> Prefer partition-aware overloads. Cross-partition queries should be monitored (add RU telemetry in higher layers).
-/// Upsert patterns may incur additional RU vs targeted replace (evaluate once concurrency tokens introduced).</para>
+/// Writes use the known partition and the observed document revision.</para>
 /// <para><b>Thread Safety:</b> Implementations (e.g., EF Core DbContext wrapper) are typically NOT thread-safe; consumers should scope instances per unit-of-work.</para>
 /// <para><b>Cancellation:</b> All async methods accept an optional <c>CancellationToken</c> to support request abort and timeouts.</para>
 /// <para><b>Backlog:</b> Pagination / continuation tokens, optimistic concurrency, projection queries (selective field retrieval),
@@ -162,12 +162,6 @@ public interface IDatabaseBroker
   /// <exception cref="OperationCanceledException">Thrown if the operation is cancelled.</exception>
   ValueTask<Merchant?> ReadMerchantAsync(Guid merchantIdentifier, Guid? parentCompanyId, CancellationToken cancellationToken);
 
-  /// <summary>Reads a merchant and its storage version from the resolved parent-company partition.</summary>
-  ValueTask<(Merchant Resource, string ETag)> ReadMerchantSnapshotAsync(Guid merchantId, Guid parentCompanyId, CancellationToken cancellationToken);
-
-  /// <summary>Replaces an existing merchant; returns false if its storage version has changed.</summary>
-  ValueTask<bool> TryReplaceMerchantSnapshotAsync(Merchant merchant, string expectedETag, CancellationToken cancellationToken);
-
   /// <summary>
   /// Lists merchants filtered by parent company partition.
   /// </summary>
@@ -189,7 +183,7 @@ public interface IDatabaseBroker
   ValueTask<IEnumerable<Merchant>> ReadMerchantsByIdentifiersAsync(IReadOnlyCollection<Guid> merchantIdentifiers, CancellationToken cancellationToken);
 
   /// <summary>
-  /// Replaces (upserts) a merchant using its current and updated snapshots.
+  /// Replaces a merchant using the revision and partition of its original snapshot.
   /// </summary>
   /// <param name="currentMerchant">Current persisted merchant (not modified).</param>
   /// <param name="updatedMerchant">Updated merchant snapshot to persist.</param>

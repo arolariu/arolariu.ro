@@ -352,7 +352,6 @@ public sealed partial class InvoiceProcessingService : IInvoiceProcessingService
   /// <param name="updatedMerchant">The replacement merchant fields.</param>
   /// <param name="identifier">The persisted merchant identifier.</param>
   /// <param name="parentCompanyId">The optional parent-company partition.</param>
-  /// <param name="fields">The details and category fields to update.</param>
   /// <param name="cancellationToken">The token used to cancel persistence.</param>
   /// <returns>The persisted merchant entity.</returns>
   /// <exception cref="DDD.AggregatorRoots.Invoices.Exceptions.Outer.Processing.InvoiceProcessingServiceValidationException">
@@ -366,7 +365,6 @@ public sealed partial class InvoiceProcessingService : IInvoiceProcessingService
     Guid identifier,
     Guid? parentCompanyId,
     Merchant updatedMerchant,
-    MerchantUpdateFields fields,
     CancellationToken cancellationToken) =>
   await TryCatchAsync(async () =>
   {
@@ -374,7 +372,7 @@ public sealed partial class InvoiceProcessingService : IInvoiceProcessingService
     var sw = Stopwatch.StartNew();
 
     var newMerchant = await merchantOrchestrationService
-      .UpdateMerchantObject(updatedMerchant, identifier, parentCompanyId, cancellationToken, fields)
+      .UpdateMerchantObject(updatedMerchant, identifier, parentCompanyId, cancellationToken)
       .ConfigureAwait(false);
 
     sw.Stop();
@@ -920,9 +918,10 @@ public sealed partial class InvoiceProcessingService : IInvoiceProcessingService
   {
     Guid partition = message.TargetPartitionIdentifier
       ?? throw new InvalidOperationException("The merchant analysis target partition is required.");
-    var (merchant, etag) = await merchantOrchestrationService
-      .ReadMerchantSnapshotAsync(message.TargetId, partition, cancellationToken)
+    var merchant = await merchantOrchestrationService
+      .ReadMerchantObject(message.TargetId, partition, cancellationToken)
       .ConfigureAwait(false);
+    if (merchant is null) throw new MerchantNotFoundException(message.TargetId);
 
     MerchantAnalysisOptions options = message.MerchantOptions
       ?? throw new InvalidOperationException("Merchant analysis messages must contain merchant options.");
@@ -933,12 +932,13 @@ public sealed partial class InvoiceProcessingService : IInvoiceProcessingService
 
     try
     {
-      if (!await merchantOrchestrationService.TryReplaceMerchantSnapshotAsync(analyzed, etag, cancellationToken).ConfigureAwait(false))
-      {
-        logger.LogAnalysisTargetPersistenceFailed(message.CorrelationId);
-        InvoiceMetrics.RecordAnalysisTargetPersistenceFailure(AnalysisTargetType.Merchant);
-        return null;
-      }
+      await merchantOrchestrationService.UpdateMerchantObject(analyzed, message.TargetId, partition, cancellationToken).ConfigureAwait(false);
+    }
+    catch (Exception exception) when (IsWriteConflict(exception))
+    {
+      logger.LogAnalysisTargetPersistenceFailed(message.CorrelationId);
+      InvoiceMetrics.RecordAnalysisTargetPersistenceFailure(AnalysisTargetType.Merchant);
+      return null;
     }
     catch (OperationCanceledException)
     {

@@ -24,6 +24,12 @@ using arolariu.Backend.Domain.Invoices.Serialization;
 /// </remarks>
 public sealed class Merchant : NamedEntity<Guid>
 {
+  internal string? StorageETag { get; set; }
+
+  // Read the Cosmos system field on query results without writing it into the document.
+  [Newtonsoft.Json.JsonProperty("_etag")]
+  private string? CosmosETag { set => StorageETag = value; }
+
   /// <summary>Immutable merchant identity.</summary>
   /// <remarks>
   /// <para>Generated via <see cref="Guid.NewGuid()"/>; no ordering guarantees. Consider Version 7 GUID if chronological sorting becomes a requirement.</para>

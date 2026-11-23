@@ -67,6 +67,7 @@ public partial class CosmosDatabaseBroker
       activity?.RecordSuccess();
 
       var merchant = response.Resource;
+      if (merchant is not null) merchant.StorageETag = response.ETag ?? merchant.StorageETag;
       return merchant is not null && merchant.IsSoftDeleted
         ? throw new MerchantLockedException(merchantIdentifier)
         : merchant;
@@ -93,54 +94,6 @@ public partial class CosmosDatabaseBroker
       return merchant is not null && merchant.IsSoftDeleted
         ? throw new MerchantLockedException(merchantIdentifier)
         : merchant;
-    }
-  }
-
-  /// <inheritdoc/>
-  public async ValueTask<(Merchant Resource, string ETag)> ReadMerchantSnapshotAsync(Guid merchantId, Guid parentCompanyId, CancellationToken cancellationToken)
-  {
-    using var activity = InvoicePackageTracing.StartActivity(nameof(ReadMerchantSnapshotAsync));
-    var container = CosmosClient.GetDatabase("primary").GetContainer("merchants");
-    var response = await TranslateMerchantCosmosAsync(
-      () => container.ReadItemAsync<Merchant>(merchantId.ToString(), new PartitionKey(parentCompanyId.ToString()), cancellationToken: cancellationToken),
-      merchantId).ConfigureAwait(false);
-
-    InvoiceMetrics.RecordCosmosDbCharge(response.RequestCharge, "read", "merchants");
-    Merchant merchant = response.Resource ?? throw new MerchantNotFoundException(merchantId);
-    if (merchant.IsSoftDeleted)
-    {
-      throw new MerchantLockedException(merchantId);
-    }
-
-    activity?.RecordSuccess();
-    return (merchant, response.ETag);
-  }
-
-  /// <inheritdoc/>
-  public async ValueTask<bool> TryReplaceMerchantSnapshotAsync(Merchant merchant, string expectedETag, CancellationToken cancellationToken)
-  {
-    using var activity = InvoicePackageTracing.StartActivity(nameof(TryReplaceMerchantSnapshotAsync));
-    ArgumentNullException.ThrowIfNull(merchant);
-    ArgumentException.ThrowIfNullOrWhiteSpace(expectedETag);
-
-    var container = CosmosClient.GetDatabase("primary").GetContainer("merchants");
-    try
-    {
-      var response = await container.ReplaceItemAsync(
-        merchant, merchant.id.ToString(), new PartitionKey(merchant.ParentCompanyId.ToString()),
-        new ItemRequestOptions { IfMatchEtag = expectedETag }, cancellationToken).ConfigureAwait(false);
-      InvoiceMetrics.RecordCosmosDbCharge(response.RequestCharge, "replace", "merchants");
-      activity?.RecordSuccess();
-      return true;
-    }
-    catch (CosmosException exception) when (exception.StatusCode == HttpStatusCode.PreconditionFailed)
-    {
-      activity?.SetTag("result.conflict", true);
-      return false;
-    }
-    catch (CosmosException exception)
-    {
-      throw TranslateMerchantCosmos(exception, merchant.id);
     }
   }
 
@@ -244,24 +197,33 @@ public partial class CosmosDatabaseBroker
   /// <inheritdoc/>
   public async ValueTask<Merchant> UpdateMerchantAsync(Merchant currentMerchant, Merchant updatedMerchant, CancellationToken cancellationToken)
   {
+    ArgumentNullException.ThrowIfNull(currentMerchant);
+    ArgumentNullException.ThrowIfNull(updatedMerchant);
+    if (currentMerchant.id != updatedMerchant.id || currentMerchant.ParentCompanyId != updatedMerchant.ParentCompanyId)
+    {
+      throw new ArgumentException("Updates must retain the merchant identity and partition.", nameof(updatedMerchant));
+    }
+
     using var activity = InvoicePackageTracing.StartActivity(nameof(UpdateMerchantAsync));
     activity?
       .SetLayerContext("Broker", nameof(CosmosDatabaseBroker))
-      .SetCosmosDbContext("primary", "merchants", "upsert", currentMerchant?.ParentCompanyId.ToString());
+      .SetCosmosDbContext("primary", "merchants", "replace", currentMerchant.ParentCompanyId.ToString());
 
     var database = CosmosClient.GetDatabase("primary");
     var container = database.GetContainer("merchants");
 
-    var partitionKey = new PartitionKey(currentMerchant?.ParentCompanyId.ToString());
+    var partitionKey = new PartitionKey(currentMerchant.ParentCompanyId.ToString());
+    var options = MatchStorageRevision(currentMerchant.StorageETag);
     var response = await TranslateMerchantCosmosAsync(
-      () => container.UpsertItemAsync(updatedMerchant, partitionKey, cancellationToken: cancellationToken),
-      updatedMerchant?.id).ConfigureAwait(false);
+      () => container.ReplaceItemAsync(updatedMerchant, updatedMerchant.id.ToString(), partitionKey, options, cancellationToken),
+      updatedMerchant.id).ConfigureAwait(false);
 
     activity?.SetCosmosDbRequestCharge(response.RequestCharge);
-    InvoiceMetrics.RecordCosmosDbCharge(response.RequestCharge, "upsert", "merchants");
+    InvoiceMetrics.RecordCosmosDbCharge(response.RequestCharge, "replace", "merchants");
     activity?.RecordSuccess();
 
     var newMerchant = response.Resource;
+    newMerchant.StorageETag = response.ETag ?? newMerchant.StorageETag;
     return newMerchant;
   }
 
@@ -296,7 +258,8 @@ public partial class CosmosDatabaseBroker
 
         var merchantKey = merchant.id.ToString();
         var replaceResponse = await TranslateMerchantCosmosAsync(
-          () => container.ReplaceItemAsync(merchant, merchantKey, partitionKey, cancellationToken: cancellationToken),
+          () => container.ReplaceItemAsync(merchant, merchantKey, partitionKey,
+            MatchStorageRevision(response.ETag ?? merchant.StorageETag), cancellationToken),
           merchantIdentifier).ConfigureAwait(false);
         if (replaceResponse is not null) totalRequestCharge += replaceResponse.RequestCharge;
       }
@@ -326,7 +289,8 @@ public partial class CosmosDatabaseBroker
         var partitionKey = new PartitionKey(merchant.ParentCompanyId.ToString());
 
         var replaceResponse = await TranslateMerchantCosmosAsync(
-          () => container.ReplaceItemAsync(merchant, merchantKey, partitionKey, cancellationToken: cancellationToken),
+          () => container.ReplaceItemAsync(merchant, merchantKey, partitionKey,
+            MatchStorageRevision(merchant.StorageETag), cancellationToken),
           merchantIdentifier).ConfigureAwait(false);
         if (replaceResponse is not null) totalRequestCharge += replaceResponse.RequestCharge;
       }

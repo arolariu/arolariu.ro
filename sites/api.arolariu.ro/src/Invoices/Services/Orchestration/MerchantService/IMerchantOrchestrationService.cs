@@ -60,14 +60,7 @@ public interface IMerchantOrchestrationService
   /// <param name="parentCompanyId">The optional parent-company partition.</param>
   /// <param name="cancellationToken">Cancellation token to abort the operation (required).</param>
   /// <returns>The persisted merchant entity.</returns>
-  /// <param name="fields">The explicitly supplied editable fields.</param>
-  Task<Merchant> UpdateMerchantObject(Merchant updatedMerchant, Guid merchantIdentifier, Guid? parentCompanyId, CancellationToken cancellationToken, MerchantUpdateFields fields = MerchantUpdateFields.Details);
-
-  /// <summary>Reads a merchant and the opaque version needed to commit analysis.</summary>
-  Task<(Merchant Resource, string ETag)> ReadMerchantSnapshotAsync(Guid merchantId, Guid parentCompanyId, CancellationToken cancellationToken);
-
-  /// <summary>Conditionally replaces the merchant without creating a missing document.</summary>
-  Task<bool> TryReplaceMerchantSnapshotAsync(Merchant merchant, string expectedETag, CancellationToken cancellationToken);
+  Task<Merchant> UpdateMerchantObject(Merchant updatedMerchant, Guid merchantIdentifier, Guid? parentCompanyId, CancellationToken cancellationToken);
   #endregion
 
   #region Delete Merchant API

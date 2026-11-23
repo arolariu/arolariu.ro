@@ -248,8 +248,8 @@ Accepted response body.
 ### Manual category updates
 
 Invoice, product, and merchant categories are nullable domain-specific numeric IDs. Omission preserves the saved value; explicit null clears
-it. A category-bearing product PUT requires a unique case-insensitive name match and conditionally replaces the invoice once using its read
-ETag. A stale snapshot returns a conflict without deleting the product. Category writes do not call Analysis Orchestration.
+it. A product PUT requires a unique case-insensitive name match and conditionally replaces the invoice once using its read ETag. A stale
+snapshot returns a conflict without deleting the product. Category writes do not call Analysis Orchestration.
 
 ### Worker execution and persistence
 

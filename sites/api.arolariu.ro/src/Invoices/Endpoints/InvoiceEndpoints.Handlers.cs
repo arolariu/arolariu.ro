@@ -363,7 +363,6 @@ public static partial class InvoiceEndpoints
               possibleMerchant.id,
               possibleMerchant.ParentCompanyId,
               possibleMerchant,
-              fields: MerchantUpdateFields.Details,
               cancellationToken: writeScope.Token)
             .ConfigureAwait(false);
         }
@@ -834,7 +833,6 @@ public static partial class InvoiceEndpoints
           possibleMerchant.id,
           possibleMerchant.ParentCompanyId,
           possibleMerchant,
-          fields: MerchantUpdateFields.Details,
           cancellationToken: writeScope.Token)
         .ConfigureAwait(false);
 
@@ -1416,15 +1414,12 @@ public static partial class InvoiceEndpoints
         return TypedResults.BadRequest("Provide a category alone or complete merchant details.");
       }
 
-      Merchant updatedMerchant = merchantPayload.ToMerchant(id);
+      merchantPayload.ApplyTo(existingMerchant);
       Merchant persistedMerchant = await invoiceManagementService
         .UpdateMerchant(
           id,
           existingMerchant.ParentCompanyId,
-          updatedMerchant,
-          merchantPayload.IsCategoryOnly
-            ? MerchantUpdateFields.Category
-            : MerchantUpdateFields.Details | (merchantPayload.HasCategory ? MerchantUpdateFields.Category : MerchantUpdateFields.None),
+          existingMerchant,
           cancellationToken: writeScope.Token)
         .ConfigureAwait(false);
 
@@ -1636,7 +1631,6 @@ public static partial class InvoiceEndpoints
           possibleMerchant.id,
           possibleMerchant.ParentCompanyId,
           possibleMerchant,
-          fields: MerchantUpdateFields.Details,
           cancellationToken: writeScope.Token)
         .ConfigureAwait(false);
 
@@ -1718,7 +1712,6 @@ public static partial class InvoiceEndpoints
           possibleMerchant.id,
           possibleMerchant.ParentCompanyId,
           possibleMerchant,
-          fields: MerchantUpdateFields.Details,
           cancellationToken: writeScope.Token)
         .ConfigureAwait(false);
 

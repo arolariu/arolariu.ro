@@ -427,11 +427,10 @@ public sealed partial class InvoiceManagementService : IInvoiceManagementService
       return await invoiceProcessingService.ReadMerchantsVisibleToUser(userIdentifier, cancellationToken).ConfigureAwait(false);
     }).ConfigureAwait(false);
 
-  /// <summary>Replaces client-editable merchant state through Processing.</summary>
-  /// <param name="updatedMerchant">The replacement merchant fields.</param>
+  /// <summary>Replaces a previously read merchant through Processing.</summary>
+  /// <param name="updatedMerchant">The edited merchant snapshot.</param>
   /// <param name="identifier">The persisted merchant identifier.</param>
   /// <param name="parentCompanyId">The optional parent-company partition.</param>
-  /// <param name="fields">The details and category fields to update.</param>
   /// <param name="cancellationToken">The token used to cancel the operation.</param>
   /// <returns>The persisted merchant entity.</returns>
   /// <exception cref="arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices.Exceptions.Outer.Management.InvoiceManagementValidationException">
@@ -445,13 +444,12 @@ public sealed partial class InvoiceManagementService : IInvoiceManagementService
     Guid identifier,
     Guid? parentCompanyId,
     Merchant updatedMerchant,
-    MerchantUpdateFields fields,
     CancellationToken cancellationToken) =>
     await TryCatchAsync(async () =>
     {
       using var activity = InvoicePackageTracing.StartActivity(nameof(UpdateMerchant));
       return await invoiceProcessingService
-        .UpdateMerchant(identifier, parentCompanyId, updatedMerchant, fields, cancellationToken)
+        .UpdateMerchant(identifier, parentCompanyId, updatedMerchant, cancellationToken)
         .ConfigureAwait(false);
     }).ConfigureAwait(false);
 

@@ -57,7 +57,7 @@ using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Categories;
 ///     ParentCompanyId: parentId,
 ///     AdditionalMetadata: new Dictionary&lt;string, string&gt; { ["storeCode"] = "IS001" });
 ///
-/// var merchant = request.ToMerchant(existingMerchantId);
+/// request.ApplyTo(merchant);
 /// await merchantService.UpdateAsync(merchant);
 /// </code>
 /// </example>
@@ -93,52 +93,22 @@ public readonly record struct UpdateMerchantRequestDto(
 
   internal bool IsValid => IsCategoryOnly || (!string.IsNullOrWhiteSpace(Name) && !string.IsNullOrWhiteSpace(Description));
 
-  /// <summary>
-  /// Converts this DTO to a <see cref="Merchant"/> domain entity.
-  /// </summary>
-  /// <remarks>
-  /// <para>
-  /// <b>Identity Preservation:</b> The <paramref name="merchantId"/> is used to
-  /// maintain the merchant's identity across the update operation.
-  /// </para>
-  /// <para>
-  /// <b>Null Handling:</b>
-  /// <list type="bullet">
-  ///   <item><description><see cref="Address"/>: Null becomes empty <see cref="ContactInformation"/>.</description></item>
-  ///   <item><description><see cref="ParentCompanyId"/>: Deliberately ignored; the persisted partition identity is retained.</description></item>
-  ///   <item><description><see cref="AdditionalMetadata"/>: Null results in an empty update candidate and preserves persisted metadata.</description></item>
-  /// </list>
-  /// </para>
-  /// <para>
-  /// <b>Metadata Handling:</b> The metadata dictionary is copied entry-by-entry
-  /// to the domain entity's metadata collection.
-  /// </para>
-  /// </remarks>
-  /// <param name="merchantId">
-  /// The existing merchant identifier to preserve. Must match an existing merchant.
-  /// </param>
-  /// <returns>
-  /// A transient <see cref="Merchant"/> carrying only client-editable values for application to a persisted merchant.
-  /// </returns>
-  public Merchant ToMerchant(Guid merchantId)
+  /// <summary>Applies only editable values, retaining the merchant's identity, revision and references.</summary>
+  internal void ApplyTo(Merchant merchant)
   {
-    var merchant = new Merchant
+    if (!IsCategoryOnly)
     {
-      id = merchantId,
-      Name = Name ?? string.Empty,
-      Description = Description ?? string.Empty,
-      Category = Category,
-      Address = Address ?? new ContactInformation(),
-    };
+      merchant.Name = Name ?? string.Empty;
+      merchant.Description = Description ?? string.Empty;
+      merchant.Address = Address ?? new ContactInformation();
 
-    if (AdditionalMetadata is not null)
-    {
-      foreach (var (key, value) in AdditionalMetadata)
+      if (AdditionalMetadata is { Count: > 0 })
       {
-        merchant.AdditionalMetadata[key] = value;
+        merchant.AdditionalMetadata.Clear();
+        foreach (var (key, value) in AdditionalMetadata) merchant.AdditionalMetadata[key] = value;
       }
     }
 
-    return merchant;
+    if (HasCategory) merchant.Category = Category;
   }
 }

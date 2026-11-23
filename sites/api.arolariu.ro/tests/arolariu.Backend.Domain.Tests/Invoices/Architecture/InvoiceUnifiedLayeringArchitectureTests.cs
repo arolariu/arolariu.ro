@@ -129,7 +129,7 @@ public sealed class InvoiceUnifiedLayeringArchitectureTests
   }
 
   /// <summary>
-  /// Verifies internal persistence workflows and product replacement are absent from public service contracts.
+  /// Verifies internal persistence workflows remain private and a product edit uses one service command.
   /// </summary>
   [TestMethod]
   public void ServiceContracts_InternalWorkflows_ExposeOnlyApprovedOperations()
@@ -140,8 +140,10 @@ public sealed class InvoiceUnifiedLayeringArchitectureTests
     Assert.IsNull(typeof(IInvoiceManagementService).GetMethod("PersistMerchantAnalysisAsync"));
     Assert.IsNull(processingContract.GetMethod("PersistInvoiceAnalysisAsync"));
     Assert.IsNull(processingContract.GetMethod("PersistMerchantAnalysisAsync"));
-    Assert.IsNull(typeof(IInvoiceManagementService).GetMethod("UpdateProduct"));
-    Assert.IsNull(processingContract.GetMethod("UpdateProduct"));
+    Assert.IsNotNull(typeof(IInvoiceManagementService).GetMethod("UpdateProduct"));
+    Assert.IsNotNull(processingContract.GetMethod("UpdateProduct"));
+    Assert.IsNull(typeof(IInvoiceManagementService).GetMethod("GetProduct"));
+    Assert.IsNull(processingContract.GetMethod("GetProduct"));
     Assert.IsNotNull(typeof(IInvoiceManagementService).GetMethod("ProcessAnalysisAsync"));
     Assert.IsNotNull(processingContract.GetMethod("ProcessAnalysisAsync"));
     Assert.IsNull(typeof(IInvoiceManagementService).GetMethod("CreateInvoiceScan"));

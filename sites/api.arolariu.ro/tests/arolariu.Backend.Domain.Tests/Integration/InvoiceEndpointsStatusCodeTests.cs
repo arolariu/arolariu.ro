@@ -1130,10 +1130,9 @@ public sealed class InvoiceEndpointsStatusCodeTests
         merchantId,
         parentCompanyId,
         It.IsAny<Merchant>(),
-        MerchantUpdateFields.Details,
         It.IsAny<CancellationToken>()))
-      .Callback<Guid, Guid?, Merchant, MerchantUpdateFields, CancellationToken>(
-        (_, _, updated, _, _) => capturedMerchant = updated)
+      .Callback<Guid, Guid?, Merchant, CancellationToken>(
+        (_, _, updated, _) => capturedMerchant = updated)
       .ReturnsAsync(merchant);
 
     IResult result = await InvoiceEndpoints.UpdateSpecificMerchantAsync(
@@ -1144,7 +1143,8 @@ public sealed class InvoiceEndpointsStatusCodeTests
 
     Assert.AreEqual(StatusCodes.Status202Accepted, GetStatusCode(result));
     Assert.IsNotNull(capturedMerchant);
-    Assert.IsNull(capturedMerchant.Category);
+    Assert.AreEqual(classification, capturedMerchant.Category);
+    Assert.AreSame(merchant, capturedMerchant);
     service.VerifyAll();
   }
 
@@ -1183,7 +1183,6 @@ public sealed class InvoiceEndpointsStatusCodeTests
       It.IsAny<Guid>(),
       It.IsAny<Guid?>(),
       It.IsAny<Merchant>(),
-      MerchantUpdateFields.Details,
       It.IsAny<CancellationToken>()), Times.Never);
   }
 
