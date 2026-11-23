@@ -180,6 +180,7 @@ export function stepsForTarget(input: LintWorkerInput): readonly LintStep[] {
         {
           label: "svelte-check",
           run: async () => {
+            if (target === "cv") return runCommand("npm", ["run", "check"], {cwd: dirFor(target)});
             // SvelteKit type generation must run first or svelte-check flags every $app/* import.
             const sync = await runCommand("npx", ["svelte-kit", "sync"], {cwd: dirFor(target)});
             if (sync.code !== 0) return sync;
