@@ -92,7 +92,12 @@ describe("computeAvailableCategories", () => {
     expect(computeAvailableCategories([invoice])).toEqual(["uncategorized"]);
   });
 
-  it("returns a single taxonomy root label for one classified invoice", () => {
+  it("groups an unknown cached invoice ID with uncategorized receipts, not Other", () => {
+    const cached = {...makeInvoice({}), category: 2001} as unknown as Invoice;
+    expect(computeAvailableCategories([cached, makeInvoice({category: 3100}), makeInvoice({})])).toEqual(["uncategorized", 3100]);
+  });
+
+  it("returns a single category ID for one categorized invoice", () => {
     const invoices = [makeInvoice({category: 3001})];
     expect(computeAvailableCategories(invoices)).toEqual([3001]);
   });

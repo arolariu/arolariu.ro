@@ -5,7 +5,7 @@ import {toSafeDate} from "@/lib/utils.generic";
 import type {Invoice} from "@/types/invoices";
 import {useMemo} from "react";
 import type {FilterState} from "./useInvoiceFilters";
-import {UNCATEGORIZED_FILTER} from "../_utils/filterOptions";
+import {invoiceCategoryFilterValue} from "../_utils/filterOptions";
 
 /**
  * Custom hook for filtering and sorting invoices based on filter criteria.
@@ -90,13 +90,8 @@ export function useFilteredInvoices(invoices: ReadonlyArray<Invoice>, filters: F
       filtered = filtered.filter((invoice) => invoice.paymentInformation.totalCostAmount <= filters.amountMax!);
     }
 
-    // Apply classification group filter (OR logic).
-    // Null classifications use the same stable bucket exposed by the option deriver.
     if (filters.categoryFilters.length > 0) {
-      filtered = filtered.filter((invoice) => {
-        const group = invoice.category ?? UNCATEGORIZED_FILTER;
-        return filters.categoryFilters.includes(group);
-      });
+      filtered = filtered.filter((invoice) => filters.categoryFilters.includes(invoiceCategoryFilterValue(invoice.category)));
     }
 
     // Apply payment type filter (OR logic)

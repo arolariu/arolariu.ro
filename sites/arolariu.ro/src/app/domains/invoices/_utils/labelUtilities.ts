@@ -3,8 +3,14 @@
  * @module app/domains/invoices/_utils/labelUtilities
  */
 
-import {getInvoiceCategory, getMerchantCategory, getProductCategory} from "@/lib/categories/categoryCatalog";
-import type {InvoiceCategory, MerchantCategory, ProductCategory} from "@/types/invoices/Category";
+import {
+  getInvoiceCategory,
+  getMerchantCategory,
+  getProductCategory,
+  isInvoiceCategory,
+  isMerchantCategory,
+  isProductCategory,
+} from "@/lib/categories/categoryCatalog";
 import {PaymentType} from "@/types/invoices/Payment";
 import type {SelectorTranslator} from "next-intl-selector";
 
@@ -28,23 +34,23 @@ export function getPaymentTypeLabel(paymentType: number): string {
   return PAYMENT_TYPE_LABELS[paymentType] ?? "Unknown";
 }
 
-/** Returns the localized label for a receipt category or the empty state. */
-export function invoiceCategoryLabel(t: SelectorTranslator, category: InvoiceCategory | null): string {
-  if (category === null) return t((m) => m.categories.ui.unclassified);
+/** Returns the localized receipt category label, treating missing or stale cached IDs as uncategorized. */
+export function invoiceCategoryLabel(t: SelectorTranslator, category: unknown): string {
+  if (!isInvoiceCategory(category)) return t((m) => m.categories.ui.unclassified);
   const {key} = getInvoiceCategory(category);
   return t((m) => m.categories.invoices[key]);
 }
 
-/** Returns the localized label for a merchant category or the empty state. */
-export function merchantCategoryLabel(t: SelectorTranslator, category: MerchantCategory | null): string {
-  if (category === null) return t((m) => m.categories.ui.unclassified);
+/** Returns the localized merchant category label, treating missing or stale cached IDs as uncategorized. */
+export function merchantCategoryLabel(t: SelectorTranslator, category: unknown): string {
+  if (!isMerchantCategory(category)) return t((m) => m.categories.ui.unclassified);
   const {key} = getMerchantCategory(category);
   return t((m) => m.categories.merchants[key]);
 }
 
-/** Returns the localized label for a product category or the empty state. */
-export function productCategoryLabel(t: SelectorTranslator, category: ProductCategory | null): string {
-  if (category === null) return t((m) => m.categories.ui.unclassified);
+/** Returns the localized product category label, treating missing or stale cached IDs as uncategorized. */
+export function productCategoryLabel(t: SelectorTranslator, category: unknown): string {
+  if (!isProductCategory(category)) return t((m) => m.categories.ui.unclassified);
   const {key} = getProductCategory(category);
   return t((m) => m.categories.products[key]);
 }

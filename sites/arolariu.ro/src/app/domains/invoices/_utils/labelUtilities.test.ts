@@ -64,6 +64,15 @@ describe("invoice label utilities", () => {
   });
 
   describe("category labels", () => {
+    it.each([undefined, 9999, "3001"])("renders cached category value %s as uncategorized", (category) => {
+      const t = createTranslator({locale: "en", messages: {categories: english.categories}});
+      const uncategorized = english.categories.ui.unclassified;
+      expect(invoiceCategoryLabel(t, category)).toBe(uncategorized);
+      expect(merchantCategoryLabel(t, category)).toBe(uncategorized);
+      expect(productCategoryLabel(t, category)).toBe(uncategorized);
+      expect(invoiceCategoryLabel(t, MerchantCategory.Supermarket)).toBe(uncategorized);
+    });
+
     it.each([
       ["en", english],
       ["ro", romanian],

@@ -13,13 +13,19 @@
  * numeric for the enum values used by payment type).
  */
 
+import {isInvoiceCategory} from "@/lib/categories/categoryCatalog";
 import type {Invoice, PaymentType} from "@/types/invoices";
 import type {CategoryFilterValue} from "../_hooks/useInvoiceFilters";
 
 const DEFAULT_CURRENCY_CODE = "RON";
 
-/** Stable filter bucket for invoices without a resolved classification. */
+/** Stable filter bucket for invoices without a current category. */
 export const UNCATEGORIZED_FILTER = "uncategorized";
+
+/** Returns the invoice category filter value, including for older cached records. */
+export function invoiceCategoryFilterValue(category: unknown): CategoryFilterValue {
+  return isInvoiceCategory(category) ? category : UNCATEGORIZED_FILTER;
+}
 
 function buildFrequencyMap<K>(values: Iterable<K>): Map<K, number> {
   const map = new Map<K, number>();
@@ -49,7 +55,7 @@ export function computeAvailableCurrencies(invoices: ReadonlyArray<Invoice>): Re
 
 /** Returns categories present in the current collection, by frequency and then ID. */
 export function computeAvailableCategories(invoices: ReadonlyArray<Invoice>): readonly CategoryFilterValue[] {
-  const frequencies = buildFrequencyMap(invoices.map((invoice) => invoice.category ?? UNCATEGORIZED_FILTER));
+  const frequencies = buildFrequencyMap(invoices.map((invoice) => invoiceCategoryFilterValue(invoice.category)));
   return [...frequencies.entries()]
     .toSorted(
       ([left, leftCount], [right, rightCount]) =>

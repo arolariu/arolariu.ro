@@ -826,19 +826,20 @@ describe("useFilteredInvoices", () => {
       expect(result.current[0]).toEqual(classifiedInvoice);
     });
 
-    it("returns null-classification invoices when the unclassified group is selected", () => {
+    it("returns uncategorized and stale cached invoices when the uncategorized filter is selected", () => {
       const classifiedInvoice = new InvoiceBuilder().withName("Classified").build();
       classifiedInvoice.category = 3001;
       const unclassifiedInvoice = new InvoiceBuilder().withName("Unclassified").build();
+      const cachedInvoice = {...unclassifiedInvoice, category: 9999} as unknown as typeof unclassifiedInvoice;
 
       const filters: FilterState = {
         ...createDefaultFilters(),
         categoryFilters: ["uncategorized"],
       };
 
-      const {result} = renderHook(() => useFilteredInvoices([classifiedInvoice, unclassifiedInvoice], filters));
+      const {result} = renderHook(() => useFilteredInvoices([classifiedInvoice, unclassifiedInvoice, cachedInvoice], filters));
 
-      expect(result.current).toEqual([unclassifiedInvoice]);
+      expect(result.current).toEqual([unclassifiedInvoice, cachedInvoice]);
     });
 
     it("includes invoices with null classification when filter is empty (All)", () => {
