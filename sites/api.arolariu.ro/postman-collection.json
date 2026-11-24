@@ -1281,7 +1281,7 @@
             },
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"entries\": {\n    \"processedBy\": \"postman-collection\",\n    \"priority\": \"high\",\n    \"reviewStatus\": \"pending\"\n  }\n}",
+              "raw": "{\n  \"entries\": {\n    \"custom.processedBy\": \"postman-collection\",\n    \"custom.priority\": \"high\",\n    \"custom.reviewStatus\": \"pending\"\n  }\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -1320,8 +1320,7 @@
                 "exec": [
                   "pm.test(\"Metadata contains new keys\", function () {",
                   "    var body = pm.response.json();",
-                  "    pm.expect(body).to.have.property('processedBy');",
-                  "    pm.expect(body.processedBy).to.eql('postman-collection');",
+                  "    pm.expect(body).to.have.property('custom.processedBy', 'postman-collection');",
                   "});"
                 ]
               }
@@ -1356,7 +1355,7 @@
             },
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"keys\": [\"reviewStatus\"]\n}",
+              "raw": "{\n  \"keys\": [\"custom.reviewStatus\"]\n}",
               "options": {
                 "raw": {
                   "language": "json"
