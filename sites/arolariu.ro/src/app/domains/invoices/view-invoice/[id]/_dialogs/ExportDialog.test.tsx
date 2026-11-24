@@ -5,7 +5,8 @@ import {DialogProvider, useDialogs} from "@/app/domains/invoices/_contexts/Dialo
 import DialogContainer from "@/app/domains/invoices/_contexts/DialogContainer";
 import {Toaster, toast} from "@arolariu/components";
 import {act, cleanup, fireEvent, render, screen, waitFor, within} from "@testing-library/react";
-import {NextIntlClientProvider} from "next-intl";
+import {NextIntlClientProvider, type Locale} from "next-intl";
+import type {ComponentProps} from "react";
 import {afterEach, describe, expect, it, vi} from "vitest";
 import messages from "../../../../../../../messages/en.json";
 import frenchMessages from "../../../../../../../messages/fr.json";
@@ -23,16 +24,20 @@ function ExportTrigger(): React.JSX.Element {
   return <button onClick={() => openDialog("VIEW_INVOICE__EXPORT", "view")}>Open invoice export</button>;
 }
 
-async function openExportDialog(locale = "en", dictionary = messages): Promise<HTMLElement> {
+async function openExportDialog(
+  locale: Locale = "en",
+  dictionary: typeof messages | typeof romanianMessages | typeof frenchMessages = messages,
+): Promise<HTMLElement> {
   const exportMessages = dictionary.pages.invoices.viewInvoice.export;
+  const providerMessages = {
+    pages: {invoices: {viewInvoice: {export: exportMessages}}},
+    shared: dictionary.shared,
+    categories: dictionary.categories,
+  } as unknown as ComponentProps<typeof NextIntlClientProvider>["messages"];
   render(
     <NextIntlClientProvider
       locale={locale}
-      messages={{
-        pages: {invoices: {viewInvoice: {export: exportMessages}}},
-        shared: dictionary.shared,
-        categories: dictionary.categories,
-      }}>
+      messages={providerMessages}>
       <InvoiceContextProvider
         invoice={invoice}
         merchant={null}>
