@@ -448,7 +448,7 @@ public sealed partial class InvoiceProcessingService : IInvoiceProcessingService
     await TryCatchAsync(async () =>
     {
       using var activity = InvoicePackageTracing.StartActivity(nameof(UpdateProduct));
-      if (!request.IsValid || (request.Category is { } category && !Enum.IsDefined(category)))
+      if (!request.IsValid)
       {
         throw new ArgumentException("A valid product update is required.", nameof(request));
       }

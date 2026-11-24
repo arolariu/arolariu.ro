@@ -48,6 +48,7 @@ using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Categories;
 /// Optional extensible key-value metadata. A non-empty dictionary replaces existing client-editable metadata;
 /// null or an empty dictionary retains persisted metadata and server enrichment.
 /// </param>
+/// <param name="Category">Omit to preserve the category, send null or -1 to clear it, or send a valid merchant category ID.</param>
 /// <example>
 /// <code>
 /// var request = new UpdateMerchantRequestDto(
@@ -70,25 +71,12 @@ public readonly record struct UpdateMerchantRequestDto(
   string? Description,
   ContactInformation? Address,
   Guid? ParentCompanyId,
-  IDictionary<string, string>? AdditionalMetadata)
+  IDictionary<string, string>? AdditionalMetadata,
+  [property: JsonConverter(typeof(CategoryUpdate<MerchantCategory>.JsonConverter))]
+  [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+  CategoryUpdate<MerchantCategory> Category = default)
 {
-  private readonly MerchantCategory? category;
-
-  /// <summary>Gets the selected category. An explicit null clears the saved category.</summary>
-  public MerchantCategory? Category
-  {
-    get => category;
-    init
-    {
-      category = value;
-      HasCategory = true;
-    }
-  }
-
-  [JsonIgnore]
-  internal bool HasCategory { get; private init; }
-
-  internal bool IsCategoryOnly => HasCategory && Name is null && Description is null
+  internal bool IsCategoryOnly => Category.IsSpecified && Name is null && Description is null
     && Address is null && ParentCompanyId is null && AdditionalMetadata is null;
 
   internal bool IsValid => IsCategoryOnly || (!string.IsNullOrWhiteSpace(Name) && !string.IsNullOrWhiteSpace(Description));
@@ -109,6 +97,6 @@ public readonly record struct UpdateMerchantRequestDto(
       }
     }
 
-    if (HasCategory) merchant.Category = Category;
+    merchant.Category = Category.ApplyTo(merchant.Category);
   }
 }

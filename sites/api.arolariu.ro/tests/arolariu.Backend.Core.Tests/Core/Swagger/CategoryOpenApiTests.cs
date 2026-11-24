@@ -19,7 +19,7 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 [TestClass]
 public sealed class CategoryOpenApiTests
 {
-  /// <summary>The category field accepts only domain IDs or null and can be omitted.</summary>
+  /// <summary>Category updates document both clear forms without widening the response contract.</summary>
   [TestMethod]
   [DataRow("/openapi/v1.json")]
   [DataRow("/swagger/v1/swagger.json")]
@@ -48,14 +48,14 @@ public sealed class CategoryOpenApiTests
     var body = Resolve(root, operation.GetProperty("requestBody").GetProperty("content").GetProperty("application/json").GetProperty("schema"));
     Assert.IsFalse(body.TryGetProperty("required", out var required)
       && required.EnumerateArray().Any(property => property.GetString() == "category"));
-    AssertCategory(root, body.GetProperty("properties").GetProperty("category"));
+    AssertCategory(root, body.GetProperty("properties").GetProperty("category"), allowClearAlias: true);
 
     var response = Resolve(root, operation.GetProperty("responses").GetProperty("202")
       .GetProperty("content").GetProperty("application/json").GetProperty("schema"));
-    AssertCategory(root, response.GetProperty("properties").GetProperty("category"));
+    AssertCategory(root, response.GetProperty("properties").GetProperty("category"), allowClearAlias: false);
   }
 
-  private static void AssertCategory(JsonElement root, JsonElement field)
+  private static void AssertCategory(JsonElement root, JsonElement field, bool allowClearAlias)
   {
     var schema = Resolve(root, field);
     bool separateNull = schema.TryGetProperty("oneOf", out var alternatives);
@@ -78,13 +78,15 @@ public sealed class CategoryOpenApiTests
       Assert.AreEqual("integer", type.GetString());
       if (!separateNull)
       {
-        Assert.IsTrue(field.TryGetProperty("nullable", out var nullable) && nullable.GetBoolean(), field.GetRawText());
+        Assert.IsTrue((field.TryGetProperty("nullable", out var nullable) || schema.TryGetProperty("nullable", out nullable))
+          && nullable.GetBoolean(), schema.GetRawText());
       }
     }
     var allowed = schema.GetProperty("enum");
     Assert.AreEqual(!separateNull, allowed.EnumerateArray().Any(value => value.ValueKind == JsonValueKind.Null));
     var ids = allowed.EnumerateArray().Where(value => value.ValueKind != JsonValueKind.Null).Select(value => value.GetInt32());
-    CollectionAssert.AreEquivalent(Enum.GetValues<ProductCategory>().Select(category => (int)category).ToArray(), ids.ToArray());
+    var expected = Enum.GetValues<ProductCategory>().Select(category => (int)category);
+    CollectionAssert.AreEquivalent((allowClearAlias ? expected.Prepend(-1) : expected).ToArray(), ids.ToArray());
   }
 
   private static bool IsNullSchema(JsonElement schema) =>

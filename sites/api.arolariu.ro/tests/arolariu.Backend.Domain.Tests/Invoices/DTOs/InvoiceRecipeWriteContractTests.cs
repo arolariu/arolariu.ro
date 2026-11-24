@@ -227,18 +227,9 @@ public sealed class InvoiceRecipeWriteContractTests
     Assert.IsEmpty(result.PossibleRecipes);
   }
 
-  // ── Classification preservation ───────────────────────────────────────────────
-
-  /// <summary>
-  /// A PUT with no manual classification code must not destroy an analysis-derived
-  /// classification. <see cref="UpdateInvoiceRequestDto.ToInvoice"/> never populates
-  /// <c>Classification</c>, and persistence is a full-document upsert, so without the
-  /// handler-level preserve step an unrelated edit such as renaming the invoice would
-  /// silently drop the classification along with its origin, confidence and evidence.
-  /// This test replicates that handler logic inline.
-  /// </summary>
+  /// <summary>A full edit that omits its category preserves the stored value.</summary>
   [TestMethod]
-  public void Put_NullClassificationCode_HandlerPreservesExistingClassification()
+  public void Put_OmittedCategory_PreservesExistingCategory()
   {
     var existing = MakeExistingInvoice();
     existing.Category = InvoiceCategory.Groceries;
@@ -252,16 +243,7 @@ public sealed class InvoiceRecipeWriteContractTests
       PossibleRecipes: null,
       AdditionalMetadata: null);
 
-    var updatedEntity = dto.ToInvoice(InvoiceId, UserId);
-
-    // Without the handler step the replacement entity carries no classification at all.
-    Assert.IsNull(updatedEntity.Category);
-
-    // Replicate what UpdateSpecificInvoiceAsync does when ClassificationCode is null:
-    if (!dto.HasCategory)
-    {
-      updatedEntity.Category = existing.Category;
-    }
+    var updatedEntity = dto.ToInvoice(InvoiceId, UserId, existing.Category);
 
     Assert.IsNotNull(updatedEntity.Category);
     Assert.AreEqual(InvoiceCategory.Groceries, updatedEntity.Category);

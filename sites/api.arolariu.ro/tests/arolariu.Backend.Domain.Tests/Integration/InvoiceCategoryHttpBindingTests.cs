@@ -70,9 +70,11 @@ public sealed class InvoiceCategoryHttpBindingTests
   [TestMethod]
   [DataRow("PUT", "", "3001")]
   [DataRow("PUT", "null", "null")]
+  [DataRow("PUT", "-1", "null")]
   [DataRow("PUT", "3074", "3074")]
   [DataRow("PATCH", "", "3001")]
   [DataRow("PATCH", "null", "null")]
+  [DataRow("PATCH", "-1", "null")]
   [DataRow("PATCH", "3074", "3074")]
   public async Task EditInvoice_CategoryIntent_BindsOmissionClearAndAssignment(string method, string category, string expected)
   {
@@ -120,6 +122,9 @@ public sealed class InvoiceCategoryHttpBindingTests
   [TestMethod]
   [DataRow("2001")]
   [DataRow("\"3001\"")]
+  [DataRow("\"-1\"")]
+  [DataRow("-1.0")]
+  [DataRow("-2")]
   public async Task PatchInvoice_InvalidCategory_DoesNotTouchMerchantReference(string category)
   {
     Guid userId = Guid.NewGuid();
@@ -147,6 +152,7 @@ public sealed class InvoiceCategoryHttpBindingTests
   [TestMethod]
   [DataRow("""{"category":2005}""", "2005", false)]
   [DataRow("""{"category":null}""", "null", false)]
+  [DataRow("""{"category":-1}""", "null", false)]
   [DataRow("""{"name":"New name","description":"New description"}""", "2001", true)]
   [DataRow("""{"name":"New name","description":"New description","category":null}""", "null", true)]
   public async Task PutMerchant_CategoryIntent_PreservesUneditedState(string payload, string expected, bool details)
@@ -279,7 +285,8 @@ public sealed class InvoiceCategoryHttpBindingTests
     if (expected == HttpStatusCode.Accepted)
     {
       using var json = JsonDocument.Parse(await response.Content.ReadAsStringAsync().ConfigureAwait(false));
-      Assert.AreEqual(fullEdit ? "1014" : category, json.RootElement.GetProperty("category").GetRawText());
+      string expectedCategory = fullEdit ? "1014" : category == "-1" ? "null" : category;
+      Assert.AreEqual(expectedCategory, json.RootElement.GetProperty("category").GetRawText());
       Assert.AreEqual(fullEdit ? 8m : 7m, json.RootElement.GetProperty("price").GetDecimal());
       Assert.AreSame(second, System.Linq.Enumerable.Last(invoice.Items));
     }
@@ -289,6 +296,7 @@ public sealed class InvoiceCategoryHttpBindingTests
   {
     var builder = WebApplication.CreateBuilder();
     builder.WebHost.UseTestServer();
+  [DataRow("-1", false, false, true, HttpStatusCode.Accepted)]
     builder.Services.AddHttpContextAccessor();
     builder.Services.AddAuthentication();
     builder.Services.AddAuthorization();

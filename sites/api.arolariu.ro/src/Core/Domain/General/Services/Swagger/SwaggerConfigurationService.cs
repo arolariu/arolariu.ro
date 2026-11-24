@@ -10,6 +10,7 @@ using System.Text.Json.Nodes;
 using System.Threading.Tasks;
 
 using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Categories;
+using arolariu.Backend.Domain.Invoices.DTOs.Requests;
 
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
@@ -67,7 +68,8 @@ internal static class SwaggerConfigurationService
   private static void DescribeCategorySchema(OpenApiSchema schema, Type declaredType)
   {
     Type? underlyingType = Nullable.GetUnderlyingType(declaredType);
-    Type categoryType = underlyingType ?? declaredType;
+    bool isUpdate = declaredType.IsGenericType && declaredType.GetGenericTypeDefinition() == typeof(CategoryUpdate<>);
+    Type categoryType = isUpdate ? declaredType.GetGenericArguments()[0] : underlyingType ?? declaredType;
     if (categoryType != typeof(ProductCategory) && categoryType != typeof(MerchantCategory) && categoryType != typeof(InvoiceCategory))
     {
       return;
@@ -75,7 +77,14 @@ internal static class SwaggerConfigurationService
 
     var values = ((int[])Enum.GetValuesAsUnderlyingType(categoryType)).Select(id => (JsonNode)JsonValue.Create(id)).ToList();
     schema.Type = JsonSchemaType.Integer;
-    if (underlyingType is not null)
+    if (isUpdate)
+    {
+      schema.Properties?.Clear();
+      schema.Default = null;
+      values.Insert(0, JsonValue.Create(CategoryUpdate<ProductCategory>.ClearValue));
+    }
+
+    if (isUpdate || underlyingType is not null)
     {
       schema.Type |= JsonSchemaType.Null;
       values.Add(null!); // JsonNode represents JSON null as a null reference.

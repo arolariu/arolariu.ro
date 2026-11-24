@@ -257,7 +257,7 @@ public static partial class InvoiceEndpoints
         return TypedResults.NotFound();
       }
 
-      var updatedInvoiceEntity = invoicePayload.ToInvoice(id, potentialUserIdentifier);
+      var updatedInvoiceEntity = invoicePayload.ToInvoice(id, potentialUserIdentifier, possibleInvoice.Category);
       updatedInvoiceEntity.StorageETag = possibleInvoice.StorageETag;
 
       // Preserve scans from the original invoice (scans are managed through dedicated endpoints)
@@ -273,11 +273,6 @@ public static partial class InvoiceEndpoints
         {
           updatedInvoiceEntity.PossibleRecipes.Add(recipe);
         }
-      }
-
-      if (!invoicePayload.HasCategory)
-      {
-        updatedInvoiceEntity.Category = possibleInvoice.Category;
       }
 
       // Product lines are not part of this write DTO.

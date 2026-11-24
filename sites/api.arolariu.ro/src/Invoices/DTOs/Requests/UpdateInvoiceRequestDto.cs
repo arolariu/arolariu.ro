@@ -62,6 +62,7 @@ using arolariu.Backend.Domain.Invoices.DDD.ValueObjects;
 /// Extensible key-value metadata for client-specific data.
 /// Null or empty dictionary replaces any existing metadata.
 /// </param>
+/// <param name="Category">Omit to preserve the category, send null or -1 to clear it, or send a valid invoice category ID.</param>
 /// <example>
 /// <code>
 /// var request = new UpdateInvoiceRequestDto(
@@ -73,7 +74,7 @@ using arolariu.Backend.Domain.Invoices.DDD.ValueObjects;
 ///     PossibleRecipes: null,    // null preserves existing recipes
 ///     AdditionalMetadata: null);
 ///
-/// var invoice = request.ToInvoice(invoiceId, userId);
+/// var invoice = request.ToInvoice(invoiceId, userId, existingInvoice.Category);
 /// await invoiceService.UpdateAsync(invoice);
 /// </code>
 /// </example>
@@ -89,24 +90,11 @@ public readonly record struct UpdateInvoiceRequestDto(
   Guid? MerchantReference,
   bool IsImportant,
   [property: JsonPropertyName("possibleRecipes")] IReadOnlyList<RecipeSuggestionRequestDto>? PossibleRecipes,
-  IDictionary<string, object>? AdditionalMetadata)
+  IDictionary<string, object>? AdditionalMetadata,
+  [property: JsonConverter(typeof(CategoryUpdate<InvoiceCategory>.JsonConverter))]
+  [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+  CategoryUpdate<InvoiceCategory> Category = default)
 {
-  private readonly InvoiceCategory? category;
-
-  /// <summary>Gets the category to assign, or null to clear an explicit selection.</summary>
-  public InvoiceCategory? Category
-  {
-    get => category;
-    init
-    {
-      category = value;
-      HasCategory = true;
-    }
-  }
-
-  [JsonIgnore]
-  internal bool HasCategory { get; private init; }
-
   /// <summary>
   /// Converts this DTO to an <see cref="Invoice"/> domain aggregate.
   /// </summary>
@@ -131,10 +119,11 @@ public readonly record struct UpdateInvoiceRequestDto(
   /// <param name="userIdentifier">
   /// The owner's user identifier. Used for authorization and partitioning.
   /// </param>
+  /// <param name="currentCategory">The stored category to preserve if the request omits it.</param>
   /// <returns>
   /// A fully populated <see cref="Invoice"/> instance ready for persistence.
   /// </returns>
-  public Invoice ToInvoice(Guid invoiceId, Guid userIdentifier)
+  public Invoice ToInvoice(Guid invoiceId, Guid userIdentifier, InvoiceCategory? currentCategory = null)
   {
     var invoice = new Invoice
     {
@@ -142,7 +131,7 @@ public readonly record struct UpdateInvoiceRequestDto(
       UserIdentifier = userIdentifier,
       Name = Name,
       Description = Description,
-      Category = Category,
+      Category = Category.ApplyTo(currentCategory),
       PaymentInformation = PaymentInformation,
       MerchantReference = MerchantReference ?? Guid.Empty,
       IsImportant = IsImportant,
