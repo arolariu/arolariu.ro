@@ -6,6 +6,7 @@ using System.ComponentModel.DataAnnotations;
 using System.Diagnostics;
 using System.Linq;
 using System.Security.Claims;
+using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -401,6 +402,16 @@ public sealed class InvoiceEndpointsStatusCodeTests
 
     Assert.AreEqual(typeof(InvoiceScan), parameter.ParameterType);
     Assert.IsNotNull(parameter.GetCustomAttributes(typeof(RequiredAttribute), inherit: false).SingleOrDefault());
+  }
+
+  /// <summary>Rejects incomplete JSON before binding can supply empty owner or scan defaults.</summary>
+  [TestMethod]
+  [DataRow("""{"invalidField":"invalid value"}""")]
+  [DataRow("""{"userIdentifier":"7f4f2ec0-4f3b-4d2b-9c1a-8e6a0d4f7b21"}""")]
+  [DataRow("""{"initialScan":{"type":2,"location":"https://example.invalid/receipt.png"}}""")]
+  public void CreateInvoiceRequestDto_RequiredFieldsOmitted_RejectsJson(string body)
+  {
+    Assert.ThrowsExactly<JsonException>(() => JsonSerializer.Deserialize<CreateInvoiceRequestDto>(body, JsonSerializerOptions.Web));
   }
   #endregion
 

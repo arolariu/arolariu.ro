@@ -4,6 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Diagnostics.CodeAnalysis;
+using System.Text.Json.Serialization;
 
 using arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices;
 
@@ -21,8 +22,8 @@ using arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices;
 [Serializable]
 [ExcludeFromCodeCoverage]
 public readonly record struct CreateInvoiceRequestDto(
-  [Required] Guid UserIdentifier,
-  [Required] InvoiceScan InitialScan,
+  [Required][property: JsonRequired] Guid UserIdentifier,
+  [Required][property: JsonRequired] InvoiceScan InitialScan,
   IDictionary<string, object>? AdditionalMetadata)
 {
   /// <summary>Maps the minimal request into a new invoice aggregate.</summary>
