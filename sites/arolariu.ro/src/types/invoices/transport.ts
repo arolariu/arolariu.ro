@@ -44,7 +44,7 @@ import type {Currency} from "../DDD";
  * JSON null (an explicit clear). A non-finite value is encoded as a string so the
  * API rejects it rather than changing the stored category.
  */
-export function serializeCategoryRequest<T extends Readonly<{category?: number | null | undefined}>>(request: T): string {
+export function serializeCategoryRequest<T extends Readonly<{category?: number | null}>>(request: T): string {
   const {category} = request;
   return JSON.stringify(typeof category === "number" && !Number.isFinite(category) ? {...request, category: String(category)} : request);
 }

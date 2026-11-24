@@ -121,7 +121,7 @@ export function ExportDialog(): React.JSX.Element {
         t((m) => m.pages.invoices.viewInvoice.export.csv.headers.total),
         t((m) => m.pages.invoices.viewInvoice.export.csv.headers.category),
       ];
-      const csvRows = [headers.map(quoteCsvField).join(",")];
+      const csvRows = [headers.map((header) => quoteCsvField(header)).join(",")];
 
       // CSV Rows - one per product
       for (const item of invoice.items) {
