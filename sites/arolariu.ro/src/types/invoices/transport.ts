@@ -40,12 +40,13 @@ import {isRecipeSuggestion, type RecipeSuggestion} from "./Recipe";
 import type {Currency} from "../DDD";
 
 /**
- * Checks that category intent survives JSON serialization unchanged, including
- * keeping a non-finite number from becoming an explicit null (clear). The API
- * validates category membership.
+ * Serializes a category-bearing request without turning a non-finite number into
+ * JSON null (an explicit clear). A non-finite value is encoded as a string so the
+ * API rejects it rather than changing the stored category.
  */
-export function isCategoryIntentInput(value: unknown): value is number | null | undefined {
-  return value === undefined || value === null || isFiniteNumber(value);
+export function serializeCategoryRequest<T extends Readonly<{category?: number | null | undefined}>>(request: T): string {
+  const {category} = request;
+  return JSON.stringify(typeof category === "number" && !Number.isFinite(category) ? {...request, category: String(category)} : request);
 }
 
 // ============================================================

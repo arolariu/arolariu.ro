@@ -30,7 +30,7 @@ import {fetchBFFUserFromAuthService} from "@/lib/actions/user/fetchUser";
 import {validateStringIsGuidType} from "@/lib/utils.generic";
 import {createErrorResult, createHttpErrorResult, fetchWithTimeout, type ServerActionResult} from "@/lib/utils.server";
 import type {Invoice, InvoiceCategory} from "@/types/invoices";
-import {isCategoryIntentInput, parseInvoiceResponse, tryParse} from "@/types/invoices/transport";
+import {parseInvoiceResponse, serializeCategoryRequest, tryParse} from "@/types/invoices/transport";
 
 type ServerActionInputType = Readonly<{
   /** The identifier of the invoice to update. */
@@ -107,9 +107,6 @@ export async function updateInvoice({invoiceId, invoice, category}: ServerAction
       // Step 0. Validate invoice identifier is valid GUID
       logWithTrace("info", "Validating invoice identifier is valid...", {invoiceId}, "server");
       validateStringIsGuidType(invoiceId, "invoiceId");
-      if (!isCategoryIntentInput(category)) {
-        return createHttpErrorResult(400, "Invalid invoice category.");
-      }
 
       // Step 1. Fetch user JWT for authentication
       addSpanEvent("bff.user.jwt.fetch.start");
@@ -135,7 +132,7 @@ export async function updateInvoice({invoiceId, invoice, category}: ServerAction
           Authorization: `Bearer ${authToken}`,
           "Content-Type": "application/json",
         },
-        body: JSON.stringify(requestDto),
+        body: serializeCategoryRequest(requestDto),
       });
       addSpanEvent("bff.request.update-invoice.complete");
 

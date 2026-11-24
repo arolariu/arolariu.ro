@@ -21,7 +21,7 @@ import {fetchBFFUserFromAuthService} from "@/lib/actions/user/fetchUser";
 import {validateStringIsGuidType} from "@/lib/utils.generic";
 import {createErrorResult, createHttpErrorResult, fetchWithTimeout, type ServerActionResult} from "@/lib/utils.server";
 import type {Invoice, InvoiceCategory, PaymentInformation, Product, RecipeSuggestion} from "@/types/invoices";
-import {isCategoryIntentInput, parseInvoiceResponse, tryParse} from "@/types/invoices/transport";
+import {parseInvoiceResponse, serializeCategoryRequest, tryParse} from "@/types/invoices/transport";
 import {revalidatePath} from "next/cache";
 
 type ServerActionInputType = Readonly<{
@@ -97,9 +97,6 @@ export async function patchInvoice({invoiceId, payload}: ServerActionInputType):
       // Step 0. Validate invoice identifier is valid GUID
       logWithTrace("info", "Validating identifier is valid...", {invoiceId}, "server");
       validateStringIsGuidType(invoiceId, "invoiceId");
-      if (!isCategoryIntentInput(payload.category)) {
-        return createHttpErrorResult(400, "Invalid invoice category.");
-      }
 
       // Step 1. Fetch user JWT for authentication
       addSpanEvent("bff.user.jwt.fetch.start");
@@ -116,7 +113,7 @@ export async function patchInvoice({invoiceId, payload}: ServerActionInputType):
           Authorization: `Bearer ${authToken}`,
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({
+        body: serializeCategoryRequest({
           ...(payload.name !== undefined ? {name: payload.name} : {}),
           ...(payload.description !== undefined ? {description: payload.description} : {}),
           ...(payload.category !== undefined ? {category: payload.category} : {}),

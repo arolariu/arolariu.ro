@@ -19,7 +19,7 @@ import {fetchBFFUserFromAuthService} from "@/lib/actions/user/fetchUser";
 import {validateStringIsGuidType} from "@/lib/utils.generic";
 import {createErrorResult, createHttpErrorResult, fetchWithTimeout, type ServerActionResult} from "@/lib/utils.server";
 import type {Product, ProductCategory} from "@/types/invoices";
-import {isCategoryIntentInput, parseProductResponse, tryParse} from "@/types/invoices/transport";
+import {parseProductResponse, serializeCategoryRequest, tryParse} from "@/types/invoices/transport";
 import {revalidatePath} from "next/cache";
 
 /**
@@ -108,9 +108,6 @@ export async function updateInvoiceProduct({invoiceId, payload}: ServerActionInp
       // Step 0. Validate input is correct
       logWithTrace("info", "Validating input for updateInvoiceProduct", {invoiceId}, "server");
       validateStringIsGuidType(invoiceId, "invoiceId");
-      if (!isCategoryIntentInput(payload.category)) {
-        return createHttpErrorResult(400, "Invalid product category.");
-      }
 
       if (
         typeof payload.originalProductName !== "string"
@@ -150,7 +147,7 @@ export async function updateInvoiceProduct({invoiceId, payload}: ServerActionInp
           Authorization: `Bearer ${authToken}`,
           "Content-Type": "application/json",
         },
-        body: JSON.stringify(requestBody),
+        body: serializeCategoryRequest(requestBody),
       });
       addSpanEvent("bff.request.update-invoice-product.complete");
 

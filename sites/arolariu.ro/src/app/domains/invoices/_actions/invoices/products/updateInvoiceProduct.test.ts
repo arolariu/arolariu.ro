@@ -80,14 +80,21 @@ describe("updateInvoiceProduct", () => {
     expect(result).toMatchObject({success: false, error: {code: "VALIDATION_ERROR", status: 400}});
   });
 
-  it("does not serialize a non-finite category as a clear request", async () => {
-    const category = Number.NaN as ProductCategory;
+  it.each([Number.NaN, Number.POSITIVE_INFINITY, Number.NEGATIVE_INFINITY])(
+    "lets the API reject a non-finite category %s instead of serializing it as a clear",
+    async (category) => {
+      fetchAtHttp.mockResolvedValue(new Response(null, {status: 400}));
 
-    const result = await updateInvoiceProduct({invoiceId, payload: {originalProductName: "Milk", category}});
+      const result = await updateInvoiceProduct({invoiceId, payload: {originalProductName: "Milk", category: category as ProductCategory}});
 
-    expect(result).toMatchObject({success: false, error: {code: "VALIDATION_ERROR", status: 400}});
-    expect(fetchAtHttp).not.toHaveBeenCalled();
-  });
+      expect(fetchAtHttp).toHaveBeenCalledExactlyOnceWith(
+        endpoint,
+        expect.objectContaining({body: JSON.stringify({originalProductName: "Milk", category: String(category)})}),
+      );
+      expect(result).toMatchObject({success: false, error: {code: "VALIDATION_ERROR", status: 400}});
+      expect(revalidatePath).not.toHaveBeenCalled();
+    },
+  );
 
   it("rejects an invalid invoice identifier before authentication or HTTP", async () => {
     const result = await updateInvoiceProduct({...fullEdit, invoiceId: "not-a-guid"});
