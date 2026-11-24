@@ -6,6 +6,8 @@
 
 /* eslint-disable no-magic-numbers, no-console -- Configuration uses explicit numeric values */
 
+import {parseWorktreePreview} from "../../scripts/worktreePreview";
+
 /** Supported test environments */
 export type TestEnvironment = "ci" | "local" | "local-full" | "staging" | "production";
 
@@ -36,6 +38,7 @@ const ENV_KEYS = {
   BASE_URL: "BASE_URL",
   PLAYWRIGHT_WORKERS: "PLAYWRIGHT_WORKERS",
   E2E_USE_PROD: "E2E_USE_PROD",
+  E2E_WORKTREE_PORT: "E2E_WORKTREE_PORT",
 } as const;
 
 /** Simple debug check for config logging (avoids circular import) */
@@ -103,6 +106,17 @@ export function isLocal(): boolean {
   return env === "local" || env === "local-full";
 }
 
+/** Resolves the local worktree-only preview configuration, when requested. */
+export function getWorktreePreview(): ReturnType<typeof parseWorktreePreview> {
+  return parseWorktreePreview({
+    port: process.env[ENV_KEYS.E2E_WORKTREE_PORT],
+    testEnvironment: process.env[ENV_KEYS.TEST_ENV],
+    ci: isCI(),
+    productionBuild: isProdBuild(),
+    baseURL: process.env[ENV_KEYS.BASE_URL],
+  });
+}
+
 /**
  * Get the base URL for the current environment.
  *
@@ -112,6 +126,9 @@ export function isLocal(): boolean {
  * - dev (`next dev --experimental-https`) uses HTTPS via auto-generated cert
  */
 export function getBaseURL(): string {
+  const worktreePreview = getWorktreePreview();
+  if (worktreePreview) return worktreePreview.baseURL;
+
   const customURL = process.env[ENV_KEYS.BASE_URL];
   if (customURL) {
     return customURL;
@@ -193,7 +210,7 @@ export function getEnvironmentConfig(): EnvironmentConfig {
     },
   };
 
-  return configs[env];
+  return getWorktreePreview() === undefined ? configs[env] : {...configs[env], reuseExistingServer: false};
 }
 
 /**

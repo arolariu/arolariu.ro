@@ -15,7 +15,7 @@
  * explicitly.
  */
 
-import {join, resolve} from "node:path";
+import {join, posix, resolve, win32} from "node:path";
 
 import {Effect, type PlatformError} from "effect";
 
@@ -380,6 +380,33 @@ function diagnoseRepositoryRoot(context: Readonly<ModuleRunContext>): Effect.Eff
   });
 }
 
+function describeGitCheckout(
+  stdout: string,
+  expectedRoot: string,
+  platform: NodeJS.Platform,
+): {readonly kind: "primary" | "linked-worktree" | "submodule"; readonly root: string; readonly commonDirectory: string} | undefined {
+  const paths = platform === "win32" ? win32 : posix;
+  const normalize = (path: string): string => {
+    const resolved = paths.resolve(path);
+    return platform === "win32" ? resolved.toLowerCase() : resolved;
+  };
+  const lines = stdout.trimEnd().split(/\r?\n/u);
+  const [root, gitDirectory, commonDirectory, superproject] = lines;
+  if (
+    lines.length > 4
+    || !root
+    || !gitDirectory
+    || !commonDirectory
+    || !lines.every((path) => paths.isAbsolute(path))
+    || normalize(root) !== normalize(expectedRoot)
+  ) {
+    return undefined;
+  }
+  if (superproject !== undefined) return {kind: "submodule", root, commonDirectory};
+  const kind = normalize(gitDirectory) === normalize(commonDirectory) ? "primary" : "linked-worktree";
+  return {kind, root, commonDirectory};
+}
+
 function diagnoseGit(context: Readonly<ModuleRunContext>): Effect.Effect<DiagnosticResult, never, Process> {
   return Effect.gen(function* () {
     const startedAt = context.monotonicNow();
@@ -425,11 +452,30 @@ function diagnoseGit(context: Readonly<ModuleRunContext>): Effect.Effect<Diagnos
       });
     }
 
+    const checkoutResult = yield* context.probes.run(probes.workspace.gitCheckout(), {cwd: context.paths.root});
+    const checkout = isSuccessfulCommand(checkoutResult)
+      ? describeGitCheckout(checkoutResult.stdout, context.paths.root, context.environment.platform)
+      : undefined;
+    if (checkout === undefined) {
+      return issueDiagnostic(context, startedAt, {
+        id: "workspace.git",
+        name: "Git",
+        status: "fail",
+        summary: "Git could not identify the requested checkout.",
+        evidence: ["git rev-parse did not return valid checkout metadata for the expected root.", ...commandEvidence(checkoutResult)],
+        fixes: [{description: "Run doctor from the intended worktree and verify that Git can read its common directory."}],
+      });
+    }
+
     const lines = statusResult.stdout.split(/\r?\n/u).filter((line) => line.trim() !== "");
-    const branch = lines[0]?.replace(/^##\s*/u, "").split("...")[0] ?? "unknown";
+    const branchHeading = lines[0]?.replace(/^##\s*/u, "").split("...")[0] ?? "unknown";
+    const branch = branchHeading === "HEAD (no branch)" ? "(detached HEAD)" : branchHeading;
     const changedPaths = lines.filter((line) => !line.startsWith("##")).length;
     return passDiagnostic(context, startedAt, "workspace.git", "Git", "Git and checkout metadata are readable.", [
       version.stdout.trim(),
+      `Checkout: ${checkout.kind}`,
+      `Root: ${checkout.root}`,
+      `Git common directory: ${checkout.commonDirectory}`,
       `Branch: ${branch}`,
       `${String(changedPaths)} changed path${changedPaths === 1 ? "" : "s"}.`,
       `HEAD: ${logResult.stdout.trim()}`,

@@ -111,6 +111,10 @@ const PROBE_IDS_BY_COMMAND: ReadonlyMap<string, string> = new Map([
   ["git --version", "workspace.git.version"],
   ["git status --short --branch", "workspace.git.status"],
   ["git log --oneline -1 HEAD", "workspace.git.last-commit"],
+  [
+    "git rev-parse --path-format=absolute --show-toplevel --absolute-git-dir --git-common-dir --show-superproject-working-tree",
+    "workspace.git.checkout",
+  ],
   ["node --version", "workspace.node.version"],
   ["npm --version", "workspace.npm.version"],
   ["npm config get cache", "workspace.npm.cache"],
@@ -266,6 +270,7 @@ async function createWorkspaceFixture(
     options?: Partial<DoctorInput>;
     requirementsValid?: boolean;
     probeOverrides?: ReadonlyMap<string, ProbeOutcome>;
+    checkoutOutput?: (root: string) => string;
     inspectionOverrides?: ReadonlyMap<string, InspectionOutcome<unknown>>;
     omitConfigPaths?: readonly string[];
     accessFailure?: PlatformError.PlatformError;
@@ -291,6 +296,10 @@ async function createWorkspaceFixture(
     ["workspace.git.version", commandResult({stdout: "git version 2.50.1\n"})],
     ["workspace.git.status", commandResult({stdout: "## preview...origin/preview\n M docs/example.md\n"})],
     ["workspace.git.last-commit", commandResult({stdout: "abc1234 example\n"})],
+    [
+      "workspace.git.checkout",
+      commandResult({stdout: input.checkoutOutput?.(root) ?? `${root}\n${join(root, ".git")}\n${join(root, ".git")}\n`}),
+    ],
     ["workspace.node.version", commandResult({stdout: "v26.3.1\n"})],
     ["workspace.npm.version", commandResult({stdout: "11.16.0\n"})],
     ["workspace.npm.cache", commandResult({stdout: `${cacheRoot}\n`})],
@@ -413,6 +422,43 @@ describe("workspaceDoctorModule", () => {
       expect(id.startsWith("workspace.")).toBe(true);
     }
     expect(requestedIds).not.toContain("workspace.npm.tree");
+  });
+
+  it.each(["primary", "linked-worktree", "submodule"])("identifies a %s checkout without assuming .git is a directory", async (kind) => {
+    const common = "C:\\Shared Git Metadata\\.git";
+    const fixture = await createWorkspaceFixture({
+      checkoutOutput: (root) => {
+        const reportedRoot = root.replaceAll("\\", "/").toUpperCase();
+        if (kind === "primary") return `${reportedRoot}\n${common}\nC:/Shared Git Metadata/.GIT\n`;
+        if (kind === "linked-worktree") return `${reportedRoot}\n${common}\\worktrees\\lane\n${common}\n`;
+        return `${reportedRoot}\n${common}\\modules\\lane\n${common}\nC:\\Superproject\n`;
+      },
+      probeOverrides: new Map([["workspace.git.status", commandResult({stdout: "## HEAD (no branch)\n"})]]),
+    });
+
+    const git = resultById(await fixture.run(), "workspace.git");
+
+    expect(git.status).toBe("pass");
+    expect(git.evidence).toEqual(
+      expect.arrayContaining([
+        `Checkout: ${kind}`,
+        expect.stringMatching(/^Root: .+/u),
+        expect.stringMatching(/^Git common directory: .+/u),
+        "Branch: (detached HEAD)",
+        "HEAD: abc1234 example",
+      ]),
+    );
+  });
+
+  it.each(["missing metadata", "not this checkout"])("fails instead of guessing a checkout type when Git reports %s", async (problem) => {
+    const fixture = await createWorkspaceFixture({
+      checkoutOutput: (root) => (problem === "missing metadata" ? `${root}\n` : `C:\\Other Repo\n${root}\\.git\n${root}\\.git\n`),
+    });
+
+    const git = resultById(await fixture.run(), "workspace.git");
+
+    expect(git.status).toBe("fail");
+    expect(git.evidence.some((entry) => entry.includes("git rev-parse"))).toBe(true);
   });
 
   it("fails git diagnostic when the git version probe fails", async () => {

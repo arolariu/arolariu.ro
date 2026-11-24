@@ -81,8 +81,12 @@ Portable workflows in `.github/skills/`:
 - `code-review`
 - `infra-dependency-update`
 - `infra-selfhost`
+- [`parallel-worktree-development`](../skills/parallel-worktree-development/SKILL.md)
 
 Skills inspect current sibling source before prescribing structure. They work across Copilot CLI, VS Code, and Copilot coding agent.
+
+For parallel Copilot CLI sessions, use the worktree skill for dispatch and handoffs and the
+[development guide](../../DEVELOPMENT.md#parallel-git-worktrees-windows) for checkout preparation, previews, and shared integration.
 
 ### Cross-language workflow map
 

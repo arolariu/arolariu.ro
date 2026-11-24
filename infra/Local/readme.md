@@ -4,6 +4,9 @@
 
 Two coexisting modes for local development.
 
+These full stacks have host-wide ports or named resources. Run only one at a time on a host, even from different Git worktrees. Use the
+[parallel worktree integration handoff](../../DEVELOPMENT.md#reserve-one-full-stack-integration-slot) before starting or stopping a stack.
+
 ### Mode 1: Aspire (default — `npm run dev -- --engine <rancher|podman>`)
 
 > [!NOTE] Ordinary Aspire startup preserves local data. First use initializes Alice, Bob, Charlie, and Dmitryi; an explicit, confirmed

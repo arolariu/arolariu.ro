@@ -51,6 +51,79 @@ See **[AGENTS.md → Local Development Modes](AGENTS.md#local-development-modes)
 
 ---
 
+## Parallel Git worktrees (Windows)
+
+Use one linked worktree per independent workstream. For Copilot CLI sessions, follow the
+[parallel worktree skill](.github/skills/parallel-worktree-development/SKILL.md). A worktree separates source files and build outputs, not
+ports, databases, credentials, or container lifecycle. Keep normal permission checks in place.
+
+From each worktree root, verify its identity with `git rev-parse --show-toplevel`, `git branch --show-current`, and `git rev-parse HEAD`.
+With root npm dependencies installed, `npm run doctor -- --quick --json` also reports the `workspace.git` checkout kind, worktree root, and
+common Git directory. Check that row even if unrelated host checks fail.
+
+### Prepare only what the workstream needs
+
+| Workstream     | Commands from its own worktree                                                                                                                               |
+| -------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Website        | `npm ci`, then `node scripts\cli.ts generate --website-licenses-only` and `npm run typecheck --workspace @arolariu/website` (generates Next.js route types). |
+| API            | `dotnet build sites\api.arolariu.ro\src\Core\arolariu.Backend.Core.csproj` or `dotnet test` against the owning test project and filter.                      |
+| Components     | `npm ci`, then `npm run test:unit --workspace @arolariu/components`. The website uses a published components package, not a sibling checkout's build.        |
+| CV/docs/status | `npm ci`, then the selected site's workspace commands below.                                                                                                 |
+| EXP            | Prepare a separate ignored `sites\exp.arolariu.ro\.venv` in that checkout; run the owning pytest selection with its interpreter.                             |
+
+Website unit smoke: `npm run test:unit --workspace @arolariu/website -- --coverage.enabled=false transport.test.ts`. API example:
+`dotnet test sites\api.arolariu.ro\tests\arolariu.Backend.Domain.Tests\arolariu.Backend.Domain.Tests.csproj --filter FullyQualifiedName~CategoryCatalogTests`.
+Use coverage-disabled filters for quick feedback, not in place of CI. Keep full `npm run setup` and host tool/engine/certificate trust
+operations with the developer, not every worker. Never link or copy mutable dependency trees, build outputs, virtual environments, or `.env`
+files between worktrees.
+
+### Run a website preview on its own port
+
+Assign each worktree an unused loopback port. Prepare its approved local/test website configuration, and issue an ignored certificate pair
+for that checkout using an existing, already-trusted local mkcert CA. From `sites\arolariu.ro`, with `mkcert` on `PATH`:
+
+```powershell
+New-Item -ItemType Directory -Force certificates
+mkcert -key-file certificates\localhost-key.pem -cert-file certificates\localhost.pem localhost 127.0.0.1 ::1
+```
+
+If there is no trusted CA or the test configuration is missing, stop and complete developer onboarding separately. Do not run
+`mkcert -install` or copy private keys into a worker. For a manual preview run this from the root:
+
+```powershell
+npm exec --no --workspace @arolariu/website -- next dev --hostname 127.0.0.1 --port 3101 --experimental-https --experimental-https-key certificates\localhost-key.pem --experimental-https-cert certificates\localhost.pem
+```
+
+For Playwright, stop any manual preview in the **same checkout** first. With the repo's Chromium browser already installed, run:
+
+```powershell
+$env:E2E_WORKTREE_PORT = '3102'
+try {
+  npm run test:e2e --workspace @arolariu/website -- --project=chromium-desktop-e2e --grep '@smoke' 'src/app/about/page.spec.tsx'
+} finally {
+  Remove-Item Env:E2E_WORKTREE_PORT
+}
+```
+
+The opt-in starts and stops its own loopback server and fails if its port is taken or its certificate pair is missing. It does not accept
+CI, remote test targets, `E2E_USE_PROD=true`, or a `BASE_URL` override. Keep one website build, dev server, or Playwright run per worktree
+at a time: they can overwrite the same `.next` or test state. Use a separate worktree for a concurrent website preview.
+
+### Reserve one full-stack integration slot
+
+Aspire and Selfhost are **not** worktree-isolated. One human operator at a time owns the host's full stack. Record the owner, checkout,
+HEAD, mode, verified endpoints, and state (`active` or `released`) in the integration handoff. Start only after the previous owner releases
+it; verify the running resources and endpoints from the current dashboard or engine. Worker sessions do not start, stop, or reset these
+stacks. The slot is a coordination rule, not a host lock.
+
+Do not run the root `npm run test:e2e` as a local worker check; that is the Newman runner, not the website's Playwright script. A separately
+approved [API integration run](sites/api.arolariu.ro/README.md) requires an explicit Aspire profile, an approved local persona on a
+disposable stack, and verified local endpoints. It deletes that persona's invoices. See the
+[local environment runbook](infra/Local/readme.md) for stack lifecycle, and keep using regular clones for Windows checkouts opened inside
+Linux Dev Containers as described below.
+
+---
+
 ## Quick Start
 
 ### 🏆 Recommended: Aspire Mode (apps native + infra in Aspire-managed containers)

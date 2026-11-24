@@ -477,6 +477,21 @@ function gitLastCommit(): InspectionProbe {
   return registerProbe("workspace.git.last-commit", {command: "git", args: ["log", "--oneline", "-1", "HEAD"]});
 }
 
+/** Read-only probe for the checkout root, Git directories, and optional superproject. */
+function gitCheckout(): InspectionProbe {
+  return registerProbe("workspace.git.checkout", {
+    command: "git",
+    args: [
+      "rev-parse",
+      "--path-format=absolute",
+      "--show-toplevel",
+      "--absolute-git-dir",
+      "--git-common-dir",
+      "--show-superproject-working-tree",
+    ],
+  });
+}
+
 /**
  * Builds the exact, platform-specific read-only executable-resolution probe command.
  *
@@ -812,6 +827,7 @@ export const probes = {
     gitVersion,
     gitStatus,
     gitLastCommit,
+    gitCheckout,
     executableResolution,
   },
   dotnet: {

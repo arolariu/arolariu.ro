@@ -29,6 +29,7 @@
 import {defineConfig} from "@playwright/test";
 import * as path from "node:path";
 
+import {createWorktreeWebServer} from "./scripts/worktreePreview";
 import {
   getEnvironmentConfig,
   getProjectsForEnvironment,
@@ -39,6 +40,7 @@ import {
   TIMEOUTS,
   WEB_SERVER_CONFIG,
 } from "./tests/config";
+import {getWorktreePreview} from "./tests/config/environment";
 
 /** Storage state file path for sharing auth state across tests */
 const STORAGE_STATE_PATH = path.resolve(process.cwd(), "tests", "e2e-storage-state.json");
@@ -46,6 +48,7 @@ const STORAGE_STATE_PATH = path.resolve(process.cwd(), "tests", "e2e-storage-sta
 // Get environment-specific configuration
 const envConfig = getEnvironmentConfig();
 const customWorkers = getWorkerConfig();
+const worktreePreview = getWorktreePreview();
 
 export default defineConfig({
   // ==================== Global Setup/Teardown ====================
@@ -94,18 +97,18 @@ export default defineConfig({
   },
 
   // ==================== Web Server ====================
-  webServer: [
-    {
-      command: WEB_SERVER_CONFIG.command,
-      url: WEB_SERVER_CONFIG.url,
-      timeout: WEB_SERVER_CONFIG.timeout,
-      ignoreHTTPSErrors: WEB_SERVER_CONFIG.ignoreHTTPSErrors,
-      reuseExistingServer: envConfig.reuseExistingServer,
-      stdout: isCI() ? "pipe" : "ignore",
-      // Ignore stderr to suppress harmless ECONNRESET errors during test cleanup.
-      // These occur when the browser closes connections with pending requests.
-      // Real server errors will still cause tests to fail.
-      stderr: "ignore",
-    },
-  ],
+  webServer: worktreePreview
+    ? createWorktreeWebServer(worktreePreview, process.cwd())
+    : {
+        command: WEB_SERVER_CONFIG.command,
+        url: WEB_SERVER_CONFIG.url,
+        timeout: WEB_SERVER_CONFIG.timeout,
+        ignoreHTTPSErrors: WEB_SERVER_CONFIG.ignoreHTTPSErrors,
+        reuseExistingServer: envConfig.reuseExistingServer,
+        stdout: isCI() ? "pipe" : "ignore",
+        // Ignore stderr to suppress harmless ECONNRESET errors during test cleanup.
+        // These occur when the browser closes connections with pending requests.
+        // Real server errors will still cause tests to fail.
+        stderr: "ignore",
+      },
 });

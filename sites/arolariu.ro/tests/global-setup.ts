@@ -10,7 +10,7 @@ import {chromium, type FullConfig} from "@playwright/test";
 import * as fs from "node:fs";
 import * as path from "node:path";
 
-import {isProdBuild} from "./config/environment";
+import {getWorktreePreview, isProdBuild} from "./config/environment";
 
 /** Storage state file path for sharing auth state across tests */
 export const STORAGE_STATE_PATH = path.join(process.cwd(), "tests", "e2e-storage-state.json");
@@ -31,7 +31,7 @@ export default async function globalSetup(_config: FullConfig): Promise<void> {
     {
       name: "eula-accepted",
       value: "true",
-      domain: "localhost",
+      domain: getWorktreePreview()?.hostname ?? "localhost",
       path: "/",
       httpOnly: false,
       secure: !isProdBuild(),
