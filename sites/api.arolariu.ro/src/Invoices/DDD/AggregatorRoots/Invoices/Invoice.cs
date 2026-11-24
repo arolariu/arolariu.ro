@@ -30,12 +30,6 @@ using arolariu.Backend.Domain.Invoices.Serialization;
 /// </remarks>
 public sealed class Invoice : NamedEntity<Guid>
 {
-  internal string? StorageETag { get; set; }
-
-  // Read the Cosmos system field on query results without writing it into the document.
-  [Newtonsoft.Json.JsonProperty("_etag")]
-  private string? CosmosETag { set => StorageETag = value; }
-
   /// <inheritdoc/>
   [JsonPropertyName("id")]
   [JsonPropertyOrder(0)]

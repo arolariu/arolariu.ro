@@ -47,16 +47,6 @@ using Microsoft.EntityFrameworkCore;
 [ExcludeFromCodeCoverage]
 public sealed partial class CosmosDatabaseBroker : DbContext, IDatabaseBroker
 {
-  private static ItemRequestOptions MatchStorageRevision(string? etag)
-  {
-    if (string.IsNullOrWhiteSpace(etag))
-    {
-      throw new InvalidOperationException("Updates require a storage revision from the original read.");
-    }
-
-    return new ItemRequestOptions { IfMatchEtag = etag };
-  }
-
   /// <summary>
   /// Underlying Azure Cosmos DB client used for low-level container operations (point reads, queries outside EF tracking pipeline in partial implementations).
   /// </summary>

@@ -89,12 +89,10 @@ public sealed class InvoiceCategoryHttpBindingTests
       UserIdentifier = userId,
       Name = "Original receipt",
       Category = InvoiceCategory.Groceries,
-      StorageETag = "original-revision",
     };
     var broker = new Mock<IDatabaseBroker>(MockBehavior.Strict);
     broker.Setup(service => service.ReadInvoiceAsync(original.id, userId, It.IsAny<CancellationToken>())).ReturnsAsync(original);
-    broker.Setup(service => service.UpdateInvoiceAsync(
-      original.id, It.Is<Invoice>(edited => edited.StorageETag == original.StorageETag), It.IsAny<CancellationToken>()))
+    broker.Setup(service => service.UpdateInvoiceAsync(original.id, It.IsAny<Invoice>(), It.IsAny<CancellationToken>()))
       .ReturnsAsync((Guid _, Invoice edited, CancellationToken _) => edited);
     var log = NullLoggerFactory.Instance;
     var invoices = new InvoiceOrchestrationService(new InvoiceStorageFoundationService(broker.Object, log), log);
@@ -172,7 +170,7 @@ public sealed class InvoiceCategoryHttpBindingTests
     var broker = new Mock<IDatabaseBroker>(MockBehavior.Strict);
     broker.Setup(service => service.ReadInvoicesAsync(userId, It.IsAny<CancellationToken>(), merchant.id)).ReturnsAsync([invoice]);
     broker.Setup(service => service.ReadMerchantAsync(merchant.id, null, It.IsAny<CancellationToken>())).ReturnsAsync(merchant);
-    broker.Setup(service => service.UpdateMerchantAsync(merchant, merchant, It.IsAny<CancellationToken>())).ReturnsAsync(merchant);
+    broker.Setup(service => service.UpdateMerchantAsync(merchant, It.IsAny<CancellationToken>())).ReturnsAsync(merchant);
     var log = NullLoggerFactory.Instance;
     var invoices = new InvoiceOrchestrationService(new InvoiceStorageFoundationService(broker.Object, log), log);
     var merchants = new MerchantOrchestrationService(new MerchantStorageFoundationService(broker.Object, log), log);
@@ -190,13 +188,13 @@ public sealed class InvoiceCategoryHttpBindingTests
     Assert.AreEqual(details ? "New name" : "Shop", merchant.Name);
     Assert.AreEqual(details ? "New description" : "Store", merchant.Description);
     if (!details) Assert.AreEqual("Example Street", merchant.Address.Address);
-    broker.Verify(service => service.UpdateMerchantAsync(merchant, merchant, It.IsAny<CancellationToken>()), Times.Once());
+    broker.Verify(service => service.UpdateMerchantAsync(merchant, It.IsAny<CancellationToken>()), Times.Once());
     broker.Verify(service => service.ReadMerchantAsync(merchant.id, null, It.IsAny<CancellationToken>()), Times.Once());
     broker.Verify(service => service.ReadInvoicesAsync(userId, It.IsAny<CancellationToken>(), merchant.id), Times.Once());
     broker.VerifyNoOtherCalls();
   }
 
-  /// <summary>Link and unlink update only the invoice, including when a stale link conflicts.</summary>
+  /// <summary>Link and unlink update only the invoice, even if its write fails.</summary>
   [TestMethod]
   [DataRow(true, true)]
   [DataRow(false, true)]
@@ -218,11 +216,11 @@ public sealed class InvoiceCategoryHttpBindingTests
     broker.Setup(service => service.UpdateInvoiceAsync(invoiceId, It.IsAny<Invoice>(), It.IsAny<CancellationToken>()))
       .ReturnsAsync((Guid _, Invoice saved, CancellationToken _) =>
       {
-        if (!(saved.MerchantReference == Guid.Empty ? allowUnlink : allowLink)) throw new InvoiceAlreadyExistsException(invoiceId);
+        if (!(saved.MerchantReference == Guid.Empty ? allowUnlink : allowLink)) throw new InvoiceFailedStorageException("Write unavailable.");
         return currentInvoice = saved;
       });
     broker.Setup(service => service.ReadMerchantAsync(merchant.id, null, It.IsAny<CancellationToken>())).ReturnsAsync(merchant);
-    broker.Setup(service => service.UpdateMerchantAsync(merchant, merchant, It.IsAny<CancellationToken>()))
+    broker.Setup(service => service.UpdateMerchantAsync(merchant, It.IsAny<CancellationToken>()))
       .ReturnsAsync(merchant);
     var log = NullLoggerFactory.Instance;
     var invoices = new InvoiceOrchestrationService(new InvoiceStorageFoundationService(broker.Object, log), log);
@@ -234,8 +232,8 @@ public sealed class InvoiceCategoryHttpBindingTests
     using var client = app.GetTestClient();
     using var body = new StringContent($$"""{"merchantReference":"{{merchant.id}}"}""", Encoding.UTF8, "application/json");
     using var linked = await client.PatchAsync(new Uri($"/rest/v1/invoices/{invoiceId}", UriKind.Relative), body).ConfigureAwait(false);
-    Assert.AreEqual(allowLink ? HttpStatusCode.Accepted : HttpStatusCode.Conflict, linked.StatusCode);
-    broker.Verify(service => service.UpdateMerchantAsync(merchant, merchant, It.IsAny<CancellationToken>()), Times.Never());
+    Assert.AreEqual(allowLink ? HttpStatusCode.Accepted : HttpStatusCode.ServiceUnavailable, linked.StatusCode);
+    broker.Verify(service => service.UpdateMerchantAsync(merchant, It.IsAny<CancellationToken>()), Times.Never());
     if (!allowLink)
     {
       Assert.AreEqual(Guid.Empty, currentInvoice.MerchantReference);
@@ -244,11 +242,11 @@ public sealed class InvoiceCategoryHttpBindingTests
     Assert.AreEqual(merchant.id, currentInvoice.MerchantReference);
 
     using var unlinked = await client.DeleteAsync(new Uri($"/rest/v1/invoices/{invoiceId}/merchant", UriKind.Relative)).ConfigureAwait(false);
-    Assert.AreEqual(allowUnlink ? HttpStatusCode.NoContent : HttpStatusCode.Conflict, unlinked.StatusCode);
+    Assert.AreEqual(allowUnlink ? HttpStatusCode.NoContent : HttpStatusCode.ServiceUnavailable, unlinked.StatusCode);
     Assert.AreEqual(allowUnlink ? Guid.Empty : merchant.id, currentInvoice.MerchantReference);
     Assert.AreEqual(MerchantCategory.Supermarket, merchant.Category);
     Assert.AreEqual("Shop", merchant.Name);
-    broker.Verify(service => service.UpdateMerchantAsync(merchant, merchant, It.IsAny<CancellationToken>()), Times.Never());
+    broker.Verify(service => service.UpdateMerchantAsync(merchant, It.IsAny<CancellationToken>()), Times.Never());
   }
 
   /// <summary>A new link is not written until the merchant exists, and a stale link cannot overwrite the receipt.</summary>
@@ -280,7 +278,7 @@ public sealed class InvoiceCategoryHttpBindingTests
         .ReturnsAsync((Guid _, Invoice saved, CancellationToken _) =>
         {
           writes.Add("replace invoice");
-          if (!invoiceSaved) throw new InvoiceAlreadyExistsException(invoiceId);
+          if (!invoiceSaved) throw new InvoiceFailedStorageException("Write unavailable.");
           savedMerchantReference = saved.MerchantReference;
           return saved;
         });
@@ -292,7 +290,8 @@ public sealed class InvoiceCategoryHttpBindingTests
     using var body = new StringContent("""{"name":"Shop","description":"Store","category":2001}""", Encoding.UTF8, "application/json");
     using var response = await client.PostAsync(new Uri($"/rest/v1/invoices/{invoiceId}/merchant", UriKind.Relative), body).ConfigureAwait(false);
 
-    Assert.AreEqual(invoiceSaved ? HttpStatusCode.Created : HttpStatusCode.Conflict, response.StatusCode);
+    var expected = invoiceSaved ? HttpStatusCode.Created : merchantCreated ? HttpStatusCode.ServiceUnavailable : HttpStatusCode.Conflict;
+    Assert.AreEqual(expected, response.StatusCode);
     Assert.HasCount(merchantCreated ? 2 : 1, writes);
     Assert.AreEqual("create merchant", writes[0]);
     if (merchantCreated) Assert.AreEqual("replace invoice", writes[1]);
@@ -315,7 +314,7 @@ public sealed class InvoiceCategoryHttpBindingTests
     var broker = new Mock<IDatabaseBroker>(MockBehavior.Strict);
     broker.Setup(service => service.ReadInvoicesAsync(userId, It.IsAny<CancellationToken>(), merchant.id)).ReturnsAsync([receipt]);
     broker.Setup(service => service.ReadMerchantAsync(merchant.id, null, It.IsAny<CancellationToken>())).ReturnsAsync(merchant);
-    broker.Setup(service => service.UpdateMerchantAsync(merchant, merchant, It.IsAny<CancellationToken>())).ReturnsAsync(merchant);
+    broker.Setup(service => service.UpdateMerchantAsync(merchant, It.IsAny<CancellationToken>())).ReturnsAsync(merchant);
     await using var app = BuildStorageApp(broker.Object, userId);
     await app.StartAsync().ConfigureAwait(false);
 
@@ -331,7 +330,7 @@ public sealed class InvoiceCategoryHttpBindingTests
 
     Assert.AreEqual(HttpStatusCode.NotFound, update.StatusCode);
     Assert.AreEqual(MerchantCategory.Bakery, merchant.Category);
-    broker.Verify(service => service.UpdateMerchantAsync(merchant, merchant, It.IsAny<CancellationToken>()), Times.Never());
+    broker.Verify(service => service.UpdateMerchantAsync(merchant, It.IsAny<CancellationToken>()), Times.Never());
   }
 
   /// <summary>Creating a standalone merchant stamps the caller rather than accepting caller-supplied audit fields.</summary>
@@ -355,16 +354,17 @@ public sealed class InvoiceCategoryHttpBindingTests
       It.IsAny<CancellationToken>()), Times.Once());
   }
 
-  /// <summary>Edits commit once against the observed version and leave ambiguous/stale targets unchanged.</summary>
+  /// <summary>Edits replace the invoice once and reject ambiguous products before writing.</summary>
   [TestMethod]
   [DataRow("null", false, false, true, HttpStatusCode.BadRequest)]
   [DataRow("-1", false, false, true, HttpStatusCode.Accepted)]
   [DataRow("1100", false, false, true, HttpStatusCode.Accepted)]
+  [DataRow("2001", false, false, true, HttpStatusCode.BadRequest)]
   [DataRow("1100", false, true, true, HttpStatusCode.BadRequest)]
-  [DataRow("1100", false, false, false, HttpStatusCode.Conflict)]
+  [DataRow("1100", false, false, false, HttpStatusCode.ServiceUnavailable)]
   [DataRow("", true, false, true, HttpStatusCode.Accepted)]
-  [DataRow("", true, false, false, HttpStatusCode.Conflict)]
-  public async Task UpdateProduct_CategoryOrDetails_UsesSingleVersionedWrite(string category, bool fullEdit, bool duplicate, bool commit, HttpStatusCode expected)
+  [DataRow("", true, false, false, HttpStatusCode.ServiceUnavailable)]
+  public async Task UpdateProduct_CategoryOrDetails_UsesSingleWrite(string category, bool fullEdit, bool duplicate, bool commit, HttpStatusCode expected)
   {
     Guid userId = Guid.NewGuid();
     var first = new Product { Name = "Milk", Price = 7m, Quantity = 2, Category = ProductCategory.Milk };
@@ -377,7 +377,7 @@ public sealed class InvoiceCategoryHttpBindingTests
       It.Is<Invoice>(edited => edited.Items.Count == 2 && edited.Items.First().Name == (fullEdit ? "Full milk" : "Milk")),
       It.IsAny<CancellationToken>()));
     if (commit) update.ReturnsAsync(invoice);
-    else update.ThrowsAsync(new InvoiceAlreadyExistsException(invoice.id));
+    else update.ThrowsAsync(new InvoiceFailedStorageException("Write unavailable."));
 
     var logger = NullLoggerFactory.Instance;
     var storage = new InvoiceStorageFoundationService(database.Object, logger);

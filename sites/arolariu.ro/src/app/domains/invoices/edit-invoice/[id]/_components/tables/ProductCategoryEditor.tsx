@@ -49,7 +49,7 @@ export default function ProductCategoryEditor({
         payload: {originalProductName: product.name, updatedProduct: {category: value}},
       });
       if (!result.success) {
-        notify.error(result.error.status === 409 ? t((m) => m.categories.ui.conflict) : t((m) => m.categories.ui.failed));
+        notify.error(t((m) => m.categories.ui.failed));
         return;
       }
       onSaved(product, result.data.category);

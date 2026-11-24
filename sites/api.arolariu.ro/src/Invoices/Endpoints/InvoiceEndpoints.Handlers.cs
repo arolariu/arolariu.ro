@@ -265,7 +265,6 @@ public static partial class InvoiceEndpoints
 
       var updatedInvoiceEntity = invoicePayload.ToInvoice(id, potentialUserIdentifier);
       if (invoicePayload.Category is null) updatedInvoiceEntity.Category = possibleInvoice.Category;
-      updatedInvoiceEntity.StorageETag = possibleInvoice.StorageETag;
       if (updatedInvoiceEntity.MerchantReference != Guid.Empty
           && updatedInvoiceEntity.MerchantReference != possibleInvoice.MerchantReference
           && await invoiceManagementService.ReadMerchant(updatedInvoiceEntity.MerchantReference, null, writeScope.Token).ConfigureAwait(false) is null)

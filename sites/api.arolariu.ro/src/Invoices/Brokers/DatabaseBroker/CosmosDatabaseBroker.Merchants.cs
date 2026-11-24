@@ -4,7 +4,6 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
-using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -13,7 +12,6 @@ using arolariu.Backend.Domain.Invoices.DDD.Entities.Merchants.Exceptions.Inner;
 
 using Microsoft.Azure.Cosmos;
 
-using Newtonsoft.Json.Linq;
 
 using arolariu.Backend.Common.Telemetry.Tracing;
 
@@ -22,9 +20,6 @@ using static arolariu.Backend.Common.Telemetry.Tracing.ActivityGenerators;
 
 public partial class CosmosDatabaseBroker
 {
-  // The scoped Broker tracks revisions by object instance so a second read cannot renew an older edit.
-  private readonly ConditionalWeakTable<Merchant, string> merchantRevisions = new();
-
   /// <inheritdoc/>
   public async ValueTask<Merchant> CreateMerchantAsync(Merchant merchant, CancellationToken cancellationToken)
   {
@@ -59,7 +54,6 @@ public partial class CosmosDatabaseBroker
     var container = database.GetContainer("merchants");
 
     Merchant? merchant;
-    string? revision;
     if (parentCompanyId.HasValue)
     {
       activity?.SetTag("db.query.type", "point_read");
@@ -73,7 +67,6 @@ public partial class CosmosDatabaseBroker
       activity?.SetCosmosDbRequestCharge(response.RequestCharge);
       InvoiceMetrics.RecordCosmosDbCharge(response.RequestCharge, "read", "merchants");
       merchant = response.Resource;
-      revision = response.ETag;
     }
     else
     {
@@ -84,27 +77,24 @@ public partial class CosmosDatabaseBroker
       var query = new QueryDefinition($"SELECT * FROM c WHERE c.id = @merchantIdentifier")
         .WithParameter("@merchantIdentifier", merchantIdentifier);
 
-      using var iterator = container.GetItemQueryIterator<JObject>(query);
+      using var iterator = container.GetItemQueryIterator<Merchant>(query);
       double totalCharge = 0;
-      JObject? row = null;
-      while (row is null && iterator.HasMoreResults)
+      merchant = null;
+      while (merchant is null && iterator.HasMoreResults)
       {
         cancellationToken.ThrowIfCancellationRequested();
         var response = await TranslateMerchantCosmosAsync(
           () => iterator.ReadNextAsync(cancellationToken),
           merchantIdentifier).ConfigureAwait(false);
         totalCharge += response.RequestCharge;
-        row = response.Resource.FirstOrDefault();
+        merchant = response.Resource.FirstOrDefault();
       }
 
       activity?.SetCosmosDbRequestCharge(totalCharge);
       InvoiceMetrics.RecordCosmosDbCharge(totalCharge, "query", "merchants");
-      merchant = row?.ToObject<Merchant>();
-      revision = row?.Value<string>("_etag");
     }
 
     if (merchant?.IsSoftDeleted == true) throw new MerchantLockedException(merchantIdentifier);
-    if (merchant is not null) TrackMerchantRevision(merchant, revision);
     activity?.RecordSuccess();
     return merchant;
   }
@@ -207,42 +197,28 @@ public partial class CosmosDatabaseBroker
   }
 
   /// <inheritdoc/>
-  public async ValueTask<Merchant> UpdateMerchantAsync(Merchant currentMerchant, Merchant updatedMerchant, CancellationToken cancellationToken)
+  public async ValueTask<Merchant> UpdateMerchantAsync(Merchant updatedMerchant, CancellationToken cancellationToken)
   {
-    ArgumentNullException.ThrowIfNull(currentMerchant);
     ArgumentNullException.ThrowIfNull(updatedMerchant);
-    if (currentMerchant.id != updatedMerchant.id || currentMerchant.ParentCompanyId != updatedMerchant.ParentCompanyId)
-    {
-      throw new ArgumentException("Updates must retain the merchant identity and partition.", nameof(updatedMerchant));
-    }
 
     using var activity = InvoicePackageTracing.StartActivity(nameof(UpdateMerchantAsync));
     activity?
       .SetLayerContext("Broker", nameof(CosmosDatabaseBroker))
-      .SetCosmosDbContext("primary", "merchants", "replace", currentMerchant.ParentCompanyId.ToString());
+      .SetCosmosDbContext("primary", "merchants", "replace", updatedMerchant.ParentCompanyId.ToString());
 
     var database = CosmosClient.GetDatabase("primary");
     var container = database.GetContainer("merchants");
 
-    var partitionKey = new PartitionKey(currentMerchant.ParentCompanyId.ToString());
-    var options = MatchStorageRevision(merchantRevisions.TryGetValue(currentMerchant, out var revision) ? revision : null);
+    var partitionKey = new PartitionKey(updatedMerchant.ParentCompanyId.ToString());
     var response = await TranslateMerchantCosmosAsync(
-      () => container.ReplaceItemAsync(updatedMerchant, updatedMerchant.id.ToString(), partitionKey, options, cancellationToken),
+      () => container.ReplaceItemAsync(updatedMerchant, updatedMerchant.id.ToString(), partitionKey, cancellationToken: cancellationToken),
       updatedMerchant.id).ConfigureAwait(false);
 
     activity?.SetCosmosDbRequestCharge(response.RequestCharge);
     InvoiceMetrics.RecordCosmosDbCharge(response.RequestCharge, "replace", "merchants");
     activity?.RecordSuccess();
 
-    var newMerchant = response.Resource;
-    TrackMerchantRevision(newMerchant, response.ETag);
-    return newMerchant;
-  }
-
-  private void TrackMerchantRevision(Merchant merchant, string? revision)
-  {
-    if (string.IsNullOrWhiteSpace(revision)) merchantRevisions.Remove(merchant);
-    else merchantRevisions.AddOrUpdate(merchant, revision);
+    return response.Resource;
   }
 
   /// <summary>Executes a Cosmos operation returning <typeparamref name="T"/> and maps any
@@ -259,20 +235,6 @@ public partial class CosmosDatabaseBroker
     }
   }
 
-  /// <summary>Executes a Cosmos operation with no return value and maps any
-  /// <see cref="CosmosException"/> onto a typed merchant inner exception.</summary>
-  private static async Task TranslateMerchantCosmosAsync(Func<Task> operation, Guid? merchantIdentifier)
-  {
-    try
-    {
-      await operation().ConfigureAwait(false);
-    }
-    catch (CosmosException cosmosException)
-    {
-      throw TranslateMerchantCosmos(cosmosException, merchantIdentifier);
-    }
-  }
-
   /// <summary>Maps a <see cref="CosmosException"/> status code to the corresponding merchant inner exception type.</summary>
   private static Exception TranslateMerchantCosmos(CosmosException cosmosException, Guid? merchantIdentifier) =>
     cosmosException.StatusCode switch
@@ -280,7 +242,7 @@ public partial class CosmosDatabaseBroker
       HttpStatusCode.NotFound => merchantIdentifier.HasValue
         ? new MerchantNotFoundException(merchantIdentifier.Value, cosmosException)
         : new MerchantNotFoundException("Merchant not found.", cosmosException),
-      HttpStatusCode.Conflict or HttpStatusCode.PreconditionFailed => merchantIdentifier.HasValue
+      HttpStatusCode.Conflict => merchantIdentifier.HasValue
         ? new MerchantAlreadyExistsException(merchantIdentifier.Value, cosmosException)
         : new MerchantAlreadyExistsException("Merchant already exists.", cosmosException),
       HttpStatusCode.Unauthorized => new MerchantUnauthorizedAccessException(

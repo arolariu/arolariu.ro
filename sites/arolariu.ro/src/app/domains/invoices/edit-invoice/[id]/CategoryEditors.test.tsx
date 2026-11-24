@@ -5,7 +5,7 @@ import {DialogProvider, useDialog} from "@/app/domains/invoices/_contexts/Dialog
 import {EMPTY_GUID} from "@/lib/utils.generic";
 import type {Merchant} from "@/types/invoices";
 import {toast, Toaster} from "@arolariu/components";
-import {act, cleanup, render, screen, within} from "@testing-library/react";
+import {act, cleanup, render, screen, waitFor, within} from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import {MotionGlobalConfig} from "motion/react";
 import {NextIntlClientProvider} from "next-intl";
@@ -137,6 +137,7 @@ describe("individual category editors", () => {
     let page = await mountEditors();
     await choose(user, screen.getByRole("combobox", {name: "Receipt category"}), "Groceries");
     await act(() => user.click(screen.getByRole("button", {name: saveReceipt})));
+    await waitFor(() => expect(globalThis.window.location.reload).toHaveBeenCalledOnce());
     expect(writes).toEqual([{path: invoicePath, body: {category: 3001}}]);
 
     page.unmount();
@@ -144,6 +145,7 @@ describe("individual category editors", () => {
     expect(screen.getByRole("combobox", {name: "Receipt category"})).toHaveValue("Groceries");
     await act(() => user.click(screen.getByRole("button", {name: "Clear category"})));
     await act(() => user.click(screen.getByRole("button", {name: saveReceipt})));
+    await waitFor(() => expect(globalThis.window.location.reload).toHaveBeenCalledTimes(2));
     expect(writes.at(-1)).toEqual({path: invoicePath, body: {category: -1}});
 
     page.unmount();
@@ -159,6 +161,7 @@ describe("individual category editors", () => {
     await act(() => user.click(row().getByRole("button", {name: "Product category: Dairy carton"})));
     await choose(user, row().getByRole("combobox", {name: "Product category: Dairy carton"}), "Milk");
     await act(() => user.click(row().getByRole("button", {name: "Save category"})));
+    expect(await row().findByRole("button", {name: "Product category: Dairy carton"})).toHaveTextContent("Milk");
     expect(writes).toEqual([{path: productPath, body: {originalProductName: "Dairy carton", category: 1014}}]);
 
     page.unmount();
@@ -168,6 +171,7 @@ describe("individual category editors", () => {
     await act(() => user.click(edit));
     await act(() => user.click(row().getByRole("button", {name: "Clear category"})));
     await act(() => user.click(row().getByRole("button", {name: "Save category"})));
+    expect(await row().findByRole("button", {name: "Product category: Dairy carton"})).toHaveTextContent("Uncategorized");
     expect(writes.at(-1)).toEqual({path: productPath, body: {originalProductName: "Dairy carton", category: -1}});
 
     page.unmount();
@@ -186,8 +190,8 @@ describe("individual category editors", () => {
     let dialog = await open();
     await choose(user, dialog.getByRole("combobox", {name: "Merchant category"}), "Supermarket");
     await act(() => user.click(dialog.getByRole("button", {name: "Save category"})));
+    expect(await dialog.findByText("Supermarket")).toBeVisible();
     expect(writes).toEqual([{path: merchantPath, body: {category: 2001}}]);
-    expect(dialog.getByText("Supermarket")).toBeVisible();
 
     page.unmount();
     page = await mountEditors();
@@ -195,6 +199,7 @@ describe("individual category editors", () => {
     expect(dialog.getByRole("combobox", {name: "Merchant category"})).toHaveValue("Supermarket");
     await act(() => user.click(dialog.getByRole("button", {name: "Clear category"})));
     await act(() => user.click(dialog.getByRole("button", {name: "Save category"})));
+    expect(await dialog.findByText("Uncategorized")).toBeVisible();
     expect(writes.at(-1)).toEqual({path: merchantPath, body: {category: -1}});
 
     page.unmount();
@@ -230,6 +235,7 @@ describe("individual category editors", () => {
     fetchAtHttp.mockImplementationOnce(() => pending.promise);
     const save = first.getByRole("button", {name: "Save category"});
     await act(() => user.click(save));
+    await waitFor(() => expect(fetchAtHttp).toHaveBeenLastCalledWith(`${apiUrl}${merchantPath}`, expect.objectContaining({method: "PUT"})));
     expect(save).toBeDisabled();
     await act(() => user.click(first.getByRole("button", {name: messages.shared.accessibility.close})));
     await act(() => user.click(screen.getByRole("button", {name: "Open other merchant"})));
@@ -238,14 +244,14 @@ describe("individual category editors", () => {
     await choose(user, input, "Bakery");
 
     await act(() => pending.resolve(Response.json(buildMerchant({id: merchantId, category: 2001}))));
+    await waitFor(() => expect(refresh).toHaveBeenCalledOnce());
 
     expect(input).toHaveValue("Bakery");
     expect(next.getByRole("button", {name: "Save category"})).toBeEnabled();
     expect(screen.queryByText(messages.categories.ui.saved)).not.toBeInTheDocument();
-    expect(refresh).toHaveBeenCalledOnce();
   });
 
-  it("keeps the merchant draft on conflict rather than retrying or showing it as saved", async () => {
+  it("keeps the merchant draft after a failed save without retrying", async () => {
     seedBackend();
     const user = userEvent.setup();
     await mountEditors();
@@ -253,11 +259,11 @@ describe("individual category editors", () => {
     const dialog = within(await screen.findByRole("dialog"));
     const input = dialog.getByRole("combobox", {name: "Merchant category"});
     await choose(user, input, "Supermarket");
-    fetchAtHttp.mockResolvedValueOnce(new Response(null, {status: 409}));
+    fetchAtHttp.mockResolvedValueOnce(new Response(null, {status: 503}));
 
     await act(() => user.click(dialog.getByRole("button", {name: "Save category"})));
 
-    expect(await screen.findByText(messages.categories.ui.merchantConflict)).toBeVisible();
+    expect(await screen.findByText(messages.categories.ui.failed)).toBeVisible();
     expect(dialog.getByText(messages.categories.ui.unclassified)).toBeVisible();
     expect(input).toHaveValue("Supermarket");
     expect(fetchAtHttp.mock.calls.filter(([, options]) => options?.method === "PUT")).toHaveLength(1);

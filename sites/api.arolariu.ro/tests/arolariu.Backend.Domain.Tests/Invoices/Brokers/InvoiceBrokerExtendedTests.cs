@@ -336,15 +336,14 @@ public sealed class InvoiceBrokerExtendedTests
   public async Task UpdateMerchantAsync_ValidData_ReturnsUpdatedMerchant()
   {
     // Arrange
-    var currentMerchant = MerchantTestDataBuilder.CreateRandomMerchant();
     var updatedMerchant = MerchantTestDataBuilder.CreateRandomMerchant();
 
     mockBroker
-        .Setup(b => b.UpdateMerchantAsync(currentMerchant, updatedMerchant, It.IsAny<CancellationToken>()))
+        .Setup(b => b.UpdateMerchantAsync(updatedMerchant, It.IsAny<CancellationToken>()))
         .ReturnsAsync(updatedMerchant);
 
     // Act
-    var result = await mockBroker.Object.UpdateMerchantAsync(currentMerchant, updatedMerchant, CancellationToken.None);
+    var result = await mockBroker.Object.UpdateMerchantAsync(updatedMerchant, CancellationToken.None);
 
     // Assert
     Assert.AreSame(updatedMerchant, result);
@@ -461,27 +460,6 @@ public sealed class InvoiceBrokerExtendedTests
 
     // Assert
     Assert.IsNotNull(result);
-  }
-
-  /// <summary>
-  /// Validates invoice update with different overload.
-  /// </summary>
-  [TestMethod]
-  public async Task UpdateInvoiceAsync_TwoInvoices_ReturnsUpdatedInvoice()
-  {
-    // Arrange
-    var currentInvoice = InvoiceBuilder.CreateRandomInvoice();
-    var updatedInvoice = InvoiceBuilder.CreateRandomInvoice();
-
-    mockBroker
-        .Setup(b => b.UpdateInvoiceAsync(currentInvoice, updatedInvoice, It.IsAny<CancellationToken>()))
-        .ReturnsAsync(updatedInvoice);
-
-    // Act
-    var result = await mockBroker.Object.UpdateInvoiceAsync(currentInvoice, updatedInvoice, CancellationToken.None);
-
-    // Assert
-    Assert.AreSame(updatedInvoice, result);
   }
 
   /// <summary>

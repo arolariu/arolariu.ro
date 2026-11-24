@@ -111,7 +111,7 @@ public partial class MerchantStorageFoundationService : IMerchantStorageFoundati
 
     ValidateCategory(updatedMerchant.Category);
     return await invoiceNoSqlBroker
-      .UpdateMerchantAsync(updatedMerchant, updatedMerchant, cancellationToken)
+      .UpdateMerchantAsync(updatedMerchant, cancellationToken)
       .ConfigureAwait(false);
   }).ConfigureAwait(false);
   #endregion

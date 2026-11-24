@@ -33,9 +33,8 @@ using arolariu.Backend.Domain.Invoices.DDD.Entities.Merchants;
 ///   <item><description>Soft-delete operations are idempotent (repeated calls yield same terminal state).</description></item>
 ///   <item><description>Read operations are naturally idempotent.</description></item>
 /// </list></para>
-/// <para><b>Concurrency:</b> Replacements use the ETag from the original read and reject stale revisions.</para>
 /// <para><b>Performance Notes:</b> Prefer partition-aware overloads. Cross-partition queries should be monitored (add RU telemetry in higher layers).
-/// Writes use the known partition and the observed document revision.</para>
+/// Writes use the persisted resource's partition.</para>
 /// <para><b>Thread Safety:</b> Implementations (e.g., EF Core DbContext wrapper) are typically NOT thread-safe; consumers should scope instances per unit-of-work.</para>
 /// <para><b>Cancellation:</b> All async methods accept an optional <c>CancellationToken</c> to support request abort and timeouts.</para>
 /// <para><b>Backlog:</b> Pagination / continuation tokens, optimistic concurrency, projection queries (selective field retrieval),
@@ -83,11 +82,8 @@ public interface IDatabaseBroker
   ValueTask<IEnumerable<Invoice>> ReadInvoicesAsync(Guid userIdentifier, CancellationToken cancellationToken, Guid? merchantIdentifier = null);
 
   /// <summary>
-  /// Replaces an invoice against the revision observed when <paramref name="updatedInvoice"/> was read.
+  /// Replaces an existing invoice in its owner partition.
   /// </summary>
-  /// <remarks>
-  /// <para>A newer revision causes a conflict instead of replacing that revision with stale data.</para>
-  /// </remarks>
   /// <param name="invoiceIdentifier">Target invoice identity.</param>
   /// <param name="updatedInvoice">Updated invoice aggregate snapshot.</param>
   /// <param name="cancellationToken">Cancellation token to abort the operation (required).</param>
@@ -95,20 +91,6 @@ public interface IDatabaseBroker
   /// <exception cref="ArgumentNullException">Thrown if <paramref name="updatedInvoice"/> is null.</exception>
   /// <exception cref="OperationCanceledException">Thrown if the operation is cancelled.</exception>
   ValueTask<Invoice> UpdateInvoiceAsync(Guid invoiceIdentifier, Invoice updatedInvoice, CancellationToken cancellationToken);
-
-  /// <summary>
-  /// Replaces an invoice using the storage revision from the current snapshot.
-  /// </summary>
-  /// <remarks>
-  /// <para>The snapshots must retain the same invoice identity and partition.</para>
-  /// </remarks>
-  /// <param name="currentInvoice">Current persisted invoice snapshot (not validated here).</param>
-  /// <param name="updatedInvoice">Updated invoice aggregate snapshot.</param>
-  /// <param name="cancellationToken">Cancellation token to abort the operation (required).</param>
-  /// <returns>The persisted invoice after update.</returns>
-  /// <exception cref="ArgumentNullException">Thrown if <paramref name="currentInvoice"/> or <paramref name="updatedInvoice"/> is null.</exception>
-  /// <exception cref="OperationCanceledException">Thrown if the operation is cancelled.</exception>
-  ValueTask<Invoice> UpdateInvoiceAsync(Invoice currentInvoice, Invoice updatedInvoice, CancellationToken cancellationToken);
 
   /// <summary>
   /// Soft-deletes an invoice by identifier within a known partition.
@@ -184,15 +166,14 @@ public interface IDatabaseBroker
   ValueTask<IEnumerable<Merchant>> ReadMerchantsByIdentifiersAsync(IReadOnlyCollection<Guid> merchantIdentifiers, CancellationToken cancellationToken);
 
   /// <summary>
-  /// Replaces a merchant using the revision and partition of its original snapshot.
+  /// Replaces an existing merchant in its stored partition.
   /// </summary>
-  /// <param name="currentMerchant">The original merchant instance returned by this Broker's read operation.</param>
   /// <param name="updatedMerchant">Updated merchant snapshot to persist.</param>
   /// <param name="cancellationToken">Cancellation token to abort the operation (required).</param>
   /// <returns>The persisted merchant.</returns>
-  /// <exception cref="ArgumentNullException">Thrown if <paramref name="currentMerchant"/> or <paramref name="updatedMerchant"/> is null.</exception>
+  /// <exception cref="ArgumentNullException">Thrown if <paramref name="updatedMerchant"/> is null.</exception>
   /// <exception cref="OperationCanceledException">Thrown if the operation is cancelled.</exception>
-  ValueTask<Merchant> UpdateMerchantAsync(Merchant currentMerchant, Merchant updatedMerchant, CancellationToken cancellationToken);
+  ValueTask<Merchant> UpdateMerchantAsync(Merchant updatedMerchant, CancellationToken cancellationToken);
 
   #endregion
 

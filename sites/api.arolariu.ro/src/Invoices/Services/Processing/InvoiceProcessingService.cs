@@ -8,7 +8,6 @@ using System.Threading;
 using System.Threading.Tasks;
 using arolariu.Backend.Domain.Invoices.Brokers.QueueBroker;
 using arolariu.Backend.Common.Telemetry.Tracing;
-using arolariu.Backend.Common.Exceptions;
 using arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices;
 using arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices.Exceptions.Inner;
 using arolariu.Backend.Domain.Invoices.DDD.Entities.Merchants;
@@ -854,12 +853,6 @@ public sealed partial class InvoiceProcessingService : IInvoiceProcessingService
     {
       await invoiceOrchestrationService.UpdateInvoiceObject(analyzed, message.TargetId, partition, cancellationToken).ConfigureAwait(false);
     }
-    catch (Exception exception) when (IsWriteConflict(exception))
-    {
-      logger.LogAnalysisTargetPersistenceFailed(message.CorrelationId);
-      InvoiceMetrics.RecordAnalysisTargetPersistenceFailure(AnalysisTargetType.Invoice);
-      return null;
-    }
     catch (OperationCanceledException)
     {
       throw;
@@ -871,16 +864,6 @@ public sealed partial class InvoiceProcessingService : IInvoiceProcessingService
     }
 
     return CreateInvoiceReplacement(message, failedOptions);
-  }
-
-  private static bool IsWriteConflict(Exception exception)
-  {
-    for (Exception? cause = exception; cause is not null; cause = cause.InnerException)
-    {
-      if (cause is IAlreadyExistsException) return true;
-    }
-
-    return false;
   }
 
   [SuppressMessage(
@@ -913,12 +896,6 @@ public sealed partial class InvoiceProcessingService : IInvoiceProcessingService
     try
     {
       await merchantOrchestrationService.UpdateMerchantObject(analyzed, message.TargetId, partition, cancellationToken).ConfigureAwait(false);
-    }
-    catch (Exception exception) when (IsWriteConflict(exception))
-    {
-      logger.LogAnalysisTargetPersistenceFailed(message.CorrelationId);
-      InvoiceMetrics.RecordAnalysisTargetPersistenceFailure(AnalysisTargetType.Merchant);
-      return null;
     }
     catch (OperationCanceledException)
     {

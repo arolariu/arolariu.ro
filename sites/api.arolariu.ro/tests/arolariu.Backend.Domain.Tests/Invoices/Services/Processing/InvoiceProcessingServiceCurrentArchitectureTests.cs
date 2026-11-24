@@ -288,36 +288,11 @@ public sealed class InvoiceProcessingServiceCurrentArchitectureTests
     Assert.AreEqual(parentContext.SpanId, consumer.ParentSpanId);
   }
 
-  /// <summary>A stale analysis must not overwrite an intervening edit or queue a retry for that result.</summary>
-  [TestMethod]
-  public async Task ProcessAnalysisAsync_InvoiceSnapshotConflict_AcknowledgesWithoutAnotherAttempt()
-  {
-    AnalysisQueueReceipt receipt = CreateReceipt(dequeueCount: 1);
-    QueueAnalysisMessage message = receipt.Message!;
-    var invoice = new Invoice { id = message.TargetId, UserIdentifier = message.RequestedBy };
-    var invoices = new Mock<IInvoiceOrchestrationService>(MockBehavior.Strict);
-    invoices.Setup(service => service.ReadInvoiceObject(invoice.id, invoice.UserIdentifier, It.IsAny<CancellationToken>()))
-      .ReturnsAsync(invoice);
-    invoices.Setup(service => service.UpdateInvoiceObject(invoice, invoice.id, invoice.UserIdentifier, It.IsAny<CancellationToken>()))
-      .ThrowsAsync(new InvoiceOrchestrationDependencyValidationException(new InvoiceAlreadyExistsException(invoice.id)));
-    var analysis = new Mock<IAnalysisOrchestrationService>(MockBehavior.Strict);
-    analysis.Setup(service => service.ReceiveAnalysisAsync(It.IsAny<TimeSpan>(), It.IsAny<CancellationToken>())).ReturnsAsync(receipt);
-    analysis.Setup(service => service.AnalyzeInvoiceAsync(invoice, message.InvoiceOptions!, message.CorrelationId, It.IsAny<CancellationToken>()))
-      .ReturnsAsync((invoice, message.InvoiceOptions));
-    analysis.Setup(service => service.DeleteAnalysisAsync(receipt, It.IsAny<CancellationToken>())).Returns(Task.CompletedTask);
-    var processing = new InvoiceProcessingService(invoices.Object, Mock.Of<IMerchantOrchestrationService>(), analysis.Object, NullLoggerFactory.Instance);
-
-    Assert.IsTrue(await processing.ProcessAnalysisAsync(CancellationToken.None));
-    invoices.VerifyAll();
-    analysis.VerifyAll();
-    analysis.Verify(service => service.EnqueueAnalysisAsync(It.IsAny<QueueAnalysisMessage>(), It.IsAny<CancellationToken>()), Times.Never);
-  }
-
-  /// <summary>A merchant worker uses the original ETag and parent-company partition even when independent.</summary>
+  /// <summary>A merchant worker replaces the merchant in its stored partition even when independent.</summary>
   [TestMethod]
   [DataRow(false)]
   [DataRow(true)]
-  public async Task ProcessAnalysisAsync_MerchantSnapshotConflict_DoesNotRetryOrUpsert(bool independent)
+  public async Task ProcessAnalysisAsync_MerchantResult_ReplacesInStoredPartition(bool independent)
   {
     Guid requester = Guid.NewGuid();
     var merchant = new Merchant
@@ -334,18 +309,16 @@ public sealed class InvoiceProcessingServiceCurrentArchitectureTests
       "00-4bf92f3577b34da6a3ce929d0e0e4736-00f067aa0ba902b7-01");
     var receipt = new AnalysisQueueReceipt(message, "message-1", "receipt-1", 1, null);
     var partition = new PartitionKey(merchant.ParentCompanyId.ToString());
-    const string eTag = "\"observed\"";
     var item = new Mock<ItemResponse<Merchant>>();
     item.Setup(response => response.Resource).Returns(merchant);
-    item.Setup(response => response.ETag).Returns(eTag);
     var container = new Mock<Container>(MockBehavior.Strict);
     container.Setup(client => client.ReadItemAsync<Merchant>(merchant.id.ToString(), partition, null, It.IsAny<CancellationToken>()))
       .ReturnsAsync(item.Object);
     container.Setup(client => client.ReplaceItemAsync(
         merchant, merchant.id.ToString(), partition,
-        It.Is<ItemRequestOptions>(request => request.IfMatchEtag == eTag),
+        null,
         It.IsAny<CancellationToken>()))
-      .ThrowsAsync(new CosmosException("Stale ETag", HttpStatusCode.PreconditionFailed, 0, string.Empty, 0));
+      .ReturnsAsync(item.Object);
     var database = Mock.Of<Database>(value => value.GetContainer("merchants") == container.Object);
     var cosmos = Mock.Of<CosmosClient>(value => value.GetDatabase("primary") == database);
     using var broker = new CosmosDatabaseBroker(cosmos);
@@ -354,7 +327,7 @@ public sealed class InvoiceProcessingServiceCurrentArchitectureTests
     var analysis = new Mock<IAnalysisOrchestrationService>(MockBehavior.Strict);
     analysis.Setup(service => service.ReceiveAnalysisAsync(It.IsAny<TimeSpan>(), It.IsAny<CancellationToken>())).ReturnsAsync(receipt);
     analysis.Setup(service => service.AnalyzeMerchantAsync(merchant, options, message.CorrelationId, It.IsAny<CancellationToken>()))
-      .ReturnsAsync((merchant, options));
+      .ReturnsAsync((merchant, null));
     analysis.Setup(service => service.DeleteAnalysisAsync(receipt, It.IsAny<CancellationToken>())).Returns(Task.CompletedTask);
     var processing = new InvoiceProcessingService(Mock.Of<IInvoiceOrchestrationService>(), merchants, analysis.Object, logger);
 

@@ -81,7 +81,7 @@ export default function MerchantDialog(): React.JSX.Element | null {
       }
       if (activeDialogRef.current !== currentDialog) return;
       if (!result.success) {
-        notify.error(result.error.status === 409 ? t((m) => m.categories.ui.merchantConflict) : t((m) => m.categories.ui.failed));
+        notify.error(t((m) => m.categories.ui.failed));
         return;
       }
       setEdit({dialog: currentDialog, saved: result.data.category, draft: undefined, saving: false});

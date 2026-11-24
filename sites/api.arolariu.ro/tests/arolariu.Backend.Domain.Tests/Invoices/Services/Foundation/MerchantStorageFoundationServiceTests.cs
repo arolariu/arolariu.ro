@@ -390,7 +390,7 @@ public sealed class MerchantStorageFoundationServiceTests
     var updatedMerchant = MerchantTestDataBuilder.CreateRandomMerchant();
 
     mockBroker
-        .Setup(b => b.UpdateMerchantAsync(updatedMerchant, updatedMerchant, It.IsAny<CancellationToken>()))
+        .Setup(b => b.UpdateMerchantAsync(updatedMerchant, It.IsAny<CancellationToken>()))
         .ReturnsAsync(updatedMerchant);
 
     // Act
@@ -400,7 +400,7 @@ public sealed class MerchantStorageFoundationServiceTests
     Assert.IsNotNull(result);
     Assert.AreSame(updatedMerchant, result);
     mockBroker.Verify(b => b.ReadMerchantAsync(It.IsAny<Guid>(), It.IsAny<Guid?>(), It.IsAny<CancellationToken>()), Times.Never);
-    mockBroker.Verify(b => b.UpdateMerchantAsync(updatedMerchant, updatedMerchant, It.IsAny<CancellationToken>()), Times.Once);
+    mockBroker.Verify(b => b.UpdateMerchantAsync(updatedMerchant, It.IsAny<CancellationToken>()), Times.Once);
   }
 
   /// <summary>
@@ -413,7 +413,7 @@ public sealed class MerchantStorageFoundationServiceTests
     var updatedMerchant = MerchantTestDataBuilder.CreateRandomMerchant();
 
     mockBroker
-        .Setup(b => b.UpdateMerchantAsync(updatedMerchant, updatedMerchant, It.IsAny<CancellationToken>()))
+        .Setup(b => b.UpdateMerchantAsync(updatedMerchant, It.IsAny<CancellationToken>()))
         .ReturnsAsync(updatedMerchant);
 
     // Act
@@ -421,7 +421,7 @@ public sealed class MerchantStorageFoundationServiceTests
 
     // Assert
     Assert.IsNotNull(result);
-    mockBroker.Verify(b => b.UpdateMerchantAsync(updatedMerchant, updatedMerchant, It.IsAny<CancellationToken>()), Times.Once);
+    mockBroker.Verify(b => b.UpdateMerchantAsync(updatedMerchant, It.IsAny<CancellationToken>()), Times.Once);
   }
 
   /// <summary>
@@ -434,7 +434,7 @@ public sealed class MerchantStorageFoundationServiceTests
     var updatedMerchant = MerchantTestDataBuilder.CreateRandomMerchant();
 
     mockBroker
-        .Setup(b => b.UpdateMerchantAsync(updatedMerchant, updatedMerchant, It.IsAny<CancellationToken>()))
+        .Setup(b => b.UpdateMerchantAsync(updatedMerchant, It.IsAny<CancellationToken>()))
         .ThrowsAsync(new MerchantNotFoundException(updatedMerchant.id));
 
     // Act & Assert
@@ -455,7 +455,7 @@ public sealed class MerchantStorageFoundationServiceTests
     var updatedMerchant = MerchantTestDataBuilder.CreateRandomMerchant();
 
     mockBroker
-        .Setup(b => b.UpdateMerchantAsync(updatedMerchant, updatedMerchant, It.IsAny<CancellationToken>()))
+        .Setup(b => b.UpdateMerchantAsync(updatedMerchant, It.IsAny<CancellationToken>()))
         .ThrowsAsync(new InvalidOperationException("Update failed"));
 
     // Act & Assert

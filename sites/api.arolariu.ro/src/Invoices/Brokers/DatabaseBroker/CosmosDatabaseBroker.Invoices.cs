@@ -78,7 +78,6 @@ public partial class CosmosDatabaseBroker
         throw new InvoiceLockedException(invoiceIdentifier);
       }
 
-      if (invoice is not null) invoice.StorageETag = response.ETag ?? invoice.StorageETag;
       activity?.RecordSuccess();
       return invoice;
     }
@@ -179,34 +178,16 @@ public partial class CosmosDatabaseBroker
     var container = database.GetContainer("invoices");
 
     var partitionKey = new PartitionKey(updatedInvoice.UserIdentifier.ToString());
-    var options = MatchStorageRevision(updatedInvoice.StorageETag);
     var response = await TranslateInvoiceCosmosAsync(
-      () => container.ReplaceItemAsync(updatedInvoice, invoiceIdentifier.ToString(), partitionKey, options, cancellationToken),
+      () => container.ReplaceItemAsync(updatedInvoice, invoiceIdentifier.ToString(), partitionKey, cancellationToken: cancellationToken),
       invoiceIdentifier).ConfigureAwait(false);
 
     activity?.SetCosmosDbRequestCharge(response.RequestCharge);
     InvoiceMetrics.RecordCosmosDbCharge(response.RequestCharge, "replace", "invoices");
     activity?.RecordSuccess();
 
-    var invoice = response.Resource;
-    invoice.StorageETag = response.ETag ?? invoice.StorageETag;
-    return invoice;
+    return response.Resource;
   }
-
-  /// <inheritdoc/>
-  public ValueTask<Invoice> UpdateInvoiceAsync(Invoice currentInvoice, Invoice updatedInvoice, CancellationToken cancellationToken)
-  {
-    ArgumentNullException.ThrowIfNull(currentInvoice);
-    ArgumentNullException.ThrowIfNull(updatedInvoice);
-    if (currentInvoice.id != updatedInvoice.id || currentInvoice.UserIdentifier != updatedInvoice.UserIdentifier)
-    {
-      throw new ArgumentException("Updates must retain the invoice identity and partition.", nameof(updatedInvoice));
-    }
-
-    updatedInvoice.StorageETag = currentInvoice.StorageETag;
-    return UpdateInvoiceAsync(currentInvoice.id, updatedInvoice, cancellationToken);
-  }
-
 
   /// <inheritdoc/>
   public async ValueTask DeleteInvoiceAsync(Guid invoiceIdentifier, Guid? userIdentifier, CancellationToken cancellationToken)
@@ -244,8 +225,7 @@ public partial class CosmosDatabaseBroker
 
         // Update the invoice and the products.
         var replaceResponse = await TranslateInvoiceCosmosAsync(
-          () => container.ReplaceItemAsync(invoice, invoice.id.ToString(), partitionKey,
-            MatchStorageRevision(response.ETag ?? invoice.StorageETag), cancellationToken),
+          () => container.ReplaceItemAsync(invoice, invoice.id.ToString(), partitionKey, cancellationToken: cancellationToken),
           invoiceIdentifier).ConfigureAwait(false);
         totalRequestCharge += replaceResponse.RequestCharge;
       }
@@ -278,8 +258,7 @@ public partial class CosmosDatabaseBroker
         // Update the invoice and the products.
         var partitionKey = new PartitionKey(invoice.UserIdentifier.ToString());
         var replaceResponse = await TranslateInvoiceCosmosAsync(
-          () => container.ReplaceItemAsync(invoice, invoice.id.ToString(), partitionKey,
-            MatchStorageRevision(invoice.StorageETag), cancellationToken),
+          () => container.ReplaceItemAsync(invoice, invoice.id.ToString(), partitionKey, cancellationToken: cancellationToken),
           invoiceIdentifier).ConfigureAwait(false);
         totalRequestCharge += replaceResponse.RequestCharge;
       }
@@ -329,8 +308,7 @@ public partial class CosmosDatabaseBroker
 
         // Update the invoice and the products.
         var replaceResponse = await TranslateInvoiceCosmosAsync(
-          () => container.ReplaceItemAsync(invoice, invoice.id.ToString(), partitionKey,
-            MatchStorageRevision(invoice.StorageETag), cancellationToken),
+          () => container.ReplaceItemAsync(invoice, invoice.id.ToString(), partitionKey, cancellationToken: cancellationToken),
           invoice.id).ConfigureAwait(false);
         totalRequestCharge += replaceResponse.RequestCharge;
         deletedCount++;
@@ -375,7 +353,7 @@ public partial class CosmosDatabaseBroker
       HttpStatusCode.NotFound => invoiceIdentifier.HasValue
         ? new InvoiceNotFoundException(invoiceIdentifier.Value, cosmosException)
         : new InvoiceNotFoundException("Invoice not found in Cosmos DB.", cosmosException),
-      HttpStatusCode.Conflict or HttpStatusCode.PreconditionFailed => invoiceIdentifier.HasValue
+      HttpStatusCode.Conflict => invoiceIdentifier.HasValue
         ? new InvoiceAlreadyExistsException(invoiceIdentifier.Value, cosmosException)
         : new InvoiceAlreadyExistsException("Invoice already exists in Cosmos DB.", cosmosException),
       HttpStatusCode.Unauthorized => new InvoiceUnauthorizedAccessException(

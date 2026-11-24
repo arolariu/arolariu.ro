@@ -81,7 +81,7 @@ public readonly record struct UpdateMerchantRequestDto(
   internal bool IsValid => (IsCategoryOnly || (!string.IsNullOrWhiteSpace(Name) && !string.IsNullOrWhiteSpace(Description)))
     && (Category is null or -1 || Enum.IsDefined((MerchantCategory)Category.Value));
 
-  /// <summary>Applies only editable values, retaining the merchant's identity, revision and references.</summary>
+  /// <summary>Applies only client-editable fields to the stored merchant.</summary>
   internal void ApplyTo(Merchant merchant)
   {
     if (!IsCategoryOnly)

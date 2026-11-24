@@ -109,7 +109,7 @@ public sealed class StorageValidationCoverageTests
       service.UpdateMerchantObject(null!, merchantId, parentCompanyId, CancellationToken.None)).ConfigureAwait(false);
 
     broker.Verify(item => item.ReadMerchantAsync(It.IsAny<Guid>(), It.IsAny<Guid?>(), It.IsAny<CancellationToken>()), Times.Never);
-    broker.Verify(item => item.UpdateMerchantAsync(It.IsAny<Merchant>(), It.IsAny<Merchant>(), It.IsAny<CancellationToken>()), Times.Never);
+    broker.Verify(item => item.UpdateMerchantAsync(It.IsAny<Merchant>(), It.IsAny<CancellationToken>()), Times.Never);
   }
 
   private static InvoiceStorageFoundationService CreateInvoiceService(Mock<IDatabaseBroker> broker) =>

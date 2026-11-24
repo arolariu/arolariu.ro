@@ -30,15 +30,13 @@ using Newtonsoft.Json.Linq;
 [TestClass]
 public sealed class AnalysisPersistenceSerializationTests
 {
-  /// <summary>Query results carry their version without putting a version into application JSON.</summary>
+  /// <summary>Cosmos system metadata in a query row does not become application data.</summary>
   [TestMethod]
-  public void Invoice_CosmosRevision_IsReadOnlyStorageMetadata()
+  public void Invoice_CosmosSystemMetadata_IsNotWrittenByTheModel()
   {
     Invoice invoice = JsonConvert.DeserializeObject<Invoice>("""{"_etag":"invoice-revision"}""")!;
 
-    Assert.AreEqual("invoice-revision", invoice.StorageETag);
     Assert.DoesNotContain("_etag", JsonConvert.SerializeObject(invoice), StringComparison.Ordinal);
-    Assert.DoesNotContain("StorageETag", System.Text.Json.JsonSerializer.Serialize(invoice), StringComparison.Ordinal);
   }
 
   /// <summary>Materializing a merchant from a query does not retain provider metadata or the retired reverse list.</summary>
@@ -51,7 +49,6 @@ public sealed class AnalysisPersistenceSerializationTests
     var stored = JObject.FromObject(merchant);
     Assert.IsNull(stored["_etag"]);
     Assert.IsNull(stored["ReferencedInvoices"]);
-    Assert.DoesNotContain("StorageETag", System.Text.Json.JsonSerializer.Serialize(merchant), StringComparison.Ordinal);
   }
 
   #region Invoice

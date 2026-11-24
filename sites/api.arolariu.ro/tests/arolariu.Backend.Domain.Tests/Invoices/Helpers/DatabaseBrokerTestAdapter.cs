@@ -27,9 +27,6 @@ internal abstract class DatabaseBrokerTestAdapter : IDatabaseBroker
   public virtual ValueTask<Invoice> UpdateInvoiceAsync(Guid invoiceIdentifier, Invoice updatedInvoice, CancellationToken cancellationToken) =>
     throw new NotSupportedException();
 
-  public virtual ValueTask<Invoice> UpdateInvoiceAsync(Invoice currentInvoice, Invoice updatedInvoice, CancellationToken cancellationToken) =>
-    throw new NotSupportedException();
-
   public virtual ValueTask DeleteInvoiceAsync(Guid invoiceIdentifier, Guid? userIdentifier, CancellationToken cancellationToken) =>
     throw new NotSupportedException();
 
@@ -48,7 +45,7 @@ internal abstract class DatabaseBrokerTestAdapter : IDatabaseBroker
   public virtual ValueTask<IEnumerable<Merchant>> ReadMerchantsByIdentifiersAsync(IReadOnlyCollection<Guid> merchantIdentifiers, CancellationToken cancellationToken) =>
     throw new NotSupportedException();
 
-  public virtual ValueTask<Merchant> UpdateMerchantAsync(Merchant currentMerchant, Merchant updatedMerchant, CancellationToken cancellationToken) =>
+  public virtual ValueTask<Merchant> UpdateMerchantAsync(Merchant updatedMerchant, CancellationToken cancellationToken) =>
     throw new NotSupportedException();
 
 }

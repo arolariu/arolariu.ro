@@ -293,7 +293,7 @@ public sealed class MerchantStorageFoundationServiceExtendedTests
     var merchant = MerchantTestDataBuilder.CreateRandomMerchant();
 
     mockBroker
-        .Setup(b => b.UpdateMerchantAsync(merchant, merchant, It.IsAny<CancellationToken>()))
+        .Setup(b => b.UpdateMerchantAsync(merchant, It.IsAny<CancellationToken>()))
         .ReturnsAsync(merchant);
 
     // Act
@@ -312,7 +312,7 @@ public sealed class MerchantStorageFoundationServiceExtendedTests
     // Arrange
     var merchant = MerchantTestDataBuilder.CreateRandomMerchant();
     mockBroker
-        .Setup(b => b.UpdateMerchantAsync(merchant, merchant, It.IsAny<CancellationToken>()))
+        .Setup(b => b.UpdateMerchantAsync(merchant, It.IsAny<CancellationToken>()))
         .ThrowsAsync(new InvalidOperationException("Unexpected error"));
 
     // Act & Assert

@@ -140,7 +140,7 @@ public static partial class InvoiceEndpoints
   [SwaggerResponse(StatusCodes.Status401Unauthorized, "The user is not authorized to perform this operation.", typeof(ProblemDetails))]
   [SwaggerResponse(StatusCodes.Status403Forbidden, "The user is not authenticated. Please provide valid credentials.", typeof(ProblemDetails))]
   [SwaggerResponse(StatusCodes.Status404NotFound, "The invoice with the specified identifier was not found.", typeof(ProblemDetails))]
-  [SwaggerResponse(StatusCodes.Status409Conflict, "The invoice changed during the update. Refresh it before trying again.", typeof(ProblemDetails))]
+  [SwaggerResponse(StatusCodes.Status409Conflict, "The stored invoice could not be replaced because of a resource conflict.", typeof(ProblemDetails))]
   [SwaggerResponse(StatusCodes.Status429TooManyRequests, "The user has exceeded the rate limit. Please try again later.", typeof(ProblemDetails))]
   [SwaggerResponse(StatusCodes.Status500InternalServerError, "An internal server error occurred while processing the request.", typeof(ProblemDetails))]
   [SwaggerResponse(StatusCodes.Status504GatewayTimeout, "The operation timed out. Please try again later.", typeof(ProblemDetails))]
@@ -174,7 +174,7 @@ public static partial class InvoiceEndpoints
   [SwaggerResponse(StatusCodes.Status401Unauthorized, "The user is not authorized to perform this operation.", typeof(ProblemDetails))]
   [SwaggerResponse(StatusCodes.Status403Forbidden, "The user is not authenticated. Please provide valid credentials.", typeof(ProblemDetails))]
   [SwaggerResponse(StatusCodes.Status404NotFound, "The invoice with the specified identifier was not found.", typeof(ProblemDetails))]
-  [SwaggerResponse(StatusCodes.Status409Conflict, "The invoice changed during the update. Refresh it before trying again.", typeof(ProblemDetails))]
+  [SwaggerResponse(StatusCodes.Status409Conflict, "The stored invoice could not be replaced because of a resource conflict.", typeof(ProblemDetails))]
   [SwaggerResponse(StatusCodes.Status429TooManyRequests, "The user has exceeded the rate limit. Please try again later.", typeof(ProblemDetails))]
   [SwaggerResponse(StatusCodes.Status500InternalServerError, "An internal server error occurred while processing the request.", typeof(ProblemDetails))]
   [SwaggerResponse(StatusCodes.Status504GatewayTimeout, "The operation timed out. Please try again later.", typeof(ProblemDetails))]
@@ -364,7 +364,7 @@ public static partial class InvoiceEndpoints
     Summary = "Updates a product in a specific invoice in the system.",
     Description = "Selects the product by its exact, case-insensitive original name. " +
     "Supplying a category ID or -1 alone changes only that field. Send -1 to clear it. Omitting category or sending null preserves it on a full edit. " +
-    "A unique match is required and the invoice is replaced once against the observed version.",
+    "A unique match is required and the edited invoice is replaced once.",
     OperationId = nameof(UpdateProductInInvoiceAsync),
     Tags = [EndpointNameTag])]
   [SwaggerResponse(StatusCodes.Status202Accepted, "The product was successfully updated in the invoice.", typeof(ProductResponseDto))]
@@ -372,7 +372,7 @@ public static partial class InvoiceEndpoints
   [SwaggerResponse(StatusCodes.Status401Unauthorized, "The user is not authorized to perform this operation.", typeof(ProblemDetails))]
   [SwaggerResponse(StatusCodes.Status403Forbidden, "The user is not authenticated. Please provide valid credentials.", typeof(ProblemDetails))]
   [SwaggerResponse(StatusCodes.Status404NotFound, "The invoice or the product was not found.", typeof(ProblemDetails))]
-  [SwaggerResponse(StatusCodes.Status409Conflict, "The invoice changed during the update. Refresh it before trying again.", typeof(ProblemDetails))]
+  [SwaggerResponse(StatusCodes.Status409Conflict, "The stored invoice could not be replaced because of a resource conflict.", typeof(ProblemDetails))]
   [SwaggerResponse(StatusCodes.Status413PayloadTooLarge, "The request payload exceeds the maximum allowed size (1MB).", typeof(ProblemDetails))]
   [SwaggerResponse(StatusCodes.Status429TooManyRequests, "The user has exceeded the rate limit. Please try again later.", typeof(ProblemDetails))]
   [SwaggerResponse(StatusCodes.Status500InternalServerError, "An internal server error occurred while processing the request.", typeof(ProblemDetails))]
@@ -474,7 +474,7 @@ public static partial class InvoiceEndpoints
   [SwaggerResponse(StatusCodes.Status401Unauthorized, "The user is not authorized to perform this operation.", typeof(ProblemDetails))]
   [SwaggerResponse(StatusCodes.Status403Forbidden, "The user is not authenticated. Please provide valid credentials.", typeof(ProblemDetails))]
   [SwaggerResponse(StatusCodes.Status404NotFound, "The invoice with the specified identifier was not found.", typeof(ProblemDetails))]
-  [SwaggerResponse(StatusCodes.Status409Conflict, "The invoice is not linked to a merchant or its revision changed.", typeof(ProblemDetails))]
+  [SwaggerResponse(StatusCodes.Status409Conflict, "The invoice is not linked to a merchant.", typeof(ProblemDetails))]
   [SwaggerResponse(StatusCodes.Status413PayloadTooLarge, "The request payload exceeds the maximum allowed size (1MB).", typeof(ProblemDetails))]
   [SwaggerResponse(StatusCodes.Status429TooManyRequests, "The user has exceeded the rate limit. Please try again later.", typeof(ProblemDetails))]
   [SwaggerResponse(StatusCodes.Status500InternalServerError, "An internal server error occurred while processing the request.", typeof(ProblemDetails))]
@@ -810,7 +810,7 @@ public static partial class InvoiceEndpoints
   [SwaggerResponse(StatusCodes.Status401Unauthorized, "The user is not authorized to update this merchant.", typeof(ProblemDetails))]
   [SwaggerResponse(StatusCodes.Status403Forbidden, "The user is not authenticated. Please provide valid credentials.", typeof(ProblemDetails))]
   [SwaggerResponse(StatusCodes.Status404NotFound, "The merchant is missing or is not editable by the caller.", typeof(ProblemDetails))]
-  [SwaggerResponse(StatusCodes.Status409Conflict, "The merchant changed during the update. Refresh it before trying again.", typeof(ProblemDetails))]
+  [SwaggerResponse(StatusCodes.Status409Conflict, "The stored merchant could not be replaced because of a resource conflict.", typeof(ProblemDetails))]
   [SwaggerResponse(StatusCodes.Status429TooManyRequests, "The user has exceeded the rate limit. Please try again later.", typeof(ProblemDetails))]
   [SwaggerResponse(StatusCodes.Status500InternalServerError, "An internal server error occurred while processing the request.", typeof(ProblemDetails))]
   [SwaggerResponse(StatusCodes.Status504GatewayTimeout, "The operation timed out. Please try again later.", typeof(ProblemDetails))]
