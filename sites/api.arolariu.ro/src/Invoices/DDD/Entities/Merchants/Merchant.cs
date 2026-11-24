@@ -61,6 +61,7 @@ public sealed class Merchant : NamedEntity<Guid>
   [JsonPropertyOrder(7)]
   public IDictionary<string, string> AdditionalMetadata { get; init; } = new Dictionary<string, string>();
 
+  internal bool IsOwnedBy(Guid userIdentifier) => userIdentifier != Guid.Empty && CreatedBy == userIdentifier;
 
 
   /// <summary>

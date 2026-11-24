@@ -494,7 +494,7 @@ public sealed partial class InvoiceManagementService : IInvoiceManagementService
   /// Thrown when the analysis request is invalid.
   /// </exception>
   /// <exception cref="arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices.Exceptions.Outer.Management.InvoiceManagementDependencyValidationException">
-  /// Thrown when the target merchant is unavailable or is not referenced by one of the requester's invoices.
+  /// Thrown when the merchant is unavailable, is not visible, or was not created by the requester.
   /// </exception>
   /// <exception cref="arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices.Exceptions.Outer.Management.InvoiceManagementDependencyException">
   /// Thrown when target lookup or queue publication fails.

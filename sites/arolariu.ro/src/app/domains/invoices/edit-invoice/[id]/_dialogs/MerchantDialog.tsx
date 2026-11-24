@@ -4,6 +4,7 @@ import {updateMerchant} from "@/app/domains/invoices/_actions/merchants/updateMe
 import CategoryPicker from "@/app/domains/invoices/_components/category/CategoryPicker";
 import {merchantCategoryLabel} from "@/app/domains/invoices/_utils/labelUtilities";
 import {notify} from "@/lib/notify";
+import {EMPTY_GUID} from "@/lib/utils.generic";
 import {useMerchantsStore} from "@/stores/merchantsStore";
 import type {MerchantCategory} from "@/types/invoices";
 import {
@@ -30,6 +31,7 @@ import styles from "./MerchantDialog.module.scss";
 export default function MerchantDialog(): React.JSX.Element | null {
   const {currentDialog, isOpen, close} = useDialog("EDIT_INVOICE__MERCHANT");
   const merchant = isOpen ? currentDialog.payload : null;
+  const canEdit = Boolean(merchant?.createdBy && merchant.createdBy !== EMPTY_GUID);
   const t = useTranslations();
   const router = useRouter();
   const [edit, setEdit] = useState<{
@@ -143,20 +145,24 @@ export default function MerchantDialog(): React.JSX.Element | null {
               </TableRow>
             </TableBody>
           </Table>
-          <CategoryPicker
-            domain='merchants'
-            label={t((m) => m.categories.ui.merchant)}
-            value={value}
-            onValueChange={onCategoryChange}
-            disabled={saving}
-          />
-          <Button
-            type='button'
-            variant='outline'
-            onClick={save}
-            disabled={saving || value === saved}>
-            {t((m) => m.categories.ui.save)}
-          </Button>
+          {canEdit ? (
+            <>
+              <CategoryPicker
+                domain='merchants'
+                label={t((m) => m.categories.ui.merchant)}
+                value={value}
+                onValueChange={onCategoryChange}
+                disabled={saving}
+              />
+              <Button
+                type='button'
+                variant='outline'
+                onClick={save}
+                disabled={saving || value === saved}>
+                {t((m) => m.categories.ui.save)}
+              </Button>
+            </>
+          ) : null}
         </div>
 
         <div className={styles["footer"]}>

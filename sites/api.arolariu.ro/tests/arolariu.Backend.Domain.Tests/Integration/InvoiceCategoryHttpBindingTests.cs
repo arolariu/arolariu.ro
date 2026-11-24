@@ -163,6 +163,7 @@ public sealed class InvoiceCategoryHttpBindingTests
       id = Guid.NewGuid(), Name = "Shop", Description = "Store",
       Address = new ContactInformation { Address = "Example Street" }, Category = MerchantCategory.Supermarket,
       ParentCompanyId = Guid.NewGuid(),
+      CreatedBy = userId,
     };
     var invoice = new Invoice { id = Guid.NewGuid(), UserIdentifier = userId, MerchantReference = merchant.id };
     var broker = new Mock<IDatabaseBroker>(MockBehavior.Strict);
@@ -297,7 +298,58 @@ public sealed class InvoiceCategoryHttpBindingTests
     {
       using var receipt = JsonDocument.Parse(await response.Content.ReadAsStringAsync().ConfigureAwait(false));
       Assert.AreEqual(createdMerchantId, receipt.RootElement.GetProperty("id").GetGuid());
+      Assert.AreEqual(userId, receipt.RootElement.GetProperty("createdBy").GetGuid());
     }
+  }
+
+  /// <summary>A merchant may be read through an owned link without granting edits to its record.</summary>
+  [TestMethod]
+  public async Task PutMerchant_LinkedButNotCreatedByCaller_DoesNotWrite()
+  {
+    Guid userId = Guid.NewGuid();
+    var merchant = new Merchant { Name = "Shared merchant", CreatedBy = Guid.NewGuid(), Category = MerchantCategory.Bakery };
+    var receipt = new Invoice { id = Guid.NewGuid(), UserIdentifier = userId, MerchantReference = merchant.id };
+    var broker = new Mock<IDatabaseBroker>(MockBehavior.Strict);
+    broker.Setup(service => service.ReadInvoicesAsync(userId, It.IsAny<CancellationToken>(), merchant.id)).ReturnsAsync([receipt]);
+    broker.Setup(service => service.ReadMerchantAsync(merchant.id, null, It.IsAny<CancellationToken>())).ReturnsAsync(merchant);
+    broker.Setup(service => service.UpdateMerchantAsync(merchant, merchant, It.IsAny<CancellationToken>())).ReturnsAsync(merchant);
+    await using var app = BuildStorageApp(broker.Object, userId);
+    await app.StartAsync().ConfigureAwait(false);
+
+    using var client = app.GetTestClient();
+    var url = new Uri($"/rest/v1/merchants/{merchant.id}", UriKind.Relative);
+    using var read = await client.GetAsync(url).ConfigureAwait(false);
+    Assert.AreEqual(HttpStatusCode.OK, read.StatusCode);
+    using var json = JsonDocument.Parse(await read.Content.ReadAsStringAsync().ConfigureAwait(false));
+    Assert.AreEqual(Guid.Empty, json.RootElement.GetProperty("createdBy").GetGuid());
+
+    using var body = new StringContent("""{"category":-1}""", Encoding.UTF8, "application/json");
+    using var update = await client.PutAsync(url, body).ConfigureAwait(false);
+
+    Assert.AreEqual(HttpStatusCode.NotFound, update.StatusCode);
+    Assert.AreEqual(MerchantCategory.Bakery, merchant.Category);
+    broker.Verify(service => service.UpdateMerchantAsync(merchant, merchant, It.IsAny<CancellationToken>()), Times.Never());
+  }
+
+  /// <summary>Creating a standalone merchant stamps the caller rather than accepting caller-supplied audit fields.</summary>
+  [TestMethod]
+  public async Task CreateMerchant_UsesAuthenticatedCreator()
+  {
+    Guid userId = Guid.NewGuid();
+    var broker = new Mock<IDatabaseBroker>(MockBehavior.Strict);
+    broker.Setup(service => service.CreateMerchantAsync(It.IsAny<Merchant>(), It.IsAny<CancellationToken>()))
+      .ReturnsAsync((Merchant merchant, CancellationToken _) => merchant);
+    await using var app = BuildStorageApp(broker.Object, userId);
+    await app.StartAsync().ConfigureAwait(false);
+
+    using var client = app.GetTestClient();
+    using var body = new StringContent($$"""{"name":"Store","description":"Store","address":"","createdBy":"{{Guid.NewGuid()}}"}""",
+      Encoding.UTF8, "application/json");
+    using var result = await client.PostAsync(new Uri("/rest/v1/merchants", UriKind.Relative), body).ConfigureAwait(false);
+
+    Assert.AreEqual(HttpStatusCode.Created, result.StatusCode);
+    broker.Verify(service => service.CreateMerchantAsync(It.Is<Merchant>(merchant => merchant.CreatedBy == userId),
+      It.IsAny<CancellationToken>()), Times.Once());
   }
 
   /// <summary>Edits commit once against the observed version and leave ambiguous/stale targets unchanged.</summary>

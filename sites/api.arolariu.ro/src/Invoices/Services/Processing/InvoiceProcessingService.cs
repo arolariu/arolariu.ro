@@ -897,6 +897,11 @@ public sealed partial class InvoiceProcessingService : IInvoiceProcessingService
       .ReadMerchantObject(message.TargetId, partition, cancellationToken)
       .ConfigureAwait(false);
     if (merchant is null) throw new MerchantNotFoundException(message.TargetId);
+    if (!merchant.IsOwnedBy(message.RequestedBy))
+    {
+      Activity.Current?.SetTag("access.granted", false);
+      return null;
+    }
 
     MerchantAnalysisOptions options = message.MerchantOptions
       ?? throw new InvalidOperationException("Merchant analysis messages must contain merchant options.");
@@ -1027,7 +1032,7 @@ public sealed partial class InvoiceProcessingService : IInvoiceProcessingService
       return messageId;
     }).ConfigureAwait(false);
 
-  /// <summary>Validates invoice-reference visibility and publishes a resolved durable merchant analysis request.</summary>
+  /// <summary>Validates visibility and creator ownership before publishing a merchant analysis request.</summary>
   /// <param name="merchantId">The merchant identifier to analyze.</param>
   /// <param name="userIdentifier">The authenticated requester.</param>
   /// <param name="request">The requested profile and capability overrides.</param>
@@ -1037,7 +1042,7 @@ public sealed partial class InvoiceProcessingService : IInvoiceProcessingService
   /// Thrown when the request cannot be converted to valid analysis options.
   /// </exception>
   /// <exception cref="DDD.AggregatorRoots.Invoices.Exceptions.Outer.Processing.InvoiceProcessingServiceDependencyValidationException">
-  /// Thrown when the target merchant is unavailable or is not referenced by one of the requester's invoices.
+  /// Thrown when the merchant is unavailable, is not visible, or was not created by the requester.
   /// </exception>
   /// <exception cref="DDD.AggregatorRoots.Invoices.Exceptions.Outer.Processing.InvoiceProcessingServiceDependencyException">
   /// Thrown when target lookup or queue publication fails.
@@ -1063,6 +1068,8 @@ public sealed partial class InvoiceProcessingService : IInvoiceProcessingService
       Merchant merchant = await merchantOrchestrationService
         .ReadMerchantObject(merchantId, parentCompanyId: null, cancellationToken)
         .ConfigureAwait(false);
+      if (merchant is null) throw new MerchantNotFoundException(merchantId);
+      if (!merchant.IsOwnedBy(userIdentifier)) throw new MerchantForbiddenAccessException(merchantId, userIdentifier);
 
       MerchantAnalysisOptions options = request.ToMerchantAnalysisOptions();
       QueueAnalysisMessage message = QueueAnalysisMessage.CreateMerchantMessage(

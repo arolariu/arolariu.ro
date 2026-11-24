@@ -711,6 +711,8 @@ public static partial class InvoiceEndpoints
       var potentialUserIdentifier = RetrieveUserIdentifierClaimFromPrincipal(httpContext);
       activity?.SetInvoiceContext(id, potentialUserIdentifier);
 
+      if (potentialUserIdentifier == Guid.Empty) return TypedResults.Forbid();
+
       var possibleInvoice = await invoiceManagementService
         .ReadInvoice(id, potentialUserIdentifier, cancellationToken: writeScope.Token)
         .ConfigureAwait(false);
@@ -732,7 +734,7 @@ public static partial class InvoiceEndpoints
         return TypedResults.BadRequest("A merchant category is required.");
       }
 
-      var merchant = merchantDto.ToMerchant();
+      var merchant = merchantDto.ToMerchant(potentialUserIdentifier);
       activity?.SetMerchantContext(merchant.id);
       activity?.SetTag("merchant.parent_company_id", merchant.ParentCompanyId.ToString());
 
@@ -1169,8 +1171,9 @@ public static partial class InvoiceEndpoints
       }
 
       Guid userIdentifier = RetrieveUserIdentifierClaimFromPrincipal(httpContext);
+      if (userIdentifier == Guid.Empty) return TypedResults.Forbid();
 
-      var merchant = merchantDto.ToMerchant();
+      var merchant = merchantDto.ToMerchant(userIdentifier);
       activity?.SetMerchantContext(merchant.id);
 
       await invoiceManagementService
@@ -1345,8 +1348,9 @@ public static partial class InvoiceEndpoints
       }
 
       var merchant = await invoiceManagementService.ReadMerchant(id, null, writeScope.Token).ConfigureAwait(false);
-      if (merchant is null)
+      if (merchant is null || !merchant.IsOwnedBy(userIdentifier))
       {
+        activity?.SetTag("access.granted", false);
         return TypedResults.NotFound();
       }
 

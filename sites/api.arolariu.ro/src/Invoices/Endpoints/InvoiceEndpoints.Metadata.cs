@@ -801,16 +801,15 @@ public static partial class InvoiceEndpoints
   /// <returns>A task representing the asynchronous operation, indicating the result of the update.</returns>
   [SwaggerOperation(
     Summary = "Updates a specific merchant in the system.",
-    Description = "This endpoint updates a specific merchant in the Invoice Management System. " +
-    "It validates the updated merchant data, validates any supplied merchant category, and ensures the merchant exists. " +
-    "If successful, the merchant is updated.",
+    Description = "Updates a merchant created by the caller and referenced by one of the caller's active invoices. " +
+    "An invoice link grants visibility, not edit permission.",
     OperationId = nameof(UpdateSpecificMerchantAsync),
     Tags = [EndpointNameTag])]
   [SwaggerResponse(StatusCodes.Status202Accepted, "The merchant was successfully updated.", typeof(MerchantResponseDto))]
   [SwaggerResponse(StatusCodes.Status400BadRequest, "The provided merchant data is invalid.", typeof(ValidationProblemDetails))]
   [SwaggerResponse(StatusCodes.Status401Unauthorized, "The user is not authorized to update this merchant.", typeof(ProblemDetails))]
   [SwaggerResponse(StatusCodes.Status403Forbidden, "The user is not authenticated. Please provide valid credentials.", typeof(ProblemDetails))]
-  [SwaggerResponse(StatusCodes.Status404NotFound, "The merchant with the specified identifier was not found.", typeof(ProblemDetails))]
+  [SwaggerResponse(StatusCodes.Status404NotFound, "The merchant is missing or is not editable by the caller.", typeof(ProblemDetails))]
   [SwaggerResponse(StatusCodes.Status409Conflict, "The merchant changed during the update. Refresh it before trying again.", typeof(ProblemDetails))]
   [SwaggerResponse(StatusCodes.Status429TooManyRequests, "The user has exceeded the rate limit. Please try again later.", typeof(ProblemDetails))]
   [SwaggerResponse(StatusCodes.Status500InternalServerError, "An internal server error occurred while processing the request.", typeof(ProblemDetails))]
@@ -876,7 +875,7 @@ public static partial class InvoiceEndpoints
   /// <returns>A task representing the asynchronous operation, containing the accepted-run acknowledgement.</returns>
   [SwaggerOperation(
     Summary = "Enqueues an asynchronous analysis run for a specific merchant.",
-    Description = "This endpoint validates the merchant, resolves the effective analysis capability selection, and " +
+    Description = "This endpoint verifies that the caller created and can see the merchant, resolves the analysis capabilities, and " +
     "durably enqueues an analysis run. It returns immediately with 202 Accepted; the analysis itself is executed " +
     "later by a background worker and applied to the merchant.",
     OperationId = nameof(AnalyzeMerchantAsync),
@@ -885,7 +884,7 @@ public static partial class InvoiceEndpoints
   [SwaggerResponse(StatusCodes.Status400BadRequest, "The provided merchant identifier or analysis options are invalid.", typeof(ValidationProblemDetails))]
   [SwaggerResponse(StatusCodes.Status401Unauthorized, "The user is not authorized to analyze this merchant.", typeof(ProblemDetails))]
   [SwaggerResponse(StatusCodes.Status402PaymentRequired, "The user does not have enough credits to perform this analysis.", typeof(ProblemDetails))]
-  [SwaggerResponse(StatusCodes.Status403Forbidden, "The user is not authenticated. Please provide valid credentials.", typeof(ProblemDetails))]
+  [SwaggerResponse(StatusCodes.Status403Forbidden, "The caller cannot analyze this merchant.", typeof(ProblemDetails))]
   [SwaggerResponse(StatusCodes.Status404NotFound, "The merchant with the specified identifier was not found.", typeof(ProblemDetails))]
   [SwaggerResponse(StatusCodes.Status429TooManyRequests, "The user has exceeded the rate limit. Please try again later.", typeof(ProblemDetails))]
   [SwaggerResponse(StatusCodes.Status500InternalServerError, "An internal server error occurred while processing the request.", typeof(ProblemDetails))]

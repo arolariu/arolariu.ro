@@ -57,7 +57,7 @@ using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Categories;
 ///     Address: new ContactInformation { City = "Iasi", Country = "Romania" },
 ///     ParentCompanyId: parentCompanyGuid);
 ///
-/// var merchant = request.ToMerchant();
+/// var merchant = request.ToMerchant(authenticatedUserId);
 /// await invoiceService.AddMerchantToInvoiceAsync(invoiceId, merchant);
 /// </code>
 /// </example>
@@ -91,12 +91,14 @@ public readonly record struct AddMerchantToInvoiceRequestDto(
   /// <b>Timestamp:</b> <c>CreatedAt</c> is set to the current UTC time.
   /// </para>
   /// </remarks>
+  /// <param name="creatorIdentifier">The authenticated creator, supplied by the server.</param>
   /// <returns>
   /// A new <see cref="Merchant"/> instance ready for persistence.
   /// </returns>
-  public Merchant ToMerchant() => new()
+  public Merchant ToMerchant(Guid creatorIdentifier) => new()
   {
     id = Guid.NewGuid(),
+    CreatedBy = creatorIdentifier,
     Name = Name,
     Category = Category,
     Description = Description,

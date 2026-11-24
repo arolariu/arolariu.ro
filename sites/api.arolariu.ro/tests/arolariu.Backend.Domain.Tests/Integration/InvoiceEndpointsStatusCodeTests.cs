@@ -1090,6 +1090,7 @@ public sealed class InvoiceEndpointsStatusCodeTests
       id = merchantId,
       ParentCompanyId = parentCompanyId,
       Category = classification,
+      CreatedBy = userId,
     };
     var request = new UpdateMerchantRequestDto(
       Name: "Store",

@@ -324,6 +324,7 @@ public sealed class InvoiceProcessingServiceCurrentArchitectureTests
     {
       id = Guid.NewGuid(),
       ParentCompanyId = independent ? Guid.Empty : Guid.NewGuid(),
+      CreatedBy = requester,
       Name = "Corner Shop",
       Category = MerchantCategory.Other,
     };
@@ -361,6 +362,30 @@ public sealed class InvoiceProcessingServiceCurrentArchitectureTests
     container.VerifyAll();
     container.VerifyNoOtherCalls();
     analysis.VerifyAll();
+    analysis.VerifyNoOtherCalls();
+  }
+
+  /// <summary>An old merchant job without creator authorization is acknowledged without generating or persisting results.</summary>
+  [TestMethod]
+  public async Task ProcessAnalysisAsync_MerchantNoLongerAuthorized_DiscardsWithoutGeneration()
+  {
+    var merchant = new Merchant { CreatedBy = Guid.NewGuid() };
+    var message = QueueAnalysisMessage.CreateMerchantMessage(merchant.id, Guid.NewGuid(), Guid.NewGuid(),
+      merchant.ParentCompanyId, MerchantAnalysisOptions.Comprehensive(),
+      "00-4bf92f3577b34da6a3ce929d0e0e4736-00f067aa0ba902b7-01");
+    var receipt = new AnalysisQueueReceipt(message, "message-1", "receipt-1", 1, null);
+    var merchants = new Mock<IMerchantOrchestrationService>(MockBehavior.Strict);
+    merchants.Setup(service => service.ReadMerchantObject(merchant.id, merchant.ParentCompanyId, It.IsAny<CancellationToken>()))
+      .ReturnsAsync(merchant);
+    var analysis = new Mock<IAnalysisOrchestrationService>(MockBehavior.Strict);
+    analysis.Setup(service => service.ReceiveAnalysisAsync(It.IsAny<TimeSpan>(), It.IsAny<CancellationToken>())).ReturnsAsync(receipt);
+    analysis.Setup(service => service.DeleteAnalysisAsync(receipt, It.IsAny<CancellationToken>())).Returns(Task.CompletedTask);
+    var processing = new InvoiceProcessingService(Mock.Of<IInvoiceOrchestrationService>(), merchants.Object, analysis.Object, NullLoggerFactory.Instance);
+
+    Assert.IsTrue(await processing.ProcessAnalysisAsync(CancellationToken.None));
+    merchants.VerifyAll();
+    analysis.VerifyAll();
+    merchants.VerifyNoOtherCalls();
     analysis.VerifyNoOtherCalls();
   }
 
@@ -695,9 +720,9 @@ public sealed class InvoiceProcessingServiceCurrentArchitectureTests
     analysis.VerifyAll();
   }
 
-  /// <summary>Verifies merchant queueing uses invoice-reference visibility rather than merchant creator identity.</summary>
+  /// <summary>Verifies a creator with a visible merchant can queue merchant analysis.</summary>
   [TestMethod]
-  public async Task QueueMerchantAnalysisAsync_ReferencedMerchant_ReturnsMessageId()
+  public async Task QueueMerchantAnalysisAsync_ReferencedMerchantOwnedByCaller_ReturnsMessageId()
   {
     Guid merchantId = Guid.NewGuid();
     Guid parentCompanyId = Guid.NewGuid();
@@ -720,7 +745,7 @@ public sealed class InvoiceProcessingServiceCurrentArchitectureTests
       {
         id = merchantId,
         ParentCompanyId = parentCompanyId,
-        CreatedBy = Guid.NewGuid(),
+        CreatedBy = userIdentifier,
       });
     analysis
       .Setup(service => service.EnqueueAnalysisAsync(
@@ -745,6 +770,30 @@ public sealed class InvoiceProcessingServiceCurrentArchitectureTests
     invoiceOrchestration.VerifyAll();
     merchantOrchestration.VerifyAll();
     analysis.VerifyAll();
+  }
+
+  /// <summary>Receipt access alone does not grant permission to enqueue a merchant mutation.</summary>
+  [TestMethod]
+  public async Task QueueMerchantAnalysisAsync_ReferencedMerchantNotOwnedByCaller_DoesNotEnqueue()
+  {
+    Guid merchantId = Guid.NewGuid();
+    Guid userId = Guid.NewGuid();
+    var invoices = new Mock<IInvoiceOrchestrationService>();
+    invoices.Setup(service => service.ReadAllInvoiceObjects(userId, It.IsAny<CancellationToken>()))
+      .ReturnsAsync([new Invoice { id = Guid.NewGuid(), UserIdentifier = userId, MerchantReference = merchantId }]);
+    var merchants = new Mock<IMerchantOrchestrationService>();
+    merchants.Setup(service => service.ReadMerchantObject(merchantId, null, It.IsAny<CancellationToken>()))
+      .ReturnsAsync(new Merchant { id = merchantId, CreatedBy = Guid.NewGuid() });
+    var analysis = new Mock<IAnalysisOrchestrationService>();
+    analysis.Setup(service => service.EnqueueAnalysisAsync(It.IsAny<QueueAnalysisMessage>(), It.IsAny<CancellationToken>()))
+      .ReturnsAsync("unexpected-message");
+    var processing = new InvoiceProcessingService(invoices.Object, merchants.Object, analysis.Object, NullLoggerFactory.Instance);
+
+    var result = await Assert.ThrowsExactlyAsync<InvoiceProcessingServiceDependencyValidationException>(() =>
+      processing.QueueMerchantAnalysisAsync(merchantId, userId, new MerchantAnalysisRequestDto(AnalysisProfile.Fast, null, null), CancellationToken.None));
+
+    Assert.IsInstanceOfType<MerchantForbiddenAccessException>(result.InnerException);
+    analysis.VerifyNoOtherCalls();
   }
 
   /// <summary>Verifies merchant queueing rejects a target not referenced by the caller's invoices.</summary>

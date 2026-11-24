@@ -2,6 +2,7 @@
 
 import "@testing-library/jest-dom/vitest";
 import {DialogProvider, useDialog} from "@/app/domains/invoices/_contexts/DialogContext";
+import {EMPTY_GUID} from "@/lib/utils.generic";
 import type {Merchant} from "@/types/invoices";
 import {toast, Toaster} from "@arolariu/components";
 import {act, cleanup, render, screen, within} from "@testing-library/react";
@@ -31,7 +32,7 @@ const merchantPath = `/rest/v1/merchants/${merchantId}`;
 const saveReceipt = messages.shared.invoices.invoiceHeader.buttons.save;
 const skipAnimations = MotionGlobalConfig.skipAnimations;
 
-function seedBackend() {
+function seedBackend(creator?: string) {
   let product = buildProduct({name: "Dairy carton", category: null});
   let invoice = buildInvoice({
     id: invoiceId,
@@ -40,7 +41,7 @@ function seedBackend() {
     items: [product],
     category: null,
   });
-  let merchant = buildMerchant({id: merchantId, category: null});
+  let merchant = buildMerchant({id: merchantId, category: null, ...(creator === undefined ? {} : {createdBy: creator})});
   const writes: {path: string; body: unknown}[] = [];
   fetchAtHttp.mockImplementation(async (input, options) => {
     const {origin, pathname} = new URL(String(input));
@@ -200,6 +201,20 @@ describe("individual category editors", () => {
     await mountEditors();
     dialog = await open();
     expect(dialog.getByRole("combobox", {name: "Merchant category"})).toHaveValue("");
+  });
+
+  it("shows merchant details but no editor when the API redacts the creator", async () => {
+    const writes = seedBackend(EMPTY_GUID);
+    const user = userEvent.setup();
+    await mountEditors();
+
+    await act(() => user.click(screen.getByRole("button", {name: "Open merchant"})));
+
+    const dialog = within(await screen.findByRole("dialog"));
+    expect(dialog.getByRole("heading", {name: "Test Merchant"})).toBeVisible();
+    expect(dialog.queryByRole("combobox", {name: "Merchant category"})).not.toBeInTheDocument();
+    expect(dialog.queryByRole("button", {name: "Save category"})).not.toBeInTheDocument();
+    expect(writes).toEqual([]);
   });
 
   it("does not apply a late save or notification to a newly opened merchant dialog", async () => {
