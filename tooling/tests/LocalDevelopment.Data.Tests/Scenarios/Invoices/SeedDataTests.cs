@@ -140,16 +140,16 @@ public sealed class SeedDataTests
     Assert.AreEqual(12.53m, details.Sum(detail => detail.NetAmount + detail.Amount));
   }
 
-  /// <summary>Every physical invoice has exactly one owner-local reciprocal merchant link.</summary>
+  /// <summary>Every invoice points to an existing merchant in its owner's scenario.</summary>
   [TestMethod]
-  public void Materialize_ApprovedScenario_HasExactReciprocalReferences()
+  public void Materialize_ApprovedScenario_HasOwnerLocalMerchantReferences()
   {
     MaterializedSeedScenario scenario = SeedData.Materialize(SeedData.LoadScenario(ScenarioPath), new DateOnly(2026, 11, 4));
+    var merchantIds = scenario.Merchants.Select(merchant => merchant.id).ToHashSet();
+    Assert.IsTrue(scenario.Invoices.All(invoice => merchantIds.Contains(invoice.MerchantReference)));
     foreach (var merchant in scenario.Merchants)
     {
       var invoices = scenario.Invoices.Where(invoice => invoice.MerchantReference == merchant.id).ToArray();
-      CollectionAssert.AreEquivalent(invoices.Select(invoice => invoice.id).ToArray(), merchant.ReferencedInvoices.ToArray());
-      Assert.AreEqual(merchant.ReferencedInvoices.Count(), merchant.ReferencedInvoices.Distinct().Count());
       Assert.IsTrue(invoices.All(invoice => invoice.UserIdentifier == merchant.CreatedBy));
       Assert.IsTrue(invoices.Any(invoice => !invoice.IsSoftDeleted));
       Assert.IsTrue(invoices.All(invoice => merchant.CreatedAt < invoice.PaymentInformation.TransactionDate));
@@ -333,7 +333,6 @@ public sealed class SeedDataTests
         merchant.CreatedAt,
         merchant.Address,
         merchant.AdditionalMetadata,
-        merchant.ReferencedInvoices,
       }),
       Invoices = scenario.Invoices.Select(invoice => new
       {

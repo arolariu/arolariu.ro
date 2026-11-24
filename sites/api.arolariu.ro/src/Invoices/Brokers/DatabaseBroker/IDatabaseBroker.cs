@@ -73,13 +73,20 @@ public interface IDatabaseBroker
   ValueTask<Invoice?> ReadInvoiceAsync(Guid invoiceIdentifier, Guid? userIdentifier, CancellationToken cancellationToken);
 
   /// <summary>
-  /// Lists all non soft-deleted invoices for a specific user/partition.
+  /// Lists active invoices in a user partition, optionally limited to a merchant.
   /// </summary>
   /// <param name="userIdentifier">Partition key / owner identity.</param>
   /// <param name="cancellationToken">Cancellation token to abort the operation (required).</param>
   /// <returns>An enumerable of invoices (may be empty).</returns>
   /// <exception cref="OperationCanceledException">Thrown if the operation is cancelled.</exception>
-  ValueTask<IEnumerable<Invoice>> ReadInvoicesAsync(Guid userIdentifier, CancellationToken cancellationToken);
+  /// <param name="merchantIdentifier">The optional merchant reference to match.</param>
+  ValueTask<IEnumerable<Invoice>> ReadInvoicesAsync(Guid userIdentifier, CancellationToken cancellationToken, Guid? merchantIdentifier = null);
+
+  /// <summary>Checks whether any active invoice references a merchant without reading invoice contents.</summary>
+  /// <param name="merchantIdentifier">The merchant reference to match.</param>
+  /// <param name="cancellationToken">The token used to cancel the query.</param>
+  /// <returns>Whether a matching active invoice exists in storage.</returns>
+  ValueTask<bool> HasInvoicesForMerchantAsync(Guid merchantIdentifier, CancellationToken cancellationToken);
 
   /// <summary>
   /// Replaces an invoice against the revision observed when <paramref name="updatedInvoice"/> was read.

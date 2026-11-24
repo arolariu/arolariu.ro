@@ -68,7 +68,7 @@ public interface IAnalysisFoundationService
     CancellationToken cancellationToken);
 
   /// <summary>
-  /// Generates a concise factual description for a merchant from merchant fields and related invoice evidence.
+  /// Generates a concise factual description for a merchant from its supplied fields.
   /// </summary>
   /// <param name="merchant">The merchant evidence to describe.</param>
   /// <param name="sourceRunId">The non-empty durable analysis run identifier.</param>

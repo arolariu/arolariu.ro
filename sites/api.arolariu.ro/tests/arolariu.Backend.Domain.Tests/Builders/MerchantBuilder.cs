@@ -32,7 +32,6 @@ public static class MerchantTestDataBuilder
     CreatedBy = Guid.NewGuid(),
     CreatedAt = GetRandomDateTimeOffset(),
     NumberOfUpdates = Random.Next(0, 10),
-    ReferencedInvoices = [Guid.NewGuid()]
   };
 
   /// <summary>Creates a merchant overriding selected properties while randomizing the rest.</summary>
@@ -56,7 +55,6 @@ public static class MerchantTestDataBuilder
       CreatedBy = merchant.CreatedBy,
       CreatedAt = merchant.CreatedAt,
       NumberOfUpdates = merchant.NumberOfUpdates,
-      ReferencedInvoices = merchant.ReferencedInvoices
     };
   }
 

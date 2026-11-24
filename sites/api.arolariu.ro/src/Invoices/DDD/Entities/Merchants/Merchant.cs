@@ -14,11 +14,10 @@ using arolariu.Backend.Domain.Invoices.Serialization;
 /// </summary>
 /// <remarks>
 /// <para>Encapsulates classification (<c>Category</c>), the inherited generated <c>Description</c>, location/contact data
-/// (<c>Address</c>), hierarchical grouping (<c>ParentCompanyId</c>) and reverse references from invoices
-/// (<c>ReferencedInvoices</c>) for analytic aggregation.</para>
+/// (<c>Address</c>) and hierarchical grouping (<c>ParentCompanyId</c>).</para>
 /// <para><b>Identity:</b> Assigned at creation time (random GUID). Future optimization may migrate to Version 7 GUID for chronological sorting.</para>
 /// <para><b>Relationships:</b> Not an aggregate root for invoices (invoices own the relationship by storing <c>MerchantReference</c>). This type acts
-/// as a referenced entity; deleting a merchant should not cascade to invoices without explicit orchestration logic.</para>
+/// as a referenced entity; active invoice relationships are queried from those source records.</para>
 /// <para><b>Thread-safety:</b> Not thread-safe — treat instances as single-thread scoped.</para>
 /// <para><b>Soft Delete:</b> Not currently implementing soft-delete flags at this level; deletion semantics handled at persistence/broker layer if added.</para>
 /// </remarks>
@@ -52,14 +51,6 @@ public sealed class Merchant : NamedEntity<Guid>
   /// <remarks><para><c>Guid.Empty</c> indicates no parent company assigned.</para></remarks>
   [JsonPropertyOrder(5)]
   public Guid ParentCompanyId { get; set; } = Guid.Empty;
-
-  /// <summary>Reverse references to invoices that currently point to this merchant.</summary>
-  /// <remarks>
-  /// <para>Maintained for read-optimization / analytics. Contents are not automatically pruned on invoice deletion; reconciliation job may be required.</para>
-  /// <para>Order reflects insertion order; duplicates are not automatically filtered (caller MUST prevent duplicate insertion).</para>
-  /// </remarks>
-  [JsonPropertyOrder(6)]
-  public ICollection<Guid> ReferencedInvoices { get; init; } = [];
 
   /// <summary>Extensible key/value metadata (lightweight tagging / enrichment layer).</summary>
   /// <remarks>

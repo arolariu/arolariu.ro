@@ -79,7 +79,8 @@ public interface IInvoiceProcessingService
   /// <param name="userIdentifier">Partition / tenant context.</param>
   /// <param name="cancellationToken">Cancellation token to abort the operation (required).</param>
   /// <returns>The invoices returned for the user partition.</returns>
-  Task<IEnumerable<Invoice>> ReadInvoices(Guid userIdentifier, CancellationToken cancellationToken);
+  /// <param name="merchantIdentifier">The optional merchant reference to match.</param>
+  Task<IEnumerable<Invoice>> ReadInvoices(Guid userIdentifier, CancellationToken cancellationToken, Guid? merchantIdentifier = null);
   #endregion
 
   #region Update Invoice API

@@ -180,19 +180,21 @@ public sealed partial class InvoiceProcessingService : IInvoiceProcessingService
   /// <summary>Reads all invoices in one user partition.</summary>
   /// <param name="userIdentifier">The user partition to query.</param>
   /// <param name="cancellationToken">The token used to cancel the query.</param>
+  /// <param name="merchantIdentifier">The optional merchant reference to match.</param>
   /// <returns>The invoices returned by invoice orchestration.</returns>
   /// <exception cref="DDD.AggregatorRoots.Invoices.Exceptions.Outer.Processing.InvoiceProcessingServiceDependencyException">
   /// Thrown when invoice orchestration cannot complete the query.
   /// </exception>
   /// <inheritdoc/>
-  public async Task<IEnumerable<Invoice>> ReadInvoices(Guid userIdentifier, CancellationToken cancellationToken) =>
+  public async Task<IEnumerable<Invoice>> ReadInvoices(
+    Guid userIdentifier, CancellationToken cancellationToken, Guid? merchantIdentifier = null) =>
   await TryCatchAsync(async () =>
   {
     using var activity = InvoicePackageTracing.StartActivity(nameof(ReadInvoices));
     var sw = Stopwatch.StartNew();
 
     var invoices = await invoiceOrchestrationService
-      .ReadAllInvoiceObjects(userIdentifier, cancellationToken)
+      .ReadAllInvoiceObjects(userIdentifier, cancellationToken, merchantIdentifier)
       .ConfigureAwait(false);
 
     sw.Stop();
@@ -396,6 +398,11 @@ public sealed partial class InvoiceProcessingService : IInvoiceProcessingService
   {
     using var activity = InvoicePackageTracing.StartActivity(nameof(DeleteMerchant));
     var sw = Stopwatch.StartNew();
+
+    if (await invoiceOrchestrationService.HasInvoicesForMerchant(identifier, cancellationToken).ConfigureAwait(false))
+    {
+      throw new MerchantInUseException();
+    }
 
     await merchantOrchestrationService
       .DeleteMerchantObject(identifier, parentCompanyId, cancellationToken)

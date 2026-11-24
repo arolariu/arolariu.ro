@@ -39,7 +39,6 @@ public sealed class GenerativeAnalysisMerchantDescriptionNullEvidenceTests
       Description = string.Empty,
       Category = null,
       Address = null!,
-      ReferencedInvoices = null!,
       AdditionalMetadata = null!,
       ParentCompanyId = Guid.Empty,
     };

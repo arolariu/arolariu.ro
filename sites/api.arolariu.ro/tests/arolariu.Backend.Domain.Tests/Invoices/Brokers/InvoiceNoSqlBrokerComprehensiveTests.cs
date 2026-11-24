@@ -355,6 +355,55 @@ public sealed partial class CosmosDatabaseBrokerComprehensiveTests : CosmosDatab
     Assert.AreEqual(4, actualInvoices.Count());
   }
 
+  /// <summary>Merchant invoice reads specify the owner partition and filter by the committed forward link.</summary>
+  [TestMethod]
+  public async Task ReadInvoicesAsync_MerchantFilter_PassesOwnerPartitionAndMerchantToCosmos()
+  {
+    var merchantId = Guid.NewGuid();
+    var invoice = new Invoice { id = Guid.NewGuid(), UserIdentifier = Guid.NewGuid(), MerchantReference = merchantId };
+    var page = new Mock<FeedResponse<Invoice>>();
+    page.Setup(response => response.GetEnumerator()).Returns(((IEnumerable<Invoice>)[invoice]).GetEnumerator());
+    var iterator = new Mock<FeedIterator<Invoice>>();
+    iterator.SetupSequence(feed => feed.HasMoreResults).Returns(true).Returns(false);
+    iterator.Setup(feed => feed.ReadNextAsync(It.IsAny<CancellationToken>())).ReturnsAsync(page.Object);
+    mockInvoicesContainer.Setup(container =>
+        container.GetItemQueryIterator<Invoice>(It.IsAny<QueryDefinition>(), null, It.IsAny<QueryRequestOptions>()))
+      .Callback((QueryDefinition query, string? _, QueryRequestOptions options) =>
+      {
+        Assert.AreEqual(new PartitionKey(invoice.UserIdentifier.ToString()), options.PartitionKey);
+        Assert.Contains("c.UserIdentifier = @userIdentifier", query.QueryText, StringComparison.Ordinal);
+        Assert.Contains("c.MerchantReference = @merchantIdentifier", query.QueryText, StringComparison.Ordinal);
+        Assert.Contains("c.IsSoftDeleted = false", query.QueryText, StringComparison.Ordinal);
+        Assert.AreEqual(merchantId.ToString(), query.GetQueryParameters().Single(parameter => parameter.Name == "@merchantIdentifier").Value);
+      })
+      .Returns(iterator.Object);
+
+    var invoices = await invoiceNoSqlBroker.ReadInvoicesAsync(invoice.UserIdentifier, CancellationToken.None, merchantId);
+
+    Assert.AreSame(invoice, invoices.Single());
+  }
+
+  /// <summary>The merchant delete guard reads only an ID projection and does not stop at an empty page.</summary>
+  [TestMethod]
+  public async Task HasInvoicesForMerchantAsync_EmptyPageBeforeMatch_ReportsActiveReference()
+  {
+    var merchantId = Guid.NewGuid();
+    var empty = new Mock<FeedResponse<string>>();
+    var match = new Mock<FeedResponse<string>>();
+    match.Setup(response => response.Count).Returns(1);
+    var iterator = new Mock<FeedIterator<string>>();
+    iterator.SetupSequence(feed => feed.HasMoreResults).Returns(true).Returns(true).Returns(false);
+    iterator.SetupSequence(feed => feed.ReadNextAsync(It.IsAny<CancellationToken>())).ReturnsAsync(empty.Object).ReturnsAsync(match.Object);
+    mockInvoicesContainer.Setup(container => container.GetItemQueryIterator<string>(
+        It.Is<QueryDefinition>(query => query.QueryText.StartsWith("SELECT TOP 1 VALUE c.id", StringComparison.Ordinal)
+          && query.GetQueryParameters().Any(parameter => parameter.Name == "@merchantIdentifier" && object.Equals(parameter.Value, merchantId.ToString()))),
+        null, null))
+      .Returns(iterator.Object);
+
+    Assert.IsTrue(await invoiceNoSqlBroker.HasInvoicesForMerchantAsync(merchantId, CancellationToken.None));
+    iterator.Verify(feed => feed.ReadNextAsync(It.IsAny<CancellationToken>()), Times.Exactly(2));
+  }
+
   #endregion
 
   #region ReadInvoiceAsync with Soft Delete Tests

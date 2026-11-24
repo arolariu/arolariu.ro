@@ -162,7 +162,6 @@ public sealed class InvoiceResponseTransportContractTests
         Website = "https://example.test",
       },
       ParentCompanyId = Guid.Empty,
-      ReferencedInvoices = [Guid.Parse("99999999-9999-7999-8999-999999999999")],
       AdditionalMetadata = new Dictionary<string, string> { ["source"] = "manual" },
       IsImportant = true,
       CreatedAt = new DateTimeOffset(2026, 8, 18, 0, 0, 0, TimeSpan.Zero),
@@ -172,7 +171,9 @@ public sealed class InvoiceResponseTransportContractTests
 
     // Act
     using JsonDocument productDocument = JsonDocument.Parse(JsonSerializer.Serialize(ProductResponseDto.FromProduct(product), ApiJsonOptions));
-    using JsonDocument merchantDocument = JsonDocument.Parse(JsonSerializer.Serialize(MerchantResponseDto.FromMerchant(merchant), ApiJsonOptions));
+    var merchantResponse = MerchantResponseDto.FromMerchantForCaller(
+      merchant, merchant.CreatedBy, [Guid.Parse("99999999-9999-7999-8999-999999999999")]);
+    using JsonDocument merchantDocument = JsonDocument.Parse(JsonSerializer.Serialize(merchantResponse, ApiJsonOptions));
     JsonElement productRoot = productDocument.RootElement;
     JsonElement merchantRoot = merchantDocument.RootElement;
 

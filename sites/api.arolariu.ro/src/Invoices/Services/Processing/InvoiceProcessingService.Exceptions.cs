@@ -84,7 +84,7 @@ public sealed partial class InvoiceProcessingService
       => CreateAndLogServiceException(analysisService.InnerException ?? analysisService),
     ArgumentException
       => CreateAndLogValidationException(exception),
-    InvoiceAlreadyExistsException or ProductNotFoundException
+    InvoiceAlreadyExistsException or ProductNotFoundException or MerchantInUseException
       => CreateAndLogDependencyValidationException(exception),
     _ => CreateAndLogServiceException(exception),
   };

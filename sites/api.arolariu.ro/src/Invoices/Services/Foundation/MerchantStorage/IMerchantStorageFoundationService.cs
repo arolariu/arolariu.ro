@@ -32,7 +32,7 @@ public interface IMerchantStorageFoundationService
   /// Persists a new <see cref="Merchant"/> aggregate.
   /// </summary>
   /// <remarks>
-  /// <para><b>Validation:</b> Ensures merchant id not empty, required collections (e.g. <c>ReferencedInvoices</c>) initialized, and category values within allowed domain.</para>
+  /// <para><b>Validation:</b> Ensures the merchant ID is not empty and the category belongs to its domain.</para>
   /// <para><b>Failure Modes:</b> Throws validation exceptions on invariant breach, dependency / dependency validation exceptions on broker-level persistence failures (conflicts, connectivity, serialization).</para>
   /// </remarks>
   /// <param name="merchant">Merchant aggregate to persist (MUST NOT be null).</param>

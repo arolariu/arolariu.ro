@@ -474,7 +474,7 @@ public static partial class InvoiceEndpoints
   [SwaggerResponse(StatusCodes.Status401Unauthorized, "The user is not authorized to perform this operation.", typeof(ProblemDetails))]
   [SwaggerResponse(StatusCodes.Status403Forbidden, "The user is not authenticated. Please provide valid credentials.", typeof(ProblemDetails))]
   [SwaggerResponse(StatusCodes.Status404NotFound, "The invoice with the specified identifier was not found.", typeof(ProblemDetails))]
-  [SwaggerResponse(StatusCodes.Status409Conflict, "No merchant is currently associated with this invoice.", typeof(ProblemDetails))]
+  [SwaggerResponse(StatusCodes.Status409Conflict, "The invoice is not linked to a merchant or its revision changed.", typeof(ProblemDetails))]
   [SwaggerResponse(StatusCodes.Status413PayloadTooLarge, "The request payload exceeds the maximum allowed size (1MB).", typeof(ProblemDetails))]
   [SwaggerResponse(StatusCodes.Status429TooManyRequests, "The user has exceeded the rate limit. Please try again later.", typeof(ProblemDetails))]
   [SwaggerResponse(StatusCodes.Status500InternalServerError, "An internal server error occurred while processing the request.", typeof(ProblemDetails))]
@@ -835,9 +835,7 @@ public static partial class InvoiceEndpoints
   /// <returns>A task representing the asynchronous operation, indicating the result of the deletion.</returns>
   [SwaggerOperation(
     Summary = "Deletes a specific merchant from the system.",
-    Description = "This endpoint deletes a specific merchant from the Invoice Management System. " +
-    "It ensures the merchant exists and the user has permission to delete it. " +
-    "If successful, the merchant is removed from the system.",
+    Description = "Soft-deletes a merchant when no active invoices reference it. It does not update invoices.",
     OperationId = nameof(DeleteMerchantAsync),
     Tags = [EndpointNameTag])]
   [SwaggerResponse(StatusCodes.Status204NoContent, "The merchant was successfully deleted.")]
@@ -845,6 +843,7 @@ public static partial class InvoiceEndpoints
   [SwaggerResponse(StatusCodes.Status401Unauthorized, "The user is not authorized to delete this merchant.", typeof(ProblemDetails))]
   [SwaggerResponse(StatusCodes.Status403Forbidden, "The user is not authenticated. Please provide valid credentials.", typeof(ProblemDetails))]
   [SwaggerResponse(StatusCodes.Status404NotFound, "The merchant with the specified identifier was not found.", typeof(ProblemDetails))]
+  [SwaggerResponse(StatusCodes.Status409Conflict, "The merchant is still referenced or its revision changed.", typeof(ProblemDetails))]
   [SwaggerResponse(StatusCodes.Status429TooManyRequests, "The user has exceeded the rate limit. Please try again later.", typeof(ProblemDetails))]
   [SwaggerResponse(StatusCodes.Status500InternalServerError, "An internal server error occurred while processing the request.", typeof(ProblemDetails))]
   [SwaggerResponse(StatusCodes.Status504GatewayTimeout, "The operation timed out. Please try again later.", typeof(ProblemDetails))]
@@ -868,16 +867,14 @@ public static partial class InvoiceEndpoints
   /// <returns>A task representing the asynchronous operation, containing a list of invoices.</returns>
   [SwaggerOperation(
     Summary = "Retrieves all invoices from a specific merchant in the system.",
-    Description = "This endpoint retrieves all invoices associated with a specific merchant in the Invoice Management System. " +
-    "It ensures the merchant exists and the user has permission to view the invoices. " +
-    "If successful, a list of invoices is returned.",
+    Description = "Returns active invoices owned by the caller and associated with this merchant.",
     OperationId = nameof(RetrieveInvoicesFromMerchantAsync),
     Tags = [EndpointNameTag])]
   [SwaggerResponse(StatusCodes.Status200OK, "The invoices were successfully retrieved.", typeof(IEnumerable<InvoiceResponseDto>))]
   [SwaggerResponse(StatusCodes.Status400BadRequest, "The provided merchant identifier is invalid.", typeof(ValidationProblemDetails))]
   [SwaggerResponse(StatusCodes.Status401Unauthorized, "The user is not authorized to access the invoices from this merchant.", typeof(ProblemDetails))]
   [SwaggerResponse(StatusCodes.Status403Forbidden, "The user is not authenticated. Please provide valid credentials.", typeof(ProblemDetails))]
-  [SwaggerResponse(StatusCodes.Status404NotFound, "The merchant with the specified identifier was not found.", typeof(ProblemDetails))]
+  [SwaggerResponse(StatusCodes.Status404NotFound, "The merchant is not linked to any active invoice owned by the caller, or is missing.", typeof(ProblemDetails))]
   [SwaggerResponse(StatusCodes.Status429TooManyRequests, "The user has exceeded the rate limit. Please try again later.", typeof(ProblemDetails))]
   [SwaggerResponse(StatusCodes.Status500InternalServerError, "An internal server error occurred while processing the request.", typeof(ProblemDetails))]
   [SwaggerResponse(StatusCodes.Status504GatewayTimeout, "The operation timed out. Please try again later.", typeof(ProblemDetails))]
@@ -901,9 +898,7 @@ public static partial class InvoiceEndpoints
   /// <returns>A task representing the asynchronous operation, indicating the result of the addition.</returns>
   [SwaggerOperation(
     Summary = "Adds invoice(s) to a specific merchant in the system.",
-    Description = "This endpoint associates one or more invoices with a specific merchant in the Invoice Management System. " +
-    "It validates the invoice identifiers and ensures the merchant exists. " +
-    "If successful, the invoices are added to the merchant.",
+    Description = "Associates selected invoices owned by the caller with the merchant. Each invoice commits independently.",
     OperationId = nameof(AddInvoiceToMerchantAsync),
     Tags = [EndpointNameTag])]
   [SwaggerResponse(StatusCodes.Status202Accepted, "The invoice(s) were successfully added to the merchant.", typeof(MerchantResponseDto))]
@@ -911,7 +906,7 @@ public static partial class InvoiceEndpoints
   [SwaggerResponse(StatusCodes.Status401Unauthorized, "The user is not authorized to add invoices to this merchant.", typeof(ProblemDetails))]
   [SwaggerResponse(StatusCodes.Status403Forbidden, "The user is not authenticated. Please provide valid credentials.", typeof(ProblemDetails))]
   [SwaggerResponse(StatusCodes.Status404NotFound, "The merchant with the specified identifier was not found.", typeof(ProblemDetails))]
-  [SwaggerResponse(StatusCodes.Status409Conflict, "One or more invoices are already associated with the merchant.", typeof(ProblemDetails))]
+  [SwaggerResponse(StatusCodes.Status409Conflict, "An invoice changed during the operation.", typeof(ProblemDetails))]
   [SwaggerResponse(StatusCodes.Status413PayloadTooLarge, "The request payload is too large. Please reduce the number of invoice identifiers.", typeof(ProblemDetails))]
   [SwaggerResponse(StatusCodes.Status429TooManyRequests, "The user has exceeded the rate limit. Please try again later.", typeof(ProblemDetails))]
   [SwaggerResponse(StatusCodes.Status500InternalServerError, "An internal server error occurred while processing the request.", typeof(ProblemDetails))]
@@ -936,9 +931,7 @@ public static partial class InvoiceEndpoints
   /// <returns>A task representing the asynchronous operation, indicating the result of the removal.</returns>
   [SwaggerOperation(
     Summary = "Removes invoice(s) from a specific merchant in the system.",
-    Description = "This endpoint removes the association between one or more invoices and a specific merchant in the Invoice Management System. " +
-    "It validates the invoice identifiers and ensures the merchant exists. " +
-    "If successful, the invoices are removed from the merchant.",
+    Description = "Clears the merchant on selected invoices owned by the caller and currently linked to it. Each invoice commits independently.",
     OperationId = nameof(RemoveInvoiceFromMerchantAsync),
     Tags = [EndpointNameTag])]
   [SwaggerResponse(StatusCodes.Status204NoContent, "The invoice(s) were successfully removed from the merchant.")]
@@ -946,7 +939,7 @@ public static partial class InvoiceEndpoints
   [SwaggerResponse(StatusCodes.Status401Unauthorized, "The user is not authorized to remove invoices from this merchant.", typeof(ProblemDetails))]
   [SwaggerResponse(StatusCodes.Status403Forbidden, "The user is not authenticated. Please provide valid credentials.", typeof(ProblemDetails))]
   [SwaggerResponse(StatusCodes.Status404NotFound, "The merchant with the specified identifier was not found.", typeof(ProblemDetails))]
-  [SwaggerResponse(StatusCodes.Status409Conflict, "One or more invoices are not associated with the merchant.", typeof(ProblemDetails))]
+  [SwaggerResponse(StatusCodes.Status409Conflict, "An invoice changed during the operation.", typeof(ProblemDetails))]
   [SwaggerResponse(StatusCodes.Status413PayloadTooLarge, "The request payload is too large. Please reduce the number of invoice identifiers.", typeof(ProblemDetails))]
   [SwaggerResponse(StatusCodes.Status429TooManyRequests, "The user has exceeded the rate limit. Please try again later.", typeof(ProblemDetails))]
   [SwaggerResponse(StatusCodes.Status500InternalServerError, "An internal server error occurred while processing the request.", typeof(ProblemDetails))]
@@ -971,16 +964,14 @@ public static partial class InvoiceEndpoints
   /// <returns>A task representing the asynchronous operation, containing a list of products.</returns>
   [SwaggerOperation(
     Summary = "Retrieves all products from a specific merchant in the system.",
-    Description = "This endpoint retrieves all products associated with a specific merchant in the Invoice Management System. " +
-    "It ensures the merchant exists and the user has permission to view the products. " +
-    "If successful, a list of products is returned.",
+    Description = "Returns products on active invoices owned by the caller and associated with this merchant.",
     OperationId = nameof(RetrieveProductsFromMerchantAsync),
     Tags = [EndpointNameTag])]
   [SwaggerResponse(StatusCodes.Status200OK, "The products were successfully retrieved.", typeof(IEnumerable<ProductResponseDto>))]
   [SwaggerResponse(StatusCodes.Status400BadRequest, "The provided merchant identifier is invalid.", typeof(ValidationProblemDetails))]
   [SwaggerResponse(StatusCodes.Status401Unauthorized, "The user is not authorized to access the products from this merchant.", typeof(ProblemDetails))]
   [SwaggerResponse(StatusCodes.Status403Forbidden, "The user is not authenticated. Please provide valid credentials.", typeof(ProblemDetails))]
-  [SwaggerResponse(StatusCodes.Status404NotFound, "The merchant with the specified identifier was not found.", typeof(ProblemDetails))]
+  [SwaggerResponse(StatusCodes.Status404NotFound, "The merchant is not linked to any active invoice owned by the caller, or is missing.", typeof(ProblemDetails))]
   [SwaggerResponse(StatusCodes.Status429TooManyRequests, "The user has exceeded the rate limit. Please try again later.", typeof(ProblemDetails))]
   [SwaggerResponse(StatusCodes.Status500InternalServerError, "An internal server error occurred while processing the request.", typeof(ProblemDetails))]
   [SwaggerResponse(StatusCodes.Status504GatewayTimeout, "The operation timed out. Please try again later.", typeof(ProblemDetails))]

@@ -38,7 +38,8 @@ public interface IInvoiceManagementService
   /// <param name="userIdentifier">The owning user partition.</param>
   /// <param name="cancellationToken">The token that cancels the asynchronous operation.</param>
   /// <returns>The invoices visible in the requested partition.</returns>
-  Task<IEnumerable<Invoice>> ReadInvoices(Guid userIdentifier, CancellationToken cancellationToken);
+  /// <param name="merchantIdentifier">The optional merchant reference to match.</param>
+  Task<IEnumerable<Invoice>> ReadInvoices(Guid userIdentifier, CancellationToken cancellationToken, Guid? merchantIdentifier = null);
 
   /// <summary>Replaces client-editable state on an existing invoice.</summary>
   /// <param name="invoiceIdentifier">The identifier of the persisted invoice.</param>

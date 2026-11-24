@@ -259,6 +259,12 @@ public static partial class InvoiceEndpoints
 
       var updatedInvoiceEntity = invoicePayload.ToInvoice(id, potentialUserIdentifier, possibleInvoice.Category);
       updatedInvoiceEntity.StorageETag = possibleInvoice.StorageETag;
+      if (updatedInvoiceEntity.MerchantReference != Guid.Empty
+          && updatedInvoiceEntity.MerchantReference != possibleInvoice.MerchantReference
+          && await invoiceManagementService.ReadMerchant(updatedInvoiceEntity.MerchantReference, null, writeScope.Token).ConfigureAwait(false) is null)
+      {
+        return TypedResults.BadRequest("The referenced merchant does not exist.");
+      }
 
       // Preserve scans from the original invoice (scans are managed through dedicated endpoints)
       foreach (var scan in possibleInvoice.Scans)
@@ -348,18 +354,6 @@ public static partial class InvoiceEndpoints
         if (possibleMerchant is null)
         {
           return TypedResults.BadRequest($"The merchant with id {invoicePayload.MerchantReference} does not exist.");
-        }
-
-        if (!possibleMerchant.ReferencedInvoices.Contains(id))
-        {
-          possibleMerchant.ReferencedInvoices.Add(id);
-          await invoiceManagementService
-            .UpdateMerchant(
-              possibleMerchant.id,
-              possibleMerchant.ParentCompanyId,
-              possibleMerchant,
-              cancellationToken: writeScope.Token)
-            .ConfigureAwait(false);
         }
       }
 
@@ -673,7 +667,7 @@ public static partial class InvoiceEndpoints
       return TypedResults.Ok(MerchantResponseDto.FromMerchantForCaller(
         possibleMerchant,
         potentialUserIdentifier,
-        new HashSet<Guid> { possibleInvoice.id }));
+        [possibleInvoice.id]));
     }
     catch (OperationCanceledException)
     {
@@ -734,9 +728,11 @@ public static partial class InvoiceEndpoints
       activity?.SetMerchantContext(merchant.id);
       activity?.SetTag("merchant.parent_company_id", merchant.ParentCompanyId.ToString());
 
-      possibleInvoice.MerchantReference = merchant.id;
-      merchant.ReferencedInvoices.Add(possibleInvoice.id);
+      await invoiceManagementService
+        .CreateMerchant(merchant, null, writeScope.Token)
+        .ConfigureAwait(false);
 
+      possibleInvoice.MerchantReference = merchant.id;
       await invoiceManagementService
         .UpdateInvoice(
           id,
@@ -745,13 +741,9 @@ public static partial class InvoiceEndpoints
           cancellationToken: writeScope.Token)
         .ConfigureAwait(false);
 
-      await invoiceManagementService
-        .CreateMerchant(merchant, null, writeScope.Token)
-        .ConfigureAwait(false);
-
       activity?.RecordSuccess("Merchant added to invoice");
-      // Return MerchantResponseDto so the client can extract the merchant ID
-      return TypedResults.Created(uri: $"/rest/v1/merchants/{merchant.id}", MerchantResponseDto.FromMerchant(merchant));
+      return TypedResults.Created($"/rest/v1/merchants/{merchant.id}",
+        MerchantResponseDto.FromMerchantForCaller(merchant, potentialUserIdentifier, [id]));
     }
     catch (OperationCanceledException)
     {
@@ -803,31 +795,13 @@ public static partial class InvoiceEndpoints
 
       activity?.SetMerchantContext(possibleInvoice.MerchantReference);
 
-      var possibleMerchant = await invoiceManagementService
-        .ReadMerchant(possibleInvoice.MerchantReference, null, writeScope.Token)
-        .ConfigureAwait(false);
-      if (possibleMerchant is null)
-      {
-        activity?.SetTag("result.merchant_found", false);
-        return TypedResults.NotFound();
-      }
-
       possibleInvoice.MerchantReference = Guid.Empty;
-      possibleMerchant.ReferencedInvoices.Remove(possibleInvoice.id);
 
       await invoiceManagementService
         .UpdateInvoice(
           id,
           potentialUserIdentifier,
           possibleInvoice,
-          cancellationToken: writeScope.Token)
-        .ConfigureAwait(false);
-
-      await invoiceManagementService
-        .UpdateMerchant(
-          possibleMerchant.id,
-          possibleMerchant.ParentCompanyId,
-          possibleMerchant,
           cancellationToken: writeScope.Token)
         .ConfigureAwait(false);
 
@@ -1186,7 +1160,7 @@ public static partial class InvoiceEndpoints
         activity.SetOperationType("Merchant.Create");
       }
 
-      _ = RetrieveUserIdentifierClaimFromPrincipal(httpContext);
+      Guid userIdentifier = RetrieveUserIdentifierClaimFromPrincipal(httpContext);
 
       var merchant = merchantDto.ToMerchant();
       activity?.SetMerchantContext(merchant.id);
@@ -1196,7 +1170,8 @@ public static partial class InvoiceEndpoints
           .ConfigureAwait(false);
 
       activity?.RecordSuccess("Merchant created");
-      return TypedResults.Created($"/rest/v1/merchants/{merchant.id}", MerchantResponseDto.FromMerchant(merchant));
+      return TypedResults.Created($"/rest/v1/merchants/{merchant.id}",
+        MerchantResponseDto.FromMerchantForCaller(merchant, userIdentifier, []));
     }
     catch (OperationCanceledException)
     {
@@ -1268,19 +1243,10 @@ public static partial class InvoiceEndpoints
       }
 
       // RESTful convention: return 200 with empty array for collection endpoints, not 404
-      var merchantDtos = possibleMerchants?.Select(merchant =>
-      {
-        HashSet<Guid> callerInvoiceIdentifiers = callerInvoices
-          .Where(invoice => invoice.MerchantReference == merchant.id)
-          .Select(invoice => invoice.id)
-          .ToHashSet();
-
-        return MerchantResponseDto.FromMerchantForCaller(
-          merchant,
-          userIdentifier,
-          callerInvoiceIdentifiers);
-      }) ?? [];
-      activity?.SetTag("result.count", merchantDtos.Count());
+      var identifiersByMerchant = callerInvoices.ToLookup(invoice => invoice.MerchantReference, invoice => invoice.id);
+      var merchantDtos = possibleMerchants.Select(merchant => MerchantResponseDto.FromMerchantForCaller(
+        merchant, userIdentifier, identifiersByMerchant[merchant.id].ToArray())).ToArray();
+      activity?.SetTag("result.count", merchantDtos.Length);
       activity?.RecordSuccess();
       return TypedResults.Ok(merchantDtos);
     }
@@ -1319,25 +1285,9 @@ public static partial class InvoiceEndpoints
         activity?.SetTag("parent_company.id", parentCompanyId.Value.ToString());
       }
 
-      var possibleMerchant = await invoiceManagementService
-        .ReadMerchant(id, parentCompanyId, cancellationToken)
+      var merchantWithInvoices = await ReadMerchantWithCallerInvoicesAsync(invoiceManagementService, id, userIdentifier, parentCompanyId, cancellationToken)
         .ConfigureAwait(false);
-
-      if (possibleMerchant is null)
-      {
-        activity?.SetTag("result.found", false);
-        return TypedResults.NotFound();
-      }
-
-      IEnumerable<Invoice> callerInvoices = await invoiceManagementService
-        .ReadInvoices(userIdentifier, cancellationToken)
-        .ConfigureAwait(false);
-      HashSet<Guid> callerInvoiceIdentifiers = callerInvoices
-        .Where(invoice => invoice.MerchantReference == possibleMerchant.id)
-        .Select(invoice => invoice.id)
-        .ToHashSet();
-
-      if (callerInvoiceIdentifiers.Count == 0)
+      if (merchantWithInvoices is not { } related)
       {
         activity?.SetTag("access.granted", false);
         return TypedResults.NotFound();
@@ -1346,9 +1296,9 @@ public static partial class InvoiceEndpoints
       activity?.SetTag("access.granted", true);
       activity?.RecordSuccess();
       return TypedResults.Ok(MerchantResponseDto.FromMerchantForCaller(
-        possibleMerchant,
+        related.Merchant,
         userIdentifier,
-        callerInvoiceIdentifiers));
+        related.Invoices.Select(invoice => invoice.id).ToArray()));
     }
     catch (OperationCanceledException)
     {
@@ -1384,42 +1334,32 @@ public static partial class InvoiceEndpoints
       Guid userIdentifier = RetrieveUserIdentifierClaimFromPrincipal(httpContext);
       activity?.SetMerchantContext(id);
 
-      IEnumerable<Invoice> callerInvoices = await invoiceManagementService
-        .ReadInvoices(userIdentifier, writeScope.Token)
+      var merchantWithInvoices = await ReadMerchantWithCallerInvoicesAsync(invoiceManagementService, id, userIdentifier, null, writeScope.Token)
         .ConfigureAwait(false);
-      if (!callerInvoices.Any(invoice => invoice.MerchantReference == id))
+      if (merchantWithInvoices is not { } related)
       {
         activity?.SetTag("access.granted", false);
         return TypedResults.NotFound();
       }
 
       activity?.SetTag("access.granted", true);
-      Merchant? existingMerchant = await invoiceManagementService
-        .ReadMerchant(id, parentCompanyId: null, cancellationToken: writeScope.Token)
-        .ConfigureAwait(false);
-
-      if (existingMerchant is null)
-      {
-        activity?.SetTag("result.found", false);
-        return TypedResults.NotFound();
-      }
-
       if (!merchantPayload.IsValid)
       {
         return TypedResults.BadRequest("Provide a category alone or complete merchant details.");
       }
 
-      merchantPayload.ApplyTo(existingMerchant);
+      merchantPayload.ApplyTo(related.Merchant);
       Merchant persistedMerchant = await invoiceManagementService
         .UpdateMerchant(
           id,
-          existingMerchant.ParentCompanyId,
-          existingMerchant,
+          related.Merchant.ParentCompanyId,
+          related.Merchant,
           cancellationToken: writeScope.Token)
         .ConfigureAwait(false);
 
       activity?.RecordSuccess("Merchant updated");
-      return TypedResults.Accepted($"/rest/v1/merchants/{id}", MerchantResponseDto.FromMerchant(persistedMerchant));
+      return TypedResults.Accepted($"/rest/v1/merchants/{id}", MerchantResponseDto.FromMerchantForCaller(
+        persistedMerchant, userIdentifier, related.Invoices.Select(invoice => invoice.id).ToArray()));
     }
     catch (OperationCanceledException)
     {
@@ -1465,27 +1405,6 @@ public static partial class InvoiceEndpoints
         return TypedResults.NotFound();
       }
 
-      activity?.SetTag("merchant.referenced_invoices_count", possibleMerchant.ReferencedInvoices.Count);
-
-      // Before deleting the merchant, we need to remove the reference from all invoices that reference this merchant.
-      foreach (var invoiceIdentifier in possibleMerchant.ReferencedInvoices)
-      {
-        var possibleInvoice = await invoiceManagementService
-          .ReadInvoice(invoiceIdentifier, null, writeScope.Token)
-          .ConfigureAwait(false);
-        if (possibleInvoice is not null)
-        {
-          possibleInvoice.MerchantReference = Guid.Empty;
-          await invoiceManagementService
-            .UpdateInvoice(
-              possibleInvoice.id,
-              userIdentifier: null,
-              possibleInvoice,
-              writeScope.Token)
-            .ConfigureAwait(false);
-        }
-      }
-
       await invoiceManagementService
         .DeleteMerchant(id, parentCompanyId, cancellationToken: writeScope.Token)
         .ConfigureAwait(false);
@@ -1520,38 +1439,20 @@ public static partial class InvoiceEndpoints
         activity.SetOperationType("Merchant.ReadInvoices");
       }
 
-      _ = RetrieveUserIdentifierClaimFromPrincipal(httpContext);
+      Guid userIdentifier = RetrieveUserIdentifierClaimFromPrincipal(httpContext);
       activity?.SetMerchantContext(id);
 
-      var possibleMerchant = await invoiceManagementService
-        .ReadMerchant(id, null, cancellationToken)
+      var merchantWithInvoices = await ReadMerchantWithCallerInvoicesAsync(invoiceManagementService, id, userIdentifier, null, cancellationToken)
         .ConfigureAwait(false);
-      if (possibleMerchant is null)
+      if (merchantWithInvoices is not { } related)
       {
         activity?.SetTag("result.found", false);
         return TypedResults.NotFound();
       }
 
-      var listOfInvoiceIdentifiers = possibleMerchant.ReferencedInvoices;
-      activity?.SetTag("merchant.referenced_invoices_count", listOfInvoiceIdentifiers.Count);
-
-      var listOfConcreteInvoices = new List<Invoice>();
-
-      foreach (var identifier in listOfInvoiceIdentifiers)
-      {
-        var possibleInvoice = await invoiceManagementService
-          .ReadInvoice(identifier, null, cancellationToken)
-          .ConfigureAwait(false);
-        if (possibleInvoice is not null)
-        {
-          listOfConcreteInvoices.Add(possibleInvoice);
-        }
-      }
-
-      activity?.SetTag("result.count", listOfConcreteInvoices.Count);
+      activity?.SetTag("result.count", related.Invoices.Length);
       activity?.RecordSuccess();
-      // RESTful convention: return 200 with empty array for collection endpoints, not 404
-      return TypedResults.Ok(listOfConcreteInvoices.Select(InvoiceResponseDto.FromInvoice));
+      return TypedResults.Ok(related.Invoices.Select(InvoiceResponseDto.FromInvoice));
     }
     catch (OperationCanceledException)
     {
@@ -1584,9 +1485,19 @@ public static partial class InvoiceEndpoints
         activity.SetOperationType("Merchant.AddInvoices");
       }
 
-      _ = RetrieveUserIdentifierClaimFromPrincipal(httpContext);
+      Guid userIdentifier = RetrieveUserIdentifierClaimFromPrincipal(httpContext);
       activity?.SetMerchantContext(id);
-      activity?.SetTag("invoices.requested_count", invoiceIdentifiers.InvoiceIdentifiers.Count());
+      var requested = invoiceIdentifiers.InvoiceIdentifiers?.ToHashSet();
+      if (requested is null || requested.Count == 0)
+      {
+        return TypedResults.BadRequest("Provide at least one invoice identifier.");
+      }
+      if (userIdentifier == Guid.Empty) return TypedResults.NotFound();
+      activity?.SetTag("invoices.requested_count", requested.Count);
+
+      var ownedInvoices = (await invoiceManagementService.ReadInvoices(userIdentifier, writeScope.Token).ConfigureAwait(false)).ToArray();
+      var selected = ownedInvoices.Where(invoice => requested.Contains(invoice.id)).ToArray();
+      if (selected.Length == 0) return TypedResults.NotFound();
 
       var possibleMerchant = await invoiceManagementService.ReadMerchant(id, null, writeScope.Token).ConfigureAwait(false);
       if (possibleMerchant is null)
@@ -1595,42 +1506,25 @@ public static partial class InvoiceEndpoints
         return TypedResults.NotFound();
       }
 
-      var listOfValidInvoices = new HashSet<Invoice>();
-      foreach (var identifier in invoiceIdentifiers.InvoiceIdentifiers)
-      {
-        var potentialInvoice = await invoiceManagementService.ReadInvoice(identifier, null, writeScope.Token).ConfigureAwait(false);
-        if (potentialInvoice is not null)
-        {
-          listOfValidInvoices.Add(potentialInvoice);
-        }
-      }
+      activity?.SetTag("invoices.valid_count", selected.Length);
 
-      activity?.SetTag("invoices.valid_count", listOfValidInvoices.Count);
-
-      foreach (var invoice in listOfValidInvoices)
+      foreach (var invoice in selected.Where(invoice => invoice.MerchantReference != id))
       {
-        possibleMerchant.ReferencedInvoices.Add(invoice.id);
-        invoice.MerchantReference = possibleMerchant.id;
+        invoice.MerchantReference = id;
 
         await invoiceManagementService
           .UpdateInvoice(
             invoice.id,
-            userIdentifier: null,
+            userIdentifier,
             invoice,
             writeScope.Token)
           .ConfigureAwait(false);
       }
 
-      await invoiceManagementService
-        .UpdateMerchant(
-          possibleMerchant.id,
-          possibleMerchant.ParentCompanyId,
-          possibleMerchant,
-          cancellationToken: writeScope.Token)
-        .ConfigureAwait(false);
-
       activity?.RecordSuccess("Invoices added to merchant");
-      return TypedResults.Accepted($"/rest/v1/merchants/{id}", MerchantResponseDto.FromMerchant(possibleMerchant));
+      var linkedIds = ownedInvoices.Where(invoice => invoice.MerchantReference == id).Select(invoice => invoice.id).ToArray();
+      return TypedResults.Accepted($"/rest/v1/merchants/{id}",
+        MerchantResponseDto.FromMerchantForCaller(possibleMerchant, userIdentifier, linkedIds));
     }
     catch (OperationCanceledException)
     {
@@ -1663,52 +1557,38 @@ public static partial class InvoiceEndpoints
         activity.SetOperationType("Merchant.RemoveInvoices");
       }
 
-      _ = RetrieveUserIdentifierClaimFromPrincipal(httpContext);
+      Guid userIdentifier = RetrieveUserIdentifierClaimFromPrincipal(httpContext);
       activity?.SetMerchantContext(id);
-      activity?.SetTag("invoices.requested_count", invoiceIdentifiers.InvoiceIdentifiers.Count());
+      var requested = invoiceIdentifiers.InvoiceIdentifiers?.ToHashSet();
+      if (requested is null || requested.Count == 0)
+      {
+        return TypedResults.BadRequest("Provide at least one invoice identifier.");
+      }
+      activity?.SetTag("invoices.requested_count", requested.Count);
 
-      var possibleMerchant = await invoiceManagementService
-        .ReadMerchant(id, null, writeScope.Token)
+      var merchantWithInvoices = await ReadMerchantWithCallerInvoicesAsync(invoiceManagementService, id, userIdentifier, null, writeScope.Token)
         .ConfigureAwait(false);
-      if (possibleMerchant is null)
+      if (merchantWithInvoices is not { } related)
       {
         activity?.SetTag("result.found", false);
         return TypedResults.NotFound();
       }
 
-      var listOfInvoicesToBeRemoved = new List<Invoice>();
-      foreach (var identifier in invoiceIdentifiers.InvoiceIdentifiers)
-      {
-        var potentialInvoice = await invoiceManagementService.ReadInvoice(identifier, null, writeScope.Token).ConfigureAwait(false);
-        if (potentialInvoice is not null)
-        {
-          listOfInvoicesToBeRemoved.Add(potentialInvoice);
-        }
-      }
+      var selected = related.Invoices.Where(invoice => requested.Contains(invoice.id)).ToArray();
+      activity?.SetTag("invoices.removed_count", selected.Length);
 
-      activity?.SetTag("invoices.removed_count", listOfInvoicesToBeRemoved.Count);
-
-      foreach (var invoice in listOfInvoicesToBeRemoved)
+      foreach (var invoice in selected)
       {
-        possibleMerchant.ReferencedInvoices.Remove(invoice.id);
         invoice.MerchantReference = Guid.Empty;
 
         await invoiceManagementService
           .UpdateInvoice(
             invoice.id,
-            userIdentifier: null,
+            userIdentifier,
             invoice,
             writeScope.Token)
           .ConfigureAwait(false);
       }
-
-      await invoiceManagementService
-        .UpdateMerchant(
-          possibleMerchant.id,
-          possibleMerchant.ParentCompanyId,
-          possibleMerchant,
-          cancellationToken: writeScope.Token)
-        .ConfigureAwait(false);
 
       activity?.RecordSuccess("Invoices removed from merchant");
       return TypedResults.NoContent();
@@ -1740,41 +1620,22 @@ public static partial class InvoiceEndpoints
         activity.SetOperationType("Merchant.ReadProducts");
       }
 
-      _ = RetrieveUserIdentifierClaimFromPrincipal(httpContext);
+      Guid userIdentifier = RetrieveUserIdentifierClaimFromPrincipal(httpContext);
       activity?.SetMerchantContext(id);
 
-      var possibleMerchant = await invoiceManagementService
-        .ReadMerchant(id, null, cancellationToken)
+      var merchantWithInvoices = await ReadMerchantWithCallerInvoicesAsync(invoiceManagementService, id, userIdentifier, null, cancellationToken)
         .ConfigureAwait(false);
-      if (possibleMerchant is null)
+      if (merchantWithInvoices is not { } related)
       {
         activity?.SetTag("result.found", false);
         return TypedResults.NotFound();
       }
 
-      var listOfInvoices = possibleMerchant.ReferencedInvoices;
-      activity?.SetTag("merchant.invoices_count", listOfInvoices.Count);
+      var products = related.Invoices.SelectMany(invoice => invoice.Items).Select(ProductResponseDto.FromProduct).ToArray();
 
-      var listOfProducts = new List<ProductResponseDto>();
-
-      foreach (var identifier in listOfInvoices)
-      {
-        var potentialInvoice = await invoiceManagementService
-          .ReadInvoice(identifier, null, cancellationToken)
-          .ConfigureAwait(false);
-
-        if (potentialInvoice is not null)
-        {
-          foreach (var product in potentialInvoice.Items)
-          {
-            listOfProducts.Add(ProductResponseDto.FromProduct(product));
-          }
-        }
-      }
-
-      activity?.SetTag("result.count", listOfProducts.Count);
+      activity?.SetTag("result.count", products.Length);
       activity?.RecordSuccess();
-      return TypedResults.Ok(listOfProducts);
+      return TypedResults.Ok(products);
     }
     catch (OperationCanceledException)
     {

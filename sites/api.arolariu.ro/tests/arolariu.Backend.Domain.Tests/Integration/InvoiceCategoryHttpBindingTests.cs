@@ -1,6 +1,7 @@
 namespace arolariu.Backend.Domain.Tests.Integration;
 
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
@@ -14,6 +15,7 @@ using arolariu.Backend.Domain.Invoices.Brokers.DatabaseBroker;
 using arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices;
 using arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices.Exceptions.Inner;
 using arolariu.Backend.Domain.Invoices.DDD.Entities.Merchants;
+using arolariu.Backend.Domain.Invoices.DDD.Entities.Merchants.Exceptions.Inner;
 using arolariu.Backend.Common.DDD.ValueObjects;
 using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Categories;
 using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Products;
@@ -142,7 +144,6 @@ public sealed class InvoiceCategoryHttpBindingTests
     using var response = await client.PatchAsync(new Uri($"/rest/v1/invoices/{invoice.id}", UriKind.Relative), body).ConfigureAwait(false);
 
     Assert.AreEqual(HttpStatusCode.BadRequest, response.StatusCode);
-    Assert.IsEmpty(merchant.ReferencedInvoices);
     Assert.AreEqual(Guid.Empty, invoice.MerchantReference);
     management.Verify(service => service.ReadMerchant(merchant.id, null, It.IsAny<CancellationToken>()), Times.Never);
     management.Verify(service => service.UpdateInvoice(invoice.id, userId, It.IsAny<Invoice>(), It.IsAny<CancellationToken>()), Times.Never);
@@ -162,12 +163,11 @@ public sealed class InvoiceCategoryHttpBindingTests
     {
       id = Guid.NewGuid(), Name = "Shop", Description = "Store",
       Address = new ContactInformation { Address = "Example Street" }, Category = MerchantCategory.Supermarket,
-      ParentCompanyId = Guid.NewGuid(), ReferencedInvoices = [Guid.NewGuid()],
+      ParentCompanyId = Guid.NewGuid(),
     };
     var invoice = new Invoice { id = Guid.NewGuid(), UserIdentifier = userId, MerchantReference = merchant.id };
-    Guid originalLink = merchant.ReferencedInvoices.Single();
     var broker = new Mock<IDatabaseBroker>(MockBehavior.Strict);
-    broker.Setup(service => service.ReadInvoicesAsync(userId, It.IsAny<CancellationToken>())).ReturnsAsync([invoice]);
+    broker.Setup(service => service.ReadInvoicesAsync(userId, It.IsAny<CancellationToken>(), merchant.id)).ReturnsAsync([invoice]);
     broker.Setup(service => service.ReadMerchantAsync(merchant.id, null, It.IsAny<CancellationToken>())).ReturnsAsync(merchant);
     broker.Setup(service => service.UpdateMerchantAsync(merchant, merchant, It.IsAny<CancellationToken>())).ReturnsAsync(merchant);
     var log = NullLoggerFactory.Instance;
@@ -187,36 +187,40 @@ public sealed class InvoiceCategoryHttpBindingTests
     Assert.AreEqual(details ? "New name" : "Shop", merchant.Name);
     Assert.AreEqual(details ? "New description" : "Store", merchant.Description);
     if (!details) Assert.AreEqual("Example Street", merchant.Address.Address);
-    Assert.AreEqual(originalLink, merchant.ReferencedInvoices.Single());
+    Assert.AreEqual(invoice.id, json.RootElement.GetProperty("referencedInvoiceIds").EnumerateArray().Single().GetGuid());
     broker.Verify(service => service.UpdateMerchantAsync(merchant, merchant, It.IsAny<CancellationToken>()), Times.Once());
     broker.Verify(service => service.ReadMerchantAsync(merchant.id, null, It.IsAny<CancellationToken>()), Times.Once());
-    broker.Verify(service => service.ReadInvoicesAsync(userId, It.IsAny<CancellationToken>()), Times.Once());
+    broker.Verify(service => service.ReadInvoicesAsync(userId, It.IsAny<CancellationToken>(), merchant.id), Times.Once());
     broker.VerifyNoOtherCalls();
   }
 
-  /// <summary>Link and unlink writes persist the changed reverse references without replacing merchant details.</summary>
+  /// <summary>Link and unlink update only the invoice, including when a stale link conflicts.</summary>
   [TestMethod]
-  public async Task InvoiceMerchant_LinkAndUnlink_PersistReverseReferences()
+  [DataRow(true, true)]
+  [DataRow(false, true)]
+  [DataRow(true, false)]
+  public async Task InvoiceMerchant_LinkAndUnlink_OnlyWritesTheOwningInvoice(bool allowLink, bool allowUnlink)
   {
     Guid userId = Guid.NewGuid();
     Guid invoiceId = Guid.NewGuid();
-    Guid unrelatedLink = Guid.NewGuid();
     var merchant = new Merchant
     {
       Name = "Shop",
       ParentCompanyId = Guid.NewGuid(),
       Category = MerchantCategory.Supermarket,
-      ReferencedInvoices = [unrelatedLink],
     };
     var currentInvoice = new Invoice { id = invoiceId, UserIdentifier = userId };
     var broker = new Mock<IDatabaseBroker>(MockBehavior.Strict);
-    broker.Setup(service => service.ReadInvoiceAsync(invoiceId, userId, It.IsAny<CancellationToken>())).ReturnsAsync(() => currentInvoice);
+    broker.Setup(service => service.ReadInvoiceAsync(invoiceId, userId, It.IsAny<CancellationToken>()))
+      .ReturnsAsync(() => new Invoice { id = invoiceId, UserIdentifier = userId, MerchantReference = currentInvoice.MerchantReference });
     broker.Setup(service => service.UpdateInvoiceAsync(invoiceId, It.IsAny<Invoice>(), It.IsAny<CancellationToken>()))
-      .ReturnsAsync((Guid _, Invoice saved, CancellationToken _) => currentInvoice = saved);
+      .ReturnsAsync((Guid _, Invoice saved, CancellationToken _) =>
+      {
+        if (!(saved.MerchantReference == Guid.Empty ? allowUnlink : allowLink)) throw new InvoiceAlreadyExistsException(invoiceId);
+        return currentInvoice = saved;
+      });
     broker.Setup(service => service.ReadMerchantAsync(merchant.id, null, It.IsAny<CancellationToken>())).ReturnsAsync(merchant);
-    Guid[] savedLinks = [];
     broker.Setup(service => service.UpdateMerchantAsync(merchant, merchant, It.IsAny<CancellationToken>()))
-      .Callback((Merchant _, Merchant saved, CancellationToken _) => savedLinks = saved.ReferencedInvoices.ToArray())
       .ReturnsAsync(merchant);
     var log = NullLoggerFactory.Instance;
     var invoices = new InvoiceOrchestrationService(new InvoiceStorageFoundationService(broker.Object, log), log);
@@ -228,22 +232,192 @@ public sealed class InvoiceCategoryHttpBindingTests
     using var client = app.GetTestClient();
     using var body = new StringContent($$"""{"merchantReference":"{{merchant.id}}"}""", Encoding.UTF8, "application/json");
     using var linked = await client.PatchAsync(new Uri($"/rest/v1/invoices/{invoiceId}", UriKind.Relative), body).ConfigureAwait(false);
-    Assert.AreEqual(HttpStatusCode.Accepted, linked.StatusCode);
+    Assert.AreEqual(allowLink ? HttpStatusCode.Accepted : HttpStatusCode.Conflict, linked.StatusCode);
+    broker.Verify(service => service.UpdateMerchantAsync(merchant, merchant, It.IsAny<CancellationToken>()), Times.Never());
+    if (!allowLink)
+    {
+      Assert.AreEqual(Guid.Empty, currentInvoice.MerchantReference);
+      return;
+    }
     Assert.AreEqual(merchant.id, currentInvoice.MerchantReference);
-    CollectionAssert.AreEquivalent(new[] { unrelatedLink, invoiceId }, savedLinks);
 
     using var unlinked = await client.DeleteAsync(new Uri($"/rest/v1/invoices/{invoiceId}/merchant", UriKind.Relative)).ConfigureAwait(false);
-    Assert.AreEqual(HttpStatusCode.NoContent, unlinked.StatusCode);
-    Assert.AreEqual(Guid.Empty, currentInvoice.MerchantReference);
-    Assert.AreEqual(unrelatedLink, savedLinks.Single());
+    Assert.AreEqual(allowUnlink ? HttpStatusCode.NoContent : HttpStatusCode.Conflict, unlinked.StatusCode);
+    Assert.AreEqual(allowUnlink ? Guid.Empty : merchant.id, currentInvoice.MerchantReference);
     Assert.AreEqual(MerchantCategory.Supermarket, merchant.Category);
     Assert.AreEqual("Shop", merchant.Name);
-    broker.Verify(service => service.UpdateMerchantAsync(merchant, merchant, It.IsAny<CancellationToken>()), Times.Exactly(2));
+    broker.Verify(service => service.UpdateMerchantAsync(merchant, merchant, It.IsAny<CancellationToken>()), Times.Never());
+  }
+
+  /// <summary>A new link is not written until the merchant exists, and a stale link cannot overwrite the receipt.</summary>
+  [TestMethod]
+  [DataRow(false, false)]
+  [DataRow(true, false)]
+  [DataRow(true, true)]
+  public async Task CreateAndLinkMerchant_OnlyExposesACommittedLink(bool merchantCreated, bool invoiceSaved)
+  {
+    Guid userId = Guid.NewGuid();
+    Guid invoiceId = Guid.NewGuid();
+    var broker = new Mock<IDatabaseBroker>(MockBehavior.Strict);
+    var writes = new List<string>();
+    Guid createdMerchantId = Guid.Empty;
+    Guid savedMerchantReference = Guid.Empty;
+    broker.Setup(service => service.ReadInvoiceAsync(invoiceId, userId, It.IsAny<CancellationToken>()))
+      .ReturnsAsync(new Invoice { id = invoiceId, UserIdentifier = userId });
+    broker.Setup(service => service.CreateMerchantAsync(It.IsAny<Merchant>(), It.IsAny<CancellationToken>()))
+      .ReturnsAsync((Merchant merchant, CancellationToken _) =>
+      {
+        writes.Add("create merchant");
+        if (!merchantCreated) throw new MerchantAlreadyExistsException(merchant.id);
+        createdMerchantId = merchant.id;
+        return merchant;
+      });
+    if (merchantCreated)
+    {
+      broker.Setup(service => service.UpdateInvoiceAsync(invoiceId, It.IsAny<Invoice>(), It.IsAny<CancellationToken>()))
+        .ReturnsAsync((Guid _, Invoice saved, CancellationToken _) =>
+        {
+          writes.Add("replace invoice");
+          if (!invoiceSaved) throw new InvoiceAlreadyExistsException(invoiceId);
+          savedMerchantReference = saved.MerchantReference;
+          return saved;
+        });
+    }
+
+    await using var app = BuildStorageApp(broker.Object, userId);
+    await app.StartAsync().ConfigureAwait(false);
+    using var client = app.GetTestClient();
+    using var body = new StringContent("""{"name":"Shop","description":"Store","category":2001}""", Encoding.UTF8, "application/json");
+    using var response = await client.PostAsync(new Uri($"/rest/v1/invoices/{invoiceId}/merchant", UriKind.Relative), body).ConfigureAwait(false);
+
+    Assert.AreEqual(invoiceSaved ? HttpStatusCode.Created : HttpStatusCode.Conflict, response.StatusCode);
+    Assert.HasCount(merchantCreated ? 2 : 1, writes);
+    Assert.AreEqual("create merchant", writes[0]);
+    if (merchantCreated) Assert.AreEqual("replace invoice", writes[1]);
+    Assert.AreEqual(invoiceSaved ? createdMerchantId : Guid.Empty, savedMerchantReference);
+    if (invoiceSaved)
+    {
+      using var receipt = JsonDocument.Parse(await response.Content.ReadAsStringAsync().ConfigureAwait(false));
+      Assert.AreEqual(invoiceId, receipt.RootElement.GetProperty("referencedInvoiceIds").EnumerateArray().Single().GetGuid());
+    }
+  }
+
+  /// <summary>Merchant relationship responses use the caller's current persisted invoice links.</summary>
+  [TestMethod]
+  [DataRow(true)]
+  [DataRow(false)]
+  public async Task MerchantRelationships_OnlyOwnedLinksCanBeRead(bool isLinked)
+  {
+    Guid userId = Guid.NewGuid();
+    var merchant = new Merchant { Name = "Shop" };
+    var invoice = new Invoice
+    {
+      id = Guid.NewGuid(),
+      UserIdentifier = userId,
+      MerchantReference = merchant.id,
+      Items = [new Product { Name = "Milk", Category = ProductCategory.Milk }],
+    };
+    var broker = new Mock<IDatabaseBroker>(MockBehavior.Strict);
+    broker.Setup(service => service.ReadInvoicesAsync(userId, It.IsAny<CancellationToken>(), merchant.id))
+      .ReturnsAsync(isLinked ? [invoice] : []);
+    if (isLinked) broker.Setup(service => service.ReadMerchantAsync(merchant.id, null, It.IsAny<CancellationToken>())).ReturnsAsync(merchant);
+    var log = NullLoggerFactory.Instance;
+    var invoices = new InvoiceOrchestrationService(new InvoiceStorageFoundationService(broker.Object, log), log);
+    var merchants = new MerchantOrchestrationService(new MerchantStorageFoundationService(broker.Object, log), log);
+    var processing = new InvoiceProcessingService(invoices, merchants, Mock.Of<IAnalysisOrchestrationService>(), log);
+    await using var app = BuildApp(new InvoiceManagementService(processing, log), userId);
+    await app.StartAsync().ConfigureAwait(false);
+
+    using var client = app.GetTestClient();
+    string merchantPath = $"/rest/v1/merchants/{merchant.id}";
+    using var response = await client.GetAsync(new Uri(merchantPath, UriKind.Relative)).ConfigureAwait(false);
+    using var receipts = await client.GetAsync(new Uri($"{merchantPath}/invoices", UriKind.Relative)).ConfigureAwait(false);
+    using var products = await client.GetAsync(new Uri($"{merchantPath}/products", UriKind.Relative)).ConfigureAwait(false);
+    if (!isLinked)
+    {
+      Assert.AreEqual(HttpStatusCode.NotFound, response.StatusCode);
+      Assert.AreEqual(HttpStatusCode.NotFound, receipts.StatusCode);
+      Assert.AreEqual(HttpStatusCode.NotFound, products.StatusCode);
+      return;
+    }
+
+    Assert.AreEqual(HttpStatusCode.OK, response.StatusCode);
+    using var details = JsonDocument.Parse(await response.Content.ReadAsStringAsync().ConfigureAwait(false));
+    Assert.AreEqual(1, details.RootElement.GetProperty("referencedInvoiceCount").GetInt32());
+    Assert.AreEqual(invoice.id, details.RootElement.GetProperty("referencedInvoiceIds")[0].GetGuid());
+
+    Assert.AreEqual(HttpStatusCode.OK, receipts.StatusCode);
+    using var receiptList = JsonDocument.Parse(await receipts.Content.ReadAsStringAsync().ConfigureAwait(false));
+    Assert.AreEqual(invoice.id, receiptList.RootElement.EnumerateArray().Single().GetProperty("id").GetGuid());
+
+    Assert.AreEqual(HttpStatusCode.OK, products.StatusCode);
+    using var productList = JsonDocument.Parse(await products.Content.ReadAsStringAsync().ConfigureAwait(false));
+    Assert.AreEqual("Milk", productList.RootElement.EnumerateArray().Single().GetProperty("name").GetString());
+  }
+
+  /// <summary>A merchant with active links cannot be deleted; deleting an unlinked merchant does not edit invoices.</summary>
+  [TestMethod]
+  [DataRow(true, HttpStatusCode.Conflict)]
+  [DataRow(false, HttpStatusCode.NoContent)]
+  public async Task DeleteMerchant_ActiveLinksBlockDeletion(bool isLinked, HttpStatusCode expected)
+  {
+    Guid userId = Guid.NewGuid();
+    var merchant = new Merchant { Name = "Shop", ParentCompanyId = Guid.NewGuid() };
+    var broker = new Mock<IDatabaseBroker>(MockBehavior.Strict);
+    broker.Setup(service => service.ReadMerchantAsync(merchant.id, merchant.ParentCompanyId, It.IsAny<CancellationToken>()))
+      .ReturnsAsync(merchant);
+    broker.Setup(service => service.HasInvoicesForMerchantAsync(merchant.id, It.IsAny<CancellationToken>())).ReturnsAsync(isLinked);
+    if (!isLinked)
+    {
+      broker.Setup(service => service.DeleteMerchantAsync(merchant.id, merchant.ParentCompanyId, It.IsAny<CancellationToken>()))
+        .Returns(ValueTask.CompletedTask);
+    }
+
+    await using var app = BuildStorageApp(broker.Object, userId);
+    await app.StartAsync().ConfigureAwait(false);
+    using var client = app.GetTestClient();
+    using var response = await client.DeleteAsync(
+      new Uri($"/rest/v1/merchants/{merchant.id}?parentCompanyId={merchant.ParentCompanyId}", UriKind.Relative)).ConfigureAwait(false);
+
+    Assert.AreEqual(expected, response.StatusCode);
+    broker.Verify(service => service.DeleteMerchantAsync(merchant.id, merchant.ParentCompanyId, It.IsAny<CancellationToken>()),
+      isLinked ? Times.Never() : Times.Once());
+  }
+
+  /// <summary>Batch detach touches only selected invoices in the caller's current merchant set.</summary>
+  [TestMethod]
+  public async Task DetachMerchantInvoices_OnlyClearsSelectedOwnedLinks()
+  {
+    Guid userId = Guid.NewGuid();
+    var merchant = new Merchant { Name = "Shop" };
+    var invoice = new Invoice { id = Guid.NewGuid(), UserIdentifier = userId, MerchantReference = merchant.id };
+    var retained = new Invoice { id = Guid.NewGuid(), UserIdentifier = userId, MerchantReference = merchant.id };
+    var unrelated = Guid.NewGuid();
+    var broker = new Mock<IDatabaseBroker>(MockBehavior.Strict);
+    broker.Setup(service => service.ReadInvoicesAsync(userId, It.IsAny<CancellationToken>(), merchant.id)).ReturnsAsync([invoice, retained]);
+    broker.Setup(service => service.ReadMerchantAsync(merchant.id, null, It.IsAny<CancellationToken>())).ReturnsAsync(merchant);
+    broker.Setup(service => service.UpdateInvoiceAsync(invoice.id,
+      It.Is<Invoice>(edited => edited.MerchantReference == Guid.Empty), It.IsAny<CancellationToken>())).ReturnsAsync(invoice);
+
+    await using var app = BuildStorageApp(broker.Object, userId);
+    await app.StartAsync().ConfigureAwait(false);
+    using var client = app.GetTestClient();
+    using var request = new HttpRequestMessage(HttpMethod.Delete, new Uri($"/rest/v1/merchants/{merchant.id}/invoices", UriKind.Relative))
+    {
+      Content = new StringContent($$"""{"invoiceIdentifiers":["{{invoice.id}}","{{unrelated}}"]}""", Encoding.UTF8, "application/json"),
+    };
+    using var response = await client.SendAsync(request).ConfigureAwait(false);
+
+    Assert.AreEqual(HttpStatusCode.NoContent, response.StatusCode);
+    Assert.AreEqual(Guid.Empty, invoice.MerchantReference);
+    Assert.AreEqual(merchant.id, retained.MerchantReference);
+    broker.Verify(service => service.UpdateInvoiceAsync(invoice.id, invoice, It.IsAny<CancellationToken>()), Times.Once());
   }
 
   /// <summary>Edits commit once against the observed version and leave ambiguous/stale targets unchanged.</summary>
   [TestMethod]
   [DataRow("null", false, false, true, HttpStatusCode.Accepted)]
+  [DataRow("-1", false, false, true, HttpStatusCode.Accepted)]
   [DataRow("1100", false, false, true, HttpStatusCode.Accepted)]
   [DataRow("1100", false, true, true, HttpStatusCode.BadRequest)]
   [DataRow("1100", false, false, false, HttpStatusCode.Conflict)]
@@ -292,11 +466,19 @@ public sealed class InvoiceCategoryHttpBindingTests
     }
   }
 
+  private static WebApplication BuildStorageApp(IDatabaseBroker broker, Guid userId)
+  {
+    var log = NullLoggerFactory.Instance;
+    var invoices = new InvoiceOrchestrationService(new InvoiceStorageFoundationService(broker, log), log);
+    var merchants = new MerchantOrchestrationService(new MerchantStorageFoundationService(broker, log), log);
+    var processing = new InvoiceProcessingService(invoices, merchants, Mock.Of<IAnalysisOrchestrationService>(), log);
+    return BuildApp(new InvoiceManagementService(processing, log), userId);
+  }
+
   private static WebApplication BuildApp(IInvoiceManagementService management, Guid userId)
   {
     var builder = WebApplication.CreateBuilder();
     builder.WebHost.UseTestServer();
-  [DataRow("-1", false, false, true, HttpStatusCode.Accepted)]
     builder.Services.AddHttpContextAccessor();
     builder.Services.AddAuthentication();
     builder.Services.AddAuthorization();

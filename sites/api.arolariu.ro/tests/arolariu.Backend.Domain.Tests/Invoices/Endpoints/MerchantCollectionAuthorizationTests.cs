@@ -50,7 +50,6 @@ public sealed class MerchantCollectionAuthorizationTests
   {
     var callerIdentifier = Guid.NewGuid();
     var callerInvoiceIdentifier = Guid.NewGuid();
-    var unrelatedInvoiceIdentifier = Guid.NewGuid();
     var merchant = new Merchant
     {
       id = Guid.NewGuid(),
@@ -62,9 +61,6 @@ public sealed class MerchantCollectionAuthorizationTests
         ["integration.source"] = "shared import",
       },
     };
-    merchant.ReferencedInvoices.Add(callerInvoiceIdentifier);
-    merchant.ReferencedInvoices.Add(unrelatedInvoiceIdentifier);
-
     MerchantResponseDto response = MerchantResponseDto.FromMerchantForCaller(
       merchant,
       callerIdentifier,

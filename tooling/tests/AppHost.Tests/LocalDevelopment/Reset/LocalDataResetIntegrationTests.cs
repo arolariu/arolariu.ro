@@ -380,8 +380,8 @@ public sealed class LocalDataResetIntegrationTests
     {
       string? id = merchant.Value<string>("id");
       JObject[] referenced = invoices.Where(invoice => invoice.Value<string>("MerchantReference") == id).ToArray();
-      CollectionAssert.AreEquivalent(referenced.Select(invoice => invoice.Value<string>("id")).ToArray(),
-        merchant["ReferencedInvoices"]?.Values<string>().ToArray() ?? []);
+      Assert.IsNull(merchant["ReferencedInvoices"]);
+      Assert.IsNotEmpty(referenced);
       Assert.IsTrue(referenced.All(invoice => invoice.Value<string>("UserIdentifier") == merchant.Value<string>("CreatedBy")));
     }
     Assert.IsFalse(invoices.Any(invoice => invoice.Value<string>("id") == "custom-invoice"));

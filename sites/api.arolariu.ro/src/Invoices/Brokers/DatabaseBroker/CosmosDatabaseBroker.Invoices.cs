@@ -116,21 +116,30 @@ public partial class CosmosDatabaseBroker
   }
 
   /// <inheritdoc/>
-  public async ValueTask<IEnumerable<Invoice>> ReadInvoicesAsync(Guid userIdentifier, CancellationToken cancellationToken)
+  public async ValueTask<IEnumerable<Invoice>> ReadInvoicesAsync(
+    Guid userIdentifier, CancellationToken cancellationToken, Guid? merchantIdentifier = null)
   {
+    const string allInvoices = "SELECT * FROM c WHERE c.UserIdentifier = @userIdentifier";
+    const string merchantInvoices = allInvoices
+      + " AND c.MerchantReference = @merchantIdentifier AND (NOT IS_DEFINED(c.IsSoftDeleted) OR c.IsSoftDeleted = false)";
+    string statement = merchantIdentifier.HasValue ? merchantInvoices : allInvoices;
     using var activity = InvoicePackageTracing.StartActivity(nameof(ReadInvoicesAsync));
     activity?
       .SetLayerContext("Broker", nameof(CosmosDatabaseBroker))
       .SetCosmosDbContext("primary", "invoices", "query", userIdentifier.ToString())
       .SetUserContext(userIdentifier)
-      .SetDbStatement("SELECT * FROM c WHERE c.UserIdentifier = @userIdentifier");
+      .SetDbStatement(statement);
 
     var database = CosmosClient.GetDatabase("primary");
     var container = database.GetContainer("invoices");
     var partitionKey = new PartitionKey(userIdentifier.ToString());
 
-    var query = new QueryDefinition("SELECT * FROM c WHERE c.UserIdentifier = @userIdentifier")
+    var query = new QueryDefinition(statement)
       .WithParameter("@userIdentifier", userIdentifier);
+    if (merchantIdentifier is { } merchant)
+    {
+      query.WithParameter("@merchantIdentifier", merchant.ToString());
+    }
 
     var invoices = new List<Invoice>();
     var totalRequestCharge = 0.0;
@@ -154,6 +163,38 @@ public partial class CosmosDatabaseBroker
     activity?.RecordSuccess();
 
     return filteredInvoices;
+  }
+
+  /// <inheritdoc/>
+  public async ValueTask<bool> HasInvoicesForMerchantAsync(Guid merchantIdentifier, CancellationToken cancellationToken)
+  {
+    const string statement = """
+      SELECT TOP 1 VALUE c.id FROM c
+      WHERE c.MerchantReference = @merchantIdentifier AND (NOT IS_DEFINED(c.IsSoftDeleted) OR c.IsSoftDeleted = false)
+      """;
+    using var activity = InvoicePackageTracing.StartActivity(nameof(HasInvoicesForMerchantAsync));
+    activity?
+      .SetLayerContext("Broker", nameof(CosmosDatabaseBroker))
+      .SetCosmosDbContext("primary", "invoices", "query")
+      .SetDbStatement(statement);
+
+    var container = CosmosClient.GetDatabase("primary").GetContainer("invoices");
+    var query = new QueryDefinition(statement).WithParameter("@merchantIdentifier", merchantIdentifier.ToString());
+    using var iterator = container.GetItemQueryIterator<string>(query);
+    var totalRequestCharge = 0.0;
+    bool found = false;
+    while (!found && iterator.HasMoreResults)
+    {
+      cancellationToken.ThrowIfCancellationRequested();
+      var response = await TranslateInvoiceCosmosAsync(() => iterator.ReadNextAsync(cancellationToken)).ConfigureAwait(false);
+      totalRequestCharge += response.RequestCharge;
+      found = response.Count > 0;
+    }
+
+    activity?.SetCosmosDbRequestCharge(totalRequestCharge);
+    InvoiceMetrics.RecordCosmosDbCharge(totalRequestCharge, "query", "invoices");
+    activity?.RecordSuccess();
+    return found;
   }
 
   /// <inheritdoc/>

@@ -34,7 +34,8 @@ internal abstract class WorkerManagementServiceBase : IInvoiceManagementService
 
   public Task CreateInvoice(Invoice invoice, Guid? userIdentifier, CancellationToken cancellationToken) => Task.FromException(Unsupported());
   public Task<Invoice> ReadInvoice(Guid identifier, Guid? userIdentifier, CancellationToken cancellationToken) => Task.FromException<Invoice>(Unsupported());
-  public Task<IEnumerable<Invoice>> ReadInvoices(Guid userIdentifier, CancellationToken cancellationToken) => Task.FromException<IEnumerable<Invoice>>(Unsupported());
+  public Task<IEnumerable<Invoice>> ReadInvoices(Guid userIdentifier, CancellationToken cancellationToken, Guid? merchantIdentifier = null) =>
+    Task.FromException<IEnumerable<Invoice>>(Unsupported());
   public Task<Invoice> UpdateInvoice(Guid invoiceIdentifier, Guid? userIdentifier, Invoice updatedInvoice, CancellationToken cancellationToken) => Task.FromException<Invoice>(Unsupported());
   public Task DeleteInvoice(Guid identifier, Guid? userIdentifier, CancellationToken cancellationToken) => Task.FromException(Unsupported());
   public Task DeleteInvoices(Guid userIdentifier, CancellationToken cancellationToken) => Task.FromException(Unsupported());

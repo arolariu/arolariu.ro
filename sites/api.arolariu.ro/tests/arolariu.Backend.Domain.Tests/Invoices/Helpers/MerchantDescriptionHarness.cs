@@ -110,7 +110,6 @@ internal sealed class MerchantDescriptionHarness
         Website = string.Empty,
       },
       ParentCompanyId = Guid.Empty,
-      ReferencedInvoices = [Guid.NewGuid()],
     };
 
   private static Merchant CreateSparseMerchant() =>
@@ -121,7 +120,6 @@ internal sealed class MerchantDescriptionHarness
       Category = null,
       Address = new ContactInformation(),
       ParentCompanyId = Guid.Empty,
-      ReferencedInvoices = [],
     };
 
   private static object CreateMerchantDescriptionOutput(string description)

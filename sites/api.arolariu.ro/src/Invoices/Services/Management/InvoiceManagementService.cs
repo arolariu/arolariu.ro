@@ -79,16 +79,18 @@ public sealed partial class InvoiceManagementService : IInvoiceManagementService
   /// <summary>Reads every invoice in one user partition through Processing.</summary>
   /// <param name="userIdentifier">The user partition to query.</param>
   /// <param name="cancellationToken">The token used to cancel the query.</param>
+  /// <param name="merchantIdentifier">The optional merchant reference to match.</param>
   /// <returns>The invoices visible in the partition.</returns>
   /// <exception cref="arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices.Exceptions.Outer.Management.InvoiceManagementDependencyException">
   /// Thrown when the persistence dependency cannot complete the query.
   /// </exception>
   /// <inheritdoc/>
-  public async Task<IEnumerable<Invoice>> ReadInvoices(Guid userIdentifier, CancellationToken cancellationToken) =>
+  public async Task<IEnumerable<Invoice>> ReadInvoices(
+    Guid userIdentifier, CancellationToken cancellationToken, Guid? merchantIdentifier = null) =>
     await TryCatchAsync(async () =>
     {
       using var activity = InvoicePackageTracing.StartActivity(nameof(ReadInvoices));
-      return await invoiceProcessingService.ReadInvoices(userIdentifier, cancellationToken).ConfigureAwait(false);
+      return await invoiceProcessingService.ReadInvoices(userIdentifier, cancellationToken, merchantIdentifier).ConfigureAwait(false);
     }).ConfigureAwait(false);
 
   /// <summary>Replaces client-editable invoice state through Processing.</summary>

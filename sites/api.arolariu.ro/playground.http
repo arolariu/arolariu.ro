@@ -365,8 +365,8 @@ Content-Type: application/json
 ###
 
 ### Delete Merchant
-# Permanently delete a merchant.
-# Returns: 204 No Content on success.
+# Soft-delete a merchant with no active invoices.
+# Returns: 204 No Content, or 409 Conflict if an invoice still references it.
 DELETE {{baseUrl}}/rest/{{apiVersion}}/merchants/{{merchantId}}?parentCompanyId=aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee
 Authorization: Bearer {{authToken}}
 
@@ -375,8 +375,8 @@ Authorization: Bearer {{authToken}}
 ###############################################################################
 
 ### Get Merchant Invoices
-# Retrieve all invoices associated with a merchant.
-# Returns: Array of Invoice objects.
+# Retrieve the caller's active invoices associated with a merchant.
+# Returns: Array of Invoice objects, or 404 if the caller has no associated invoices.
 GET {{baseUrl}}/rest/{{apiVersion}}/merchants/{{merchantId}}/invoices
 Authorization: Bearer {{authToken}}
 Accept: application/json
@@ -384,7 +384,7 @@ Accept: application/json
 ###
 
 ### Add Invoice to Merchant
-# Associate existing invoice(s) with a merchant.
+# Associate existing invoice(s) owned by the caller with a merchant.
 # Provide array of invoice identifiers.
 PATCH {{baseUrl}}/rest/{{apiVersion}}/merchants/{{merchantId}}/invoices
 Authorization: Bearer {{authToken}}
@@ -397,7 +397,7 @@ Content-Type: application/json
 ###
 
 ### Remove Invoice from Merchant
-# Disassociate invoice(s) from a merchant.
+# Disassociate the caller's invoice(s) currently linked to this merchant.
 # The invoices themselves are not deleted.
 DELETE {{baseUrl}}/rest/{{apiVersion}}/merchants/{{merchantId}}/invoices
 Authorization: Bearer {{authToken}}
@@ -410,7 +410,7 @@ Content-Type: application/json
 ###
 
 ### Get Merchant Products
-# Retrieve all products across all invoices for a merchant.
+# Retrieve products across the caller's active invoices for a merchant.
 # Useful for aggregate reporting and analytics.
 GET {{baseUrl}}/rest/{{apiVersion}}/merchants/{{merchantId}}/products
 Authorization: Bearer {{authToken}}

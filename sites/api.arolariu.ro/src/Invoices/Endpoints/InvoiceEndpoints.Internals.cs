@@ -5,10 +5,14 @@ using System.Diagnostics;
 using System.Linq;
 using System.Security.Claims;
 using System.Threading;
+using System.Threading.Tasks;
 
 using arolariu.Backend.Common.Http;
 using arolariu.Backend.Common.Telemetry.Tracing;
 using arolariu.Backend.Domain.Invoices;
+using arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices;
+using arolariu.Backend.Domain.Invoices.DDD.Entities.Merchants;
+using arolariu.Backend.Domain.Invoices.Services.Management;
 
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -17,6 +21,18 @@ using static arolariu.Backend.Common.Telemetry.Tracing.ActivityGenerators;
 
 public static partial class InvoiceEndpoints
 {
+  private static async Task<(Merchant Merchant, Invoice[] Invoices)?> ReadMerchantWithCallerInvoicesAsync(
+    IInvoiceManagementService management, Guid merchantIdentifier, Guid userIdentifier, Guid? parentCompanyId, CancellationToken cancellationToken)
+  {
+    if (userIdentifier == Guid.Empty || merchantIdentifier == Guid.Empty) return null;
+
+    var invoices = (await management.ReadInvoices(userIdentifier, cancellationToken, merchantIdentifier).ConfigureAwait(false)).ToArray();
+    if (invoices.Length == 0) return null;
+
+    var merchant = await management.ReadMerchant(merchantIdentifier, parentCompanyId, cancellationToken).ConfigureAwait(false);
+    return merchant is null ? null : (merchant, invoices);
+  }
+
   /// <summary>
   /// Produces the response and telemetry for a cancelled request, distinguishing a server-side
   /// timeout (a fault worth alerting on) from a client disconnect (not a fault at all).

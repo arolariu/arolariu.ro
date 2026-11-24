@@ -435,20 +435,6 @@ public sealed class EntityTests
   }
 
   /// <summary>
-  /// Verifies Merchant has default empty ReferencedInvoices.
-  /// </summary>
-  [TestMethod]
-  public void Merchant_DefaultReferencedInvoices_IsEmpty()
-  {
-    // Arrange
-    var merchant = new Merchant();
-
-    // Assert
-    Assert.IsNotNull(merchant.ReferencedInvoices);
-    Assert.IsEmpty(merchant.ReferencedInvoices);
-  }
-
-  /// <summary>
   /// Verifies Merchant has default empty AdditionalMetadata.
   /// </summary>
   [TestMethod]

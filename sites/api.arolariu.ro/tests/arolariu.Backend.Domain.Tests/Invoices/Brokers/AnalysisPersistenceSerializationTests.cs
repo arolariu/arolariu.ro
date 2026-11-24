@@ -41,6 +41,20 @@ public sealed class AnalysisPersistenceSerializationTests
     Assert.DoesNotContain("StorageETag", System.Text.Json.JsonSerializer.Serialize(invoice), StringComparison.Ordinal);
   }
 
+  /// <summary>A merchant query can read its version without retaining the retired list in future writes.</summary>
+  [TestMethod]
+  public void MerchantQuery_LegacyReverseList_IsIgnoredAndRevisionIsReadOnly()
+  {
+    const string json = """{"_etag":"merchant-revision","ReferencedInvoices":["11111111-1111-4111-8111-111111111111"]}""";
+    Merchant merchant = JsonConvert.DeserializeObject<Merchant>(json)!;
+
+    Assert.AreEqual("merchant-revision", merchant.StorageETag);
+    var stored = JObject.FromObject(merchant);
+    Assert.IsNull(stored["_etag"]);
+    Assert.IsNull(stored["ReferencedInvoices"]);
+    Assert.DoesNotContain("StorageETag", System.Text.Json.JsonSerializer.Serialize(merchant), StringComparison.Ordinal);
+  }
+
   #region Invoice
 
   /// <summary>

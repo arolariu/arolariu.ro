@@ -90,7 +90,7 @@ using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Categories;
 /// <code>
 /// // Converting from domain entity
 /// Merchant domainMerchant = await merchantService.GetMerchantAsync(merchantId);
-/// MerchantResponseDto dto = MerchantResponseDto.FromMerchant(domainMerchant);
+/// MerchantResponseDto dto = MerchantResponseDto.FromMerchantForCaller(domainMerchant, callerId, callerInvoiceIds);
 ///
 /// // Displaying merchant summary
 /// Console.WriteLine($"Merchant: {dto.Name} ({dto.Category})");
@@ -121,50 +121,6 @@ public readonly record struct MerchantResponseDto(
   [property: JsonPropertyName("numberOfUpdates")] int NumberOfUpdates)
 {
   /// <summary>
-  /// Creates a <see cref="MerchantResponseDto"/> from a domain <see cref="Merchant"/> entity.
-  /// </summary>
-  /// <remarks>
-  /// <para>
-  /// <b>Factory Pattern:</b> Preferred method for creating DTOs from domain entities.
-  /// Ensures consistent mapping and defensive copying of collections.
-  /// </para>
-  /// <para>
-  /// <b>Defensive Copying:</b> The <see cref="ReferencedInvoiceIds"/> and
-  /// <see cref="AdditionalMetadata"/> are copied to prevent external mutation.
-  /// </para>
-  /// </remarks>
-  /// <param name="merchant">
-  /// The domain merchant entity to convert. Must not be null.
-  /// </param>
-  /// <returns>
-  /// A new <see cref="MerchantResponseDto"/> instance with all fields mapped from the domain entity.
-  /// </returns>
-  /// <exception cref="ArgumentNullException">
-  /// Thrown when <paramref name="merchant"/> is null.
-  /// </exception>
-  public static MerchantResponseDto FromMerchant(Merchant merchant)
-  {
-    ArgumentNullException.ThrowIfNull(merchant);
-    return new(
-      Id: merchant.id,
-      Name: merchant.Name,
-      Description: merchant.Description,
-      Category: merchant.Category,
-      Address: ContactInformationResponseDto.FromContactInformation(merchant.Address),
-      ParentCompanyId: merchant.ParentCompanyId,
-      ReferencedInvoiceCount: merchant.ReferencedInvoices.Count,
-      ReferencedInvoiceIds: merchant.ReferencedInvoices.ToList().AsReadOnly(),
-      AdditionalMetadata: new Dictionary<string, string>(merchant.AdditionalMetadata),
-      IsImportant: merchant.IsImportant,
-      IsSoftDeleted: merchant.IsSoftDeleted,
-      CreatedAt: merchant.CreatedAt,
-      CreatedBy: merchant.CreatedBy,
-      LastUpdatedAt: merchant.LastUpdatedAt,
-      LastUpdatedBy: merchant.LastUpdatedBy,
-      NumberOfUpdates: merchant.NumberOfUpdates);
-  }
-
-  /// <summary>
   /// Creates a caller-scoped merchant response without disclosing cross-tenant relationships or audit principals.
   /// </summary>
   /// <remarks>
@@ -186,16 +142,12 @@ public readonly record struct MerchantResponseDto(
   public static MerchantResponseDto FromMerchantForCaller(
     Merchant merchant,
     Guid callerIdentifier,
-    IReadOnlySet<Guid> callerInvoiceIdentifiers)
+    IReadOnlyCollection<Guid> callerInvoiceIdentifiers)
   {
     ArgumentNullException.ThrowIfNull(merchant);
     ArgumentNullException.ThrowIfNull(callerInvoiceIdentifiers);
 
-    var visibleInvoiceIdentifiers = merchant.ReferencedInvoices
-      .Where(callerInvoiceIdentifiers.Contains)
-      .Distinct()
-      .ToList()
-      .AsReadOnly();
+    var visibleInvoiceIdentifiers = callerInvoiceIdentifiers.Distinct().ToList().AsReadOnly();
 
     return new(
       Id: merchant.id,

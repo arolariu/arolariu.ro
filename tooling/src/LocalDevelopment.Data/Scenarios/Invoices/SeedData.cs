@@ -104,9 +104,6 @@ internal static class SeedData
         utcAnchorDate,
         oldestInvoiceDays.GetValueOrDefault(definition.Key)))
       .ToList();
-    Dictionary<Guid, Merchant> merchantsById =
-      merchants.ToDictionary(merchant => merchant.id);
-
     var invoices = new List<Invoice>(manifest.Invoices.Count);
 
     foreach (SeedInvoiceDefinition definition in manifest.Invoices)
@@ -122,7 +119,6 @@ internal static class SeedData
         manifest.Version,
         utcAnchorDate);
       invoices.Add(invoice);
-      merchantsById[merchantDefinition.Id].ReferencedInvoices.Add(invoice.id);
     }
 
     List<MaterializedSeedBlob> blobs = manifest.Blobs

@@ -252,7 +252,6 @@ public sealed class LocalScenarioBootstrapPersistenceTests
       Assert.AreEqual(original.CreatedBy, actual.CreatedBy);
       Assert.AreEqual(original.Address, actual.Address);
       Assert.AreEqual(original.Category, actual.Category);
-      CollectionAssert.AreEquivalent(original.ReferencedInvoices.ToArray(), actual.ReferencedInvoices.ToArray());
     }
   }
 

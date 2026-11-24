@@ -388,7 +388,6 @@ public sealed class MerchantStorageFoundationServiceTests
   {
     // Arrange
     var updatedMerchant = MerchantTestDataBuilder.CreateRandomMerchant();
-    updatedMerchant.ReferencedInvoices.Add(Guid.NewGuid());
 
     mockBroker
         .Setup(b => b.UpdateMerchantAsync(updatedMerchant, updatedMerchant, It.IsAny<CancellationToken>()))

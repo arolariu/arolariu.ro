@@ -522,23 +522,6 @@ public sealed class InvoiceEdgeCaseTests
   #region Merchant Edge Cases
 
   /// <summary>
-  /// Verifies Merchant handles many referenced invoices.
-  /// </summary>
-  [TestMethod]
-  public void Merchant_ManyReferencedInvoices_HandlesCorrectly()
-  {
-    // Arrange
-    var invoiceIds = Enumerable.Range(0, 500).Select(_ => Guid.NewGuid()).ToList();
-    var merchant = new Merchant
-    {
-      ReferencedInvoices = invoiceIds
-    };
-
-    // Assert
-    Assert.AreEqual(500, merchant.ReferencedInvoices.Count);
-  }
-
-  /// <summary>
   /// Verifies Merchant handles empty name.
   /// </summary>
   [TestMethod]

@@ -88,7 +88,14 @@ public interface IInvoiceOrchestrationService
   /// <param name="userIdentifier">Tenant / partition scope.</param>
   /// <param name="cancellationToken">Cancellation token to abort the operation (required).</param>
   /// <returns>Sequence of invoices (empty if none).</returns>
-  Task<IEnumerable<Invoice>> ReadAllInvoiceObjects(Guid userIdentifier, CancellationToken cancellationToken);
+  /// <param name="merchantIdentifier">The optional merchant reference to match.</param>
+  Task<IEnumerable<Invoice>> ReadAllInvoiceObjects(Guid userIdentifier, CancellationToken cancellationToken, Guid? merchantIdentifier = null);
+
+  /// <summary>Checks for any active invoice referencing a merchant.</summary>
+  /// <param name="merchantIdentifier">The merchant reference to match.</param>
+  /// <param name="cancellationToken">The token used to cancel the query.</param>
+  /// <returns>Whether an active reference exists.</returns>
+  Task<bool> HasInvoicesForMerchant(Guid merchantIdentifier, CancellationToken cancellationToken);
   #endregion
 
   #region Update Invoice API

@@ -11,7 +11,7 @@ using System.Diagnostics.CodeAnalysis;
 /// <remarks>
 /// <para>
 /// <b>Purpose:</b> Provides a batch operation interface for adding or removing
-/// invoice references from a merchant's tracked collection.
+/// the merchant reference on the caller's own invoices.
 /// </para>
 /// <para>
 /// <b>Immutability:</b> This is a <c>readonly record struct</c> ensuring thread-safety
@@ -20,15 +20,13 @@ using System.Diagnostics.CodeAnalysis;
 /// <para>
 /// <b>HTTP Method Semantics:</b>
 /// <list type="bullet">
-///   <item><description><b>PATCH:</b> Adds the specified invoice identifiers to the merchant's
-///   <c>ReferencedInvoices</c> collection. Duplicates are ignored.</description></item>
-///   <item><description><b>DELETE:</b> Removes the specified invoice identifiers from the
-///   merchant's <c>ReferencedInvoices</c> collection. Missing IDs are ignored.</description></item>
+///   <item><description><b>PATCH:</b> Sets the merchant reference on the selected invoices. Duplicates are ignored.</description></item>
+///   <item><description><b>DELETE:</b> Clears the reference on selected invoices currently linked to this merchant.</description></item>
 /// </list>
 /// </para>
 /// <para>
-/// <b>Validation:</b> Invoice identifiers are validated for existence in the handler
-/// layer. Non-existent invoices result in partial success with warnings.
+/// <b>Validation:</b> Only active invoices in the caller's partition are eligible. Unknown identifiers do not
+/// grant access to other invoices. Each selected invoice commits independently.
 /// </para>
 /// <para>
 /// <b>Use Cases:</b>

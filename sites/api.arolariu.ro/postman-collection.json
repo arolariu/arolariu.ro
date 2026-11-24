@@ -1622,7 +1622,7 @@
                 }
               ]
             },
-            "description": "Get all invoices associated with a merchant.",
+            "description": "Get active invoices owned by the caller and associated with the merchant. Returns 404 if none are linked.",
             "url": {
               "raw": "{{baseUrl}}/rest/v1/merchants/{{merchantIdentifier}}/invoices",
               "host": ["{{baseUrl}}"],
@@ -1650,7 +1650,7 @@
                 }
               ]
             },
-            "description": "Associate an invoice with the merchant.",
+            "description": "Associate an invoice owned by the caller with the merchant.",
             "url": {
               "raw": "{{baseUrl}}/rest/v1/merchants/{{merchantIdentifier}}/invoices",
               "host": ["{{baseUrl}}"],
@@ -1720,7 +1720,7 @@
                 }
               ]
             },
-            "description": "Get all products across all invoices for this merchant.",
+            "description": "Get the products on the caller's active invoices for this merchant.",
             "url": {
               "raw": "{{baseUrl}}/rest/v1/merchants/{{merchantIdentifier}}/products",
               "host": ["{{baseUrl}}"],
@@ -1928,7 +1928,7 @@
                 }
               ]
             },
-            "description": "Delete the test merchant. Expected: 204 No Content.",
+            "description": "Soft-delete the unlinked test merchant. Expected: 204 No Content; active invoice references prevent deletion.",
             "url": {
               "raw": "{{baseUrl}}/rest/v1/merchants/{{merchantIdentifier}}?parentCompanyId=aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee",
               "host": ["{{baseUrl}}"],

@@ -195,6 +195,9 @@ public sealed class InvoiceEndpointsStatusCodeTests
   private static Mock<IInvoiceManagementService> CreateServiceMockThatThrowsOnMerchantRead(Exception exceptionToThrow)
   {
     var mock = new Mock<IInvoiceManagementService>(MockBehavior.Strict);
+    mock.Setup(s => s.ReadInvoices(It.IsAny<Guid>(), It.IsAny<CancellationToken>(), It.Is<Guid?>(id => id.HasValue)))
+      .ReturnsAsync((Guid userId, CancellationToken _, Guid? merchantId) =>
+        [new Invoice { id = Guid.NewGuid(), UserIdentifier = userId, MerchantReference = merchantId.GetValueOrDefault() }]);
     mock
       .Setup(s => s.ReadMerchant(It.IsAny<Guid>(), It.IsAny<Guid?>(), It.IsAny<CancellationToken>()))
       .ThrowsAsync(exceptionToThrow);
@@ -765,13 +768,11 @@ public sealed class InvoiceEndpointsStatusCodeTests
   {
     Guid userId = Guid.NewGuid();
     Guid callerInvoiceId = Guid.NewGuid();
-    Guid otherUserInvoiceId = Guid.NewGuid();
     Guid otherUserId = Guid.NewGuid();
     Guid merchantId = Guid.NewGuid();
     var merchant = new Merchant
     {
       id = merchantId,
-      ReferencedInvoices = [callerInvoiceId, otherUserInvoiceId],
       CreatedBy = otherUserId,
     };
     typeof(Merchant)
@@ -817,13 +818,11 @@ public sealed class InvoiceEndpointsStatusCodeTests
   {
     Guid userId = Guid.NewGuid();
     Guid callerInvoiceId = Guid.NewGuid();
-    Guid otherUserInvoiceId = Guid.NewGuid();
     Guid otherUserId = Guid.NewGuid();
     Guid merchantId = Guid.NewGuid();
     var merchant = new Merchant
     {
       id = merchantId,
-      ReferencedInvoices = [callerInvoiceId, otherUserInvoiceId],
       CreatedBy = otherUserId,
     };
     var callerInvoice = new Invoice
@@ -840,7 +839,7 @@ public sealed class InvoiceEndpointsStatusCodeTests
         It.IsAny<CancellationToken>()))
       .ReturnsAsync(merchant);
     service
-      .Setup(candidate => candidate.ReadInvoices(userId, It.IsAny<CancellationToken>()))
+      .Setup(candidate => candidate.ReadInvoices(userId, It.IsAny<CancellationToken>(), merchantId))
       .ReturnsAsync([callerInvoice]);
 
     IResult result = await InvoiceEndpoints.RetrieveSpecificMerchantAsync(
@@ -866,7 +865,6 @@ public sealed class InvoiceEndpointsStatusCodeTests
   {
     Guid userId = Guid.NewGuid();
     Guid invoiceId = Guid.NewGuid();
-    Guid otherUserInvoiceId = Guid.NewGuid();
     Guid otherUserId = Guid.NewGuid();
     Guid merchantId = Guid.NewGuid();
     var invoice = new Invoice
@@ -878,7 +876,6 @@ public sealed class InvoiceEndpointsStatusCodeTests
     var merchant = new Merchant
     {
       id = merchantId,
-      ReferencedInvoices = [invoiceId, otherUserInvoiceId],
       CreatedBy = otherUserId,
     };
     var service = new Mock<IInvoiceManagementService>(MockBehavior.Strict);
@@ -1117,7 +1114,8 @@ public sealed class InvoiceEndpointsStatusCodeTests
     service
       .Setup(candidate => candidate.ReadInvoices(
         userId,
-        It.IsAny<CancellationToken>()))
+        It.IsAny<CancellationToken>(),
+        merchantId))
       .ReturnsAsync([new Invoice { id = Guid.NewGuid(), UserIdentifier = userId, MerchantReference = merchantId }]);
     service
       .Setup(candidate => candidate.ReadMerchant(
@@ -1164,8 +1162,9 @@ public sealed class InvoiceEndpointsStatusCodeTests
     service
       .Setup(candidate => candidate.ReadInvoices(
         userId,
-        It.IsAny<CancellationToken>()))
-      .ReturnsAsync([new Invoice { id = Guid.NewGuid(), UserIdentifier = userId, MerchantReference = Guid.NewGuid() }]);
+        It.IsAny<CancellationToken>(),
+        merchantId))
+      .ReturnsAsync([]);
 
     IResult result = await InvoiceEndpoints.UpdateSpecificMerchantAsync(
       service.Object,
