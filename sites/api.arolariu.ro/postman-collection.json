@@ -2,7 +2,7 @@
   "$schema": "https://schema.postman.com/collection/json/v2.1.0/draft-04/collection.json",
   "info": {
     "name": "api.arolariu.ro",
-    "description": "Comprehensive E2E test suite for the arolariu.ro backend API.\n\nThis collection provides complete coverage of:\n- Invoice CRUD operations and sub-resources (products, merchant, scans, metadata)\n- Merchant CRUD operations and relationships\n- Invoice analysis endpoint\n- Authentication endpoints\n- Health check monitoring\n\n**Configuration:**\n- Set `baseUrl` to target environment (https://api.arolariu.ro, http://localhost:5000)\n- Set `authToken` to valid JWT Bearer token for authenticated requests\n- Set `userIdentifier` to match the authenticated user's GUID\n- Variables `invoiceIdentifier` and `merchantIdentifier` are auto-populated during test execution\n\n**Test Environments:**\n- Local: baseUrl=http://localhost:5000\n- Production: baseUrl=https://api.arolariu.ro\n\n**Test Flow:**\nThe collection is designed to run sequentially, building state progressively:\n1. Health checks verify API availability\n2. Invoice lifecycle (create \u2192 read \u2192 update \u2192 delete)\n3. Sub-resource management (products, merchant, scans, metadata)\n4. Merchant operations and relationships\n5. Cleanup operations to reset test state\n\n**Security:**\n- All endpoints require Bearer token authentication\n- Rate limiting is enforced on health check endpoint\n- CORS is configured for cross-origin requests",
+    "description": "Comprehensive E2E test suite for the arolariu.ro backend API.\n\nThis collection covers:\n- Invoice CRUD operations and sub-resources (products, merchant, scans, metadata)\n- Merchant creation, reads, and owner edits\n- Invoice analysis endpoint\n- Authentication endpoints\n- Health check monitoring\n\n**Configuration:**\n- Set `baseUrl` to the approved test environment\n- Set `authToken` to a valid JWT Bearer token for authenticated requests\n- Set `userIdentifier` to match the authenticated user's GUID\n- Variables `invoiceIdentifier` and `merchantIdentifier` are auto-populated during test execution\n\n**Test Flow:**\nThe collection is designed to run sequentially, building state progressively:\n1. Health checks verify API availability\n2. Invoice lifecycle (create \u2192 read \u2192 update \u2192 delete)\n3. Sub-resource management (products, merchant, scans, metadata)\n4. Merchant operations; receipt PATCH manages associations\n5. Invoice cleanup; created merchants remain in the isolated test environment\n\n**Security:**\n- Authenticated requests use Bearer tokens\n- Rate limiting is enforced on health check endpoint\n- CORS is configured for cross-origin requests",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
     "_postman_id": "api-arolariu-ro-backend-tests",
     "version": "2.0.0"
@@ -1369,7 +1369,7 @@
     },
     {
       "name": "Merchants",
-      "description": "Standalone Merchant CRUD operations",
+      "description": "Merchant creation, caller-scoped reads, and creator edits",
       "item": [
         {
           "name": "27 - Get All Merchants",

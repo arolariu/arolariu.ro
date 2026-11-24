@@ -19,7 +19,7 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 [TestClass]
 public sealed class CategoryOpenApiTests
 {
-  /// <summary>Category updates document both clear forms without widening the response contract.</summary>
+  /// <summary>Product category updates accept an optional integer without widening the response enum.</summary>
   [TestMethod]
   [DataRow("/openapi/v1.json")]
   [DataRow("/swagger/v1/swagger.json")]
