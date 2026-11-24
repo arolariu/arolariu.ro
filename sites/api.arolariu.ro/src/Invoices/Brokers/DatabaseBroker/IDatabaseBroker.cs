@@ -186,7 +186,7 @@ public interface IDatabaseBroker
   /// <summary>
   /// Replaces a merchant using the revision and partition of its original snapshot.
   /// </summary>
-  /// <param name="currentMerchant">Current persisted merchant (not modified).</param>
+  /// <param name="currentMerchant">The original merchant instance returned by this Broker's read operation.</param>
   /// <param name="updatedMerchant">Updated merchant snapshot to persist.</param>
   /// <param name="cancellationToken">Cancellation token to abort the operation (required).</param>
   /// <returns>The persisted merchant.</returns>

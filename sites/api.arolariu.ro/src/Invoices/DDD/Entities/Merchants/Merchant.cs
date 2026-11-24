@@ -19,16 +19,10 @@ using arolariu.Backend.Domain.Invoices.Serialization;
 /// <para><b>Relationships:</b> Not an aggregate root for invoices (invoices own the relationship by storing <c>MerchantReference</c>). This type acts
 /// as a referenced entity; active invoice relationships are queried from those source records.</para>
 /// <para><b>Thread-safety:</b> Not thread-safe — treat instances as single-thread scoped.</para>
-/// <para><b>Soft Delete:</b> Not currently implementing soft-delete flags at this level; deletion semantics handled at persistence/broker layer if added.</para>
+/// <para><b>Soft Delete:</b> The inherited flag is respected when reading existing data.</para>
 /// </remarks>
 public sealed class Merchant : NamedEntity<Guid>
 {
-  internal string? StorageETag { get; set; }
-
-  // Read the Cosmos system field on query results without writing it into the document.
-  [Newtonsoft.Json.JsonProperty("_etag")]
-  private string? CosmosETag { set => StorageETag = value; }
-
   /// <summary>Immutable merchant identity.</summary>
   /// <remarks>
   /// <para>Generated via <see cref="Guid.NewGuid()"/>; no ordering guarantees. Consider Version 7 GUID if chronological sorting becomes a requirement.</para>

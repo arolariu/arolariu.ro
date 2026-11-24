@@ -19,6 +19,8 @@ using Moq;
 
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
+using Newtonsoft.Json.Linq;
+
 /// <summary>
 /// Comprehensive test suite for <see cref="CosmosDatabaseBroker"/> merchant operations following project test standards.
 /// Covers CRUD operations, exception pathways and query filtering scenarios. Method names follow
@@ -132,25 +134,8 @@ It.IsAny<System.Threading.CancellationToken>()
   {
     ArgumentNullException.ThrowIfNull(expectedMerchant);
     // Given
-    var merchantList = new List<Merchant> { expectedMerchant };
-    var feedResponseMock = new Mock<FeedResponse<Merchant>>();
-    feedResponseMock.Setup(response => response.Resource).Returns(merchantList);
-    feedResponseMock.Setup(response => response.GetEnumerator())
-      .Returns(merchantList.GetEnumerator());
-    feedResponseMock.Setup(response => response.StatusCode).Returns(HttpStatusCode.OK);
-
-    var mockFeedIterator = new Mock<FeedIterator<Merchant>>();
-    mockFeedIterator.Setup(iterator => iterator.HasMoreResults).Returns(true);
-    mockFeedIterator.Setup(iterator => iterator.ReadNextAsync(It.IsAny<System.Threading.CancellationToken>()))
-      .ReturnsAsync(feedResponseMock.Object)
-      .Callback(() => mockFeedIterator.Setup(iterator => iterator.HasMoreResults).Returns(false));
-
-    mockMerchantsContainer.Setup(container => container.GetItemQueryIterator<Merchant>(
-        It.IsAny<QueryDefinition>(),
-        It.IsAny<string>(),
-        It.IsAny<QueryRequestOptions>()
-      ))
-      .Returns(mockFeedIterator.Object);
+    mockMerchantsContainer.Setup(container => container.GetItemQueryIterator<JObject>(It.IsAny<QueryDefinition>(), null, null))
+      .Returns(QueryResult(JObject.FromObject(expectedMerchant)));
 
     // When
     var actualMerchant = await merchantNoSqlBroker.ReadMerchantAsync(expectedMerchant.id, null, CancellationToken.None);
@@ -167,24 +152,8 @@ It.IsAny<System.Threading.CancellationToken>()
   {
     // Given
     var merchantId = Guid.NewGuid();
-    var emptyList = new List<Merchant>();
-    var feedResponseMock = new Mock<FeedResponse<Merchant>>();
-    feedResponseMock.Setup(response => response.Resource).Returns(emptyList);
-    feedResponseMock.Setup(response => response.GetEnumerator()).Returns(emptyList.GetEnumerator());
-    feedResponseMock.Setup(response => response.StatusCode).Returns(HttpStatusCode.NotFound);
-
-    var mockFeedIterator = new Mock<FeedIterator<Merchant>>();
-    mockFeedIterator.Setup(iterator => iterator.HasMoreResults).Returns(true);
-    mockFeedIterator.Setup(iterator => iterator.ReadNextAsync(It.IsAny<System.Threading.CancellationToken>()))
-          .ReturnsAsync(feedResponseMock.Object)
-          .Callback(() => mockFeedIterator.Setup(iterator => iterator.HasMoreResults).Returns(false));
-
-    mockMerchantsContainer.Setup(container => container.GetItemQueryIterator<Merchant>(
-        It.IsAny<QueryDefinition>(),
-        It.IsAny<string>(),
-   It.IsAny<QueryRequestOptions>()
-      ))
-      .Returns(mockFeedIterator.Object);
+    mockMerchantsContainer.Setup(container => container.GetItemQueryIterator<JObject>(It.IsAny<QueryDefinition>(), null, null))
+      .Returns(QueryResult());
 
     // When
     var actualMerchant = await merchantNoSqlBroker.ReadMerchantAsync(merchantId, null, CancellationToken.None);
@@ -238,6 +207,49 @@ It.IsAny<System.Threading.CancellationToken>()
 
   #region UpdateMerchantAsync Tests
 
+  /// <summary>An edit must use the version of the queried entity it was based on, not a later read of the same ID.</summary>
+  [TestMethod]
+  public async Task UpdateMerchantAsync_OlderQuerySnapshot_UsesItsOwnRevision()
+  {
+    var merchant = MerchantTestDataBuilder.CreateRandomMerchant();
+    const string before = "\"before\"";
+    const string after = "\"after\"";
+    var firstRow = JObject.FromObject(merchant);
+    firstRow["_etag"] = before;
+    var secondRow = JObject.FromObject(merchant);
+    secondRow["_etag"] = after;
+    mockMerchantsContainer.SetupSequence(container => container.GetItemQueryIterator<JObject>(
+        It.Is<QueryDefinition>(query => query.QueryText.Contains("c.id = @merchantIdentifier", StringComparison.Ordinal)),
+        null, null))
+      .Returns(QueryResult(firstRow))
+      .Returns(QueryResult(secondRow));
+    var original = await merchantNoSqlBroker.ReadMerchantAsync(merchant.id, null, CancellationToken.None);
+    var current = await merchantNoSqlBroker.ReadMerchantAsync(merchant.id, null, CancellationToken.None);
+    Assert.IsNotNull(original);
+    Assert.IsNotNull(current);
+    Assert.AreNotSame(original, current);
+    Assert.AreEqual(merchant.Category, original.Category);
+    var partition = new PartitionKey(merchant.ParentCompanyId.ToString());
+    mockMerchantsContainer.Setup(container => container.ReplaceItemAsync(
+        original, original.id.ToString(), partition,
+        It.Is<ItemRequestOptions>(options => options.IfMatchEtag == before), CancellationToken.None))
+      .ThrowsAsync(new CosmosException("Stale version", HttpStatusCode.PreconditionFailed, 0, "", 0));
+
+    await Assert.ThrowsExactlyAsync<MerchantAlreadyExistsException>(() =>
+      merchantNoSqlBroker.UpdateMerchantAsync(original, original, CancellationToken.None).AsTask());
+  }
+
+  private static FeedIterator<JObject> QueryResult(params JObject[] rows)
+  {
+    var page = new Mock<FeedResponse<JObject>>();
+    page.Setup(response => response.Resource).Returns(rows);
+    page.Setup(response => response.GetEnumerator()).Returns(() => ((IEnumerable<JObject>)rows).GetEnumerator());
+    var iterator = new Mock<FeedIterator<JObject>>();
+    iterator.SetupSequence(feed => feed.HasMoreResults).Returns(true).Returns(false);
+    iterator.Setup(feed => feed.ReadNextAsync(It.IsAny<CancellationToken>())).ReturnsAsync(page.Object);
+    return iterator.Object;
+  }
+
   /// <summary>A merchant edit cannot replace state saved after its original read.</summary>
   [TestMethod]
   public async Task UpdateMerchantAsync_ObservedVersionChanged_RejectsStaleWrite()
@@ -275,7 +287,12 @@ It.IsAny<System.Threading.CancellationToken>()
       id: originalMerchant.id,
       parentCompanyId: originalMerchant.ParentCompanyId,
       name: "Updated Name");
-    originalMerchant.StorageETag = MerchantRevision;
+    var partition = new PartitionKey(originalMerchant.ParentCompanyId.ToString());
+    var read = new Mock<ItemResponse<Merchant>>();
+    read.Setup(response => response.Resource).Returns(originalMerchant);
+    read.Setup(response => response.ETag).Returns(MerchantRevision);
+    mockMerchantsContainer.Setup(container => container.ReadItemAsync<Merchant>(originalMerchant.id.ToString(), partition, null, CancellationToken.None))
+      .ReturnsAsync(read.Object);
 
     var itemResponseMock = new Mock<ItemResponse<Merchant>>();
     itemResponseMock.Setup(response => response.Resource).Returns(updatedMerchant);
@@ -290,6 +307,7 @@ It.IsAny<System.Threading.CancellationToken>()
       .ReturnsAsync(itemResponseMock.Object);
 
     // When
+    _ = await merchantNoSqlBroker.ReadMerchantAsync(originalMerchant.id, originalMerchant.ParentCompanyId, CancellationToken.None);
     var actualMerchant = await merchantNoSqlBroker.UpdateMerchantAsync(originalMerchant, updatedMerchant, CancellationToken.None);
 
     // Then
