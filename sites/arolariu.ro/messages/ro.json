@@ -2971,6 +2971,13 @@
           },
           "csv": {
             "description": "Descarcă articolele ca foaie de calcul",
+            "headers": {
+              "category": "Categoria produsului",
+              "name": "Denumirea produsului",
+              "price": "Preț",
+              "quantity": "Cantitate",
+              "total": "Total"
+            },
             "title": "Exportă ca CSV"
           },
           "csvError": "Eroare la exportul CSV",

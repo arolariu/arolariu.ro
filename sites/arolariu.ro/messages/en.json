@@ -2971,6 +2971,13 @@
           },
           "csv": {
             "description": "Download items as spreadsheet",
+            "headers": {
+              "category": "Product category",
+              "name": "Product Name",
+              "price": "Price",
+              "quantity": "Quantity",
+              "total": "Total"
+            },
             "title": "Export as CSV"
           },
           "csvError": "Failed to export CSV",

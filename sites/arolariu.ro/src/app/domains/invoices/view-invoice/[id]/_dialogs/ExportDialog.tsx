@@ -42,6 +42,10 @@ import {InvoicePDF} from "../_components/export/InvoicePDF";
 import {useInvoiceContext} from "../_context/InvoiceContext";
 import styles from "./ExportDialog.module.scss";
 
+function quoteCsvField(value: string): string {
+  return `"${value.replaceAll('"', '""')}"`;
+}
+
 /**
  * Export Dialog component with multiple export format options.
  *
@@ -54,7 +58,7 @@ import styles from "./ExportDialog.module.scss";
  *    - Automatic download with filename: `invoice-{name}-{date}.pdf`
  *
  * 2. **CSV Export**: Exports invoice items as CSV
- *    - Headers: Product Name, Quantity, Price, Total, Category
+ *    - Localized headers in a fixed order: product name, quantity, unit price, total, product category
  *    - One row per product
  *    - Automatic download with filename: `invoice-{id}.csv`
  *
@@ -95,9 +99,9 @@ export function ExportDialog(): React.JSX.Element {
    * Handles exporting invoice items as CSV.
    *
    * @remarks
-   * **CSV Format:**
+   * **CSV Format (English):**
    * ```
-   * Product Name,Quantity,Price,Total,Category
+   * "Product Name","Quantity","Price","Total","Product category"
    * "Product 1",2,10.50,21.00,"Category A"
    * "Product 2",1,5.99,5.99,"Category B"
    * ```
@@ -110,18 +114,23 @@ export function ExportDialog(): React.JSX.Element {
    */
   const handleExportCSV = useCallback((): void => {
     try {
-      // CSV Headers
-      const headers = ["Product Name", "Quantity", "Price", "Total", t((m) => m.categories.ui.product)];
-      const csvRows = [headers.join(",")];
+      const headers = [
+        t((m) => m.pages.invoices.viewInvoice.export.csv.headers.name),
+        t((m) => m.pages.invoices.viewInvoice.export.csv.headers.quantity),
+        t((m) => m.pages.invoices.viewInvoice.export.csv.headers.price),
+        t((m) => m.pages.invoices.viewInvoice.export.csv.headers.total),
+        t((m) => m.pages.invoices.viewInvoice.export.csv.headers.category),
+      ];
+      const csvRows = [headers.map(quoteCsvField).join(",")];
 
       // CSV Rows - one per product
       for (const item of invoice.items) {
         const row = [
-          `"${item.name.replaceAll('"', '""')}"`, // Escape quotes in product name
+          quoteCsvField(item.name),
           item.quantity.toString(),
           formatAmount(item.price),
           formatAmount(item.totalPrice),
-          `"${productCategoryLabel(t, item.category).replaceAll('"', '""')}"`,
+          quoteCsvField(productCategoryLabel(t, item.category)),
         ];
         csvRows.push(row.join(","));
       }

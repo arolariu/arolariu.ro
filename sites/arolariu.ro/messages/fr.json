@@ -2971,6 +2971,13 @@
           },
           "csv": {
             "description": "Télécharger les articles sous forme de feuille de calcul",
+            "headers": {
+              "category": "Catégorie du produit",
+              "name": "Nom du produit",
+              "price": "Prix",
+              "quantity": "Quantité",
+              "total": "Total"
+            },
             "title": "Exporter en CSV"
           },
           "csvError": "Échec de l'export CSV",
