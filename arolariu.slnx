@@ -1,16 +1,45 @@
 <Solution>
+  <Folder Name="/docs/">
+    <File Path="docs/README.md" />
+  </Folder>
+  <Folder Name="/infra/Azure/Bicep/">
+    <File Path="infra/Azure/Bicep/DEPLOYMENT_GUIDE.md" />
+    <File Path="infra/Azure/Bicep/main.bicep" />
+  </Folder>
+  <Folder Name="/infra/Local/">
+    <File Path="infra/Local/readme.md" />
+  </Folder>
+  <Folder Name="/packages/components/">
+    <File Path="packages/components/README.md" />
+    <File Path="packages/components/package.json" />
+    <File Path="packages/components/rslib.config.ts" />
+    <File Path="packages/components/src/index.ts" />
+  </Folder>
   <Folder Name="/root/">
     <File Path=".editorconfig" />
     <File Path=".filenesting.json" />
     <File Path=".gitignore" />
+    <File Path="AGENTS.md" />
+    <File Path="DEVELOPMENT.md" />
+    <File Path="README.md" />
+    <File Path="nx.json" />
+    <File Path="package-lock.json" />
+    <File Path="package.json" />
+    <File Path="tsconfig.json" />
+  </Folder>
+  <Folder Name="/scripts/">
+    <File Path="scripts/README.md" />
+    <File Path="scripts/cli.ts" />
+  </Folder>
+  <Folder Name="/sites/" />
+  <Folder Name="/sites/api.arolariu.ro/">
     <File Path="sites/api.arolariu.ro/.dockerignore" />
     <File Path="sites/api.arolariu.ro/Controllers_Breakpoints.xml" />
     <File Path="sites/api.arolariu.ro/Directory.Build.props" />
     <File Path="sites/api.arolariu.ro/Directory.Packages.props" />
     <File Path="sites/api.arolariu.ro/Dockerfile" />
+    <File Path="sites/api.arolariu.ro/README.md" />
   </Folder>
-  <Folder Name="/sites/" />
-  <Folder Name="/sites/api.arolariu.ro/" />
   <Folder Name="/sites/api.arolariu.ro/src/">
     <Project Path="sites/api.arolariu.ro/src/Common/arolariu.Backend.Common.csproj" />
     <Project Path="sites/api.arolariu.ro/src/Core.Auth/arolariu.Backend.Core.Auth.csproj" />
@@ -27,11 +56,21 @@
       <BuildDependency Project="sites/api.arolariu.ro/src/Invoices/arolariu.Backend.Domain.Invoices.csproj" />
     </Project>
   </Folder>
+  <Folder Name="/sites/exp.arolariu.ro/">
+    <File Path="sites/exp.arolariu.ro/README.md" />
+    <File Path="sites/exp.arolariu.ro/main.py" />
+    <File Path="sites/exp.arolariu.ro/pyproject.toml" />
+  </Folder>
   <Folder Name="/sites/frontend/">
     <Project Path="sites/arolariu.ro/arolariu.ro.esproj" />
     <Project Path="sites/cv.arolariu.ro/cv.arolariu.ro.esproj" />
     <Project Path="sites/docs.arolariu.ro/docs.arolariu.ro.esproj" />
     <Project Path="sites/status.arolariu.ro/status.arolariu.ro.esproj" />
+  </Folder>
+  <Folder Name="/tooling/">
+    <File Path="tooling/Directory.Build.props" />
+    <File Path="tooling/Directory.Packages.props" />
+    <File Path="tooling/README.md" />
   </Folder>
   <Folder Name="/tooling/src/">
     <Project Path="tooling/src/AppHost/AppHost.csproj" />
