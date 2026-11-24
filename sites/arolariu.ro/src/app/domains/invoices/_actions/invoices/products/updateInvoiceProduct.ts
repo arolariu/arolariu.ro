@@ -52,7 +52,7 @@ type ServerActionOutputType = ServerActionResult<Readonly<Product>>;
  * Updates one existing product in an invoice's line items.
  *
  * @remarks
- * **Authorization and transport:** Validates the invoice GUID and update shape,
+ * **Authorization and transport:** Validates the invoice GUID,
  * obtains a server-derived BFF JWT, then sends a bounded `PUT` request to
  * `/rest/v1/invoices/{id}/products`. The API checks the caller's access to the
  * invoice and requires exactly one `originalProductName` match using
@@ -108,14 +108,6 @@ export async function updateInvoiceProduct({invoiceId, payload}: ServerActionInp
       // Step 0. Validate input is correct
       logWithTrace("info", "Validating input for updateInvoiceProduct", {invoiceId}, "server");
       validateStringIsGuidType(invoiceId, "invoiceId");
-
-      if (
-        typeof payload.originalProductName !== "string"
-        || payload.originalProductName.trim() === ""
-        || (payload.updatedProduct === undefined && typeof payload.category === "undefined")
-      ) {
-        return createHttpErrorResult(400, "A product name and update are required.");
-      }
 
       // Step 1. Fetch user JWT for authentication
       addSpanEvent("bff.user.jwt.fetch.start");

@@ -2,6 +2,7 @@ import {describe, expect, it} from "vitest";
 import {TestDataBuilder} from "../../../../../../tests/helpers";
 import {fetchAtHttp} from "../../../../../../tests/setup/server-http";
 import {analyzeMerchant} from "../analysis/analyzeMerchant";
+import {updateInvoiceProduct} from "../invoices/products/updateInvoiceProduct";
 import {fetchMerchant} from "./fetchMerchant";
 import {fetchMerchants} from "./fetchMerchants";
 import {updateMerchant} from "./updateMerchant";
@@ -38,5 +39,32 @@ describe("merchant HTTP failures", () => {
 
     expect(fetchAtHttp).toHaveBeenCalledTimes(1);
     expect(result).toEqual({success: false, error: {code, status, message}});
+  });
+
+  describe("update action validation belongs to the API", () => {
+    it("forwards an empty merchant edit and preserves the API's 400", async () => {
+      fetchAtHttp.mockResolvedValueOnce(new Response(null, {status: 400}));
+      const input = {merchantId} as Parameters<typeof updateMerchant>[0];
+
+      const result = await updateMerchant(input);
+
+      expect(fetchAtHttp).toHaveBeenCalledExactlyOnceWith(
+        expect.stringMatching(/\/rest\/v1\/merchants\//u),
+        expect.objectContaining({method: "PUT", body: "{}"}),
+      );
+      expect(result).toMatchObject({success: false, error: {code: "VALIDATION_ERROR", status: 400}});
+    });
+
+    it("forwards an invalid product selector and preserves the API's 400", async () => {
+      fetchAtHttp.mockResolvedValueOnce(new Response(null, {status: 400}));
+
+      const result = await updateInvoiceProduct({invoiceId: merchantId, payload: {originalProductName: " ", category: null}});
+
+      expect(fetchAtHttp).toHaveBeenCalledExactlyOnceWith(
+        expect.stringMatching(/\/products$/u),
+        expect.objectContaining({method: "PUT", body: JSON.stringify({originalProductName: " ", category: -1})}),
+      );
+      expect(result).toMatchObject({success: false, error: {code: "VALIDATION_ERROR", status: 400}});
+    });
   });
 });

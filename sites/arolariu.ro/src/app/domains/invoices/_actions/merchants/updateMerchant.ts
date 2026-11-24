@@ -39,10 +39,6 @@ export async function updateMerchant({merchantId, merchant, category}: ServerAct
       logWithTrace("info", "Validating merchant identifier is valid...", {merchantId}, "server");
       validateStringIsGuidType(merchantId, "merchantId");
 
-      if (merchant === undefined && typeof category === "undefined") {
-        return createHttpErrorResult(400, "A merchant update is required.");
-      }
-
       addSpanEvent("bff.user.jwt.fetch.start");
       logWithTrace("info", "Fetching BFF user JWT for authentication...", {}, "server");
       const {userJwt: authToken} = await fetchBFFUserFromAuthService();
