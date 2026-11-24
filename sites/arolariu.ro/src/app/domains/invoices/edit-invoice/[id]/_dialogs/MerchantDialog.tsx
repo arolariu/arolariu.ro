@@ -74,7 +74,7 @@ export default function MerchantDialog(): React.JSX.Element | null {
     saveInFlightRef.current = currentDialog;
     setEdit({dialog: currentDialog, saved, draft: value, saving: true});
     try {
-      const result = await updateMerchant({merchantId: merchant.id, category: value});
+      const result = await updateMerchant({merchantId: merchant.id, merchant: {category: value}});
       if (result.success) {
         useMerchantsStore.getState().updateEntity(merchant.id, {category: result.data.category});
         router.refresh();

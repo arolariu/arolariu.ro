@@ -6,7 +6,7 @@
  *
  * @remarks
  * Supports category-only changes and full edits to one existing product line.
- * Both use the invoice API's conditional replacement of the original revision.
+ * Both save the edited receipt in one replacement.
  *
  * @see {@link addInvoiceProduct} - Sibling action for adding products
  * @see {@link deleteInvoiceProduct} - Sibling action for deleting products
@@ -18,7 +18,7 @@ import {addSpanEvent, logWithTrace, withSpan} from "@/instrumentation.server";
 import {fetchBFFUserFromAuthService} from "@/lib/actions/user/fetchUser";
 import {validateStringIsGuidType} from "@/lib/utils.generic";
 import {createErrorResult, createHttpErrorResult, fetchWithTimeout, type ServerActionResult} from "@/lib/utils.server";
-import type {Product, ProductCategory} from "@/types/invoices";
+import type {Product} from "@/types/invoices";
 import {parseProductResponse, serializeCategoryUpdate, tryParse} from "@/types/invoices/transport";
 import {revalidatePath} from "next/cache";
 
@@ -27,16 +27,18 @@ import {revalidatePath} from "next/cache";
  *
  * @remarks
  * The `originalProductName` is the current, complete name, even when a full
- * edit renames the line. A category-only edit does not send `updatedProduct`.
+ * edit renames the line. A category-only edit supplies only `updatedProduct.category`.
  */
 type ServerActionInputType = Readonly<{
   /** Valid GUID identifying the containing invoice. */
   invoiceId: string;
-  payload: Readonly<{originalProductName: string}>
-    & (
-      | Readonly<{category: ProductCategory | null; updatedProduct?: never}>
-      | Readonly<{category?: ProductCategory | null; updatedProduct: Product}>
-    );
+  payload: Readonly<{
+    originalProductName: string;
+    updatedProduct: Readonly<
+      Pick<Product, "category">
+        & Partial<Pick<Product, "name" | "quantity" | "quantityUnit" | "productCode" | "price" | "allergenAssessment">>
+    >;
+  }>;
 }>;
 
 /**
@@ -57,14 +59,13 @@ type ServerActionOutputType = ServerActionResult<Readonly<Product>>;
  * `/rest/v1/invoices/{id}/products`. The API checks the caller's access to the
  * invoice and requires exactly one `originalProductName` match using
  * `StringComparison.OrdinalIgnoreCase`. The replacement stays in the same
- * position and commits only if the read revision is still current.
+ * position.
  *
  * **Request body:** A category-only update sends `{originalProductName, category}`
  * and preserves the other product fields. A full edit flattens `updatedProduct`
  * to its editable fields (including `name`, `quantity`, and `price`), not a nested
- * object or a copy of server-owned metadata. Passing a category ID assigns it,
- * a null input sends `-1` to clear it, and omission on a full edit preserves it.
- * The category inside `updatedProduct` is never sent as write intent.
+ * object or a copy of server-owned metadata. The category comes from `updatedProduct`;
+ * null sends the API's `-1` clear command.
  *
  * **Result and side effects:** The API responds with `202 Accepted` and the
  * updated product. After parsing the response, this action revalidates both
@@ -72,10 +73,10 @@ type ServerActionOutputType = ServerActionResult<Readonly<Product>>;
  * upstream request.
  *
  * **Failure behavior:** An invalid body or ambiguous name yields HTTP 400, a
- * missing product or invoice yields 404, and a stale revision yields 409.
+ * missing product or invoice yields 404.
  * The action preserves the API status, maps malformed successful responses to
- * `SERVER_ERROR`, and does not retry. Refresh before making another attempt
- * after a conflict or uncertain network outcome.
+ * `SERVER_ERROR`, and does not retry. Refresh before retrying an uncertain
+ * network outcome.
  *
  * @param input - The invoice GUID and the product selector with its update.
  * @returns The parsed saved product or a structured failure.
@@ -84,13 +85,13 @@ type ServerActionOutputType = ServerActionResult<Readonly<Product>>;
  * ```ts
  * await updateInvoiceProduct({
  *   invoiceId: "11111111-1111-4111-8111-111111111111",
- *   payload: {originalProductName: "Milk 1L", category: 1014},
+ *   payload: {originalProductName: "Milk 1L", updatedProduct: {category: 1014}},
  * });
  * ```
  *
  * @example
  * ```ts
- * // Edit price without copying a stale category from the loaded product.
+ * // Edit the product's price while keeping its current category.
  * await updateInvoiceProduct({
  *   invoiceId: "11111111-1111-4111-8111-111111111111",
  *   payload: {originalProductName: product.name, updatedProduct: {...product, price: 8.99}},
@@ -115,20 +116,16 @@ export async function updateInvoiceProduct({invoiceId, payload}: ServerActionInp
       const {userJwt: authToken} = await fetchBFFUserFromAuthService();
       addSpanEvent("bff.user.jwt.fetch.complete");
 
-      const {originalProductName, updatedProduct, category} = payload;
+      const {originalProductName, updatedProduct} = payload;
       const requestBody = {
         originalProductName,
-        ...(category !== undefined ? {category} : {}),
-        ...(updatedProduct === undefined
-          ? {}
-          : {
-              name: updatedProduct.name,
-              quantity: updatedProduct.quantity,
-              quantityUnit: updatedProduct.quantityUnit,
-              productCode: updatedProduct.productCode,
-              price: updatedProduct.price,
-              allergenAssessment: updatedProduct.allergenAssessment,
-            }),
+        name: updatedProduct?.name,
+        category: updatedProduct?.category,
+        quantity: updatedProduct?.quantity,
+        quantityUnit: updatedProduct?.quantityUnit,
+        productCode: updatedProduct?.productCode,
+        price: updatedProduct?.price,
+        allergenAssessment: updatedProduct?.allergenAssessment,
       };
 
       addSpanEvent("bff.request.update-invoice-product.start");

@@ -12,11 +12,13 @@ import {addSpanEvent, logWithTrace, withSpan} from "@/instrumentation.server";
 import {fetchBFFUserFromAuthService} from "@/lib/actions/user/fetchUser";
 import {validateStringIsGuidType} from "@/lib/utils.generic";
 import {createErrorResult, createHttpErrorResult, fetchWithTimeout, type ServerActionResult} from "@/lib/utils.server";
-import type {Merchant, MerchantCategory} from "@/types/invoices";
+import type {Merchant} from "@/types/invoices";
 import {parseMerchantResponse, serializeCategoryUpdate, tryParse} from "@/types/invoices/transport";
 
-type ServerActionInputType = Readonly<{merchantId: string}>
-  & (Readonly<{category: MerchantCategory | null; merchant?: never}> | Readonly<{category?: MerchantCategory | null; merchant: Merchant}>);
+type ServerActionInputType = Readonly<{
+  merchantId: string;
+  merchant: Readonly<Pick<Merchant, "category"> & Partial<Pick<Merchant, "name" | "description" | "address">>>;
+}>;
 
 type ServerActionOutputType = ServerActionResult<Readonly<Merchant>>;
 
@@ -28,10 +30,10 @@ type ServerActionOutputType = ServerActionResult<Readonly<Merchant>>;
  * **Endpoint**: `/rest/v1/merchants/{merchantId}`
  * **Response**: `202 Accepted` with the updated merchant body.
  *
- * @param input - The merchant ID and the edit. Omit category to preserve it; null sends the API's `-1` clear command.
+ * @param input - The merchant ID and edited merchant fields. A null category sends the API's `-1` clear command.
  * @returns A result object containing the updated merchant, or an error result.
  */
-export async function updateMerchant({merchantId, merchant, category}: ServerActionInputType): ServerActionOutputType {
+export async function updateMerchant({merchantId, merchant}: ServerActionInputType): ServerActionOutputType {
   console.info(">>> Executing server action {{updateMerchant}}, with:", {merchantId, merchantName: merchant?.name});
 
   return withSpan("api.actions.invoices.updateMerchant", async () => {
@@ -47,15 +49,10 @@ export async function updateMerchant({merchantId, merchant, category}: ServerAct
       addSpanEvent("bff.request.update-merchant.start");
       logWithTrace("info", "Making API request to update merchant...", {merchantId}, "server");
       const requestDto = {
-        ...(category !== undefined ? {category} : {}),
-        ...(merchant === undefined
-          ? {}
-          : {
-              name: merchant.name,
-              description: merchant.description,
-              address: merchant.address,
-              additionalMetadata: null,
-            }),
+        name: merchant?.name,
+        description: merchant?.description,
+        category: merchant?.category,
+        address: merchant?.address,
       };
       const response = await fetchWithTimeout(`/rest/v1/merchants/${merchantId}`, {
         method: "PUT",

@@ -30,12 +30,12 @@ describe("updateMerchant", () => {
     expect(body).toHaveProperty("name");
     expect(body).toHaveProperty("description");
     expect(body).not.toHaveProperty("id");
-    expect(body).not.toHaveProperty("category");
+    expect(body).toHaveProperty("category", merchant.category ?? -1);
     expect(body).not.toHaveProperty("totalSpent");
   });
 
   it.each([2001, null] as const)("saves only explicit category intent (%s)", async (category) => {
-    await updateMerchant({merchantId, category});
+    await updateMerchant({merchantId, merchant: {category}});
     const [, init] = fetchMock.mock.calls[0]!;
     expect(JSON.parse(String(init?.body))).toEqual({category: category ?? -1});
   });

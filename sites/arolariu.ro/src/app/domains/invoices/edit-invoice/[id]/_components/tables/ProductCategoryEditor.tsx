@@ -44,7 +44,10 @@ export default function ProductCategoryEditor({
     saveInFlightRef.current = true;
     setSaving(true);
     try {
-      const result = await updateInvoiceProduct({invoiceId, payload: {originalProductName: product.name, category: value}});
+      const result = await updateInvoiceProduct({
+        invoiceId,
+        payload: {originalProductName: product.name, updatedProduct: {category: value}},
+      });
       if (!result.success) {
         notify.error(result.error.status === 409 ? t((m) => m.categories.ui.conflict) : t((m) => m.categories.ui.failed));
         return;

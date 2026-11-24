@@ -29,7 +29,7 @@ import {addSpanEvent, logWithTrace, withSpan} from "@/instrumentation.server";
 import {fetchBFFUserFromAuthService} from "@/lib/actions/user/fetchUser";
 import {validateStringIsGuidType} from "@/lib/utils.generic";
 import {createErrorResult, createHttpErrorResult, fetchWithTimeout, type ServerActionResult} from "@/lib/utils.server";
-import type {Invoice, InvoiceCategory} from "@/types/invoices";
+import type {Invoice} from "@/types/invoices";
 import {parseInvoiceResponse, serializeCategoryUpdate, tryParse} from "@/types/invoices/transport";
 
 type ServerActionInputType = Readonly<{
@@ -37,13 +37,12 @@ type ServerActionInputType = Readonly<{
   invoiceId: string;
   /** The complete invoice object to replace the existing one. */
   invoice: Invoice;
-  category?: InvoiceCategory | null;
 }>;
 
 type ServerActionOutputType = ServerActionResult<Readonly<Invoice>>;
 
 /**
- * Server action that performs a full update (POST) on an invoice.
+ * Server action that performs a full update (PUT) on an invoice.
  *
  * @remarks
  * **HTTP Method**: PUT
@@ -51,13 +50,11 @@ type ServerActionOutputType = ServerActionResult<Readonly<Invoice>>;
  *
  * **Update Semantics**:
  * - Replaces the entire invoice resource with the provided data
- * - All fields from the provided invoice object are written
- * - The invoice ID in the URL must match `invoice.id`
+ * - Sends the editable fields from the invoice, including its category
+ * - A null category sends the API's `-1` clear command
  *
  * **Validation**:
  * - `invoiceId` must be a valid GUID
- * - `invoice` object must be provided and non-null
- * - `invoice.id` must match the `invoiceId` parameter
  *
  * **Error Handling**:
  * Returns a result object with `success` flag instead of throwing,
@@ -81,7 +78,6 @@ type ServerActionOutputType = ServerActionResult<Readonly<Invoice>>;
  *   ...invoice,
  *   name: "Updated Invoice Name",
  *   description: "New description",
- *   items: [...invoice.items, newItem],
  * };
  *
  * const result = await updateInvoice({
@@ -99,7 +95,7 @@ type ServerActionOutputType = ServerActionResult<Readonly<Invoice>>;
  * @see {@link patchInvoice} for partial updates (when only changing a few fields)
  * @see {@link fetchInvoice} for retrieving invoice data before update
  */
-export async function updateInvoice({invoiceId, invoice, category}: ServerActionInputType): ServerActionOutputType {
+export async function updateInvoice({invoiceId, invoice}: ServerActionInputType): ServerActionOutputType {
   console.info(">>> Executing server action {{updateInvoice}}, with:", {invoiceId, invoiceName: invoice?.name});
 
   return withSpan("api.actions.invoices.updateInvoice", async () => {
@@ -120,7 +116,7 @@ export async function updateInvoice({invoiceId, invoice, category}: ServerAction
       const requestDto = {
         name: invoice.name,
         description: invoice.description,
-        ...(category !== undefined ? {category} : {}),
+        category: invoice.category,
         paymentInformation: invoice.paymentInformation,
         merchantReference: invoice.merchantReference,
         isImportant: invoice.isImportant,

@@ -14,15 +14,14 @@ describe("updateInvoice", () => {
     possibleRecipes: [buildRecipeSuggestion({description: "A quick meal from the receipt"})],
   });
 
-  it.each([undefined, null, 3004] as const)("serializes only explicit category intent (%s)", async (category) => {
-    const storedCategory = category === undefined ? 3001 : category;
-    fetchAtHttp.mockResolvedValue(Response.json({...invoice, category: storedCategory, name: "Stored by the server"}));
+  it.each([null, 3004] as const)("serializes the invoice object's category (%s)", async (category) => {
+    fetchAtHttp.mockResolvedValue(Response.json({...invoice, category, name: "Stored by the server"}));
 
-    const result = await updateInvoice({invoiceId, invoice: {...invoice, category: 3001}, ...(category === undefined ? {} : {category})});
+    const result = await updateInvoice({invoiceId, invoice: {...invoice, category}});
 
     expect(result).toMatchObject({
       success: true,
-      data: {id: invoiceId, name: "Stored by the server", category: storedCategory, createdAt: expect.any(Date)},
+      data: {id: invoiceId, name: "Stored by the server", category, createdAt: expect.any(Date)},
     });
     expect(fetchAtHttp).toHaveBeenCalledExactlyOnceWith(
       `${apiUrl}/rest/v1/invoices/${invoiceId}`,
@@ -36,7 +35,7 @@ describe("updateInvoice", () => {
     expect(requestBody).toEqual({
       name: invoice.name,
       description: invoice.description,
-      ...(category === undefined ? {} : {category: category ?? -1}),
+      category: category ?? -1,
       paymentInformation: {...invoice.paymentInformation, transactionDate: invoice.paymentInformation.transactionDate.toISOString()},
       merchantReference: invoice.merchantReference,
       isImportant: invoice.isImportant,

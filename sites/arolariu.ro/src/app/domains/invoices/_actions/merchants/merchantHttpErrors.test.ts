@@ -58,7 +58,10 @@ describe("merchant HTTP failures", () => {
     it("forwards an invalid product selector and preserves the API's 400", async () => {
       fetchAtHttp.mockResolvedValueOnce(new Response(null, {status: 400}));
 
-      const result = await updateInvoiceProduct({invoiceId: merchantId, payload: {originalProductName: " ", category: null}});
+      const result = await updateInvoiceProduct({
+        invoiceId: merchantId,
+        payload: {originalProductName: " ", updatedProduct: {category: null}},
+      });
 
       expect(fetchAtHttp).toHaveBeenCalledExactlyOnceWith(
         expect.stringMatching(/\/products$/u),

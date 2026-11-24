@@ -18,7 +18,7 @@ const product = buildProduct({name: "Milk", category: ProductCategory.Milk});
 const fullEdit = {invoiceId, payload: {originalProductName: product.name, updatedProduct: product}};
 
 describe("updateInvoiceProduct", () => {
-  it("flattens a full edit without sending the previously saved category", async () => {
+  it("flattens a full edit including the product object's category", async () => {
     const replacement = {...product, name: "Premium Milk", quantity: 2, quantityUnit: "L", productCode: "PROD-123", price: 15.99};
     fetchAtHttp.mockResolvedValue(Response.json(replacement, {status: 202}));
 
@@ -33,6 +33,7 @@ describe("updateInvoiceProduct", () => {
     expect(JSON.parse(String(request?.body))).toEqual({
       originalProductName: "Milk",
       name: "Premium Milk",
+      category: ProductCategory.Milk,
       quantity: 2,
       quantityUnit: "L",
       productCode: "PROD-123",
@@ -48,7 +49,7 @@ describe("updateInvoiceProduct", () => {
   it.each([ProductCategory.Milk, null] as const)("sends only the product selector and explicit category %s", async (category) => {
     fetchAtHttp.mockResolvedValue(Response.json({...product, category}, {status: 202}));
 
-    const result = await updateInvoiceProduct({invoiceId, payload: {originalProductName: "Milk", category}});
+    const result = await updateInvoiceProduct({invoiceId, payload: {originalProductName: "Milk", updatedProduct: {category}}});
 
     expect(result).toMatchObject({success: true, data: {category}});
     expect(fetchAtHttp).toHaveBeenCalledExactlyOnceWith(
@@ -60,7 +61,7 @@ describe("updateInvoiceProduct", () => {
   it("preserves a conflict without resubmitting the category edit", async () => {
     fetchAtHttp.mockResolvedValue(new Response(null, {status: 409}));
 
-    const result = await updateInvoiceProduct({invoiceId, payload: {originalProductName: "Milk", category: null}});
+    const result = await updateInvoiceProduct({invoiceId, payload: {originalProductName: "Milk", updatedProduct: {category: null}}});
 
     expect(result).toMatchObject({success: false, error: {status: 409}});
     expect(fetchAtHttp).toHaveBeenCalledOnce();
@@ -71,7 +72,7 @@ describe("updateInvoiceProduct", () => {
     const category = 2001 as ProductCategory;
     fetchAtHttp.mockResolvedValue(new Response(null, {status: 400}));
 
-    const result = await updateInvoiceProduct({invoiceId, payload: {originalProductName: "Milk", category}});
+    const result = await updateInvoiceProduct({invoiceId, payload: {originalProductName: "Milk", updatedProduct: {category}}});
 
     expect(fetchAtHttp).toHaveBeenCalledExactlyOnceWith(
       endpoint,
@@ -85,7 +86,10 @@ describe("updateInvoiceProduct", () => {
     async (category) => {
       fetchAtHttp.mockResolvedValue(new Response(null, {status: 400}));
 
-      const result = await updateInvoiceProduct({invoiceId, payload: {originalProductName: "Milk", category: category as ProductCategory}});
+      const result = await updateInvoiceProduct({
+        invoiceId,
+        payload: {originalProductName: "Milk", updatedProduct: {category: category as ProductCategory}},
+      });
 
       expect(fetchAtHttp).toHaveBeenCalledExactlyOnceWith(
         endpoint,
