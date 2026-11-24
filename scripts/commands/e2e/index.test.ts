@@ -669,6 +669,25 @@ describe("runE2e: env-derived Newman arguments", () => {
       harness.layer,
     );
   }
+
+  {
+    const aspireEnvironment = join(repositoryFixtureRoot, TARGET_DIRS.backend, "postman-environment.aspire.json");
+    const harness = e2eHarness({
+      variables: {E2E_TEST_AUTH_TOKEN: FAKE_TOKEN, E2E_TEST_ENVIRONMENT: "aspire"},
+      files: fixtureFiles({[aspireEnvironment]: "{}"}),
+    });
+    effectTest(
+      "uses the Aspire environment instead of falling back to production",
+      () =>
+        Effect.gen(function* () {
+          yield* runE2e({target: "backend"});
+
+          expect(newmanArgs(harness)[0]?.[4]).toBe(aspireEnvironment);
+          expect(newmanArgs(harness)[0]).toContain("--ignore-redirects");
+        }),
+      harness.layer,
+    );
+  }
 });
 
 // ============================================================================

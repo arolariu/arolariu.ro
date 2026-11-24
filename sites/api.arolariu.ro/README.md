@@ -126,6 +126,10 @@ Important contract suites include:
 The Postman/Newman collection under this project covers deployed HTTP contracts. Invoke it through the root E2E command so the current
 environment and safety controls are applied.
 
+For the native Aspire API at `https://localhost:5000`, set `E2E_TEST_ENVIRONMENT=aspire` and provide a local persona token through
+`E2E_TEST_AUTH_TOKEN`, then run `npm run test:e2e:backend` from the repository root. Use only a disposable local stack: the collection ends
+by deleting all invoices for that persona. The `local` profile still targets the standalone HTTP API.
+
 ## Persistence and external systems
 
 - SQL Server stores ASP.NET Core Identity data.
