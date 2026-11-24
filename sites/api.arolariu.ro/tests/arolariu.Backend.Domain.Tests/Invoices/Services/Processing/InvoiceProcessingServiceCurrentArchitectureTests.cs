@@ -73,13 +73,9 @@ public sealed class InvoiceProcessingServiceCurrentArchitectureTests
       Mock.Of<IAnalysisOrchestrationService>(),
       NullLoggerFactory.Instance);
 
-    (IReadOnlyCollection<Merchant> merchants, IReadOnlyCollection<Invoice> invoiceSnapshot) =
-      await service.ReadMerchantsVisibleToUser(
-      userId,
-      CancellationToken.None);
+    var merchants = await service.ReadMerchantsVisibleToUser(userId, CancellationToken.None);
 
     Assert.AreSame(merchant, merchants.Single());
-    CollectionAssert.AreEqual(invoices, invoiceSnapshot.ToList());
     invoiceOrchestration.VerifyAll();
     merchantOrchestration.VerifyAll();
   }
@@ -109,11 +105,9 @@ public sealed class InvoiceProcessingServiceCurrentArchitectureTests
       Mock.Of<IAnalysisOrchestrationService>(),
       NullLoggerFactory.Instance);
 
-    (IReadOnlyCollection<Merchant> merchants, IReadOnlyCollection<Invoice> invoiceSnapshot) =
-      await service.ReadMerchantsVisibleToUser(userId, CancellationToken.None);
+    var merchants = await service.ReadMerchantsVisibleToUser(userId, CancellationToken.None);
 
     Assert.IsEmpty(merchants);
-    CollectionAssert.AreEqual(invoices.ToList(), invoiceSnapshot.ToList());
     invoiceOrchestration.VerifyAll();
     merchantOrchestration.VerifyAll();
   }

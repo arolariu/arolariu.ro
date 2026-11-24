@@ -350,47 +350,6 @@ public sealed class InvoiceBrokerExtendedTests
     Assert.AreSame(updatedMerchant, result);
   }
 
-  /// <summary>
-  /// Validates merchant deletion completes without error.
-  /// </summary>
-  [TestMethod]
-  public async Task DeleteMerchantAsync_ValidIdentifiers_CompletesSuccessfully()
-  {
-    // Arrange
-    var merchantId = Guid.NewGuid();
-    var parentCompanyId = Guid.NewGuid();
-
-    mockBroker
-        .Setup(b => b.DeleteMerchantAsync(merchantId, parentCompanyId, It.IsAny<CancellationToken>()))
-        .Returns(ValueTask.CompletedTask);
-
-    // Act
-    await mockBroker.Object.DeleteMerchantAsync(merchantId, parentCompanyId, CancellationToken.None);
-
-    // Assert
-    mockBroker.Verify(b => b.DeleteMerchantAsync(merchantId, parentCompanyId, It.IsAny<CancellationToken>()), Times.Once);
-  }
-
-  /// <summary>
-  /// Validates merchant deletion with null parent company ID.
-  /// </summary>
-  [TestMethod]
-  public async Task DeleteMerchantAsync_NullParentCompanyId_CompletesSuccessfully()
-  {
-    // Arrange
-    var merchantId = Guid.NewGuid();
-
-    mockBroker
-        .Setup(b => b.DeleteMerchantAsync(merchantId, null, It.IsAny<CancellationToken>()))
-        .Returns(ValueTask.CompletedTask);
-
-    // Act
-    await mockBroker.Object.DeleteMerchantAsync(merchantId, null, CancellationToken.None);
-
-    // Assert
-    mockBroker.Verify(b => b.DeleteMerchantAsync(merchantId, null, It.IsAny<CancellationToken>()), Times.Once);
-  }
-
   #endregion
 
   #region Large Data Tests

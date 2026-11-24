@@ -415,12 +415,12 @@ public sealed partial class InvoiceManagementService : IInvoiceManagementService
   /// <summary>Reads the merchants referenced by the caller's own invoices through the unified Processing boundary.</summary>
   /// <param name="userIdentifier">The authenticated user whose invoices are inspected.</param>
   /// <param name="cancellationToken">The token used to cancel the query.</param>
-  /// <returns>The distinct visible merchants and the caller-owned invoice snapshot used to derive them.</returns>
+  /// <returns>The distinct visible merchants.</returns>
   /// <exception cref="arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices.Exceptions.Outer.Management.InvoiceManagementDependencyException">
   /// Thrown when invoice or merchant persistence cannot complete the query.
   /// </exception>
   /// <inheritdoc/>
-  public async Task<(IReadOnlyCollection<Merchant> Merchants, IReadOnlyCollection<Invoice> Invoices)> ReadMerchantsVisibleToUser(
+  public async Task<IEnumerable<Merchant>> ReadMerchantsVisibleToUser(
     Guid userIdentifier,
     CancellationToken cancellationToken) =>
     await TryCatchAsync(async () =>
@@ -453,22 +453,6 @@ public sealed partial class InvoiceManagementService : IInvoiceManagementService
       return await invoiceProcessingService
         .UpdateMerchant(identifier, parentCompanyId, updatedMerchant, cancellationToken)
         .ConfigureAwait(false);
-    }).ConfigureAwait(false);
-
-  /// <summary>Deletes one merchant through Processing.</summary>
-  /// <param name="identifier">The merchant identifier.</param>
-  /// <param name="parentCompanyId">The optional parent-company partition.</param>
-  /// <param name="cancellationToken">The token used to cancel deletion.</param>
-  /// <returns>A task that completes after deletion.</returns>
-  /// <exception cref="arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices.Exceptions.Outer.Management.InvoiceManagementDependencyException">
-  /// Thrown when merchant persistence cannot complete deletion.
-  /// </exception>
-  /// <inheritdoc/>
-  public async Task DeleteMerchant(Guid identifier, Guid? parentCompanyId, CancellationToken cancellationToken) =>
-    await TryCatchAsync(async () =>
-    {
-      using var activity = InvoicePackageTracing.StartActivity(nameof(DeleteMerchant));
-      await invoiceProcessingService.DeleteMerchant(identifier, parentCompanyId, cancellationToken).ConfigureAwait(false);
     }).ConfigureAwait(false);
 
   /// <summary>Validates invoice ownership and queues a request with resolved analysis options.</summary>

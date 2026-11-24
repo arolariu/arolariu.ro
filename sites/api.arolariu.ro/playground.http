@@ -362,60 +362,6 @@ Content-Type: application/json
   "category": -1
 }
 
-###
-
-### Delete Merchant
-# Soft-delete a merchant with no active invoices.
-# Returns: 204 No Content, or 409 Conflict if an invoice still references it.
-DELETE {{baseUrl}}/rest/{{apiVersion}}/merchants/{{merchantId}}?parentCompanyId=aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee
-Authorization: Bearer {{authToken}}
-
-###############################################################################
-# MERCHANT INVOICES - Relationship Management
-###############################################################################
-
-### Get Merchant Invoices
-# Retrieve the caller's active invoices associated with a merchant.
-# Returns: Array of Invoice objects, or 404 if the caller has no associated invoices.
-GET {{baseUrl}}/rest/{{apiVersion}}/merchants/{{merchantId}}/invoices
-Authorization: Bearer {{authToken}}
-Accept: application/json
-
-###
-
-### Add Invoice to Merchant
-# Associate existing invoice(s) owned by the caller with a merchant.
-# Provide array of invoice identifiers.
-PATCH {{baseUrl}}/rest/{{apiVersion}}/merchants/{{merchantId}}/invoices
-Authorization: Bearer {{authToken}}
-Content-Type: application/json
-
-{
-  "invoiceIdentifiers": ["{{invoiceId}}"]
-}
-
-###
-
-### Remove Invoice from Merchant
-# Disassociate the caller's invoice(s) currently linked to this merchant.
-# The invoices themselves are not deleted.
-DELETE {{baseUrl}}/rest/{{apiVersion}}/merchants/{{merchantId}}/invoices
-Authorization: Bearer {{authToken}}
-Content-Type: application/json
-
-{
-  "invoiceIdentifiers": ["{{invoiceId}}"]
-}
-
-###
-
-### Get Merchant Products
-# Retrieve products across the caller's active invoices for a merchant.
-# Useful for aggregate reporting and analytics.
-GET {{baseUrl}}/rest/{{apiVersion}}/merchants/{{merchantId}}/products
-Authorization: Bearer {{authToken}}
-Accept: application/json
-
 ###############################################################################
 # ERROR SCENARIOS - Testing Edge Cases
 ###############################################################################

@@ -725,9 +725,7 @@ public sealed class InvoiceEndpointsStatusCodeTests
   /// </summary>
   /// <remarks>
   /// <para><c>parentCompanyId</c> narrows the caller's own visible set. It must never act as an
-  /// alternate path that skips ownership filtering: <c>MerchantResponseDto</c> exposes
-  /// <c>referencedInvoiceIds</c> and <c>createdBy</c>, so an unscoped partition read would
-  /// disclose other users' invoice and user identifiers to any authenticated caller.</para>
+  /// alternate path that skips caller visibility filtering.</para>
   /// </remarks>
   [TestMethod]
   public async Task RetrieveAllMerchantsAsync_WithParentCompanyId_StillScopesToCaller()
@@ -740,9 +738,7 @@ public sealed class InvoiceEndpointsStatusCodeTests
     var service = new Mock<IInvoiceManagementService>(MockBehavior.Strict);
     service
       .Setup(candidate => candidate.ReadMerchantsVisibleToUser(userId, It.IsAny<CancellationToken>()))
-      .ReturnsAsync((
-        new List<Merchant> { inPartition, outOfPartition },
-        new List<Invoice>()));
+      .ReturnsAsync([inPartition, outOfPartition]);
 
     IResult result = await InvoiceEndpoints.RetrieveAllMerchantsAsync(
       service.Object,
@@ -752,6 +748,8 @@ public sealed class InvoiceEndpointsStatusCodeTests
       CancellationToken.None);
 
     Assert.AreEqual(StatusCodes.Status200OK, GetStatusCode(result));
+    var values = Assert.IsInstanceOfType<IEnumerable<MerchantResponseDto>>(((IValueHttpResult)result).Value);
+    Assert.AreEqual(inPartition.id, values.Single().Id);
 
     // The owner-scoped read is the ONLY source of merchants; the unscoped partition read
     // must never be reached. MockBehavior.Strict makes any other call fail the test.
@@ -761,13 +759,12 @@ public sealed class InvoiceEndpointsStatusCodeTests
   }
 
   /// <summary>
-  /// Verifies collection responses expose only caller-owned invoice references and redact unrelated audit principals.
+  /// Verifies collection responses redact unrelated audit principals.
   /// </summary>
   [TestMethod]
   public async Task RetrieveAllMerchantsAsync_SharedMerchant_ReturnsCallerScopedProjection()
   {
     Guid userId = Guid.NewGuid();
-    Guid callerInvoiceId = Guid.NewGuid();
     Guid otherUserId = Guid.NewGuid();
     Guid merchantId = Guid.NewGuid();
     var merchant = new Merchant
@@ -778,18 +775,10 @@ public sealed class InvoiceEndpointsStatusCodeTests
     typeof(Merchant)
       .GetProperty(nameof(Merchant.LastUpdatedBy))!
       .SetValue(merchant, otherUserId);
-    var callerInvoice = new Invoice
-    {
-      id = callerInvoiceId,
-      UserIdentifier = userId,
-      MerchantReference = merchantId,
-    };
     var service = new Mock<IInvoiceManagementService>(MockBehavior.Strict);
     service
       .Setup(candidate => candidate.ReadMerchantsVisibleToUser(userId, It.IsAny<CancellationToken>()))
-      .ReturnsAsync((
-        new List<Merchant> { merchant },
-        new List<Invoice> { callerInvoice }));
+      .ReturnsAsync([merchant]);
 
     IResult result = await InvoiceEndpoints.RetrieveAllMerchantsAsync(
       service.Object,
@@ -801,8 +790,7 @@ public sealed class InvoiceEndpointsStatusCodeTests
     IEnumerable<MerchantResponseDto> values =
       Assert.IsInstanceOfType<IEnumerable<MerchantResponseDto>>(((IValueHttpResult)result).Value);
     MerchantResponseDto response = values.Single();
-    CollectionAssert.AreEqual(new[] { callerInvoiceId }, response.ReferencedInvoiceIds.ToArray());
-    Assert.AreEqual(1, response.ReferencedInvoiceCount);
+    Assert.AreEqual(merchantId, response.Id);
     Assert.AreEqual(Guid.Empty, response.CreatedBy);
     Assert.AreEqual(Guid.Empty, response.LastUpdatedBy);
     Assert.AreNotEqual(otherUserId, response.CreatedBy);
@@ -811,7 +799,7 @@ public sealed class InvoiceEndpointsStatusCodeTests
   }
 
   /// <summary>
-  /// Verifies a specific shared merchant response applies the same caller relationship and audit projection.
+  /// Verifies a specific shared merchant response applies the same caller audit projection.
   /// </summary>
   [TestMethod]
   public async Task RetrieveSpecificMerchantAsync_SharedMerchant_ReturnsCallerScopedProjection()
@@ -851,14 +839,14 @@ public sealed class InvoiceEndpointsStatusCodeTests
 
     MerchantResponseDto response =
       Assert.IsExactInstanceOfType<MerchantResponseDto>(((IValueHttpResult)result).Value);
-    CollectionAssert.AreEqual(new[] { callerInvoiceId }, response.ReferencedInvoiceIds.ToArray());
+    Assert.AreEqual(merchantId, response.Id);
     Assert.AreEqual(Guid.Empty, response.CreatedBy);
     Assert.AreNotEqual(otherUserId, response.CreatedBy);
     service.VerifyAll();
   }
 
   /// <summary>
-  /// Verifies the invoice merchant subresource cannot disclose references or audit principals from other users.
+  /// Verifies the invoice merchant subresource cannot disclose audit principals from other users.
   /// </summary>
   [TestMethod]
   public async Task RetrieveMerchantFromInvoiceAsync_SharedMerchant_ReturnsInvoiceScopedProjection()
@@ -900,7 +888,7 @@ public sealed class InvoiceEndpointsStatusCodeTests
 
     MerchantResponseDto response =
       Assert.IsExactInstanceOfType<MerchantResponseDto>(((IValueHttpResult)result).Value);
-    CollectionAssert.AreEqual(new[] { invoiceId }, response.ReferencedInvoiceIds.ToArray());
+    Assert.AreEqual(merchantId, response.Id);
     Assert.AreEqual(Guid.Empty, response.CreatedBy);
     Assert.AreNotEqual(otherUserId, response.CreatedBy);
     service.VerifyAll();

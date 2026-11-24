@@ -186,7 +186,6 @@ public sealed class InvoiceCategoryHttpBindingTests
     Assert.AreEqual(details ? "New name" : "Shop", merchant.Name);
     Assert.AreEqual(details ? "New description" : "Store", merchant.Description);
     if (!details) Assert.AreEqual("Example Street", merchant.Address.Address);
-    Assert.AreEqual(invoice.id, json.RootElement.GetProperty("referencedInvoiceIds").EnumerateArray().Single().GetGuid());
     broker.Verify(service => service.UpdateMerchantAsync(merchant, merchant, It.IsAny<CancellationToken>()), Times.Once());
     broker.Verify(service => service.ReadMerchantAsync(merchant.id, null, It.IsAny<CancellationToken>()), Times.Once());
     broker.Verify(service => service.ReadInvoicesAsync(userId, It.IsAny<CancellationToken>(), merchant.id), Times.Once());
@@ -297,120 +296,8 @@ public sealed class InvoiceCategoryHttpBindingTests
     if (invoiceSaved)
     {
       using var receipt = JsonDocument.Parse(await response.Content.ReadAsStringAsync().ConfigureAwait(false));
-      Assert.AreEqual(invoiceId, receipt.RootElement.GetProperty("referencedInvoiceIds").EnumerateArray().Single().GetGuid());
+      Assert.AreEqual(createdMerchantId, receipt.RootElement.GetProperty("id").GetGuid());
     }
-  }
-
-  /// <summary>Merchant relationship responses use the caller's current persisted invoice links.</summary>
-  [TestMethod]
-  [DataRow(true)]
-  [DataRow(false)]
-  public async Task MerchantRelationships_OnlyOwnedLinksCanBeRead(bool isLinked)
-  {
-    Guid userId = Guid.NewGuid();
-    var merchant = new Merchant { Name = "Shop" };
-    var invoice = new Invoice
-    {
-      id = Guid.NewGuid(),
-      UserIdentifier = userId,
-      MerchantReference = merchant.id,
-      Items = [new Product { Name = "Milk", Category = ProductCategory.Milk }],
-    };
-    var broker = new Mock<IDatabaseBroker>(MockBehavior.Strict);
-    broker.Setup(service => service.ReadInvoicesAsync(userId, It.IsAny<CancellationToken>(), merchant.id))
-      .ReturnsAsync(isLinked ? [invoice] : []);
-    if (isLinked) broker.Setup(service => service.ReadMerchantAsync(merchant.id, null, It.IsAny<CancellationToken>())).ReturnsAsync(merchant);
-    var log = NullLoggerFactory.Instance;
-    var invoices = new InvoiceOrchestrationService(new InvoiceStorageFoundationService(broker.Object, log), log);
-    var merchants = new MerchantOrchestrationService(new MerchantStorageFoundationService(broker.Object, log), log);
-    var processing = new InvoiceProcessingService(invoices, merchants, Mock.Of<IAnalysisOrchestrationService>(), log);
-    await using var app = BuildApp(new InvoiceManagementService(processing, log), userId);
-    await app.StartAsync().ConfigureAwait(false);
-
-    using var client = app.GetTestClient();
-    string merchantPath = $"/rest/v1/merchants/{merchant.id}";
-    using var response = await client.GetAsync(new Uri(merchantPath, UriKind.Relative)).ConfigureAwait(false);
-    using var receipts = await client.GetAsync(new Uri($"{merchantPath}/invoices", UriKind.Relative)).ConfigureAwait(false);
-    using var products = await client.GetAsync(new Uri($"{merchantPath}/products", UriKind.Relative)).ConfigureAwait(false);
-    if (!isLinked)
-    {
-      Assert.AreEqual(HttpStatusCode.NotFound, response.StatusCode);
-      Assert.AreEqual(HttpStatusCode.NotFound, receipts.StatusCode);
-      Assert.AreEqual(HttpStatusCode.NotFound, products.StatusCode);
-      return;
-    }
-
-    Assert.AreEqual(HttpStatusCode.OK, response.StatusCode);
-    using var details = JsonDocument.Parse(await response.Content.ReadAsStringAsync().ConfigureAwait(false));
-    Assert.AreEqual(1, details.RootElement.GetProperty("referencedInvoiceCount").GetInt32());
-    Assert.AreEqual(invoice.id, details.RootElement.GetProperty("referencedInvoiceIds")[0].GetGuid());
-
-    Assert.AreEqual(HttpStatusCode.OK, receipts.StatusCode);
-    using var receiptList = JsonDocument.Parse(await receipts.Content.ReadAsStringAsync().ConfigureAwait(false));
-    Assert.AreEqual(invoice.id, receiptList.RootElement.EnumerateArray().Single().GetProperty("id").GetGuid());
-
-    Assert.AreEqual(HttpStatusCode.OK, products.StatusCode);
-    using var productList = JsonDocument.Parse(await products.Content.ReadAsStringAsync().ConfigureAwait(false));
-    Assert.AreEqual("Milk", productList.RootElement.EnumerateArray().Single().GetProperty("name").GetString());
-  }
-
-  /// <summary>A merchant with active links cannot be deleted; deleting an unlinked merchant does not edit invoices.</summary>
-  [TestMethod]
-  [DataRow(true, HttpStatusCode.Conflict)]
-  [DataRow(false, HttpStatusCode.NoContent)]
-  public async Task DeleteMerchant_ActiveLinksBlockDeletion(bool isLinked, HttpStatusCode expected)
-  {
-    Guid userId = Guid.NewGuid();
-    var merchant = new Merchant { Name = "Shop", ParentCompanyId = Guid.NewGuid() };
-    var broker = new Mock<IDatabaseBroker>(MockBehavior.Strict);
-    broker.Setup(service => service.ReadMerchantAsync(merchant.id, merchant.ParentCompanyId, It.IsAny<CancellationToken>()))
-      .ReturnsAsync(merchant);
-    broker.Setup(service => service.HasInvoicesForMerchantAsync(merchant.id, It.IsAny<CancellationToken>())).ReturnsAsync(isLinked);
-    if (!isLinked)
-    {
-      broker.Setup(service => service.DeleteMerchantAsync(merchant.id, merchant.ParentCompanyId, It.IsAny<CancellationToken>()))
-        .Returns(ValueTask.CompletedTask);
-    }
-
-    await using var app = BuildStorageApp(broker.Object, userId);
-    await app.StartAsync().ConfigureAwait(false);
-    using var client = app.GetTestClient();
-    using var response = await client.DeleteAsync(
-      new Uri($"/rest/v1/merchants/{merchant.id}?parentCompanyId={merchant.ParentCompanyId}", UriKind.Relative)).ConfigureAwait(false);
-
-    Assert.AreEqual(expected, response.StatusCode);
-    broker.Verify(service => service.DeleteMerchantAsync(merchant.id, merchant.ParentCompanyId, It.IsAny<CancellationToken>()),
-      isLinked ? Times.Never() : Times.Once());
-  }
-
-  /// <summary>Batch detach touches only selected invoices in the caller's current merchant set.</summary>
-  [TestMethod]
-  public async Task DetachMerchantInvoices_OnlyClearsSelectedOwnedLinks()
-  {
-    Guid userId = Guid.NewGuid();
-    var merchant = new Merchant { Name = "Shop" };
-    var invoice = new Invoice { id = Guid.NewGuid(), UserIdentifier = userId, MerchantReference = merchant.id };
-    var retained = new Invoice { id = Guid.NewGuid(), UserIdentifier = userId, MerchantReference = merchant.id };
-    var unrelated = Guid.NewGuid();
-    var broker = new Mock<IDatabaseBroker>(MockBehavior.Strict);
-    broker.Setup(service => service.ReadInvoicesAsync(userId, It.IsAny<CancellationToken>(), merchant.id)).ReturnsAsync([invoice, retained]);
-    broker.Setup(service => service.ReadMerchantAsync(merchant.id, null, It.IsAny<CancellationToken>())).ReturnsAsync(merchant);
-    broker.Setup(service => service.UpdateInvoiceAsync(invoice.id,
-      It.Is<Invoice>(edited => edited.MerchantReference == Guid.Empty), It.IsAny<CancellationToken>())).ReturnsAsync(invoice);
-
-    await using var app = BuildStorageApp(broker.Object, userId);
-    await app.StartAsync().ConfigureAwait(false);
-    using var client = app.GetTestClient();
-    using var request = new HttpRequestMessage(HttpMethod.Delete, new Uri($"/rest/v1/merchants/{merchant.id}/invoices", UriKind.Relative))
-    {
-      Content = new StringContent($$"""{"invoiceIdentifiers":["{{invoice.id}}","{{unrelated}}"]}""", Encoding.UTF8, "application/json"),
-    };
-    using var response = await client.SendAsync(request).ConfigureAwait(false);
-
-    Assert.AreEqual(HttpStatusCode.NoContent, response.StatusCode);
-    Assert.AreEqual(Guid.Empty, invoice.MerchantReference);
-    Assert.AreEqual(merchant.id, retained.MerchantReference);
-    broker.Verify(service => service.UpdateInvoiceAsync(invoice.id, invoice, It.IsAny<CancellationToken>()), Times.Once());
   }
 
   /// <summary>Edits commit once against the observed version and leave ambiguous/stale targets unchanged.</summary>
@@ -472,6 +359,30 @@ public sealed class InvoiceCategoryHttpBindingTests
     var merchants = new MerchantOrchestrationService(new MerchantStorageFoundationService(broker, log), log);
     var processing = new InvoiceProcessingService(invoices, merchants, Mock.Of<IAnalysisOrchestrationService>(), log);
     return BuildApp(new InvoiceManagementService(processing, log), userId);
+  }
+
+  /// <summary>Unused merchant-side relationship and delete operations are not exposed.</summary>
+  [TestMethod]
+  [DataRow("GET", "/invoices", HttpStatusCode.NotFound)]
+  [DataRow("PATCH", "/invoices", HttpStatusCode.NotFound)]
+  [DataRow("DELETE", "/invoices", HttpStatusCode.NotFound)]
+  [DataRow("GET", "/products", HttpStatusCode.NotFound)]
+  [DataRow("DELETE", "", HttpStatusCode.MethodNotAllowed)]
+  public async Task RetiredMerchantRoutes_DoNotReachManagement(string method, string suffix, HttpStatusCode expected)
+  {
+    var management = new Mock<IInvoiceManagementService>(MockBehavior.Strict);
+    await using var app = BuildApp(management.Object, Guid.NewGuid());
+    await app.StartAsync().ConfigureAwait(false);
+    using var client = app.GetTestClient();
+    using var request = new HttpRequestMessage(new HttpMethod(method), new Uri($"/rest/v1/merchants/{Guid.NewGuid()}{suffix}", UriKind.Relative))
+    {
+      Content = new StringContent("{}", Encoding.UTF8, "application/json"),
+    };
+
+    using var response = await client.SendAsync(request).ConfigureAwait(false);
+
+    Assert.AreEqual(expected, response.StatusCode);
+    management.VerifyNoOtherCalls();
   }
 
   private static WebApplication BuildApp(IInvoiceManagementService management, Guid userId)

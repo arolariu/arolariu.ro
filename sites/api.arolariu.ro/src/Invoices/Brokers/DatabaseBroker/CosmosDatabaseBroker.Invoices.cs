@@ -166,38 +166,6 @@ public partial class CosmosDatabaseBroker
   }
 
   /// <inheritdoc/>
-  public async ValueTask<bool> HasInvoicesForMerchantAsync(Guid merchantIdentifier, CancellationToken cancellationToken)
-  {
-    const string statement = """
-      SELECT TOP 1 VALUE c.id FROM c
-      WHERE c.MerchantReference = @merchantIdentifier AND (NOT IS_DEFINED(c.IsSoftDeleted) OR c.IsSoftDeleted = false)
-      """;
-    using var activity = InvoicePackageTracing.StartActivity(nameof(HasInvoicesForMerchantAsync));
-    activity?
-      .SetLayerContext("Broker", nameof(CosmosDatabaseBroker))
-      .SetCosmosDbContext("primary", "invoices", "query")
-      .SetDbStatement(statement);
-
-    var container = CosmosClient.GetDatabase("primary").GetContainer("invoices");
-    var query = new QueryDefinition(statement).WithParameter("@merchantIdentifier", merchantIdentifier.ToString());
-    using var iterator = container.GetItemQueryIterator<string>(query);
-    var totalRequestCharge = 0.0;
-    bool found = false;
-    while (!found && iterator.HasMoreResults)
-    {
-      cancellationToken.ThrowIfCancellationRequested();
-      var response = await TranslateInvoiceCosmosAsync(() => iterator.ReadNextAsync(cancellationToken)).ConfigureAwait(false);
-      totalRequestCharge += response.RequestCharge;
-      found = response.Count > 0;
-    }
-
-    activity?.SetCosmosDbRequestCharge(totalRequestCharge);
-    InvoiceMetrics.RecordCosmosDbCharge(totalRequestCharge, "query", "invoices");
-    activity?.RecordSuccess();
-    return found;
-  }
-
-  /// <inheritdoc/>
   public async ValueTask<Invoice> UpdateInvoiceAsync(Guid invoiceIdentifier, Invoice updatedInvoice, CancellationToken cancellationToken)
   {
     ArgumentNullException.ThrowIfNull(updatedInvoice);

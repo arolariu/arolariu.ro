@@ -185,8 +185,8 @@ public interface IInvoiceManagementService
   /// </remarks>
   /// <param name="userIdentifier">The authenticated user whose invoices are inspected.</param>
   /// <param name="cancellationToken">The token that cancels the asynchronous operation.</param>
-  /// <returns>The distinct visible merchants and the caller-owned invoice snapshot used to derive them.</returns>
-  Task<(IReadOnlyCollection<Merchant> Merchants, IReadOnlyCollection<Invoice> Invoices)> ReadMerchantsVisibleToUser(
+  /// <returns>The distinct visible merchants.</returns>
+  Task<IEnumerable<Merchant>> ReadMerchantsVisibleToUser(
     Guid userIdentifier,
     CancellationToken cancellationToken);
 
@@ -202,12 +202,6 @@ public interface IInvoiceManagementService
     Merchant updatedMerchant,
     CancellationToken cancellationToken);
 
-  /// <summary>Removes one merchant from active use.</summary>
-  /// <param name="identifier">The merchant identifier.</param>
-  /// <param name="parentCompanyId">The parent-company partition, or <see langword="null"/> when resolved downstream.</param>
-  /// <param name="cancellationToken">The token that cancels the asynchronous operation.</param>
-  /// <returns>A task that represents the remove operation.</returns>
-  Task DeleteMerchant(Guid identifier, Guid? parentCompanyId, CancellationToken cancellationToken);
   #endregion
 
   #region Analysis Queue

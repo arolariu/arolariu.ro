@@ -298,8 +298,8 @@ public interface IInvoiceProcessingService
   /// </remarks>
   /// <param name="userIdentifier">The authenticated user whose invoices are inspected.</param>
   /// <param name="cancellationToken">Cancellation token to abort the operation (required).</param>
-  /// <returns>The distinct visible merchants and the caller-owned invoice snapshot used to derive them.</returns>
-  Task<(IReadOnlyCollection<Merchant> Merchants, IReadOnlyCollection<Invoice> Invoices)> ReadMerchantsVisibleToUser(
+  /// <returns>The distinct visible merchants.</returns>
+  Task<IEnumerable<Merchant>> ReadMerchantsVisibleToUser(
     Guid userIdentifier,
     CancellationToken cancellationToken);
   #endregion
@@ -318,17 +318,6 @@ public interface IInvoiceProcessingService
     Guid? parentCompanyId,
     Merchant updatedMerchant,
     CancellationToken cancellationToken);
-  #endregion
-
-  #region Delete Merchant API
-  /// <summary>
-  /// Deletes a merchant aggregate.
-  /// </summary>
-  /// <param name="identifier">Merchant id.</param>
-  /// <param name="parentCompanyId">Company / partition scope; pass null for a cross-partition operation.</param>
-  /// <param name="cancellationToken">Cancellation token to abort the operation (required).</param>
-  /// <returns>A task that completes after merchant deletion.</returns>
-  Task DeleteMerchant(Guid identifier, Guid? parentCompanyId, CancellationToken cancellationToken);
   #endregion
 
   #region Analysis Queue

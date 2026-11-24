@@ -53,10 +53,9 @@ internal abstract class WorkerManagementServiceBase : IInvoiceManagementService
   public Task CreateMerchant(Merchant merchant, Guid? parentCompanyId, CancellationToken cancellationToken) => Task.FromException(Unsupported());
   public Task<Merchant> ReadMerchant(Guid identifier, Guid? parentCompanyId, CancellationToken cancellationToken) => Task.FromException<Merchant>(Unsupported());
   public Task<IEnumerable<Merchant>> ReadMerchants(Guid parentCompanyId, CancellationToken cancellationToken) => Task.FromException<IEnumerable<Merchant>>(Unsupported());
-  public Task<(IReadOnlyCollection<Merchant> Merchants, IReadOnlyCollection<Invoice> Invoices)> ReadMerchantsVisibleToUser(
+  public Task<IEnumerable<Merchant>> ReadMerchantsVisibleToUser(
     Guid userIdentifier,
     CancellationToken cancellationToken) =>
-    Task.FromException<(IReadOnlyCollection<Merchant>, IReadOnlyCollection<Invoice>)>(Unsupported());
+    Task.FromException<IEnumerable<Merchant>>(Unsupported());
   public Task<Merchant> UpdateMerchant(Guid identifier, Guid? parentCompanyId, Merchant updatedMerchant, CancellationToken cancellationToken) => Task.FromException<Merchant>(Unsupported());
-  public Task DeleteMerchant(Guid identifier, Guid? parentCompanyId, CancellationToken cancellationToken) => Task.FromException(Unsupported());
 }

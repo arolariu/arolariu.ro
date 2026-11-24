@@ -95,30 +95,6 @@ public sealed class StorageValidationCoverageTests
   }
 
   /// <summary>
-  /// Verifies parent-company identifier validation rejects null values on delete.
-  /// </summary>
-  [TestMethod]
-  public async Task DeleteMerchantObject_NullParentCompanyIdentifier_ThrowsMerchantFoundationValidationException()
-  {
-    MerchantStorageFoundationService service = CreateMerchantService(new Mock<IDatabaseBroker>());
-
-    await Assert.ThrowsExactlyAsync<MerchantFoundationServiceException>(() =>
-      service.DeleteMerchantObject(Guid.NewGuid(), null, CancellationToken.None)).ConfigureAwait(false);
-  }
-
-  /// <summary>
-  /// Verifies parent-company identifier validation rejects empty values on delete.
-  /// </summary>
-  [TestMethod]
-  public async Task DeleteMerchantObject_EmptyParentCompanyIdentifier_ThrowsMerchantFoundationValidationException()
-  {
-    MerchantStorageFoundationService service = CreateMerchantService(new Mock<IDatabaseBroker>());
-
-    await Assert.ThrowsExactlyAsync<MerchantFoundationServiceException>(() =>
-      service.DeleteMerchantObject(Guid.NewGuid(), Guid.Empty, CancellationToken.None)).ConfigureAwait(false);
-  }
-
-  /// <summary>
   /// Verifies an update without merchant data is rejected before any broker operation.
   /// </summary>
   [TestMethod]

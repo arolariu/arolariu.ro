@@ -79,14 +79,6 @@ public partial class InvoiceStorageFoundationService : IInvoiceStorageFoundation
     return invoices;
   }).ConfigureAwait(false);
 
-  /// <inheritdoc/>
-  public async Task<bool> HasInvoicesForMerchant(Guid merchantIdentifier, CancellationToken cancellationToken) =>
-  await TryCatchAsync(async () =>
-  {
-    using var activity = InvoicePackageTracing.StartActivity(nameof(HasInvoicesForMerchant));
-    ValidateIdentifierIsSet(merchantIdentifier);
-    return await invoiceNoSqlBroker.HasInvoicesForMerchantAsync(merchantIdentifier, cancellationToken).ConfigureAwait(false);
-  }).ConfigureAwait(false);
   #endregion
 
   #region Update Invoice Object API

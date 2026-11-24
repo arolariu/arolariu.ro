@@ -3,7 +3,6 @@ namespace arolariu.Backend.Domain.Invoices.DTOs.Responses;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
-using System.Linq;
 using System.Text.Json.Serialization;
 
 using arolariu.Backend.Common.DDD.ValueObjects;
@@ -21,10 +20,6 @@ using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Categories;
 /// <para>
 /// <b>Immutability:</b> This is a <c>readonly record struct</c> ensuring thread-safety
 /// and value semantics for equality comparisons.
-/// </para>
-/// <para>
-/// <b>Relationships:</b> Includes <see cref="ReferencedInvoiceCount"/> and
-/// <see cref="ReferencedInvoiceIds"/> for quick relationship access without additional queries.
 /// </para>
 /// <para>
 /// <b>Auditing:</b> Tracks creation and update metadata via <see cref="CreatedAt"/>,
@@ -50,14 +45,6 @@ using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Categories;
 /// <param name="ParentCompanyId">
 /// Reference to a parent company merchant (for franchise/chain stores).
 /// <see cref="Guid.Empty"/> if no parent company exists.
-/// </param>
-/// <param name="ReferencedInvoiceCount">
-/// Count of invoices associated with this merchant. Useful for UI display
-/// without needing to load the full invoice list.
-/// </param>
-/// <param name="ReferencedInvoiceIds">
-/// Collection of invoice identifiers referencing this merchant.
-/// Returns an empty collection if no invoices are associated.
 /// </param>
 /// <param name="AdditionalMetadata">
 /// Extensible key-value metadata for custom merchant attributes (e.g., loyalty program IDs,
@@ -90,11 +77,10 @@ using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Categories;
 /// <code>
 /// // Converting from domain entity
 /// Merchant domainMerchant = await merchantService.GetMerchantAsync(merchantId);
-/// MerchantResponseDto dto = MerchantResponseDto.FromMerchantForCaller(domainMerchant, callerId, callerInvoiceIds);
+/// MerchantResponseDto dto = MerchantResponseDto.FromMerchantForCaller(domainMerchant, callerId);
 ///
 /// // Displaying merchant summary
 /// Console.WriteLine($"Merchant: {dto.Name} ({dto.Category})");
-/// Console.WriteLine($"Invoices: {dto.ReferencedInvoiceCount}");
 /// Console.WriteLine($"Last updated: {dto.LastUpdatedAt:u}");
 /// </code>
 /// </example>
@@ -109,8 +95,6 @@ public readonly record struct MerchantResponseDto(
   [property: JsonPropertyName("category")] MerchantCategory? Category,
   [property: JsonPropertyName("address")] ContactInformationResponseDto Address,
   [property: JsonPropertyName("parentCompanyId")] Guid ParentCompanyId,
-  [property: JsonPropertyName("referencedInvoiceCount")] int ReferencedInvoiceCount,
-  [property: JsonPropertyName("referencedInvoiceIds")] IReadOnlyCollection<Guid> ReferencedInvoiceIds,
   [property: JsonPropertyName("additionalMetadata")] IReadOnlyDictionary<string, string> AdditionalMetadata,
   [property: JsonPropertyName("isImportant")] bool IsImportant,
   [property: JsonPropertyName("isSoftDeleted")] bool IsSoftDeleted,
@@ -121,34 +105,21 @@ public readonly record struct MerchantResponseDto(
   [property: JsonPropertyName("numberOfUpdates")] int NumberOfUpdates)
 {
   /// <summary>
-  /// Creates a caller-scoped merchant response without disclosing cross-tenant relationships or audit principals.
+  /// Creates a caller-scoped merchant response without disclosing cross-tenant audit principals.
   /// </summary>
   /// <remarks>
-  /// Referenced invoice identifiers and their count are restricted to the identifiers independently
-  /// established as belonging to the authenticated caller. Audit principals are retained only when
+  /// Audit principals are retained only when
   /// they identify that caller; unrelated identities are represented by <see cref="Guid.Empty"/>.
   /// Additional metadata is omitted because the shared merchant document does not retain per-key
   /// ownership provenance and therefore cannot safely distinguish caller-visible values.
   /// </remarks>
   /// <param name="merchant">The shared merchant document to project.</param>
   /// <param name="callerIdentifier">The authenticated caller identifier.</param>
-  /// <param name="callerInvoiceIdentifiers">
-  /// Invoice identifiers owned by the caller and linked to this merchant.
-  /// </param>
-  /// <returns>A merchant response containing only caller-visible relationship and audit identity data.</returns>
-  /// <exception cref="ArgumentNullException">
-  /// Thrown when <paramref name="merchant"/> or <paramref name="callerInvoiceIdentifiers"/> is null.
-  /// </exception>
-  public static MerchantResponseDto FromMerchantForCaller(
-    Merchant merchant,
-    Guid callerIdentifier,
-    IReadOnlyCollection<Guid> callerInvoiceIdentifiers)
+  /// <returns>A merchant response containing only caller-visible audit identity data.</returns>
+  /// <exception cref="ArgumentNullException">Thrown when <paramref name="merchant"/> is null.</exception>
+  public static MerchantResponseDto FromMerchantForCaller(Merchant merchant, Guid callerIdentifier)
   {
     ArgumentNullException.ThrowIfNull(merchant);
-    ArgumentNullException.ThrowIfNull(callerInvoiceIdentifiers);
-
-    var visibleInvoiceIdentifiers = callerInvoiceIdentifiers.Distinct().ToList().AsReadOnly();
-
     return new(
       Id: merchant.id,
       Name: merchant.Name,
@@ -156,8 +127,6 @@ public readonly record struct MerchantResponseDto(
       Category: merchant.Category,
       Address: ContactInformationResponseDto.FromContactInformation(merchant.Address),
       ParentCompanyId: merchant.ParentCompanyId,
-      ReferencedInvoiceCount: visibleInvoiceIdentifiers.Count,
-      ReferencedInvoiceIds: visibleInvoiceIdentifiers,
       AdditionalMetadata: new Dictionary<string, string>(),
       IsImportant: merchant.IsImportant,
       IsSoftDeleted: merchant.IsSoftDeleted,

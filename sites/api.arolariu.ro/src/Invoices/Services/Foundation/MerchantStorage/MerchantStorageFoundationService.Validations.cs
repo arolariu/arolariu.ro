@@ -23,9 +23,4 @@ public partial class MerchantStorageFoundationService
     Validator.ValidateAndThrow<Guid?, MerchantIdNotSetException>(identifier, identifier => identifier != Guid.Empty, "Identifier not set!");
   }
 
-  private static void ValidateParentCompanyIdentifierIsSet(Guid? parentCompanyId)
-  {
-    Validator.ValidateAndThrow<Guid?, MerchantParentCompanyIdNotSetException>(parentCompanyId, identifier => identifier is not null, "Identifier not set!");
-    Validator.ValidateAndThrow<Guid?, MerchantParentCompanyIdNotSetException>(parentCompanyId, identifier => identifier != Guid.Empty, "Identifier not set!");
-  }
 }

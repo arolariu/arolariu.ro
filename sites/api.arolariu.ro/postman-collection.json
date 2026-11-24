@@ -1461,6 +1461,28 @@
           ]
         },
         {
+          "name": "Link the created merchant to the test invoice",
+          "request": {
+            "method": "PATCH",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "auth": {
+              "type": "bearer",
+              "bearer": [{"key": "token", "value": "{{authToken}}", "type": "string"}]
+            },
+            "description": "Set the merchant on the caller's receipt before exercising merchant reads and edits.",
+            "url": {
+              "raw": "{{baseUrl}}/rest/v1/invoices/{{invoiceIdentifier}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["rest", "v1", "invoices", "{{invoiceIdentifier}}"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"merchantReference\": \"{{merchantIdentifier}}\"\n}",
+              "options": {"raw": {"language": "json"}}
+            }
+          }
+        },
+        {
           "name": "29 - Get All Merchants (Has One)",
           "request": {
             "method": "GET",
@@ -1600,170 +1622,6 @@
               }
             }
           ]
-        }
-      ]
-    },
-    {
-      "name": "Merchant Invoices",
-      "description": "Merchant-Invoice relationship management",
-      "item": [
-        {
-          "name": "33 - Get Merchant Invoices",
-          "request": {
-            "method": "GET",
-            "header": [],
-            "auth": {
-              "type": "bearer",
-              "bearer": [
-                {
-                  "key": "token",
-                  "value": "{{authToken}}",
-                  "type": "string"
-                }
-              ]
-            },
-            "description": "Get active invoices owned by the caller and associated with the merchant. Returns 404 if none are linked.",
-            "url": {
-              "raw": "{{baseUrl}}/rest/v1/merchants/{{merchantIdentifier}}/invoices",
-              "host": ["{{baseUrl}}"],
-              "path": ["rest", "v1", "merchants", "{{merchantIdentifier}}", "invoices"]
-            }
-          }
-        },
-        {
-          "name": "34 - Add Invoice to Merchant",
-          "request": {
-            "method": "PATCH",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
-            "auth": {
-              "type": "bearer",
-              "bearer": [
-                {
-                  "key": "token",
-                  "value": "{{authToken}}",
-                  "type": "string"
-                }
-              ]
-            },
-            "description": "Associate an invoice owned by the caller with the merchant.",
-            "url": {
-              "raw": "{{baseUrl}}/rest/v1/merchants/{{merchantIdentifier}}/invoices",
-              "host": ["{{baseUrl}}"],
-              "path": ["rest", "v1", "merchants", "{{merchantIdentifier}}", "invoices"]
-            },
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"invoiceIdentifiers\": [\"{{invoiceIdentifier}}\"]\n}",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
-              }
-            }
-          }
-        },
-        {
-          "name": "35 - Get Merchant Invoices (Has One)",
-          "request": {
-            "method": "GET",
-            "header": [],
-            "auth": {
-              "type": "bearer",
-              "bearer": [
-                {
-                  "key": "token",
-                  "value": "{{authToken}}",
-                  "type": "string"
-                }
-              ]
-            },
-            "description": "Verify invoice was associated.",
-            "url": {
-              "raw": "{{baseUrl}}/rest/v1/merchants/{{merchantIdentifier}}/invoices",
-              "host": ["{{baseUrl}}"],
-              "path": ["rest", "v1", "merchants", "{{merchantIdentifier}}", "invoices"]
-            }
-          },
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "type": "text/javascript",
-                "exec": [
-                  "pm.test(\"Merchant has at least one invoice\", function () {",
-                  "    var body = pm.response.json();",
-                  "    pm.expect(body).to.be.an('array');",
-                  "    pm.expect(body.length).to.be.greaterThan(0);",
-                  "});"
-                ]
-              }
-            }
-          ]
-        },
-        {
-          "name": "36 - Get Merchant Products",
-          "request": {
-            "method": "GET",
-            "header": [],
-            "auth": {
-              "type": "bearer",
-              "bearer": [
-                {
-                  "key": "token",
-                  "value": "{{authToken}}",
-                  "type": "string"
-                }
-              ]
-            },
-            "description": "Get the products on the caller's active invoices for this merchant.",
-            "url": {
-              "raw": "{{baseUrl}}/rest/v1/merchants/{{merchantIdentifier}}/products",
-              "host": ["{{baseUrl}}"],
-              "path": ["rest", "v1", "merchants", "{{merchantIdentifier}}", "products"]
-            }
-          }
-        },
-        {
-          "name": "37 - Remove Invoice from Merchant",
-          "request": {
-            "method": "DELETE",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
-            "auth": {
-              "type": "bearer",
-              "bearer": [
-                {
-                  "key": "token",
-                  "value": "{{authToken}}",
-                  "type": "string"
-                }
-              ]
-            },
-            "description": "Disassociate an invoice from the merchant.",
-            "url": {
-              "raw": "{{baseUrl}}/rest/v1/merchants/{{merchantIdentifier}}/invoices",
-              "host": ["{{baseUrl}}"],
-              "path": ["rest", "v1", "merchants", "{{merchantIdentifier}}", "invoices"]
-            },
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"invoiceIdentifiers\": [\"{{invoiceIdentifier}}\"]\n}",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
-              }
-            }
-          }
         }
       ]
     },
@@ -1913,35 +1771,6 @@
       "name": "Cleanup",
       "description": "Cleanup test data",
       "item": [
-        {
-          "name": "41 - Delete Merchant",
-          "request": {
-            "method": "DELETE",
-            "header": [],
-            "auth": {
-              "type": "bearer",
-              "bearer": [
-                {
-                  "key": "token",
-                  "value": "{{authToken}}",
-                  "type": "string"
-                }
-              ]
-            },
-            "description": "Soft-delete the unlinked test merchant. Expected: 204 No Content; active invoice references prevent deletion.",
-            "url": {
-              "raw": "{{baseUrl}}/rest/v1/merchants/{{merchantIdentifier}}?parentCompanyId=aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee",
-              "host": ["{{baseUrl}}"],
-              "path": ["rest", "v1", "merchants", "{{merchantIdentifier}}"],
-              "query": [
-                {
-                  "key": "parentCompanyId",
-                  "value": "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee"
-                }
-              ]
-            }
-          }
-        },
         {
           "name": "42 - Delete Invoice",
           "request": {

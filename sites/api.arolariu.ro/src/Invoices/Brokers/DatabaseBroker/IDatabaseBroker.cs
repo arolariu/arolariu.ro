@@ -82,12 +82,6 @@ public interface IDatabaseBroker
   /// <param name="merchantIdentifier">The optional merchant reference to match.</param>
   ValueTask<IEnumerable<Invoice>> ReadInvoicesAsync(Guid userIdentifier, CancellationToken cancellationToken, Guid? merchantIdentifier = null);
 
-  /// <summary>Checks whether any active invoice references a merchant without reading invoice contents.</summary>
-  /// <param name="merchantIdentifier">The merchant reference to match.</param>
-  /// <param name="cancellationToken">The token used to cancel the query.</param>
-  /// <returns>Whether a matching active invoice exists in storage.</returns>
-  ValueTask<bool> HasInvoicesForMerchantAsync(Guid merchantIdentifier, CancellationToken cancellationToken);
-
   /// <summary>
   /// Replaces an invoice against the revision observed when <paramref name="updatedInvoice"/> was read.
   /// </summary>
@@ -200,17 +194,6 @@ public interface IDatabaseBroker
   /// <exception cref="OperationCanceledException">Thrown if the operation is cancelled.</exception>
   ValueTask<Merchant> UpdateMerchantAsync(Merchant currentMerchant, Merchant updatedMerchant, CancellationToken cancellationToken);
 
-  /// <summary>
-  /// Soft-deletes (or physically replaces) a merchant by identifier via cross-partition search.
-  /// </summary>
-  /// <remarks>
-  /// <para>Current implementation performs a greedy query. If soft-delete is later introduced for merchants, implementation should mark a flag rather than remove.</para>
-  /// </remarks>
-  /// <param name="merchantIdentifier">Merchant identity.</param>
-  /// <param name="parentCompanyId">The parent company identifier.</param>
-  /// <param name="cancellationToken">Cancellation token to abort the operation (required).</param>
-  /// <exception cref="OperationCanceledException">Thrown if the operation is cancelled.</exception>
-  ValueTask DeleteMerchantAsync(Guid merchantIdentifier, Guid? parentCompanyId, CancellationToken cancellationToken);
   #endregion
 
 }

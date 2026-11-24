@@ -171,8 +171,7 @@ public sealed class InvoiceResponseTransportContractTests
 
     // Act
     using JsonDocument productDocument = JsonDocument.Parse(JsonSerializer.Serialize(ProductResponseDto.FromProduct(product), ApiJsonOptions));
-    var merchantResponse = MerchantResponseDto.FromMerchantForCaller(
-      merchant, merchant.CreatedBy, [Guid.Parse("99999999-9999-7999-8999-999999999999")]);
+    var merchantResponse = MerchantResponseDto.FromMerchantForCaller(merchant, merchant.CreatedBy);
     using JsonDocument merchantDocument = JsonDocument.Parse(JsonSerializer.Serialize(merchantResponse, ApiJsonOptions));
     JsonElement productRoot = productDocument.RootElement;
     JsonElement merchantRoot = merchantDocument.RootElement;
@@ -190,8 +189,6 @@ public sealed class InvoiceResponseTransportContractTests
       "category",
       "address",
       "parentCompanyId",
-      "referencedInvoiceCount",
-      "referencedInvoiceIds",
       "additionalMetadata",
       "isImportant",
       "isSoftDeleted",
@@ -202,7 +199,6 @@ public sealed class InvoiceResponseTransportContractTests
       "numberOfUpdates");
     Assert.AreEqual(JsonValueKind.Null, merchantRoot.GetProperty("category").ValueKind);
     AssertPropertyNames(merchantRoot.GetProperty("address"), "fullName", "address", "phoneNumber", "emailAddress", "website");
-    Assert.AreEqual(1, merchantRoot.GetProperty("referencedInvoiceCount").GetInt32());
   }
 
   /// <summary>

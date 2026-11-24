@@ -109,14 +109,6 @@ public partial class InvoiceOrchestrationService : IInvoiceOrchestrationService
     }).ConfigureAwait(false);
 
   /// <inheritdoc/>
-  public async Task<bool> HasInvoicesForMerchant(Guid merchantIdentifier, CancellationToken cancellationToken) =>
-    await TryCatchAsync(async () =>
-    {
-      using var activity = InvoicePackageTracing.StartActivity(nameof(HasInvoicesForMerchant));
-      return await invoiceStorageFoundationService.HasInvoicesForMerchant(merchantIdentifier, cancellationToken).ConfigureAwait(false);
-    }).ConfigureAwait(false);
-
-  /// <inheritdoc/>
   public async Task<Invoice> ReadInvoiceObject(Guid identifier, Guid? userIdentifier, CancellationToken cancellationToken) =>
     await TryCatchAsync(async () =>
     {

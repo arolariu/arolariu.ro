@@ -232,12 +232,12 @@ public sealed partial class InvoiceProcessingService : IInvoiceProcessingService
   /// <summary>Reads the merchants referenced by the caller's own invoices.</summary>
   /// <param name="userIdentifier">The authenticated user whose invoices are inspected.</param>
   /// <param name="cancellationToken">The token used to cancel the query.</param>
-  /// <returns>The distinct visible merchants and the caller-owned invoice snapshot used to derive them.</returns>
+  /// <returns>The distinct visible merchants.</returns>
   /// <exception cref="DDD.AggregatorRoots.Invoices.Exceptions.Outer.Processing.InvoiceProcessingServiceDependencyException">
   /// Thrown when invoice or merchant orchestration cannot complete the query.
   /// </exception>
   /// <inheritdoc/>
-  public async Task<(IReadOnlyCollection<Merchant> Merchants, IReadOnlyCollection<Invoice> Invoices)> ReadMerchantsVisibleToUser(
+  public async Task<IEnumerable<Merchant>> ReadMerchantsVisibleToUser(
     Guid userIdentifier,
     CancellationToken cancellationToken) =>
   await TryCatchAsync(async () =>
@@ -245,9 +245,9 @@ public sealed partial class InvoiceProcessingService : IInvoiceProcessingService
     using var activity = InvoicePackageTracing.StartActivity(nameof(ReadMerchantsVisibleToUser));
     activity?.SetUserContext(userIdentifier);
 
-    IReadOnlyCollection<Invoice> invoices = (await invoiceOrchestrationService
+    IEnumerable<Invoice> invoices = await invoiceOrchestrationService
       .ReadAllInvoiceObjects(userIdentifier, cancellationToken)
-      .ConfigureAwait(false)).ToList();
+      .ConfigureAwait(false);
     var merchantIdentifiers = invoices
       .Select(invoice => invoice.MerchantReference)
       .Where(reference => reference != Guid.Empty)
@@ -255,11 +255,9 @@ public sealed partial class InvoiceProcessingService : IInvoiceProcessingService
       .ToList();
     activity?.SetTag("merchant.reference_count", merchantIdentifiers.Count);
 
-    IReadOnlyCollection<Merchant> merchants = (await merchantOrchestrationService
+    return await merchantOrchestrationService
       .ReadMerchantObjectsByIdentifiers(merchantIdentifiers, cancellationToken)
-      .ConfigureAwait(false)).ToList();
-
-    return (merchants, invoices);
+      .ConfigureAwait(false);
   }).ConfigureAwait(false);
   #endregion
 
@@ -380,36 +378,6 @@ public sealed partial class InvoiceProcessingService : IInvoiceProcessingService
     sw.Stop();
     InvoiceMetrics.RecordOperation("update", "merchant", "success", sw.Elapsed.TotalMilliseconds);
     return newMerchant;
-  }).ConfigureAwait(false);
-  #endregion
-
-  #region Delete Merchant API
-  /// <summary>Deletes one merchant through merchant orchestration.</summary>
-  /// <param name="identifier">The merchant identifier.</param>
-  /// <param name="parentCompanyId">The optional parent-company partition.</param>
-  /// <param name="cancellationToken">The token used to cancel deletion.</param>
-  /// <returns>A task that completes after deletion.</returns>
-  /// <exception cref="DDD.AggregatorRoots.Invoices.Exceptions.Outer.Processing.InvoiceProcessingServiceDependencyException">
-  /// Thrown when merchant orchestration cannot complete the deletion.
-  /// </exception>
-  /// <inheritdoc/>
-  public async Task DeleteMerchant(Guid identifier, Guid? parentCompanyId, CancellationToken cancellationToken) =>
-  await TryCatchAsync(async () =>
-  {
-    using var activity = InvoicePackageTracing.StartActivity(nameof(DeleteMerchant));
-    var sw = Stopwatch.StartNew();
-
-    if (await invoiceOrchestrationService.HasInvoicesForMerchant(identifier, cancellationToken).ConfigureAwait(false))
-    {
-      throw new MerchantInUseException();
-    }
-
-    await merchantOrchestrationService
-      .DeleteMerchantObject(identifier, parentCompanyId, cancellationToken)
-      .ConfigureAwait(false);
-
-    sw.Stop();
-    InvoiceMetrics.RecordOperation("delete", "merchant", "success", sw.Elapsed.TotalMilliseconds);
   }).ConfigureAwait(false);
   #endregion
 

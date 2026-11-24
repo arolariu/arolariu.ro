@@ -36,9 +36,6 @@ internal abstract class DatabaseBrokerTestAdapter : IDatabaseBroker
   public virtual ValueTask DeleteInvoicesAsync(Guid userIdentifier, CancellationToken cancellationToken) =>
     throw new NotSupportedException();
 
-  public virtual ValueTask<bool> HasInvoicesForMerchantAsync(Guid merchantIdentifier, CancellationToken cancellationToken) =>
-    throw new NotSupportedException();
-
   public virtual ValueTask<Merchant> CreateMerchantAsync(Merchant merchant, CancellationToken cancellationToken) =>
     throw new NotSupportedException();
 
@@ -52,9 +49,6 @@ internal abstract class DatabaseBrokerTestAdapter : IDatabaseBroker
     throw new NotSupportedException();
 
   public virtual ValueTask<Merchant> UpdateMerchantAsync(Merchant currentMerchant, Merchant updatedMerchant, CancellationToken cancellationToken) =>
-    throw new NotSupportedException();
-
-  public virtual ValueTask DeleteMerchantAsync(Guid merchantIdentifier, Guid? parentCompanyId, CancellationToken cancellationToken) =>
     throw new NotSupportedException();
 
 }

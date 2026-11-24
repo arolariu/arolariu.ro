@@ -54,20 +54,6 @@ public partial class MerchantStorageFoundationService : IMerchantStorageFoundati
   }).ConfigureAwait(false);
   #endregion
 
-  #region Delete Merchant Object API
-  /// <inheritdoc/>
-  public async Task DeleteMerchantObject(Guid identifier, Guid? parentCompanyId, CancellationToken cancellationToken) =>
-  await TryCatchAsync(async () =>
-  {
-    using var activity = InvoicePackageTracing.StartActivity(nameof(DeleteMerchantObject));
-
-    ValidateMerchantIdentifierIsSet(identifier);
-    ValidateParentCompanyIdentifierIsSet(parentCompanyId);
-
-    await invoiceNoSqlBroker.DeleteMerchantAsync(identifier, parentCompanyId, cancellationToken).ConfigureAwait(false);
-  }).ConfigureAwait(false);
-  #endregion
-
   #region Read Merchant Objects API
   /// <inheritdoc/>
   public async Task<IEnumerable<Merchant>> ReadAllMerchantObjects(Guid parentCompanyId, CancellationToken cancellationToken) =>
