@@ -171,7 +171,7 @@ public sealed class InvoiceProcessingServiceCurrentArchitectureTests
     Product result = await service.UpdateProduct(
       invoiceId,
       userId,
-      new UpdateProductRequestDto("MILK", "Whole Milk", 2m, null, null, 2m, null),
+      new UpdateProductRequestDto("MILK", "Whole Milk", null, 2m, null, null, 2m, null),
       CancellationToken.None);
 
     Assert.AreSame(chocolate, invoice.Items.First());

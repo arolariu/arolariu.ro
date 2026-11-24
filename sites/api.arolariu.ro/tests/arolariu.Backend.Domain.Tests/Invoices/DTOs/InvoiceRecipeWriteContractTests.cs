@@ -5,7 +5,6 @@ using System.Linq;
 
 using arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices;
 using arolariu.Backend.Domain.Invoices.DDD.ValueObjects;
-using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Categories;
 using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Recipes;
 using arolariu.Backend.Domain.Invoices.DTOs.Requests;
 
@@ -83,6 +82,7 @@ public sealed class InvoiceRecipeWriteContractTests
     var dto = new PatchInvoiceRequestDto(
       Name: null,
       Description: null,
+      Category: null,
       PaymentInformation: null,
       MerchantReference: null,
       IsImportant: null,
@@ -108,6 +108,7 @@ public sealed class InvoiceRecipeWriteContractTests
     var dto = new PatchInvoiceRequestDto(
       Name: null,
       Description: null,
+      Category: null,
       PaymentInformation: null,
       MerchantReference: null,
       IsImportant: null,
@@ -134,6 +135,7 @@ public sealed class InvoiceRecipeWriteContractTests
     var dto = new PatchInvoiceRequestDto(
       Name: null,
       Description: null,
+      Category: null,
       PaymentInformation: null,
       MerchantReference: null,
       IsImportant: null,
@@ -163,6 +165,7 @@ public sealed class InvoiceRecipeWriteContractTests
     var dto = new UpdateInvoiceRequestDto(
       Name: "Invoice",
       Description: "desc",
+      Category: null,
       PaymentInformation: new PaymentInformation(),
       MerchantReference: null,
       IsImportant: false,
@@ -194,6 +197,7 @@ public sealed class InvoiceRecipeWriteContractTests
     var dto = new UpdateInvoiceRequestDto(
       Name: "Invoice",
       Description: "desc",
+      Category: null,
       PaymentInformation: new PaymentInformation(),
       MerchantReference: null,
       IsImportant: false,
@@ -216,6 +220,7 @@ public sealed class InvoiceRecipeWriteContractTests
     var dto = new UpdateInvoiceRequestDto(
       Name: "Invoice",
       Description: "desc",
+      Category: null,
       PaymentInformation: new PaymentInformation(),
       MerchantReference: null,
       IsImportant: false,
@@ -225,27 +230,5 @@ public sealed class InvoiceRecipeWriteContractTests
     Invoice result = dto.ToInvoice(InvoiceId, UserId);
 
     Assert.IsEmpty(result.PossibleRecipes);
-  }
-
-  /// <summary>A full edit that omits its category preserves the stored value.</summary>
-  [TestMethod]
-  public void Put_OmittedCategory_PreservesExistingCategory()
-  {
-    var existing = MakeExistingInvoice();
-    existing.Category = InvoiceCategory.Groceries;
-
-    var dto = new UpdateInvoiceRequestDto(
-      Name: "Renamed invoice",
-      Description: "desc",
-      PaymentInformation: new PaymentInformation(),
-      MerchantReference: null,
-      IsImportant: false,
-      PossibleRecipes: null,
-      AdditionalMetadata: null);
-
-    var updatedEntity = dto.ToInvoice(InvoiceId, UserId, existing.Category);
-
-    Assert.IsNotNull(updatedEntity.Category);
-    Assert.AreEqual(InvoiceCategory.Groceries, updatedEntity.Category);
   }
 }

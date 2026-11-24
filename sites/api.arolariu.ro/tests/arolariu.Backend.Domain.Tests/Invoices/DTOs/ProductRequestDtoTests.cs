@@ -45,6 +45,7 @@ public sealed class ProductRequestDtoTests
     var request = new UpdateProductRequestDto(
       "Old milk",
       "Milk",
+      Category: null,
       Quantity: 1m,
       QuantityUnit: "pcs",
       ProductCode: null,

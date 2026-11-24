@@ -698,6 +698,7 @@ public sealed class InvoiceEndpointsStatusCodeTests
     var request = new UpdateProductRequestDto(
       OriginalProductName: "Old Milk",
       Name: "New Milk",
+      Category: null,
       Quantity: 2m,
       QuantityUnit: "pcs",
       ProductCode: string.Empty,
@@ -946,6 +947,7 @@ public sealed class InvoiceEndpointsStatusCodeTests
     var request = new UpdateInvoiceRequestDto(
       Name: "Groceries",
       Description: "Weekly shop",
+      Category: null,
       PaymentInformation: new PaymentInformation(),
       MerchantReference: null,
       IsImportant: false,
@@ -996,6 +998,7 @@ public sealed class InvoiceEndpointsStatusCodeTests
     var request = new UpdateInvoiceRequestDto(
       Name: "Groceries",
       Description: "Weekly shop",
+      Category: null,
       PaymentInformation: new PaymentInformation(),
       MerchantReference: null,
       IsImportant: false,
@@ -1053,6 +1056,7 @@ public sealed class InvoiceEndpointsStatusCodeTests
     var request = new UpdateInvoiceRequestDto(
       Name: "Groceries",
       Description: "Weekly shop",
+      Category: null,
       PaymentInformation: new PaymentInformation(),
       MerchantReference: null,
       IsImportant: false,
@@ -1095,6 +1099,7 @@ public sealed class InvoiceEndpointsStatusCodeTests
     var request = new UpdateMerchantRequestDto(
       Name: "Store",
       Description: "Description",
+      Category: null,
       Address: null,
       ParentCompanyId: parentCompanyId,
       AdditionalMetadata: null);
@@ -1144,6 +1149,7 @@ public sealed class InvoiceEndpointsStatusCodeTests
     var request = new UpdateMerchantRequestDto(
       Name: "Store",
       Description: "Description",
+      Category: null,
       Address: null,
       ParentCompanyId: Guid.NewGuid(),
       AdditionalMetadata: null);

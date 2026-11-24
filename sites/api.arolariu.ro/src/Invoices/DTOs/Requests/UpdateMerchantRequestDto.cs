@@ -2,7 +2,6 @@ namespace arolariu.Backend.Domain.Invoices.DTOs.Requests;
 
 using System;
 using System.Collections.Generic;
-using System.Text.Json.Serialization;
 using System.Diagnostics.CodeAnalysis;
 
 using arolariu.Backend.Common.DDD.ValueObjects;
@@ -54,6 +53,7 @@ using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Categories;
 /// var request = new UpdateMerchantRequestDto(
 ///     Name: "Kaufland Iasi Pacurari",
 ///     Description: "Updated description with new hours",
+///     Category: null,
 ///     Address: new ContactInformation { City = "Iasi", Country = "Romania" },
 ///     ParentCompanyId: parentId,
 ///     AdditionalMetadata: new Dictionary&lt;string, string&gt; { ["storeCode"] = "IS001" });
@@ -69,16 +69,17 @@ using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Categories;
 public readonly record struct UpdateMerchantRequestDto(
   string? Name,
   string? Description,
+  int? Category,
   ContactInformation? Address,
   Guid? ParentCompanyId,
-  IDictionary<string, string>? AdditionalMetadata,
-  [property: JsonNumberHandling(JsonNumberHandling.Strict)] int? Category = null)
+  IDictionary<string, string>? AdditionalMetadata)
 {
+  // A partial detail edit must not fall through to a category-only save.
   private bool IsCategoryOnly => Category.HasValue && Name is null && Description is null
     && Address is null && ParentCompanyId is null && AdditionalMetadata is null;
 
-  internal bool IsValid => CategorySelection.IsValid<MerchantCategory>(Category)
-    && (IsCategoryOnly || (!string.IsNullOrWhiteSpace(Name) && !string.IsNullOrWhiteSpace(Description)));
+  internal bool IsValid => (IsCategoryOnly || (!string.IsNullOrWhiteSpace(Name) && !string.IsNullOrWhiteSpace(Description)))
+    && (Category is null or -1 || Enum.IsDefined((MerchantCategory)Category.Value));
 
   /// <summary>Applies only editable values, retaining the merchant's identity, revision and references.</summary>
   internal void ApplyTo(Merchant merchant)
@@ -96,6 +97,6 @@ public readonly record struct UpdateMerchantRequestDto(
       }
     }
 
-    merchant.Category = CategorySelection.Apply(Category, merchant.Category);
+    if (Category is int id) merchant.Category = id == -1 ? null : (MerchantCategory)id;
   }
 }

@@ -67,6 +67,7 @@ using arolariu.Backend.Domain.Invoices.DDD.ValueObjects;
 /// <code>
 /// var request = new UpdateInvoiceRequestDto(
 ///     Name: "Updated Invoice Name",
+///     Category: null,           // Preserve the saved category
 ///     Description: "Monthly groceries",
 ///     PaymentInformation: new PaymentInformation(Currency.RON, 150.50m, 28.60m, PaymentMethod.Card),
 ///     MerchantReference: merchantId,
@@ -74,7 +75,7 @@ using arolariu.Backend.Domain.Invoices.DDD.ValueObjects;
 ///     PossibleRecipes: null,    // null preserves existing recipes
 ///     AdditionalMetadata: null);
 ///
-/// var invoice = request.ToInvoice(invoiceId, userId, existingInvoice.Category);
+/// var invoice = request.ToInvoice(invoiceId, userId);
 /// await invoiceService.UpdateAsync(invoice);
 /// </code>
 /// </example>
@@ -86,12 +87,12 @@ using arolariu.Backend.Domain.Invoices.DDD.ValueObjects;
 public readonly record struct UpdateInvoiceRequestDto(
   [Required] string Name,
   [Required] string Description,
+  int? Category,
   PaymentInformation PaymentInformation,
   Guid? MerchantReference,
   bool IsImportant,
   [property: JsonPropertyName("possibleRecipes")] IReadOnlyList<RecipeSuggestionRequestDto>? PossibleRecipes,
-  IDictionary<string, object>? AdditionalMetadata,
-  [property: JsonNumberHandling(JsonNumberHandling.Strict)] int? Category = null)
+  IDictionary<string, object>? AdditionalMetadata)
 {
   /// <summary>
   /// Converts this DTO to an <see cref="Invoice"/> domain aggregate.
@@ -117,11 +118,10 @@ public readonly record struct UpdateInvoiceRequestDto(
   /// <param name="userIdentifier">
   /// The owner's user identifier. Used for authorization and partitioning.
   /// </param>
-  /// <param name="currentCategory">The stored category to preserve if the request omits it.</param>
   /// <returns>
   /// A fully populated <see cref="Invoice"/> instance ready for persistence.
   /// </returns>
-  public Invoice ToInvoice(Guid invoiceId, Guid userIdentifier, InvoiceCategory? currentCategory = null)
+  public Invoice ToInvoice(Guid invoiceId, Guid userIdentifier)
   {
     var invoice = new Invoice
     {
@@ -129,7 +129,7 @@ public readonly record struct UpdateInvoiceRequestDto(
       UserIdentifier = userIdentifier,
       Name = Name,
       Description = Description,
-      Category = CategorySelection.Apply(Category, currentCategory),
+      Category = Category is int id && id != -1 ? (InvoiceCategory)id : null,
       PaymentInformation = PaymentInformation,
       MerchantReference = MerchantReference ?? Guid.Empty,
       IsImportant = IsImportant,

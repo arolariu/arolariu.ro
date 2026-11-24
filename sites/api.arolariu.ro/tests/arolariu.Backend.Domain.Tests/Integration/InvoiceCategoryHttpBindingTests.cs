@@ -74,10 +74,12 @@ public sealed class InvoiceCategoryHttpBindingTests
   [DataRow("PUT", "null", "3001")]
   [DataRow("PUT", "-1", "null")]
   [DataRow("PUT", "3074", "3074")]
+  [DataRow("PUT", "\"3074\"", "3074")]
   [DataRow("PATCH", "", "3001")]
   [DataRow("PATCH", "null", "3001")]
   [DataRow("PATCH", "-1", "null")]
   [DataRow("PATCH", "3074", "3074")]
+  [DataRow("PATCH", "\"-1\"", "null")]
   public async Task EditInvoice_CategoryIntent_BindsOmissionClearAndAssignment(string method, string category, string expected)
   {
     Guid userId = Guid.NewGuid();
@@ -123,8 +125,8 @@ public sealed class InvoiceCategoryHttpBindingTests
   /// <summary>Invalid category intent cannot update either side of a merchant relationship.</summary>
   [TestMethod]
   [DataRow("2001")]
-  [DataRow("\"3001\"")]
-  [DataRow("\"-1\"")]
+  [DataRow("\"2001\"")]
+  [DataRow("\"no category\"")]
   [DataRow("-1.0")]
   [DataRow("-2")]
   public async Task PatchInvoice_InvalidCategory_DoesNotTouchMerchantReference(string category)
@@ -153,6 +155,7 @@ public sealed class InvoiceCategoryHttpBindingTests
   [TestMethod]
   [DataRow("""{"category":2005}""", "2005", false)]
   [DataRow("""{"category":-1}""", "null", false)]
+  [DataRow("""{"category":"2005"}""", "2005", false)]
   [DataRow("""{"name":"New name","description":"New description"}""", "2001", true)]
   [DataRow("""{"name":"New name","description":"New description","category":null}""", "2001", true)]
   public async Task PutMerchant_CategoryIntent_PreservesUneditedState(string payload, string expected, bool details)

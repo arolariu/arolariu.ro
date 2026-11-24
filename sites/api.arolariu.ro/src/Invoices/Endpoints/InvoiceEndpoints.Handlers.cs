@@ -246,7 +246,7 @@ public static partial class InvoiceEndpoints
         activity.SetOperationType("CRUD.Update");
       }
 
-      if (!CategorySelection.IsValid<InvoiceCategory>(invoicePayload.Category))
+      if (invoicePayload.Category is int category && category != -1 && !Enum.IsDefined((InvoiceCategory)category))
       {
         return TypedResults.BadRequest("The category must be an invoice category ID or -1 to clear.");
       }
@@ -263,7 +263,8 @@ public static partial class InvoiceEndpoints
         return TypedResults.NotFound();
       }
 
-      var updatedInvoiceEntity = invoicePayload.ToInvoice(id, potentialUserIdentifier, possibleInvoice.Category);
+      var updatedInvoiceEntity = invoicePayload.ToInvoice(id, potentialUserIdentifier);
+      if (invoicePayload.Category is null) updatedInvoiceEntity.Category = possibleInvoice.Category;
       updatedInvoiceEntity.StorageETag = possibleInvoice.StorageETag;
       if (updatedInvoiceEntity.MerchantReference != Guid.Empty
           && updatedInvoiceEntity.MerchantReference != possibleInvoice.MerchantReference
@@ -336,7 +337,7 @@ public static partial class InvoiceEndpoints
         activity.SetOperationType("CRUD.Patch");
       }
 
-      if (!CategorySelection.IsValid<InvoiceCategory>(invoicePayload.Category))
+      if (invoicePayload.Category is int category && category != -1 && !Enum.IsDefined((InvoiceCategory)category))
       {
         return TypedResults.BadRequest("The category must be an invoice category ID or -1 to clear.");
       }

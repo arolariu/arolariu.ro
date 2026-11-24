@@ -80,6 +80,7 @@ using arolariu.Backend.Domain.Invoices.DDD.ValueObjects;
 /// var request = new PatchInvoiceRequestDto(
 ///     Name: "Updated Name",
 ///     Description: null,  // Keep existing
+///     Category: null,
 ///     PaymentInformation: null,
 ///     MerchantReference: null,
 ///     IsImportant: true,
@@ -98,13 +99,13 @@ using arolariu.Backend.Domain.Invoices.DDD.ValueObjects;
 public readonly record struct PatchInvoiceRequestDto(
   string? Name,
   string? Description,
+  int? Category,
   PaymentInformation? PaymentInformation,
   Guid? MerchantReference,
   bool? IsImportant,
   ICollection<Guid>? SharedWith,
   [property: JsonPropertyName("possibleRecipes")] IReadOnlyList<RecipeSuggestionRequestDto>? PossibleRecipes,
-  IDictionary<string, object>? AdditionalMetadata,
-  [property: JsonNumberHandling(JsonNumberHandling.Strict)] int? Category = null)
+  IDictionary<string, object>? AdditionalMetadata)
 {
   /// <summary>
   /// Applies this partial update to an existing <see cref="Invoice"/> instance.
@@ -157,7 +158,12 @@ public readonly record struct PatchInvoiceRequestDto(
       StorageETag = existing.StorageETag,
       Name = !string.IsNullOrWhiteSpace(Name) ? Name : existing.Name,
       Description = !string.IsNullOrWhiteSpace(Description) ? Description : existing.Description,
-      Category = CategorySelection.Apply(Category, existing.Category),
+      Category = Category switch
+      {
+        null => existing.Category,
+        -1 => null,
+        int id => (InvoiceCategory)id,
+      },
       CreatedAt = existing.CreatedAt,
       CreatedBy = existing.CreatedBy,
       NumberOfUpdates = existing.NumberOfUpdates,
