@@ -1,5 +1,5 @@
 import {DialogProvider} from "@/app/domains/invoices/_contexts/DialogContext";
-import type {Invoice} from "@/types/invoices";
+import {ProductCategory, type Invoice} from "@/types/invoices";
 import {toast} from "@arolariu/components";
 import {fireEvent, render, screen, waitFor, within} from "@testing-library/react";
 import {MotionGlobalConfig} from "motion/react";
@@ -13,15 +13,18 @@ vi.unmock("next-intl");
 vi.unmock("next-intl-selector");
 
 function renderItems(invoice: Invoice): ReturnType<typeof render> {
-  return render(
-    <NextIntlClientProvider
-      locale='en'
-      messages={{pages: {invoices: {editInvoice: {itemsTable: messages.pages.invoices.editInvoice.itemsTable}}}}}>
-      <DialogProvider>
-        <ItemsTable invoice={invoice} />
-      </DialogProvider>
-    </NextIntlClientProvider>,
-  );
+  return render(<ItemsTable invoice={invoice} />, {
+    wrapper: ({children}) => (
+      <NextIntlClientProvider
+        locale='en'
+        messages={{
+          categories: messages.categories,
+          pages: {invoices: {editInvoice: {itemsTable: messages.pages.invoices.editInvoice.itemsTable}}},
+        }}>
+        <DialogProvider>{children}</DialogProvider>
+      </NextIntlClientProvider>
+    ),
+  });
 }
 
 describe("ItemsTable", () => {
@@ -109,5 +112,49 @@ describe("ItemsTable", () => {
     expect(screen.queryByRole("cell", {name: "Rice"})).not.toBeInTheDocument();
     expect(screen.getByRole("cell", {name: "Milk"})).toBeInTheDocument();
     expect(screen.queryByRole("button", {name: "Delete Selected"})).not.toBeInTheDocument();
+  });
+
+  it("does not treat a locally renamed row as the persisted row with that name", async () => {
+    renderItems(buildInvoice({items: [buildProduct({name: "Oats"}), buildProduct({name: "Milk"})]}));
+    fireEvent.click(screen.getByRole("checkbox", {name: "Select Milk"}));
+    fireEvent.click(screen.getByRole("button", {name: "Delete Selected"}));
+    fireEvent.click(within(screen.getByRole("alertdialog")).getByRole("button", {name: "Delete"}));
+    await waitFor(() => expect(screen.queryByRole("alertdialog")).not.toBeInTheDocument());
+
+    fireEvent.click(screen.getByText("Oats"));
+    const input = screen.getByRole("textbox", {name: "Edit Name for Oats"});
+    fireEvent.change(input, {target: {value: "Milk"}});
+    fireEvent.keyDown(input, {key: "Enter"});
+
+    const renamed = within(screen.getByRole("row", {name: /Select Milk/}));
+    expect(renamed.getByText("Milk")).toBeInTheDocument();
+    expect(renamed.queryByRole("button", {name: "Product category: Milk"})).not.toBeInTheDocument();
+  });
+
+  it("shows a refreshed saved category without discarding a local quantity edit", () => {
+    const milk = buildProduct({name: "Milk", quantity: 2, quantityUnit: "L", category: null});
+    const invoice = buildInvoice({items: [milk]});
+    const {rerender} = renderItems(invoice);
+    fireEvent.click(screen.getByRole("cell", {name: "2 L"}));
+    const quantity = screen.getByRole("spinbutton", {name: "Edit Quantity for Milk"});
+    fireEvent.change(quantity, {target: {value: "5"}});
+    fireEvent.keyDown(quantity, {key: "Enter"});
+
+    rerender(<ItemsTable invoice={{...invoice, items: [{...milk, category: ProductCategory.Milk}]}} />);
+
+    expect(screen.getByRole("button", {name: "Product category: Milk"})).toHaveTextContent("Milk");
+    expect(screen.getByRole("cell", {name: "5 L"})).toBeInTheDocument();
+  });
+
+  it("keeps distinctly named Unicode rows editable but blocks definite case-insensitive duplicates", () => {
+    const names = ["Straße", "STRASSE", "Milk", "MILK"];
+    renderItems(buildInvoice({items: names.map((name) => buildProduct({name}))}));
+
+    for (const name of ["Straße", "STRASSE"]) {
+      expect(screen.getByRole("button", {name: `Product category: ${name}`})).toBeEnabled();
+    }
+    for (const name of ["Milk", "MILK"]) {
+      expect(screen.queryByRole("button", {name: `Product category: ${name}`})).not.toBeInTheDocument();
+    }
   });
 });

@@ -1,4 +1,4 @@
-/**
+undefined; /**
  * @fileoverview Test support shared by the selfhost program and `dev selfhost` CLI tests.
  * @module scripts/container-runtime/selfhost.testing
  *
@@ -6,8 +6,7 @@
  * Builds one `makeTestLayer` harness for a selfhost run and records every side effect of that run,
  * in order, on one timeline: each process call (the SQL password replaced by `<sql-password>` in its
  * arguments and environment), the Traefik and certificate filesystem mutations, each Cosmos
- * request, each blob step, and each completed `Effect.sleep` (as `{delay: <ms>}`). Taxonomy
- * verification runs over seeded mirrors. Cosmos requests are answered by the fixture. The Azure Blob SDK
+ * request, each blob step, and each completed `Effect.sleep` (as `{delay: <ms>}`).
  * is replaced by a recording `LocalBlobStorage` layer. Nothing reaches a real external boundary.
  */
 
@@ -19,10 +18,9 @@ import {TestClock} from "effect/testing";
 
 import {makeRootCommand, runCli} from "../cli.ts";
 import {makeDevCommand} from "../commands/dev/cli.ts";
-import {pinnedTaxonomyFixtureFiles} from "../common/taxonomy-fixtures.testing.ts";
 import type {ProbeOutcome} from "../inspection/probes.ts";
 import type {ProcessOptions} from "../platform/Process.ts";
-import {makeTestLayer, processOutcomeEffect, repositoryFixtureRoot, runScoped, type TestHarness} from "../platform/testing.ts";
+import {makeTestLayer, processOutcomeEffect, runScoped, type TestHarness} from "../platform/testing.ts";
 import {LocalBlobStorage, localCosmosEndpoint} from "./selfhost.bootstrap.ts";
 import {selfhostTraefikConfigPath} from "./traefik.ts";
 import {ContainerRuntimeError} from "./types.ts";
@@ -82,8 +80,8 @@ export interface SelfhostFixtureOptions {
   readonly cosmos?: (path: string) => CosmosAnswer;
   /** Makes one blob step fail. */
   readonly blobFailure?: BlobFailure;
-  /** Omit pinned snapshot files for prerequisite failures. */
-  readonly missingTaxonomies?: boolean;
+  /** Omit the website package manifest to exercise attribution preparation failure. */
+  readonly missingWebsiteManifest?: boolean;
 }
 
 /** One selfhost harness and the recorders around it. */
@@ -227,8 +225,9 @@ export function selfhostFixture(options: SelfhostFixtureOptions = {}): SelfhostF
     context: "selfhost",
     environment: {platform: "linux", variables},
     files: {
-      ...WORKSPACE_FILES,
-      ...(options.missingTaxonomies ? {} : pinnedTaxonomyFixtureFiles(repositoryFixtureRoot)),
+      ...Object.fromEntries(
+        Object.entries(WORKSPACE_FILES).filter(([path]) => !options.missingWebsiteManifest || path !== "sites/arolariu.ro/package.json"),
+      ),
       ...(options.privateConfiguration ?? SELFHOST_PRIVATE_CONFIGURATION),
       ...(options.files ?? SELFHOST_CERTIFICATES),
     },

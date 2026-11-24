@@ -17,7 +17,7 @@ using arolariu.Backend.Domain.Invoices.DDD.Entities.Merchants;
 /// business workflow branching, or exception classification beyond direct dependency errors.</para>
 /// <para><b>Responsibilities:</b>
 /// <list type="bullet">
-///   <item><description>Persist (create / upsert) invoice and merchant aggregates.</description></item>
+///   <item><description>Create and conditionally replace invoice and merchant aggregates.</description></item>
 ///   <item><description>Retrieve single or multiple aggregates (optionally partition-scoped for RU efficiency).</description></item>
 ///   <item><description>Apply soft delete semantics for invoices (and future merchants) by flagging rather than removing.</description></item>
 /// </list></para>
@@ -33,9 +33,8 @@ using arolariu.Backend.Domain.Invoices.DDD.Entities.Merchants;
 ///   <item><description>Soft-delete operations are idempotent (repeated calls yield same terminal state).</description></item>
 ///   <item><description>Read operations are naturally idempotent.</description></item>
 /// </list></para>
-/// <para><b>Concurrency:</b> No optimistic concurrency (ETag) handling is implemented yet (backlog: introduce access conditions to prevent lost updates).</para>
 /// <para><b>Performance Notes:</b> Prefer partition-aware overloads. Cross-partition queries should be monitored (add RU telemetry in higher layers).
-/// Upsert patterns may incur additional RU vs targeted replace (evaluate once concurrency tokens introduced).</para>
+/// Writes use the persisted resource's partition.</para>
 /// <para><b>Thread Safety:</b> Implementations (e.g., EF Core DbContext wrapper) are typically NOT thread-safe; consumers should scope instances per unit-of-work.</para>
 /// <para><b>Cancellation:</b> All async methods accept an optional <c>CancellationToken</c> to support request abort and timeouts.</para>
 /// <para><b>Backlog:</b> Pagination / continuation tokens, optimistic concurrency, projection queries (selective field retrieval),
@@ -73,20 +72,18 @@ public interface IDatabaseBroker
   ValueTask<Invoice?> ReadInvoiceAsync(Guid invoiceIdentifier, Guid? userIdentifier, CancellationToken cancellationToken);
 
   /// <summary>
-  /// Lists all non soft-deleted invoices for a specific user/partition.
+  /// Lists active invoices in a user partition, optionally limited to a merchant.
   /// </summary>
   /// <param name="userIdentifier">Partition key / owner identity.</param>
   /// <param name="cancellationToken">Cancellation token to abort the operation (required).</param>
   /// <returns>An enumerable of invoices (may be empty).</returns>
   /// <exception cref="OperationCanceledException">Thrown if the operation is cancelled.</exception>
-  ValueTask<IEnumerable<Invoice>> ReadInvoicesAsync(Guid userIdentifier, CancellationToken cancellationToken);
+  /// <param name="merchantIdentifier">The optional merchant reference to match.</param>
+  ValueTask<IEnumerable<Invoice>> ReadInvoicesAsync(Guid userIdentifier, CancellationToken cancellationToken, Guid? merchantIdentifier = null);
 
   /// <summary>
-  /// Replaces (upserts) an invoice by identifier (partition inferred from <paramref name="updatedInvoice"/>).
+  /// Replaces an existing invoice in its owner partition.
   /// </summary>
-  /// <remarks>
-  /// <para>Assumes <paramref name="updatedInvoice"/> carries the correct <c>UserIdentifier</c>. Does not perform concurrency (ETag) checks.</para>
-  /// </remarks>
   /// <param name="invoiceIdentifier">Target invoice identity.</param>
   /// <param name="updatedInvoice">Updated invoice aggregate snapshot.</param>
   /// <param name="cancellationToken">Cancellation token to abort the operation (required).</param>
@@ -94,20 +91,6 @@ public interface IDatabaseBroker
   /// <exception cref="ArgumentNullException">Thrown if <paramref name="updatedInvoice"/> is null.</exception>
   /// <exception cref="OperationCanceledException">Thrown if the operation is cancelled.</exception>
   ValueTask<Invoice> UpdateInvoiceAsync(Guid invoiceIdentifier, Invoice updatedInvoice, CancellationToken cancellationToken);
-
-  /// <summary>
-  /// Replaces (upserts) an invoice using current and updated aggregate snapshots.
-  /// </summary>
-  /// <remarks>
-  /// <para><paramref name="currentInvoice"/> is not modified; only <paramref name="updatedInvoice"/> is persisted. No optimistic concurrency token applied.</para>
-  /// </remarks>
-  /// <param name="currentInvoice">Current persisted invoice snapshot (not validated here).</param>
-  /// <param name="updatedInvoice">Updated invoice aggregate snapshot.</param>
-  /// <param name="cancellationToken">Cancellation token to abort the operation (required).</param>
-  /// <returns>The persisted invoice after update.</returns>
-  /// <exception cref="ArgumentNullException">Thrown if <paramref name="currentInvoice"/> or <paramref name="updatedInvoice"/> is null.</exception>
-  /// <exception cref="OperationCanceledException">Thrown if the operation is cancelled.</exception>
-  ValueTask<Invoice> UpdateInvoiceAsync(Invoice currentInvoice, Invoice updatedInvoice, CancellationToken cancellationToken);
 
   /// <summary>
   /// Soft-deletes an invoice by identifier within a known partition.
@@ -183,27 +166,15 @@ public interface IDatabaseBroker
   ValueTask<IEnumerable<Merchant>> ReadMerchantsByIdentifiersAsync(IReadOnlyCollection<Guid> merchantIdentifiers, CancellationToken cancellationToken);
 
   /// <summary>
-  /// Replaces (upserts) a merchant using its current and updated snapshots.
+  /// Replaces an existing merchant in its stored partition.
   /// </summary>
-  /// <param name="currentMerchant">Current persisted merchant (not modified).</param>
   /// <param name="updatedMerchant">Updated merchant snapshot to persist.</param>
   /// <param name="cancellationToken">Cancellation token to abort the operation (required).</param>
   /// <returns>The persisted merchant.</returns>
-  /// <exception cref="ArgumentNullException">Thrown if <paramref name="currentMerchant"/> or <paramref name="updatedMerchant"/> is null.</exception>
+  /// <exception cref="ArgumentNullException">Thrown if <paramref name="updatedMerchant"/> is null.</exception>
   /// <exception cref="OperationCanceledException">Thrown if the operation is cancelled.</exception>
-  ValueTask<Merchant> UpdateMerchantAsync(Merchant currentMerchant, Merchant updatedMerchant, CancellationToken cancellationToken);
+  ValueTask<Merchant> UpdateMerchantAsync(Merchant updatedMerchant, CancellationToken cancellationToken);
 
-  /// <summary>
-  /// Soft-deletes (or physically replaces) a merchant by identifier via cross-partition search.
-  /// </summary>
-  /// <remarks>
-  /// <para>Current implementation performs a greedy query. If soft-delete is later introduced for merchants, implementation should mark a flag rather than remove.</para>
-  /// </remarks>
-  /// <param name="merchantIdentifier">Merchant identity.</param>
-  /// <param name="parentCompanyId">The parent company identifier.</param>
-  /// <param name="cancellationToken">Cancellation token to abort the operation (required).</param>
-  /// <exception cref="OperationCanceledException">Thrown if the operation is cancelled.</exception>
-  ValueTask DeleteMerchantAsync(Guid merchantIdentifier, Guid? parentCompanyId, CancellationToken cancellationToken);
   #endregion
 
 }

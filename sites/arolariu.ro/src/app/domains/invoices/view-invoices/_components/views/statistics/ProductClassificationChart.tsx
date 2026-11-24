@@ -5,11 +5,11 @@
  * @module app/domains/invoices/view-invoices/_components/views/statistics/ProductClassificationChart
  *
  * @remarks
- * This component visualizes product-level spending aggregated by the taxonomy root group of
- * each product's {@link StandardClassification}. Unlike the ClassificationBreakdownChart (which
+ * This component visualizes product-level spending aggregated by each product's category ID. Unlike the ClassificationBreakdownChart (which
  * shows invoice-level groups), this chart analyzes individual product items across all invoices.
  */
 
+import {productCategoryLabel} from "@/app/domains/invoices/_utils/labelUtilities";
 import {formatAmount} from "@/lib/utils.generic";
 import {
   Bar,
@@ -35,7 +35,7 @@ type Props = {
 };
 
 type TooltipPayloadItem = {
-  readonly payload?: ProductClassificationSpending & {fill: string};
+  readonly payload?: ProductClassificationSpending & {fill: string; categoryLabel: string};
 };
 
 type CustomTooltipProps = {
@@ -64,7 +64,7 @@ function CustomTooltip({
 
   return (
     <div className={styles["tooltip"]}>
-      <p className={styles["tooltipCategory"]}>{data.category}</p>
+      <p className={styles["tooltipCategory"]}>{data.categoryLabel}</p>
       <p className={styles["tooltipAmount"]}>
         {formatAmount(data.totalSpent)} {currency}
       </p>
@@ -106,14 +106,15 @@ export function ProductClassificationChart({data, currency}: Props): React.JSX.E
 
   const chartConfig: Record<string, {label: string; color: string}> = {};
   for (const [index, item] of data.entries()) {
-    chartConfig[item.category] = {
-      label: item.category,
+    chartConfig[String(item.category)] = {
+      label: productCategoryLabel(t, item.category),
       color: `var(--ac-chart-${(index % 5) + 1})`,
     };
   }
 
   const coloredData = data.map((item, index) => ({
     ...item,
+    categoryLabel: productCategoryLabel(t, item.category),
     fill: `var(--ac-chart-${(index % 5) + 1})`,
   }));
 
@@ -144,7 +145,7 @@ export function ProductClassificationChart({data, currency}: Props): React.JSX.E
               />
               <YAxis
                 type='category'
-                dataKey='category'
+                dataKey='categoryLabel'
                 tick={{fontSize: 10}}
                 tickLine={false}
                 axisLine={false}

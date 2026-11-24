@@ -5,7 +5,7 @@
  * @remarks
  * {@link runSelfhost} resolves the container engine, runs the shared preflight, and drives the
  * local compose stacks through the Effect `Process` service from `infra/Local`, echoing each command
- * as `$ <command>` with tee output. The start action verifies pinned taxonomies and prepares Website licenses
+ * as `$ <command>` with tee output. The start action prepares Website licenses
  * with {@link generateArtifacts} (silently), reads the SQL password as a `Redacted` value, makes
  * sure the localhost certificates exist, writes the Traefik file-provider config, and bootstraps
  * SQL Server, Cosmos, Azurite, and the .NET storage provisioner once the storage stack has
@@ -155,16 +155,6 @@ const stacksByAction: Readonly<Record<SelfhostAction, readonly SelfhostStack[]>>
 export interface SelfhostPlanInputs {
   readonly action: SelfhostAction;
   readonly adapter: ContainerRuntimeAdapter;
-}
-
-/**
- * Determines whether a selfhost action builds artifact-consuming images.
- *
- * @param action - Selfhost action.
- * @returns `true` only for start.
- */
-export function shouldGenerateTaxonomyArtifacts(action: SelfhostAction): boolean {
-  return action === "start";
 }
 
 function composeFile(adapter: ContainerRuntimeAdapter, file: string, args: readonly string[]): RuntimeCommand {
@@ -479,7 +469,7 @@ export const runSelfhost: (
     yield* assertSelfhostPrivateConfiguration();
   }
 
-  if (shouldGenerateTaxonomyArtifacts(input.action)) {
+  if (input.action === "start") {
     const paths = yield* resolveRepositoryPaths(import.meta.url);
     yield* silently(generateArtifacts({verbose: false, root: paths.root}));
   }

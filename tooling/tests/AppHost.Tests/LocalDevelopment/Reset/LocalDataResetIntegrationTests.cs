@@ -370,7 +370,7 @@ public sealed class LocalDataResetIntegrationTests
     {
       JObject receipt = (await stateClient.GetContainer("primary", "local-development").ReadItemAsync<JObject>(
         "invoice-scenario", new PartitionKey("invoice-scenario"), cancellationToken: token)).Resource;
-      Assert.AreEqual("v3", receipt.Value<string>("manifestVersion"));
+      Assert.AreEqual("v4", receipt.Value<string>("manifestVersion"));
       Assert.IsTrue(receipt.Value<bool>("completed"));
     }
     Assert.AreEqual(18000, invoices.Where(invoice =>
@@ -380,8 +380,8 @@ public sealed class LocalDataResetIntegrationTests
     {
       string? id = merchant.Value<string>("id");
       JObject[] referenced = invoices.Where(invoice => invoice.Value<string>("MerchantReference") == id).ToArray();
-      CollectionAssert.AreEquivalent(referenced.Select(invoice => invoice.Value<string>("id")).ToArray(),
-        merchant["ReferencedInvoices"]?.Values<string>().ToArray() ?? []);
+      Assert.IsNull(merchant["ReferencedInvoices"]);
+      Assert.IsNotEmpty(referenced);
       Assert.IsTrue(referenced.All(invoice => invoice.Value<string>("UserIdentifier") == merchant.Value<string>("CreatedBy")));
     }
     Assert.IsFalse(invoices.Any(invoice => invoice.Value<string>("id") == "custom-invoice"));

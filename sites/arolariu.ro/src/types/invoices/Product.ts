@@ -17,7 +17,7 @@
  * **Product Enrichment:**
  * Raw OCR names are enriched with:
  * - Generic names (e.g., "MLK 2% 1L" → "Milk 2% 1 Liter")
- * - Canonical taxonomy classification
+ * - Flat category selection
  * - Allergen detection
  * - Nutritional information (future)
  *
@@ -26,7 +26,7 @@
  */
 
 import type {AllergenAssessment} from "./Allergen";
-import type {StandardClassification} from "./Classification";
+import type {ProductCategory} from "./Category";
 
 /**
  * Tracks the editing and lifecycle state of a product.
@@ -110,7 +110,7 @@ export type ProductMetadata = {
  *   productCode: "5941234567890",
  *   price: 8.99,
  *   totalPrice: 17.98,
- *   classification: null,
+ *   category: null,
  *   allergenAssessment: null,
  *   metadata: { isEdited: false, isComplete: true, isSoftDeleted: false, confidence: 0.95 }
  * };
@@ -141,10 +141,10 @@ export interface Product {
   metadata: ProductMetadata;
 
   /**
-   * The standard taxonomy classification for this product.
-   * @remarks Expected system is GS1 GPC or ECOICOP v2. Null when the product has not been classified.
+   * The selected category.
+   * @remarks Null means uncategorized.
    */
-  classification: StandardClassification | null;
+  category: ProductCategory | null;
 
   /**
    * Structured EU-14 allergen assessment for this product.

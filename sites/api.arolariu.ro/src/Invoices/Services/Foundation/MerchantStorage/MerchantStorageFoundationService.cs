@@ -46,24 +46,11 @@ public partial class MerchantStorageFoundationService : IMerchantStorageFoundati
     using var activity = InvoicePackageTracing.StartActivity(nameof(CreateMerchantObject));
     ArgumentNullException.ThrowIfNull(merchant);
     ValidateMerchantIdentifierIsSet(merchant.id);
+    ValidateCategory(merchant.Category);
 
     await invoiceNoSqlBroker
       .CreateMerchantAsync(merchant, cancellationToken)
       .ConfigureAwait(false);
-  }).ConfigureAwait(false);
-  #endregion
-
-  #region Delete Merchant Object API
-  /// <inheritdoc/>
-  public async Task DeleteMerchantObject(Guid identifier, Guid? parentCompanyId, CancellationToken cancellationToken) =>
-  await TryCatchAsync(async () =>
-  {
-    using var activity = InvoicePackageTracing.StartActivity(nameof(DeleteMerchantObject));
-
-    ValidateMerchantIdentifierIsSet(identifier);
-    ValidateParentCompanyIdentifierIsSet(parentCompanyId);
-
-    await invoiceNoSqlBroker.DeleteMerchantAsync(identifier, parentCompanyId, cancellationToken).ConfigureAwait(false);
   }).ConfigureAwait(false);
   #endregion
 
@@ -116,37 +103,16 @@ public partial class MerchantStorageFoundationService : IMerchantStorageFoundati
   {
     using var activity = InvoicePackageTracing.StartActivity(nameof(UpdateMerchantObject));
     ArgumentNullException.ThrowIfNull(updatedMerchant);
-
-    var currentMerchant = await invoiceNoSqlBroker.ReadMerchantAsync(merchantIdentifier, parentCompanyId, cancellationToken).ConfigureAwait(false);
-    if (currentMerchant is null)
+    ValidateMerchantIdentifierIsSet(merchantIdentifier);
+    if (updatedMerchant.id != merchantIdentifier || (parentCompanyId is { } parent && updatedMerchant.ParentCompanyId != parent))
     {
-      throw new MerchantNotFoundException(merchantIdentifier);
+      throw new ArgumentException("Updates must retain the merchant identity and partition.", nameof(updatedMerchant));
     }
 
-    currentMerchant.Name = updatedMerchant.Name;
-    currentMerchant.Description = updatedMerchant.Description;
-    currentMerchant.Address = updatedMerchant.Address;
-
-    if (updatedMerchant.Classification is not null)
-    {
-      currentMerchant.Classification = updatedMerchant.Classification;
-    }
-
-    if (updatedMerchant.AdditionalMetadata.Count > 0)
-    {
-      currentMerchant.AdditionalMetadata.Clear();
-
-      foreach ((string key, string value) in updatedMerchant.AdditionalMetadata)
-      {
-        currentMerchant.AdditionalMetadata[key] = value;
-      }
-    }
-
-    var newMerchant = await invoiceNoSqlBroker
-      .UpdateMerchantAsync(currentMerchant, currentMerchant, cancellationToken)
+    ValidateCategory(updatedMerchant.Category);
+    return await invoiceNoSqlBroker
+      .UpdateMerchantAsync(updatedMerchant, cancellationToken)
       .ConfigureAwait(false);
-
-    return newMerchant;
   }).ConfigureAwait(false);
   #endregion
 }

@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 
 using arolariu.Backend.Common.DDD.ValueObjects;
 using arolariu.Backend.Domain.Invoices.DDD.Analysis.Exceptions.Inner;
+using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Categories;
 using arolariu.Backend.Domain.Invoices.DDD.Analysis.Exceptions.Outer.Foundation;
 using arolariu.Backend.Domain.Invoices.DDD.Analysis.Results;
 using arolariu.Backend.Domain.Invoices.DDD.Entities.Merchants;
@@ -24,21 +25,19 @@ public sealed class GenerativeAnalysisMerchantDescriptionTests
   /// Verifies that each merchant evidence signal contributes to the weak-evidence qualifier requirement.
   /// </summary>
   [TestMethod]
-  [DataRow(false, false, false, false, false, false, true)]
-  [DataRow(true, false, false, false, false, false, true)]
-  [DataRow(false, true, false, false, false, false, true)]
-  [DataRow(false, false, true, false, false, false, true)]
-  [DataRow(false, false, false, true, false, false, true)]
-  [DataRow(false, false, false, false, true, false, true)]
-  [DataRow(false, false, false, false, false, true, true)]
-  [DataRow(true, true, false, false, false, false, false)]
-  [DataRow(false, false, true, true, false, false, false)]
-  [DataRow(false, false, false, false, true, true, false)]
+  [DataRow(false, false, false, false, false, true)]
+  [DataRow(true, false, false, false, false, true)]
+  [DataRow(false, true, false, false, false, true)]
+  [DataRow(false, false, true, false, false, true)]
+  [DataRow(false, false, false, true, false, true)]
+  [DataRow(false, false, false, false, true, true)]
+  [DataRow(true, true, false, false, false, false)]
+  [DataRow(false, false, true, true, false, false)]
+  [DataRow(false, false, false, true, true, false)]
   public async Task GenerateMerchantDescriptionAsync_EvidenceSignalMatrix_RequiresQualifierOnlyWhenEvidenceIsWeak(
     bool hasDescription,
     bool hasClassification,
     bool hasContactEvidence,
-    bool hasReferencedInvoice,
     bool hasMetadata,
     bool hasParentCompany,
     bool expectsWeakEvidence)
@@ -47,7 +46,6 @@ public sealed class GenerativeAnalysisMerchantDescriptionTests
       hasDescription,
       hasClassification,
       hasContactEvidence ? CreateContact(address: "Bucharest") : new ContactInformation(),
-      hasReferencedInvoice,
       hasMetadata,
       hasParentCompany);
     MerchantDescriptionHarness harness = MerchantDescriptionHarness.WithResponse("Corner Shop sells groceries.", merchant);
@@ -85,7 +83,6 @@ public sealed class GenerativeAnalysisMerchantDescriptionTests
       hasDescription: true,
       hasClassification: false,
       CreateContact(address, phoneNumber, emailAddress, website),
-      hasReferencedInvoice: false,
       hasMetadata: false,
       hasParentCompany: false);
     MerchantDescriptionHarness harness = MerchantDescriptionHarness.WithResponse("Corner Shop sells groceries.", merchant);
@@ -132,16 +129,14 @@ public sealed class GenerativeAnalysisMerchantDescriptionTests
     bool hasDescription,
     bool hasClassification,
     ContactInformation contactInformation,
-    bool hasReferencedInvoice,
     bool hasMetadata,
     bool hasParentCompany) =>
     new()
     {
       Name = "Corner Shop",
       Description = hasDescription ? "Neighborhood grocery retailer." : string.Empty,
-      Classification = hasClassification ? ClassificationTestData.Nace("47.11", "Retail sale in non-specialised stores") : null,
+      Category = hasClassification ? MerchantCategory.Supermarket : null,
       Address = contactInformation,
-      ReferencedInvoices = hasReferencedInvoice ? [Guid.NewGuid()] : [],
       AdditionalMetadata = hasMetadata ? new Dictionary<string, string>(StringComparer.Ordinal) { ["source"] = "receipt" } : new Dictionary<string, string>(StringComparer.Ordinal),
       ParentCompanyId = hasParentCompany ? Guid.NewGuid() : Guid.Empty,
     };

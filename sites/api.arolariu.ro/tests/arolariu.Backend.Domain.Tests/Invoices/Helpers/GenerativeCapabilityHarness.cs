@@ -7,7 +7,7 @@ using arolariu.Backend.Domain.Invoices.Brokers.DocumentIntelligenceBroker;
 using arolariu.Backend.Domain.Invoices.DDD.Analysis.Contracts;
 using arolariu.Backend.Domain.Invoices.DDD.Analysis.Results;
 using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Allergens;
-using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Classifications;
+using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Categories;
 using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Products;
 using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Recipes;
 using arolariu.Backend.Domain.Invoices.Services.Foundation.Analysis;
@@ -24,7 +24,7 @@ internal sealed class GenerativeCapabilityHarness
   private GenerativeCapabilityHarness(
     ScriptedGenerativeAnalysisBroker broker,
     IReadOnlyList<ProductAnalysisInput> products,
-    IReadOnlyDictionary<string, StandardClassification> classifications,
+    IReadOnlyDictionary<string, ProductCategory?> classifications,
     IReadOnlyDictionary<string, AllergenAssessment> allergens)
   {
     Broker = broker;
@@ -34,7 +34,6 @@ internal sealed class GenerativeCapabilityHarness
     Service = new AnalysisFoundationService(
       Mock.Of<IDocumentIntelligenceBroker>(),
       broker,
-      TaxonomyBrokerTestFactory.Create(),
       NullLoggerFactory.Instance);
   }
 
@@ -48,7 +47,7 @@ internal sealed class GenerativeCapabilityHarness
   public IReadOnlyList<ProductAnalysisInput> Products { get; }
 
   /// <summary>Gets the product classifications paired with <see cref="Products"/>.</summary>
-  public IReadOnlyDictionary<string, StandardClassification> Classifications { get; }
+  public IReadOnlyDictionary<string, ProductCategory?> Classifications { get; }
 
   /// <summary>Gets the allergen assessments paired with <see cref="Products"/>.</summary>
   public IReadOnlyDictionary<string, AllergenAssessment> Allergens { get; }
@@ -174,9 +173,9 @@ internal sealed class GenerativeCapabilityHarness
     return new GenerativeCapabilityHarness(
       broker,
       [new ProductAnalysisInput("item-0001", new Product { Name = "pensula", Quantity = 1, QuantityUnit = "pcs" })],
-      new Dictionary<string, StandardClassification>(StringComparer.Ordinal)
+      new Dictionary<string, ProductCategory?>(StringComparer.Ordinal)
       {
-        ["item-0001"] = CreateNonFoodClassification("10001674", "Artists Brushes/Applicators"),
+        ["item-0001"] = ProductCategory.OfficeSchoolSupplies,
       },
       CreateAllergens(new Dictionary<string, AllergenAssessment>(StringComparer.Ordinal)
       {
@@ -196,16 +195,16 @@ internal sealed class GenerativeCapabilityHarness
         new ProductAnalysisInput("item-0001", new Product { Name = "lapte", Quantity = 1, QuantityUnit = "l" }),
       ];
 
-  private static Dictionary<string, StandardClassification> CreateClassifications(bool includeNonFood)
+  private static Dictionary<string, ProductCategory?> CreateClassifications(bool includeNonFood)
   {
-    var classifications = new Dictionary<string, StandardClassification>(StringComparer.Ordinal)
+    var classifications = new Dictionary<string, ProductCategory?>(StringComparer.Ordinal)
     {
-      ["item-0001"] = CreateFoodClassification("10000025", "Milk (Perishable)"),
+      ["item-0001"] = ProductCategory.Milk,
     };
 
     if (includeNonFood)
     {
-      classifications["item-0002"] = CreateNonFoodClassification("10001674", "Artists Brushes/Applicators");
+      classifications["item-0002"] = ProductCategory.OfficeSchoolSupplies;
     }
 
     return classifications;
@@ -219,35 +218,4 @@ internal sealed class GenerativeCapabilityHarness
         ["item-0001"] = AllergenAssessment.NoSignals(),
       };
 
-  private static StandardClassification CreateFoodClassification(string code, string label) =>
-    new(
-      ClassificationSystem.Gs1Gpc,
-      "2026-05",
-      code,
-      label,
-      [
-        new ClassificationNode("segment", "50000000", "Food/Beverage"),
-        new ClassificationNode("family", "50130000", "Milk/Butter/Cream/Yogurts/Cheese/Eggs/Substitutes"),
-        new ClassificationNode("class", "50131700", "Milk/Milk Substitutes"),
-        new ClassificationNode("brick", code, label),
-      ],
-      ClassificationOrigin.Analysis,
-      0.91,
-      [new ClassificationEvidence("subject.description", "lapte")]);
-
-  private static StandardClassification CreateNonFoodClassification(string code, string label) =>
-    new(
-      ClassificationSystem.Gs1Gpc,
-      "2026-05",
-      code,
-      label,
-      [
-        new ClassificationNode("segment", "70000000", "Arts/Crafts/Needlework"),
-        new ClassificationNode("family", "70010000", "Arts/Crafts/Needlework Supplies"),
-        new ClassificationNode("class", "70010100", "Artists Painting/Drawing Supplies"),
-        new ClassificationNode("brick", code, label),
-      ],
-      ClassificationOrigin.Analysis,
-      0.74,
-      [new ClassificationEvidence("subject.description", "pensula")]);
 }

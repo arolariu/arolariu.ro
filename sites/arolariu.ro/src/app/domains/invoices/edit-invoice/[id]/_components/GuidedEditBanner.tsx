@@ -74,7 +74,7 @@ export default function GuidedEditBanner({items, onReviewAll}: Props): React.JSX
       }
 
       // Check for unclassified products
-      if (item.classification === null) {
+      if (item.category === null) {
         uncategorized.push(item);
       }
 

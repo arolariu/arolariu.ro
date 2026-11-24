@@ -48,18 +48,6 @@ public partial class MerchantOrchestrationService : IMerchantOrchestrationServic
   }).ConfigureAwait(false);
   #endregion
 
-  #region Delete Merchant API
-  /// <inheritdoc/>
-  public async Task DeleteMerchantObject(Guid identifier, Guid? parentCompanyId, CancellationToken cancellationToken) =>
-  await TryCatchAsync(async () =>
-  {
-    using var activity = InvoicePackageTracing.StartActivity(nameof(DeleteMerchantObject));
-    await merchantStorage
-      .DeleteMerchantObject(identifier, parentCompanyId, cancellationToken)
-      .ConfigureAwait(false);
-  }).ConfigureAwait(false);
-  #endregion
-
   #region Read Merchants API
   /// <inheritdoc/>
   public async Task<IEnumerable<Merchant>> ReadAllMerchantObjects(Guid parentCompanyId, CancellationToken cancellationToken) =>
@@ -109,5 +97,6 @@ public partial class MerchantOrchestrationService : IMerchantOrchestrationServic
       .ConfigureAwait(false);
     return newMerchant;
   }).ConfigureAwait(false);
+
   #endregion
 }

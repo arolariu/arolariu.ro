@@ -44,13 +44,11 @@ public sealed class MerchantCollectionAuthorizationTests
     Assert.IsFalse(InvoiceEndpoints.IsMerchantCollectionRequestAuthorized(Guid.NewGuid(), Guid.Empty));
   }
 
-  /// <summary>Verifies the caller-scoped projection removes cross-tenant relationships, principals, and metadata.</summary>
+  /// <summary>Verifies the caller-scoped projection removes cross-tenant audit principals and metadata.</summary>
   [TestMethod]
   public void FromMerchantForCaller_SharedMerchant_RedactsCrossTenantFields()
   {
     var callerIdentifier = Guid.NewGuid();
-    var callerInvoiceIdentifier = Guid.NewGuid();
-    var unrelatedInvoiceIdentifier = Guid.NewGuid();
     var merchant = new Merchant
     {
       id = Guid.NewGuid(),
@@ -62,18 +60,7 @@ public sealed class MerchantCollectionAuthorizationTests
         ["integration.source"] = "shared import",
       },
     };
-    merchant.ReferencedInvoices.Add(callerInvoiceIdentifier);
-    merchant.ReferencedInvoices.Add(unrelatedInvoiceIdentifier);
-
-    MerchantResponseDto response = MerchantResponseDto.FromMerchantForCaller(
-      merchant,
-      callerIdentifier,
-      new HashSet<Guid> { callerInvoiceIdentifier });
-
-    Assert.AreEqual(1, response.ReferencedInvoiceCount);
-    CollectionAssert.AreEqual(
-      new[] { callerInvoiceIdentifier },
-      new List<Guid>(response.ReferencedInvoiceIds));
+    MerchantResponseDto response = MerchantResponseDto.FromMerchantForCaller(merchant, callerIdentifier);
     Assert.IsEmpty(response.AdditionalMetadata);
     Assert.AreEqual(Guid.Empty, response.CreatedBy);
     Assert.AreEqual(Guid.Empty, response.LastUpdatedBy);

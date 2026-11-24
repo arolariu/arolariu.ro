@@ -291,19 +291,13 @@ public sealed class MerchantStorageFoundationServiceExtendedTests
   {
     // Arrange
     var merchant = MerchantTestDataBuilder.CreateRandomMerchant();
-    var merchantId = Guid.NewGuid();
-    var parentCompanyId = Guid.NewGuid();
 
     mockBroker
-        .Setup(b => b.ReadMerchantAsync(merchantId, parentCompanyId, It.IsAny<CancellationToken>()))
-        .ReturnsAsync(merchant);
-
-    mockBroker
-        .Setup(b => b.UpdateMerchantAsync(merchant, merchant, It.IsAny<CancellationToken>()))
+        .Setup(b => b.UpdateMerchantAsync(merchant, It.IsAny<CancellationToken>()))
         .ReturnsAsync(merchant);
 
     // Act
-    var result = await service.UpdateMerchantObject(merchant, merchantId, parentCompanyId, CancellationToken.None);
+    var result = await service.UpdateMerchantObject(merchant, merchant.id, merchant.ParentCompanyId, CancellationToken.None);
 
     // Assert
     Assert.IsNotNull(result);
@@ -317,82 +311,13 @@ public sealed class MerchantStorageFoundationServiceExtendedTests
   {
     // Arrange
     var merchant = MerchantTestDataBuilder.CreateRandomMerchant();
-    var merchantId = Guid.NewGuid();
-
     mockBroker
-        .Setup(b => b.ReadMerchantAsync(merchantId, null, It.IsAny<CancellationToken>()))
+        .Setup(b => b.UpdateMerchantAsync(merchant, It.IsAny<CancellationToken>()))
         .ThrowsAsync(new InvalidOperationException("Unexpected error"));
 
     // Act & Assert
     await Assert.ThrowsExactlyAsync<MerchantFoundationServiceException>(() =>
-        service.UpdateMerchantObject(merchant, merchantId, null, CancellationToken.None));
-  }
-
-  #endregion
-
-  #region DeleteMerchantObject Extended Tests
-
-  /// <summary>
-  /// Validates successful merchant deletion.
-  /// </summary>
-  [TestMethod]
-  public async Task DeleteMerchantObject_ValidIdentifier_DeletesSuccessfully()
-  {
-    // Arrange
-    var merchantId = Guid.NewGuid();
-    var parentCompanyId = Guid.NewGuid();
-
-    mockBroker
-        .Setup(b => b.DeleteMerchantAsync(merchantId, parentCompanyId, It.IsAny<CancellationToken>()))
-        .Returns(ValueTask.CompletedTask);
-
-    // Act
-    await service.DeleteMerchantObject(merchantId, parentCompanyId, CancellationToken.None);
-
-    // Assert
-    mockBroker.Verify(b => b.DeleteMerchantAsync(merchantId, parentCompanyId, It.IsAny<CancellationToken>()), Times.Once);
-  }
-
-  /// <summary>
-  /// Validates generic exception during deletion is wrapped.
-  /// </summary>
-  [TestMethod]
-  public async Task DeleteMerchantObject_GenericException_ThrowsFoundationServiceException()
-  {
-    // Arrange
-    var merchantId = Guid.NewGuid();
-    var parentCompanyId = Guid.NewGuid();
-
-    mockBroker
-        .Setup(b => b.DeleteMerchantAsync(merchantId, parentCompanyId, It.IsAny<CancellationToken>()))
-        .ThrowsAsync(new InvalidOperationException("Unexpected error"));
-
-    // Act & Assert
-    await Assert.ThrowsExactlyAsync<MerchantFoundationServiceException>(() =>
-        service.DeleteMerchantObject(merchantId, parentCompanyId, CancellationToken.None));
-  }
-
-  /// <summary>
-  /// Validates idempotent deletion.
-  /// </summary>
-  [TestMethod]
-  public async Task DeleteMerchantObject_MultipleCalls_ExecutesEachTime()
-  {
-    // Arrange
-    var merchantId = Guid.NewGuid();
-    var parentCompanyId = Guid.NewGuid();
-
-    mockBroker
-        .Setup(b => b.DeleteMerchantAsync(merchantId, parentCompanyId, It.IsAny<CancellationToken>()))
-        .Returns(ValueTask.CompletedTask);
-
-    // Act
-    await service.DeleteMerchantObject(merchantId, parentCompanyId, CancellationToken.None);
-    await service.DeleteMerchantObject(merchantId, parentCompanyId, CancellationToken.None);
-    await service.DeleteMerchantObject(merchantId, parentCompanyId, CancellationToken.None);
-
-    // Assert
-    mockBroker.Verify(b => b.DeleteMerchantAsync(merchantId, parentCompanyId, It.IsAny<CancellationToken>()), Times.Exactly(3));
+        service.UpdateMerchantObject(merchant, merchant.id, null, CancellationToken.None));
   }
 
   #endregion

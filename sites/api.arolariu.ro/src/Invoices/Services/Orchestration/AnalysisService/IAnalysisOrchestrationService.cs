@@ -8,10 +8,9 @@ using arolariu.Backend.Domain.Invoices.Brokers.QueueBroker;
 using arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices;
 using arolariu.Backend.Domain.Invoices.DDD.Analysis.Contracts;
 using arolariu.Backend.Domain.Invoices.DDD.Entities.Merchants;
-using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Classifications;
 
 /// <summary>
-/// Defines queue lifecycle, aggregate analysis, and manual classification coordination.
+/// Defines queue lifecycle and aggregate analysis.
 /// </summary>
 public interface IAnalysisOrchestrationService
 {
@@ -37,16 +36,6 @@ public interface IAnalysisOrchestrationService
     Merchant merchant,
     MerchantAnalysisOptions options,
     Guid correlationId,
-    CancellationToken cancellationToken);
-
-  /// <summary>Canonically resolves one optional manual classification selection.</summary>
-  /// <param name="classificationCode">The optional code-only classification request.</param>
-  /// <param name="expectedSystem">The taxonomy system required by the target field.</param>
-  /// <param name="cancellationToken">The token used to cancel taxonomy resolution.</param>
-  /// <returns>The canonical taxonomy snapshot, or <see langword="null"/> when no selection was supplied.</returns>
-  Task<StandardClassification?> ResolveManualClassificationAsync(
-    string? classificationCode,
-    ClassificationSystem expectedSystem,
     CancellationToken cancellationToken);
 
   /// <summary>Enqueues one analysis message and returns Azure Queue's message identifier.</summary>

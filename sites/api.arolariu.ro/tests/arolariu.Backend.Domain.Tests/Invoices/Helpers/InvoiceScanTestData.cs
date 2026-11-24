@@ -25,7 +25,6 @@ internal static class InvoiceScanTestData
     new(
       documentIntelligenceBroker,
       Mock.Of<IGenerativeAnalysisBroker>(),
-      TaxonomyBrokerTestFactory.Create(),
       loggerFactory ?? NullLoggerFactory.Instance);
 
   /// <summary>Creates the unified Analysis Foundation for generative-focused tests.</summary>
@@ -35,7 +34,6 @@ internal static class InvoiceScanTestData
     new(
       Mock.Of<IDocumentIntelligenceBroker>(),
       generativeAnalysisBroker,
-      TaxonomyBrokerTestFactory.Create(),
       loggerFactory ?? NullLoggerFactory.Instance);
 
   /// <summary>

@@ -39,7 +39,7 @@ afterEach(() => {
   MotionGlobalConfig.skipAnimations = skipAnimations;
 });
 
-it("retries only the unfinished attachments and navigates to the already created invoice", async () => {
+it("retries only unfinished attachments, preserving a category clear on the existing invoice", async () => {
   const invoice = buildInvoice({
     id: invoiceId,
     userIdentifier: owner,
@@ -109,7 +109,7 @@ it("retries only the unfinished attachments and navigates to the already created
       <NextIntlClientProvider
         locale='en'
         timeZone='UTC'
-        messages={{forms: {invoices: {createInvoice: messages.forms.invoices.createInvoice}}}}>
+        messages={{categories: messages.categories, forms: {invoices: {createInvoice: messages.forms.invoices.createInvoice}}}}>
         <CreateInvoiceProvider>
           {children}
           <ReviewStep />
@@ -120,6 +120,7 @@ it("retries only the unfinished attachments and navigates to the already created
   act(() => {
     result.current.selectAllScans();
     result.current.setName("April receipts");
+    result.current.setCategory(3001);
     result.current.goToStep("review");
   });
   const user = userEvent.setup();
@@ -138,6 +139,7 @@ it("retries only the unfinished attachments and navigates to the already created
   expect(next.router.push).not.toHaveBeenCalled();
   expect(useScansStore.getState().scans.map(({status}) => status)).toEqual(["ready", "ready", "ready", "ready"]);
 
+  act(() => result.current.setCategory(null));
   await act(() => user.click(retry));
 
   await waitFor(() => {
@@ -159,6 +161,9 @@ it("retries only the unfinished attachments and navigates to the already created
   ]);
   expect(requests[0]?.body).not.toHaveProperty("name");
   expect(requests[1]?.body).toHaveProperty("name", "April receipts");
+  expect(requests[1]?.body).toHaveProperty("category", 3001);
+  expect(requests[4]?.body).toHaveProperty("category", -1);
+  expect(requests.at(-1)?.body).toEqual({profile: "comprehensive"});
   expect(useScansStore.getState().scans.map(({status, metadata}) => [status, metadata.attachedTo])).toEqual(
     scans.map(() => ["attached", invoiceId]),
   );

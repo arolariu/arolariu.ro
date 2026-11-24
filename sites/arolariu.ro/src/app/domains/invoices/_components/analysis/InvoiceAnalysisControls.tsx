@@ -14,7 +14,7 @@
  */
 
 import {useTranslations} from "next-intl-selector";
-import {useCallback, useState, type ChangeEvent} from "react";
+import {useCallback, type ChangeEvent} from "react";
 import {
   INVOICE_CAPABILITY_KEYS,
   applyInvoiceDependencyClosure,
@@ -30,11 +30,8 @@ type Props = {
   readonly profile: AnalysisProfile;
   /** Current capability set (controlled). */
   readonly value: InvoiceAnalysisCapabilities;
-  /**
-   * When `true`, enabling `invoiceClassification` will prompt an inline
-   * alert warning that manual classifications will be overwritten.
-   */
-  readonly manualClassificationPresent?: boolean;
+  /** Whether the receipt already has a category. */
+  readonly categoryAssigned?: boolean;
   /**
    * Called when the profile or any capability changes.
    *
@@ -90,12 +87,11 @@ function resolveCapability(value: string): (typeof INVOICE_CAPABILITY_KEYS)[numb
 export default function InvoiceAnalysisControls({
   profile,
   value,
-  manualClassificationPresent = false,
+  categoryAssigned = false,
   onChange,
   disabled = false,
 }: Readonly<Props>): React.JSX.Element {
   const t = useTranslations();
-  const [showOverwriteAlert, setShowOverwriteAlert] = useState(false);
 
   const isCustom = !matchesPreset(profile, value);
   const enabledCount = countEnabled(value);
@@ -104,7 +100,6 @@ export default function InvoiceAnalysisControls({
   const handleProfileChange = useCallback(
     (event: ChangeEvent<HTMLInputElement>) => {
       const newProfile = resolveProfile(event.currentTarget.value);
-      setShowOverwriteAlert(false);
       onChange(newProfile, resolveAnalysisCapabilities("invoice", newProfile));
     },
     [onChange],
@@ -115,15 +110,10 @@ export default function InvoiceAnalysisControls({
     (event: ChangeEvent<HTMLInputElement>) => {
       const key = resolveCapability(event.currentTarget.value);
       const {checked} = event.currentTarget;
-      if (key === "invoiceClassification" && checked && manualClassificationPresent) {
-        setShowOverwriteAlert(true);
-      } else {
-        setShowOverwriteAlert(false);
-      }
       const updated = applyInvoiceDependencyClosure({...value, [key]: checked});
       onChange(profile, updated);
     },
-    [value, profile, onChange, manualClassificationPresent],
+    [value, profile, onChange],
   );
 
   /** Handles the maximumRecipes number input change. */
@@ -216,11 +206,11 @@ export default function InvoiceAnalysisControls({
       </div>
 
       {/* ── Overwrite alert ── */}
-      {showOverwriteAlert ? (
+      {categoryAssigned ? (
         <div
-          role='alert'
+          role='status'
           className={styles["overwriteAlert"]}>
-          {t((m) => m.dialogs.invoices.invoiceAnalysisControls.classificationOverwriteAlert)}
+          {t((m) => m.categories.ui.fillEmpty)}
         </div>
       ) : null}
     </div>

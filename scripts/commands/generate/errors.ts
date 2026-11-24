@@ -28,12 +28,6 @@ export class TranslationSyncFailed extends Schema.TaggedError<TranslationSyncFai
   locale: Schema.String,
 }) {}
 
-/** A taxonomy source was unavailable and no validated cached artifact exists. */
-export class TaxonomySourceUnavailable extends Schema.TaggedError<TaxonomySourceUnavailable>()("TaxonomySourceUnavailable", {
-  message: Schema.String,
-  taxonomy: Schema.String,
-}) {}
-
 /** One generated artifact could not be produced. */
 export class ArtifactGenerationFailed extends Schema.TaggedError<ArtifactGenerationFailed>()("ArtifactGenerationFailed", {
   message: Schema.String,

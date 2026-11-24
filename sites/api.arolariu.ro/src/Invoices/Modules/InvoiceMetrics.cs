@@ -10,7 +10,6 @@ using System.Linq;
 
 using arolariu.Backend.Common.Telemetry.Metering;
 using arolariu.Backend.Domain.Invoices.DDD.Analysis.Enums;
-using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Classifications;
 using arolariu.Backend.Domain.Invoices.Services.Foundation.Analysis;
 
 /// <summary>
@@ -39,7 +38,6 @@ using arolariu.Backend.Domain.Invoices.Services.Foundation.Analysis;
 ///   <item><c>invoices.analysis.capability.retries</c> — Transient-failure retry attempts per capability</item>
 ///   <item><c>invoices.analysis.capability.content_filter</c> — AI content filter/refusal events</item>
 ///   <item><c>invoices.analysis.capability.invalid_structured_output</c> — Structured output validation failures</item>
-///   <item><c>invoices.analysis.taxonomy.validation_failures</c> — Taxonomy code validation failures</item>
 ///   <item><c>invoices.analysis.tokens.input</c> / <c>invoices.analysis.tokens.output</c> — Non-sensitive token usage</item>
 ///   <item><c>invoices.analysis.cost.estimated</c> — Estimated generative model cost in USD, never billing truth</item>
 ///   <item><c>invoices.cosmosdb.request_charge</c> — Cosmos DB RU cost distribution for invoice and merchant storage</item>
@@ -47,8 +45,8 @@ using arolariu.Backend.Domain.Invoices.Services.Foundation.Analysis;
 /// <para>
 /// <b>Confidentiality:</b> every analysis instrument in this class accepts only bounded, non-sensitive dimension
 /// values — <see cref="AnalysisTargetType"/>, <see cref="AnalysisCapability"/>, <see cref="AnalysisOutcome"/>,
-/// <see cref="AnalysisFailureReason"/>, and <see cref="ClassificationSystem"/> enums converted internally to fixed
-/// snake_case tag strings; catalog-owned schema, prompt, taxonomy, and pricing versions; allowlisted model
+/// <see cref="AnalysisFailureReason"/> enums converted internally to fixed
+/// snake_case tag strings; catalog-owned schema, prompt, and pricing versions; allowlisted model
 /// identifiers; and numeric counts. No instrument accepts product names, merchant names, OCR text, scan URLs,
 /// prompts, provider-controlled model identifiers, or model responses. See
 /// <c>AnalysisTelemetryTests.AnalysisMetricMethods_NeverAcceptSensitiveParameters</c> for the enforcing reflection guard.
@@ -69,7 +67,6 @@ public static class InvoiceMetrics
   private const string ModelIdTag = "model.id";
   private const string SchemaVersionTag = "schema.version";
   private const string PromptVersionTag = "prompt.version";
-  private const string TaxonomyVersionTag = "taxonomy.version";
   private const string PricingVersionTag = "pricing.version";
   private const decimal TokensPerMillion = 1_000_000m;
 
@@ -490,30 +487,12 @@ public static class InvoiceMetrics
 
   #endregion
 
-  #region Analysis Pipeline — Taxonomy Telemetry
-
-  /// <summary>
-  /// Total number of taxonomy code validation failures encountered during analysis or manual classification.
-  /// Tags: <c>system</c> (classification system identifier).
-  /// </summary>
-  public static readonly Counter<long> TaxonomyValidationFailures =
-    Meter.CreateCounter<long>("invoices.analysis.taxonomy.validation_failures", "events", "Taxonomy code validation failures during analysis or manual selection.");
-
-  /// <summary>
-  /// Records a taxonomy code validation failure.
-  /// </summary>
-  /// <param name="classificationSystem">The classification system whose code failed validation.</param>
-  public static void RecordTaxonomyValidationFailure(ClassificationSystem classificationSystem) =>
-    TaxonomyValidationFailures.Add(1, new KeyValuePair<string, object?>("system", ToTag(classificationSystem)));
-
-  #endregion
-
   #region Analysis Pipeline — Token Telemetry
 
   /// <summary>
   /// Distribution of input token counts consumed by generative analysis capability calls.
   /// Tags: <c>capability</c>, <c>model.id</c>, <c>schema.version</c>, <c>prompt.version</c>,
-  /// <c>taxonomy.version</c>, <c>outcome</c>.
+  /// <c>outcome</c>.
   /// </summary>
   public static readonly Histogram<long> InputTokens =
     Meter.CreateHistogram<long>("invoices.analysis.tokens.input", "tokens", "Input token count consumed by a generative analysis capability call.");
@@ -521,7 +500,7 @@ public static class InvoiceMetrics
   /// <summary>
   /// Distribution of output token counts produced by generative analysis capability calls.
   /// Tags: <c>capability</c>, <c>model.id</c>, <c>schema.version</c>, <c>prompt.version</c>,
-  /// <c>taxonomy.version</c>, <c>outcome</c>.
+  /// <c>outcome</c>.
   /// </summary>
   public static readonly Histogram<long> OutputTokens =
     Meter.CreateHistogram<long>("invoices.analysis.tokens.output", "tokens", "Output token count produced by a generative analysis capability call.");
@@ -529,7 +508,7 @@ public static class InvoiceMetrics
   /// <summary>
   /// Estimated USD cost for a completed generative analysis capability call with a fully reported token pair and an
   /// explicitly priced underlying model. Tags: <c>capability</c>, <c>model.id</c>, <c>schema.version</c>,
-  /// <c>prompt.version</c>, <c>taxonomy.version</c>, <c>pricing.version</c>, <c>outcome</c>.
+  /// <c>prompt.version</c>, <c>pricing.version</c>, <c>outcome</c>.
   /// </summary>
   /// <remarks>
   /// <para>The value is a deterministic pre-tax USD estimate, calculated from the versioned finite pricing catalog
@@ -548,7 +527,7 @@ public static class InvoiceMetrics
   /// Records non-sensitive input/output token usage for a completed generative analysis capability call, and an
   /// estimated cost only when a complete usage pair and a priced underlying model are available.
   /// </summary>
-  /// <param name="telemetryMetadata">The trusted bounded capability, schema, prompt, and taxonomy metadata.</param>
+  /// <param name="telemetryMetadata">The trusted bounded capability, schema and prompt metadata.</param>
   /// <param name="modelId">The normalized bounded generative model identifier.</param>
   /// <param name="inputTokens">The input token count, when available.</param>
   /// <param name="outputTokens">The output token count, when available.</param>
@@ -658,23 +637,9 @@ public static class InvoiceMetrics
     AnalysisFailureReason.Service => "service",
     AnalysisFailureReason.ContentFilter => "content_filter",
     AnalysisFailureReason.InvalidStructuredOutput => "invalid_structured_output",
-    AnalysisFailureReason.Taxonomy => "taxonomy",
     AnalysisFailureReason.LeaseLost => "lease_lost",
     AnalysisFailureReason.TargetPersistence => "target_persistence",
     AnalysisFailureReason.UnsupportedTarget => "unsupported_target",
-    _ => UnknownTag,
-  };
-
-  /// <summary>
-  /// Maps a classification system onto its bounded, low-cardinality metric tag value.
-  /// </summary>
-  /// <param name="classificationSystem">The classification system.</param>
-  /// <returns>The bounded tag value.</returns>
-  internal static string ToTag(ClassificationSystem classificationSystem) => classificationSystem switch
-  {
-    ClassificationSystem.Gs1Gpc => "gs1_gpc",
-    ClassificationSystem.EcoicopV2 => "ecoicop_v2",
-    ClassificationSystem.Nace21 => "nace_2_1",
     _ => UnknownTag,
   };
 
@@ -689,7 +654,6 @@ public static class InvoiceMetrics
       { ModelIdTag, boundedModelId },
       { SchemaVersionTag, telemetryMetadata.SchemaVersion },
       { PromptVersionTag, telemetryMetadata.PromptVersion },
-      { TaxonomyVersionTag, telemetryMetadata.TaxonomyVersion },
       { OutcomeTag, "success" },
     };
 

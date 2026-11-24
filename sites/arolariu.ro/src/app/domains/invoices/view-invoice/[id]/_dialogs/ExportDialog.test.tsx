@@ -5,15 +5,18 @@ import {DialogProvider, useDialogs} from "@/app/domains/invoices/_contexts/Dialo
 import DialogContainer from "@/app/domains/invoices/_contexts/DialogContainer";
 import {Toaster, toast} from "@arolariu/components";
 import {act, cleanup, fireEvent, render, screen, waitFor, within} from "@testing-library/react";
-import {NextIntlClientProvider} from "next-intl";
+import {NextIntlClientProvider, type Locale} from "next-intl";
+import type {ComponentProps} from "react";
 import {afterEach, describe, expect, it, vi} from "vitest";
 import messages from "../../../../../../../messages/en.json";
+import frenchMessages from "../../../../../../../messages/fr.json";
+import romanianMessages from "../../../../../../../messages/ro.json";
 import {buildInvoice, buildProduct} from "../../../../../../../tests/helpers/builders/domain";
 import {InvoiceContextProvider} from "../_context/InvoiceContext";
 
 const invoice = buildInvoice({
   id: "11111111-1111-4111-8111-111111111111",
-  items: [buildProduct({name: 'Oats, "rolled"', quantity: 2, price: 3.5})],
+  items: [buildProduct({name: 'Oats, "rolled"', category: 1010, quantity: 2, price: 3.5})],
 });
 
 function ExportTrigger(): React.JSX.Element {
@@ -21,11 +24,20 @@ function ExportTrigger(): React.JSX.Element {
   return <button onClick={() => openDialog("VIEW_INVOICE__EXPORT", "view")}>Open invoice export</button>;
 }
 
-async function openExportDialog(): Promise<HTMLElement> {
+async function openExportDialog(
+  locale: Locale = "en",
+  dictionary: typeof messages | typeof romanianMessages | typeof frenchMessages = messages,
+): Promise<HTMLElement> {
+  const exportMessages = dictionary.pages.invoices.viewInvoice.export;
+  const providerMessages = {
+    pages: {invoices: {viewInvoice: {export: exportMessages}}},
+    shared: dictionary.shared,
+    categories: dictionary.categories,
+  } as unknown as ComponentProps<typeof NextIntlClientProvider>["messages"];
   render(
     <NextIntlClientProvider
-      locale='en'
-      messages={{pages: {invoices: {viewInvoice: {export: messages.pages.invoices.viewInvoice.export}}}, shared: messages.shared}}>
+      locale={locale}
+      messages={providerMessages}>
       <InvoiceContextProvider
         invoice={invoice}
         merchant={null}>
@@ -39,7 +51,7 @@ async function openExportDialog(): Promise<HTMLElement> {
   );
   fireEvent.click(screen.getByRole("button", {name: "Open invoice export"}));
   await act(() => vi.dynamicImportSettled());
-  return screen.findByRole("dialog", {name: "Export Invoice"});
+  return screen.findByRole("dialog", {name: exportMessages.title});
 }
 
 describe("single invoice CSV export", () => {
@@ -66,9 +78,27 @@ describe("single invoice CSV export", () => {
     const blob = createUrl.mock.calls[0]?.[0];
     if (!(blob instanceof Blob)) throw new TypeError("Expected the export to generate a CSV Blob");
     expect(blob.type).toBe("text/csv;charset=utf-8;");
-    await expect(blob.text()).resolves.toBe(`Product Name,Quantity,Price,Total,Category\n"Oats, ""rolled""",2,3.50,7.00,""`);
+    await expect(blob.text()).resolves.toBe(
+      `"Product Name","Quantity","Price","Total","Product category"\n"Oats, ""rolled""",2,3.50,7.00,"Oats"`,
+    );
     expect(revokeUrl).toHaveBeenCalledExactlyOnceWith(downloads[0]?.href);
     await waitFor(() => expect(screen.queryByRole("dialog", {name: "Export Invoice"})).not.toBeInTheDocument());
+  });
+
+  it.each([
+    ["ro", romanianMessages, `"Denumirea produsului","Cantitate","Preț","Total","Categoria produsului"`],
+    ["fr", frenchMessages, `"Nom du produit","Quantité","Prix","Total","Catégorie du produit"`],
+  ] as const)("exports a fully localized CSV header in %s", async (locale, dictionary, expected) => {
+    const createUrl = vi.spyOn(URL, "createObjectURL");
+    vi.spyOn(HTMLAnchorElement.prototype, "click").mockImplementation(() => {});
+    const dialog = await openExportDialog(locale, dictionary);
+    const csvTitle = dictionary.pages.invoices.viewInvoice.export.csv.title;
+
+    fireEvent.click(within(dialog).getByRole("button", {name: (label) => label.startsWith(csvTitle)}));
+
+    const blob = createUrl.mock.calls[0]?.[0];
+    if (!(blob instanceof Blob)) throw new TypeError("Expected the export to generate a CSV Blob");
+    expect((await blob.text()).split("\n")[0]).toBe(expected);
   });
 
   it("keeps a failed export open and announces the error", async () => {

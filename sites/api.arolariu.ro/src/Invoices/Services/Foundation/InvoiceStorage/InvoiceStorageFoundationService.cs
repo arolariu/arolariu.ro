@@ -68,15 +68,17 @@ public partial class InvoiceStorageFoundationService : IInvoiceStorageFoundation
 
   #region Read Invoice Objects API
   /// <inheritdoc/>
-  public async Task<IEnumerable<Invoice>> ReadAllInvoiceObjects(Guid userIdentifier, CancellationToken cancellationToken) =>
+  public async Task<IEnumerable<Invoice>> ReadAllInvoiceObjects(
+    Guid userIdentifier, CancellationToken cancellationToken, Guid? merchantIdentifier = null) =>
   await TryCatchAsync(async () =>
   {
     using var activity = InvoicePackageTracing.StartActivity(nameof(ReadAllInvoiceObjects));
     var invoices = await invoiceNoSqlBroker
-      .ReadInvoicesAsync(userIdentifier, cancellationToken)
+      .ReadInvoicesAsync(userIdentifier, cancellationToken, merchantIdentifier)
       .ConfigureAwait(false);
     return invoices;
   }).ConfigureAwait(false);
+
   #endregion
 
   #region Update Invoice Object API

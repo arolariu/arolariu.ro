@@ -4,7 +4,7 @@ import {notify} from "@/lib/notify";
 import {patchInvoice} from "@/app/domains/invoices/_actions/invoices";
 import {usePaginationWithSearch} from "@/hooks";
 import {formatCurrency} from "@/lib/utils.generic";
-import {Invoice, Product} from "@/types/invoices";
+import type {Invoice, Product} from "@/types/invoices";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -32,10 +32,12 @@ import {
 import {motion} from "motion/react";
 import {useLocale} from "next-intl";
 import {useTranslations} from "next-intl-selector";
-import {useCallback, useEffect, useMemo, useRef, useState} from "react";
+import {createElement, useCallback, useEffect, useMemo, useRef, useState} from "react";
 import {TbEdit, TbFlask, TbPencil, TbPlus, TbRefresh, TbSearch, TbTrash} from "react-icons/tb";
 import {useDialog, useDialogs} from "../../../../_contexts/DialogContext";
 import styles from "./ItemsTable.module.scss";
+import ProductCategoryEditor from "./ProductCategoryEditor";
+import {useProductCategoryDrafts} from "./useProductCategoryDrafts";
 
 type Props = {invoice: Invoice};
 
@@ -286,6 +288,7 @@ function ItemActionsCell({
 
 type ItemTableRowProps = {
   readonly item: Product;
+  readonly categoryEditor: React.JSX.Element;
   readonly index: number;
   readonly editingCell: EditingCell;
   readonly editValues: Readonly<Record<string, string>>;
@@ -311,6 +314,7 @@ type ItemTableRowProps = {
 
 function ItemTableRow({
   item,
+  categoryEditor,
   index,
   editingCell,
   editValues,
@@ -403,6 +407,7 @@ function ItemTableRow({
       <td className={`${styles["tableCellRightBold"]} ${isSoftDeleted ? styles["strikethrough"] : ""}`}>
         {formatCurrency(price * quantity, {currencyCode, locale})}
       </td>
+      <td className={styles["tableCell"]}>{categoryEditor}</td>
       <ItemActionsCell
         isSoftDeleted={isSoftDeleted}
         isSaving={isSaving}
@@ -433,7 +438,7 @@ export default function ItemsTable({invoice}: Readonly<Props>) {
   const {open} = useDialog("EDIT_INVOICE__ITEMS", "edit", invoice);
   const {openDialog} = useDialogs();
 
-  const [localItems, setLocalItems] = useState<Product[]>(invoice.items);
+  const {localItems, setLocalItems, categoryEditorProps} = useProductCategoryDrafts(invoice);
   const [editingCell, setEditingCell] = useState<EditingCell>(null);
   const editInputRef = useRef<HTMLInputElement>(null);
   useEffect(() => {
@@ -563,7 +568,7 @@ export default function ItemsTable({invoice}: Readonly<Props>) {
     });
     setEditingCell(null);
     notify.success(t((m) => m.pages.invoices.editInvoice.itemsTable.editing.saved));
-  }, [editingCell, editValues, sortedItems, t]);
+  }, [editingCell, editValues, setLocalItems, sortedItems, t]);
 
   const handleCancelEdit = useCallback(() => {
     setEditingCell(null);
@@ -610,7 +615,7 @@ export default function ItemsTable({invoice}: Readonly<Props>) {
     setSelectedIndices(new Set());
     setShowDeleteDialog(false);
     notify.success(t((m) => m.pages.invoices.editInvoice.itemsTable.deleteConfirm.success, {count: itemsToDelete.length}));
-  }, [selectedIndices, sortedItems, t]);
+  }, [selectedIndices, setLocalItems, sortedItems, t]);
 
   const handleAddItem = useCallback(() => {
     const uniqueSuffix = `${Date.now()}-${globalThis.crypto.randomUUID().slice(0, 5)}`;
@@ -627,12 +632,12 @@ export default function ItemsTable({invoice}: Readonly<Props>) {
         isSoftDeleted: false,
         confidence: 0,
       },
-      classification: null,
+      category: null,
       allergenAssessment: null,
     };
     setLocalItems((prev) => [...prev, newItem]);
     notify.success(t((m) => m.pages.invoices.editInvoice.itemsTable.newItem.added));
-  }, [t]);
+  }, [setLocalItems, t]);
 
   const handleSoftDelete = useCallback(
     async (productIndex: number) => {
@@ -669,7 +674,7 @@ export default function ItemsTable({invoice}: Readonly<Props>) {
         setIsSaving(false);
       }
     },
-    [localItems, invoice.id, t],
+    [localItems, invoice.id, setLocalItems, t],
   );
 
   const handleRestore = useCallback(
@@ -707,7 +712,7 @@ export default function ItemsTable({invoice}: Readonly<Props>) {
         setIsSaving(false);
       }
     },
-    [localItems, invoice.id, t],
+    [localItems, invoice.id, setLocalItems, t],
   );
 
   const handleEditAllergens = useCallback(
@@ -857,6 +862,7 @@ export default function ItemsTable({invoice}: Readonly<Props>) {
               <TableHead className={styles["tableHeaderRight"]}>
                 {t((m) => m.pages.invoices.editInvoice.itemsTable.columns.total)}
               </TableHead>
+              <TableHead>{t((m) => m.categories.ui.product)}</TableHead>
               <TableHead className={styles["tableHeaderCenter"]}>
                 {t((m) => m.pages.invoices.editInvoice.itemsTable.columns.actions)}
               </TableHead>
@@ -869,6 +875,7 @@ export default function ItemsTable({invoice}: Readonly<Props>) {
                 <ItemTableRow
                   key={`${item.name}-${index}`}
                   item={item}
+                  categoryEditor={createElement(ProductCategoryEditor, categoryEditorProps(item))}
                   index={index}
                   editingCell={editingCell}
                   editValues={editValues}
@@ -905,6 +912,7 @@ export default function ItemsTable({invoice}: Readonly<Props>) {
                 <td className={styles["tableCellRight"]} />
                 <td className={styles["tableCellRight"]} />
                 <td className={styles["tableCellRight"]} />
+                <td className={styles["tableCell"]} />
                 <td className={styles["tableCellActions"]} />
               </motion.tr>
             ))}
@@ -920,7 +928,7 @@ export default function ItemsTable({invoice}: Readonly<Props>) {
               <TableHead className={styles["footerLabel"]}>
                 {formatCurrency(totalAmount, {currencyCode: invoice.paymentInformation.currency.code, locale})}
               </TableHead>
-              <TableHead colSpan={1} />
+              <TableHead colSpan={2} />
             </TableRow>
           </TableFooter>
         </Table>

@@ -68,7 +68,7 @@ describe("doctor command", () => {
     expect(result.code).toBe(1);
     expect(result.harness.httpCalls()).toEqual([]);
     expect(result.output.map((record) => record.text)).toContain(ROOT_EVIDENCE_LINE);
-    expect(result.output.map((record) => record.text)).toContain("Summary: 1 passed, 0 warnings, 40 failures, 18 skipped\n");
+    expect(result.output.map((record) => record.text)).toContain("Summary: 1 passed, 0 warnings, 39 failures, 18 skipped\n");
   });
 
   it("defaults quick and verbose to false", async () => {
@@ -102,7 +102,7 @@ describe("doctor command", () => {
     const [record] = result.output;
     expect(record?.stream).toBe("stdout");
     const document = JSON.parse(record?.text ?? "") as {summary: unknown; checks: readonly unknown[]};
-    expect(document.summary).toEqual({passed: 1, warnings: 0, failed: 40, skipped: 18});
-    expect(document.checks).toHaveLength(59);
+    expect(document.summary).toEqual({passed: 1, warnings: 0, failed: 39, skipped: 18});
+    expect(document.checks).toHaveLength(58);
   });
 });

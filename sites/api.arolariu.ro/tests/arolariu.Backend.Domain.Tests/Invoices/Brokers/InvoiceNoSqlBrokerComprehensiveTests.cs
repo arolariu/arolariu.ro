@@ -355,6 +355,34 @@ public sealed partial class CosmosDatabaseBrokerComprehensiveTests : CosmosDatab
     Assert.AreEqual(4, actualInvoices.Count());
   }
 
+  /// <summary>Merchant invoice reads specify the owner partition and filter by the committed forward link.</summary>
+  [TestMethod]
+  public async Task ReadInvoicesAsync_MerchantFilter_PassesOwnerPartitionAndMerchantToCosmos()
+  {
+    var merchantId = Guid.NewGuid();
+    var invoice = new Invoice { id = Guid.NewGuid(), UserIdentifier = Guid.NewGuid(), MerchantReference = merchantId };
+    var page = new Mock<FeedResponse<Invoice>>();
+    page.Setup(response => response.GetEnumerator()).Returns(((IEnumerable<Invoice>)[invoice]).GetEnumerator());
+    var iterator = new Mock<FeedIterator<Invoice>>();
+    iterator.SetupSequence(feed => feed.HasMoreResults).Returns(true).Returns(false);
+    iterator.Setup(feed => feed.ReadNextAsync(It.IsAny<CancellationToken>())).ReturnsAsync(page.Object);
+    mockInvoicesContainer.Setup(container =>
+        container.GetItemQueryIterator<Invoice>(It.IsAny<QueryDefinition>(), null, It.IsAny<QueryRequestOptions>()))
+      .Callback((QueryDefinition query, string? _, QueryRequestOptions options) =>
+      {
+        Assert.AreEqual(new PartitionKey(invoice.UserIdentifier.ToString()), options.PartitionKey);
+        Assert.Contains("c.UserIdentifier = @userIdentifier", query.QueryText, StringComparison.Ordinal);
+        Assert.Contains("c.MerchantReference = @merchantIdentifier", query.QueryText, StringComparison.Ordinal);
+        Assert.Contains("c.IsSoftDeleted = false", query.QueryText, StringComparison.Ordinal);
+        Assert.AreEqual(merchantId.ToString(), query.GetQueryParameters().Single(parameter => parameter.Name == "@merchantIdentifier").Value);
+      })
+      .Returns(iterator.Object);
+
+    var invoices = await invoiceNoSqlBroker.ReadInvoicesAsync(invoice.UserIdentifier, CancellationToken.None, merchantId);
+
+    Assert.AreSame(invoice, invoices.Single());
+  }
+
   #endregion
 
   #region ReadInvoiceAsync with Soft Delete Tests
@@ -462,8 +490,24 @@ public sealed partial class CosmosDatabaseBrokerComprehensiveTests : CosmosDatab
 
   #region UpdateInvoiceAsync Tests
 
+  /// <summary>A normal replace cannot recreate a missing invoice.</summary>
+  [TestMethod]
+  public async Task UpdateInvoiceAsync_MissingDocument_DoesNotInsert()
+  {
+    var invoice = InvoiceBuilder.CreateRandomInvoice();
+    var partition = new PartitionKey(invoice.UserIdentifier.ToString());
+    mockInvoicesContainer.Setup(container => container.ReplaceItemAsync(
+      invoice, invoice.id.ToString(), partition, null,
+      CancellationToken.None)).ThrowsAsync(new CosmosException("Not found", System.Net.HttpStatusCode.NotFound, 0, "", 0));
+
+    await Assert.ThrowsExactlyAsync<InvoiceNotFoundException>(
+      () => invoiceNoSqlBroker.UpdateInvoiceAsync(invoice.id, invoice, CancellationToken.None).AsTask());
+    mockInvoicesContainer.Verify(container => container.UpsertItemAsync(
+      It.IsAny<Invoice>(), It.IsAny<PartitionKey?>(), It.IsAny<ItemRequestOptions>(), It.IsAny<CancellationToken>()), Times.Never);
+  }
+
   /// <summary>
-  /// Verifies updating an invoice by identifier uses upsert and returns updated invoice.
+  /// Verifies replacing an invoice by identifier returns the saved invoice.
   /// </summary>
   [TestMethod]
   [DynamicData(nameof(GetInvoiceTestData))]
@@ -480,10 +524,11 @@ public sealed partial class CosmosDatabaseBrokerComprehensiveTests : CosmosDatab
     var itemResponseMock = new Mock<ItemResponse<Invoice>>();
     itemResponseMock.Setup(response => response.Resource).Returns(updatedInvoice);
 
-    mockInvoicesContainer.Setup(container => container.UpsertItemAsync(
+    mockInvoicesContainer.Setup(container => container.ReplaceItemAsync(
         updatedInvoice,
+        updatedInvoice.id.ToString(),
         new PartitionKey(updatedInvoice.UserIdentifier.ToString()),
-        It.IsAny<ItemRequestOptions>(),
+        null,
         It.IsAny<System.Threading.CancellationToken>()
       ))
       .ReturnsAsync(itemResponseMock.Object);
@@ -496,47 +541,13 @@ public sealed partial class CosmosDatabaseBrokerComprehensiveTests : CosmosDatab
     Assert.AreEqual(updatedInvoice.id, actualInvoice.id);
     Assert.AreEqual("Updated Invoice Name", actualInvoice.Name);
 
-    mockInvoicesContainer.Verify(container => container.UpsertItemAsync(
+    mockInvoicesContainer.Verify(container => container.ReplaceItemAsync(
         updatedInvoice,
+        updatedInvoice.id.ToString(),
         It.IsAny<PartitionKey?>(),
-        It.IsAny<ItemRequestOptions>(),
+        null,
         It.IsAny<System.Threading.CancellationToken>()
       ), Times.Once);
-  }
-
-  /// <summary>
-  /// Verifies updating invoice using current and updated objects performs upsert.
-  /// </summary>
-  [TestMethod]
-  [DynamicData(nameof(GetInvoiceTestData))]
-  public async Task ShouldUpdateInvoiceWithObjects_WhenValidInvoicesProvided(Invoice originalInvoice)
-  {
-    ArgumentNullException.ThrowIfNull(originalInvoice);
-
-    // Given
-    var updatedInvoice = InvoiceBuilder.CreateInvoiceWithSpecificProperties(
-      id: originalInvoice.id,
-      userIdentifier: originalInvoice.UserIdentifier,
-      name: "Updated Name Via Objects");
-
-    var itemResponseMock = new Mock<ItemResponse<Invoice>>();
-    itemResponseMock.Setup(response => response.Resource).Returns(updatedInvoice);
-
-    mockInvoicesContainer.Setup(container => container.UpsertItemAsync(
-        updatedInvoice,
-        new PartitionKey(updatedInvoice.UserIdentifier.ToString()),
-        It.IsAny<ItemRequestOptions>(),
-        It.IsAny<System.Threading.CancellationToken>()
-      ))
-      .ReturnsAsync(itemResponseMock.Object);
-
-    // When
-    var actualInvoice = await invoiceNoSqlBroker.UpdateInvoiceAsync(originalInvoice, updatedInvoice, CancellationToken.None);
-
-    // Then
-    Assert.IsNotNull(actualInvoice);
-    Assert.AreEqual(updatedInvoice.id, actualInvoice.id);
-    Assert.AreEqual("Updated Name Via Objects", actualInvoice.Name);
   }
 
   /// <summary>
@@ -549,8 +560,9 @@ public sealed partial class CosmosDatabaseBrokerComprehensiveTests : CosmosDatab
     var invoice = InvoiceBuilder.CreateRandomInvoice();
     var cosmosException = new CosmosException("Update failed", System.Net.HttpStatusCode.InternalServerError, 500, "", 0);
 
-    mockInvoicesContainer.Setup(container => container.UpsertItemAsync(
+    mockInvoicesContainer.Setup(container => container.ReplaceItemAsync(
         It.IsAny<Invoice>(),
+        invoice.id.ToString(),
         It.IsAny<PartitionKey?>(),
         It.IsAny<ItemRequestOptions>(),
         It.IsAny<System.Threading.CancellationToken>()
@@ -718,7 +730,10 @@ public sealed partial class CosmosDatabaseBrokerComprehensiveTests : CosmosDatab
     // Given
     var userIdentifier = Guid.NewGuid();
     var invoices = InvoiceBuilder.CreateMultipleRandomInvoices(3);
-    invoices.ForEach(i => i.UserIdentifier = userIdentifier);
+    foreach (var invoice in invoices)
+    {
+      invoice.UserIdentifier = userIdentifier;
+    }
 
     var feedResponseMock = new Mock<FeedResponse<Invoice>>();
     feedResponseMock.Setup(response => response.Resource).Returns(invoices);
@@ -866,8 +881,10 @@ public sealed partial class CosmosDatabaseBrokerComprehensiveTests : CosmosDatab
     var userIdentifier = Guid.NewGuid();
     var firstPageInvoices = InvoiceBuilder.CreateMultipleRandomInvoices(2);
     var secondPageInvoices = InvoiceBuilder.CreateMultipleRandomInvoices(2);
-    firstPageInvoices.ForEach(i => i.UserIdentifier = userIdentifier);
-    secondPageInvoices.ForEach(i => i.UserIdentifier = userIdentifier);
+    foreach (var invoice in firstPageInvoices.Concat(secondPageInvoices))
+    {
+      invoice.UserIdentifier = userIdentifier;
+    }
 
     var firstFeedResponseMock = new Mock<FeedResponse<Invoice>>();
     firstFeedResponseMock.Setup(response => response.Resource).Returns(firstPageInvoices);

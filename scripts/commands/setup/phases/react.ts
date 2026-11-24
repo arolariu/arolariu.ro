@@ -305,10 +305,10 @@ function requiredPackageCount(policy: PackagePolicy): number {
  * Determines whether one generated-artifact issue reports absence a planned generator can repair.
  *
  * @param issue - One deterministic generated-artifact issue from the shared React facts.
- * @returns Whether the issue reports an absent artifact rather than an invalid one.
+ * @returns Whether setup can defer an absent generated artifact to its generator action.
  */
 function isAbsentArtifactIssue(issue: string): boolean {
-  return issue.endsWith(" is missing.");
+  return issue.endsWith(" is missing.") && !issue.startsWith("Category catalog ");
 }
 
 function chromiumEntryPresent(facts: Readonly<ReactFacts>): boolean {
@@ -881,7 +881,7 @@ function prepareReact(
         `Deferred ${absentArtifacts.length} absent generated artifact postcondition(s) to the planned ${GENERATORS_ACTION} action.`,
       );
     } else {
-      evidence.push("Verified every generated website taxonomy, license, and locale artifact.");
+      evidence.push("Verified every website category catalog, license, and locale input.");
     }
 
     if (facts.environment.syntaxErrors.length > 0) {

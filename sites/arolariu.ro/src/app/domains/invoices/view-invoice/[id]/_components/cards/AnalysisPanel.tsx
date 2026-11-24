@@ -22,7 +22,6 @@ import {
   type AnalysisProfile,
   type InvoiceAnalysisCapabilities,
 } from "@/types/invoices/Analysis";
-import {ClassificationOrigin} from "@/types/invoices/Classification";
 import {formatDate} from "@/lib/utils.generic";
 import {Badge, Button, Card, CardContent, CardDescription, CardHeader, CardTitle, Spinner} from "@arolariu/components";
 import {useLocale} from "next-intl";
@@ -39,9 +38,7 @@ import styles from "./AnalysisPanel.module.scss";
  * Renders only when `invoice.items` is empty. Once items appear (after RSC
  * refresh picks up backend-processed data), the panel hides itself.
  *
- * **Decision D4**: `manualClassificationPresent` prevents silently overwriting a
- * user's manual classification — InvoiceAnalysisControls surfaces a warning when
- * the user enables `invoiceClassification` in that case.
+ * Analysis fills empty categories and preserves existing choices.
  *
  * @returns The AnalysisPanel card, or `null` when the invoice already has items.
  */
@@ -61,7 +58,7 @@ export function AnalysisPanel(): React.JSX.Element | null {
     scheduleRefresh: true,
   });
 
-  const manualClassificationPresent = invoice.classification?.origin === ClassificationOrigin.Manual;
+  const categoryAssigned = invoice.category !== null;
   const hasLastUpdatedAt = Boolean(invoice.lastUpdatedAt);
 
   const handleChange = useCallback((newProfile: AnalysisProfile, newCapabilities: InvoiceAnalysisCapabilities): void => {
@@ -122,7 +119,7 @@ export function AnalysisPanel(): React.JSX.Element | null {
             <InvoiceAnalysisControls
               profile={profile}
               value={capabilities}
-              manualClassificationPresent={manualClassificationPresent}
+              categoryAssigned={categoryAssigned}
               onChange={handleChange}
               disabled={status === "submitting"}
             />

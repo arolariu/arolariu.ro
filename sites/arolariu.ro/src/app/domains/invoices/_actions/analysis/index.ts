@@ -4,4 +4,3 @@
  */
 
 export {analyzeMerchant} from "./analyzeMerchant";
-export {searchClassifications} from "./searchClassifications";

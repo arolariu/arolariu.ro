@@ -20,9 +20,9 @@ using arolariu.Backend.Domain.Invoices.DDD.Analysis.Enums;
 /// <param name="Profile">The named analysis profile to resolve. Defaults to <see cref="AnalysisProfile.Comprehensive"/>.</param>
 /// <param name="DocumentExtraction">Optional receipt OCR extraction selection.</param>
 /// <param name="InvoiceSummary">Optional invoice summary selection.</param>
-/// <param name="ProductClassification">Optional GS1 GPC classification selection.</param>
+/// <param name="ProductClassification">Optional classification selection.</param>
 /// <param name="AllergenAssessment">Optional allergen assessment selection.</param>
-/// <param name="InvoiceClassification">Optional ECOICOP classification selection.</param>
+/// <param name="InvoiceClassification">Optional classification selection.</param>
 /// <param name="RecipeGeneration">Optional recipe generation selection.</param>
 /// <param name="MaximumRecipes">Optional recipe result cap in the inclusive range 1 to 3 when generation is enabled.</param>
 [Serializable]

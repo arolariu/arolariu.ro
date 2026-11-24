@@ -165,8 +165,7 @@ public sealed record InvoiceAnalysisOptions
       maximumRecipes: 3);
 
   /// <summary>
-  /// Creates the published fast (minimal, low-latency) invoice analysis preset: document extraction, product GPC
-  /// classification, and invoice ECOICOP classification only.
+  /// Creates the fast analysis preset: document extraction, product category selection, and receipt category selection.
   /// </summary>
   /// <returns>The fast invoice analysis option set.</returns>
   public static InvoiceAnalysisOptions Fast() =>

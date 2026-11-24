@@ -53,27 +53,17 @@ describe("plan-aware hygiene workflow contract", () => {
     expect(workflow.match(/^\s+name: hygiene-plan$/gm)).toHaveLength(3);
   });
 
-  it("checks the selected pinned snapshots once between setup and planning", () => {
-    const command = "node scripts/cli.ts generate --check-taxonomies";
-    const detect = job("detect");
-    const setup = detect.indexOf('node-scripts-install: "true"');
-    const check = detect.indexOf(command);
-    expect(setup).toBeGreaterThanOrEqual(0);
-    expect(check).toBeGreaterThan(setup);
-    expect(check).toBeLessThan(detect.indexOf("id: plan"));
-    expect(workflow.split(command)).toHaveLength(2);
+  it("leaves category parity to the unit-test provider", () => {
+    expect(workflow).not.toContain("category-catalog-parity.test.ts");
     expect(workflow).not.toMatch(/^  schedule:/m);
   });
 });
 
-describe("API taxonomy workflow contract", () => {
+describe("API category catalog workflow contract", () => {
   const workflow = readFileSync(resolve(ciRoot, "..", "workflows", "official-api-trigger.yml"), "utf8");
 
-  it.each(["test", "build-azure"])("runs the %s integrity check from the checkout root", (jobName) => {
-    const job = new RegExp(`^  ${jobName}:\\r?\\n([\\s\\S]*?)(?=^  [a-z][a-z-]*:|$(?![\\s\\S]))`, "m").exec(workflow)?.[1];
-    expect(job).toMatch(
-      /^      - name: Check pinned taxonomy integrity\r?\n        working-directory: \.\r?\n        run: node scripts\/cli\.ts generate --check-taxonomies --json$/m,
-    );
+  it("does not run website catalog checks in API validation or packaging", () => {
+    expect(workflow).not.toMatch(/category-catalog-parity\.test\.ts|--check-taxonomies/u);
   });
 });
 

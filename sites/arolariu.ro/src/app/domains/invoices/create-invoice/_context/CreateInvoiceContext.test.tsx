@@ -545,7 +545,7 @@ describe("CreateInvoiceContext — orchestration contract", () => {
       const {result} = await renderReady();
 
       act(() => {
-        result.current.setClassification({system: "ECOICOP_V2", code: "01.1.1"});
+        result.current.setCategory(3004);
       });
 
       await act(async () => {

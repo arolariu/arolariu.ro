@@ -429,7 +429,7 @@ runs:
         fi
         echo "::endgroup::"
 
-    - name: 🔨 Generate artifacts (env, taxonomy/licenses, GraphQL, i18n)
+    - name: 🔨 Generate artifacts (env, licenses, GraphQL, i18n)
       if: inputs.workspace-generate == 'true'
       shell: bash
       env:

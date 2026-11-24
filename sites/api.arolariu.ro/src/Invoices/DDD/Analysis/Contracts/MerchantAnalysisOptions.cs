@@ -42,7 +42,7 @@ public sealed record MerchantAnalysisOptions
     if (profile == AnalysisProfile.Fast
         && (!merchantClassification || descriptionGeneration))
     {
-      throw new ArgumentException("Fast merchant analysis options must enable only NACE classification.", nameof(profile));
+      throw new ArgumentException("Fast merchant analysis options must enable only merchant categorization.", nameof(profile));
     }
 
     Profile = profile;
@@ -76,7 +76,7 @@ public sealed record MerchantAnalysisOptions
       descriptionGeneration: true);
 
   /// <summary>
-  /// Creates the published fast (minimal, low-latency) merchant analysis preset: NACE classification only.
+  /// Creates the published fast (minimal, low-latency) merchant analysis preset: merchant categorization only.
   /// </summary>
   /// <returns>The fast merchant analysis option set.</returns>
   public static MerchantAnalysisOptions Fast() =>
@@ -86,7 +86,7 @@ public sealed record MerchantAnalysisOptions
       descriptionGeneration: false);
 
   /// <summary>
-  /// Creates the published balanced (mid-tier) merchant analysis preset: NACE classification and description
+  /// Creates the published balanced (mid-tier) merchant analysis preset: merchant categorization and description
   /// generation. This preset currently shares its capability shape with <see cref="Comprehensive"/>; the
   /// distinct profile is retained so a later provider-quality policy can diverge them without a breaking change.
   /// </summary>

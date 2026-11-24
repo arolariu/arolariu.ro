@@ -137,7 +137,7 @@ describe("manual deployment revision contract", () => {
 
       const tests =
         service === "api"
-          ? ["generate --check-taxonomies --json", "dotnet test --configuration Release", '--collect:"XPlat Code Coverage"']
+          ? ["dotnet test --configuration Release", '--collect:"XPlat Code Coverage"']
           : ["python -m ruff check .", "python -m bandit", "python -m pytest"];
       for (const command of tests) {
         expect(local.indexOf(command)).toBeGreaterThan(-1);

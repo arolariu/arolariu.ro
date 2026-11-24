@@ -5,7 +5,6 @@ using System.Linq;
 
 using arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices;
 using arolariu.Backend.Domain.Invoices.DDD.ValueObjects;
-using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Classifications;
 using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Recipes;
 using arolariu.Backend.Domain.Invoices.DTOs.Requests;
 
@@ -83,7 +82,7 @@ public sealed class InvoiceRecipeWriteContractTests
     var dto = new PatchInvoiceRequestDto(
       Name: null,
       Description: null,
-      ClassificationCode: null,
+      Category: null,
       PaymentInformation: null,
       MerchantReference: null,
       IsImportant: null,
@@ -109,7 +108,7 @@ public sealed class InvoiceRecipeWriteContractTests
     var dto = new PatchInvoiceRequestDto(
       Name: null,
       Description: null,
-      ClassificationCode: null,
+      Category: null,
       PaymentInformation: null,
       MerchantReference: null,
       IsImportant: null,
@@ -136,7 +135,7 @@ public sealed class InvoiceRecipeWriteContractTests
     var dto = new PatchInvoiceRequestDto(
       Name: null,
       Description: null,
-      ClassificationCode: null,
+      Category: null,
       PaymentInformation: null,
       MerchantReference: null,
       IsImportant: null,
@@ -166,7 +165,7 @@ public sealed class InvoiceRecipeWriteContractTests
     var dto = new UpdateInvoiceRequestDto(
       Name: "Invoice",
       Description: "desc",
-      ClassificationCode: null,
+      Category: null,
       PaymentInformation: new PaymentInformation(),
       MerchantReference: null,
       IsImportant: false,
@@ -198,7 +197,7 @@ public sealed class InvoiceRecipeWriteContractTests
     var dto = new UpdateInvoiceRequestDto(
       Name: "Invoice",
       Description: "desc",
-      ClassificationCode: null,
+      Category: null,
       PaymentInformation: new PaymentInformation(),
       MerchantReference: null,
       IsImportant: false,
@@ -221,7 +220,7 @@ public sealed class InvoiceRecipeWriteContractTests
     var dto = new UpdateInvoiceRequestDto(
       Name: "Invoice",
       Description: "desc",
-      ClassificationCode: null,
+      Category: null,
       PaymentInformation: new PaymentInformation(),
       MerchantReference: null,
       IsImportant: false,
@@ -231,60 +230,5 @@ public sealed class InvoiceRecipeWriteContractTests
     Invoice result = dto.ToInvoice(InvoiceId, UserId);
 
     Assert.IsEmpty(result.PossibleRecipes);
-  }
-
-  // ── Classification preservation ───────────────────────────────────────────────
-
-  /// <summary>
-  /// A PUT with no manual classification code must not destroy an analysis-derived
-  /// classification. <see cref="UpdateInvoiceRequestDto.ToInvoice"/> never populates
-  /// <c>Classification</c>, and persistence is a full-document upsert, so without the
-  /// handler-level preserve step an unrelated edit such as renaming the invoice would
-  /// silently drop the classification along with its origin, confidence and evidence.
-  /// This test replicates that handler logic inline.
-  /// </summary>
-  [TestMethod]
-  public void Put_NullClassificationCode_HandlerPreservesExistingClassification()
-  {
-    var existing = MakeExistingInvoice();
-    existing.Classification = new StandardClassification(
-      ClassificationSystem.EcoicopV2,
-      "2.0",
-      "01.1.1",
-      "Bread and cereals",
-      [
-        new ClassificationNode("division", "01", "Food and non-alcoholic beverages"),
-        new ClassificationNode("group", "01.1", "Food"),
-        new ClassificationNode("class", "01.1.1", "Bread and cereals"),
-      ],
-      ClassificationOrigin.Analysis,
-      0.87,
-      []);
-
-    var dto = new UpdateInvoiceRequestDto(
-      Name: "Renamed invoice",
-      Description: "desc",
-      ClassificationCode: null,   // null → preserve (handler-level)
-      PaymentInformation: new PaymentInformation(),
-      MerchantReference: null,
-      IsImportant: false,
-      PossibleRecipes: null,
-      AdditionalMetadata: null);
-
-    var updatedEntity = dto.ToInvoice(InvoiceId, UserId);
-
-    // Without the handler step the replacement entity carries no classification at all.
-    Assert.IsNull(updatedEntity.Classification);
-
-    // Replicate what UpdateSpecificInvoiceAsync does when ClassificationCode is null:
-    if (dto.ClassificationCode is null)
-    {
-      updatedEntity.Classification = existing.Classification;
-    }
-
-    Assert.IsNotNull(updatedEntity.Classification);
-    Assert.AreEqual("01.1.1", updatedEntity.Classification!.Code);
-    Assert.AreEqual(ClassificationOrigin.Analysis, updatedEntity.Classification.Origin);
-    Assert.AreEqual(0.87, updatedEntity.Classification.Confidence);
   }
 }

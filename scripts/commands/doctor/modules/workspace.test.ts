@@ -9,23 +9,18 @@
  * Inspection outcomes are scripted per fact key through the harness, and every probe runs through
  * the real opaque probe runner over scripted harness processes keyed by probe id (an unexpected
  * probe dies). Only genuine filesystem-backed checks (repository root identity, required
- * configuration files, and mirrored taxonomy artifacts) use a real temporary directory.
+ * and configuration files) use a real temporary directory.
  */
 
-import {mkdir, mkdtemp, readFile, rm, utimes, writeFile} from "node:fs/promises";
+import {mkdir, mkdtemp, readFile, rm, writeFile} from "node:fs/promises";
 import {tmpdir} from "node:os";
-import {basename, dirname, join, resolve} from "node:path";
+import {dirname, join, resolve} from "node:path";
 import {fileURLToPath} from "node:url";
 import {Clock, Effect, Layer, PlatformError} from "effect";
 import {afterEach, describe, expect, it} from "vitest";
 
 import {createRepositoryPaths} from "../../../common/repository-paths.ts";
 import type {RepositoryRequirements} from "../../../common/requirements.ts";
-import {
-  getExpectedTaxonomyArtifactPaths,
-  taxonomyArtifactFileNames,
-  taxonomyArtifactIdentities,
-} from "../../../common/taxonomy-artifacts.ts";
 import {Inspection} from "../../../inspection/Inspection.ts";
 import {inspectionProbeRunner, type ProbeOutcome} from "../../../inspection/probes.ts";
 import type {RepositoryInspectionSession} from "../../../inspection/repository.ts";
@@ -219,25 +214,6 @@ function healthyAggregateFacts(): AggregateFacts {
   };
 }
 
-function taxonomyArtifactContents(path: string, generatedAt = "2026-08-29T00:00:00.000Z", empty = false): string {
-  const fileName = basename(path);
-  const key = (["gpc", "ecoicop", "nace"] as const).find((candidate) => taxonomyArtifactFileNames[candidate] === fileName);
-  if (key === undefined) {
-    throw new Error(`Unsupported taxonomy fixture path: ${path}`);
-  }
-  const node = {
-    code: "01",
-    officialLabel: "Food",
-    level: "division",
-    parentCode: null,
-    hierarchyCodes: ["01"],
-    hierarchyLabels: ["Food"],
-    definition: null,
-    searchText: "food",
-  };
-  return `${JSON.stringify({...taxonomyArtifactIdentities[key], generatedAt, nodes: empty ? [] : [node]})}\n`;
-}
-
 async function writeFixtureFile(path: string, contents = "{}\n"): Promise<void> {
   await mkdir(dirname(path), {recursive: true});
   await writeFile(path, contents, "utf8");
@@ -292,7 +268,6 @@ async function createWorkspaceFixture(
     probeOverrides?: ReadonlyMap<string, ProbeOutcome>;
     inspectionOverrides?: ReadonlyMap<string, InspectionOutcome<unknown>>;
     omitConfigPaths?: readonly string[];
-    taxonomyContentOverrides?: ReadonlyMap<string, string>;
     accessFailure?: PlatformError.PlatformError;
   }> = {},
 ): Promise<WorkspaceFixture> {
@@ -311,13 +286,6 @@ async function createWorkspaceFixture(
     ),
     mkdir(cacheRoot, {recursive: true}),
   ]);
-
-  const generatedAt = new Date("2026-08-29T00:00:00.000Z");
-  for (const artifactPath of getExpectedTaxonomyArtifactPaths(root)) {
-    const override = input.taxonomyContentOverrides?.get(artifactPath);
-    await writeFixtureFile(artifactPath, override ?? taxonomyArtifactContents(artifactPath));
-    await utimes(artifactPath, generatedAt, generatedAt);
-  }
 
   const probeResponses = new Map<string, ProbeOutcome>([
     ["workspace.git.version", commandResult({stdout: "git version 2.50.1\n"})],
@@ -410,7 +378,6 @@ describe("workspaceDoctorModule", () => {
       "workspace.nx-projects",
       "workspace.nx-graph",
       "workspace.config-files",
-      "workspace.generated-artifacts",
       "workspace.host-capacity",
       "workspace.npm-audit",
       "workspace.npm-outdated",
@@ -848,32 +815,6 @@ describe("workspaceDoctorModule", () => {
     const configFiles = resultById(results, "workspace.config-files");
     expect(configFiles.status).toBe("fail");
     expect(configFiles.evidence).toContain("Missing: arolariu.slnx");
-  });
-
-  it("reports mismatched taxonomy artifacts", async () => {
-    const fixture = await createWorkspaceFixture();
-    const mismatchedPath = getExpectedTaxonomyArtifactPaths(fixture.root).find((path) => basename(path) === "nace-2.1.min.json");
-    if (mismatchedPath === undefined) {
-      throw new Error("Expected a nace taxonomy artifact path.");
-    }
-    await writeFixtureFile(mismatchedPath, taxonomyArtifactContents(mismatchedPath, "2026-08-30T00:00:00.000Z"));
-
-    const results = await fixture.run();
-
-    const artifacts = resultById(results, "workspace.generated-artifacts");
-    expect(artifacts.status).toBe("fail");
-    expect(artifacts.evidence).toContain("Mirrored taxonomy bytes differ: nace-2.1.min.json");
-  });
-
-  it("rejects identical taxonomy mirrors without a valid node graph", async () => {
-    const fixture = await createWorkspaceFixture();
-    for (const path of getExpectedTaxonomyArtifactPaths(fixture.root).filter((path) => basename(path) === "nace-2.1.min.json")) {
-      await writeFixtureFile(path, taxonomyArtifactContents(path, undefined, true));
-    }
-
-    const results = await fixture.run();
-
-    expect(resultById(results, "workspace.generated-artifacts").status).toBe("fail");
   });
 
   it("reads facts through the shared session and probes through the opaque probe runner", async () => {

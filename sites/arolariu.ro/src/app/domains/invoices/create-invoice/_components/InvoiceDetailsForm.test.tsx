@@ -3,13 +3,13 @@
  * @module app/domains/invoices/create-invoice/_components/InvoiceDetailsForm.test
  *
  * @remarks
- * Uses the real wizard provider, real classification picker and real taxonomy catalog.
+ * Uses the real wizard provider, real local category picker.
  */
 
 import {useScansStore} from "@/stores";
 import {PaymentType} from "@/types/invoices";
 import {type CachedScan, ScanDocumentKind, ScanDocumentRole, ScanMetadataStatus, ScanStatus, ScanType} from "@/types/scans";
-import {act, render, screen, waitFor} from "@testing-library/react";
+import {act, render, screen} from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import {MotionGlobalConfig} from "motion/react";
 import {useEffect} from "react";
@@ -54,25 +54,25 @@ function SelectScans({scans}: Readonly<{scans: ReadonlyArray<CachedScan>}>): nul
 
 /** Exposes the wizard state the form writes to. */
 function StateProbe(): React.JSX.Element {
-  const {invoiceDetails, classificationSelection} = useCreateInvoiceContext();
+  const {invoiceDetails, categorySelection} = useCreateInvoiceContext();
   return (
     <output data-testid='probe'>
       {JSON.stringify({
         name: invoiceDetails.name,
         paymentType: invoiceDetails.paymentType,
         day: invoiceDetails.transactionDate.getDate(),
-        classification: classificationSelection,
+        category: categorySelection,
       })}
     </output>
   );
 }
 
-function readProbe(): {name: string; paymentType: PaymentType; day: number; classification: {code: string} | null} {
+function readProbe(): {name: string; paymentType: PaymentType; day: number; category: number | null} {
   return JSON.parse(screen.getByTestId("probe").textContent ?? "{}") as {
     name: string;
     paymentType: PaymentType;
     day: number;
-    classification: {code: string} | null;
+    category: number | null;
   };
 }
 
@@ -168,12 +168,11 @@ describe("InvoiceDetailsForm", () => {
   it("writes a picked classification to the wizard state", async () => {
     const user = userEvent.setup();
     renderForm();
-    expect(readProbe().classification).toBeNull();
+    expect(readProbe().category).toBeNull();
 
-    await user.type(screen.getByRole("combobox", {name: /fields\.classification\.label/}), "bread");
-    const option = await screen.findByRole("option", {}, {timeout: 3000});
-    await user.click(option);
-
-    await waitFor(() => expect(readProbe().classification).not.toBeNull());
+    await act(async () => user.type(screen.getByRole("combobox", {name: /fields\.category\.label/}), "bakeryPurchases"));
+    const option = await screen.findByRole("option", {name: "categories.invoices.bakeryPurchases"});
+    await act(async () => user.click(option));
+    expect(readProbe().category).toBe(3004);
   });
 });

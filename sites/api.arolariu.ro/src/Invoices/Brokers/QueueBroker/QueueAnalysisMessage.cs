@@ -46,10 +46,10 @@ public sealed record QueueAnalysisMessage
     }
 
     if (targetType == AnalysisTargetType.Merchant
-        && (merchantOptions is null || invoiceOptions is not null))
+        && (merchantOptions is null || invoiceOptions is not null || !targetPartitionIdentifier.HasValue))
     {
       throw new ArgumentException(
-        "Merchant analysis messages require merchant options only.",
+        "Merchant analysis messages require merchant options and a parent-company partition.",
         nameof(merchantOptions));
     }
 

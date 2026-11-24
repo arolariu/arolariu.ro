@@ -32,7 +32,7 @@ public interface IMerchantStorageFoundationService
   /// Persists a new <see cref="Merchant"/> aggregate.
   /// </summary>
   /// <remarks>
-  /// <para><b>Validation:</b> Ensures merchant id not empty, required collections (e.g. <c>ReferencedInvoices</c>) initialized, and category values within allowed domain.</para>
+  /// <para><b>Validation:</b> Ensures the merchant ID is not empty and the category belongs to its domain.</para>
   /// <para><b>Failure Modes:</b> Throws validation exceptions on invariant breach, dependency / dependency validation exceptions on broker-level persistence failures (conflicts, connectivity, serialization).</para>
   /// </remarks>
   /// <param name="merchant">Merchant aggregate to persist (MUST NOT be null).</param>
@@ -104,19 +104,4 @@ public interface IMerchantStorageFoundationService
   Task<Merchant> UpdateMerchantObject(Merchant updatedMerchant, Guid merchantIdentifier, Guid? parentCompanyId, CancellationToken cancellationToken);
   #endregion
 
-  #region Delete Merchant Object API
-  /// <summary>
-  /// Deletes (logical or physical) a merchant.
-  /// </summary>
-  /// <remarks>
-  /// <para><b>Idempotency:</b> Repeated deletes yield same terminal state (absent / marked deleted).</para>
-  /// <para><b>Referential Integrity:</b> This layer DOES NOT cascade / clean invoice references (belongs to orchestration / processing layers).</para>
-  /// </remarks>
-  /// <param name="identifier">Merchant identifier.</param>
-  /// <param name="parentCompanyId">Partition discriminator; pass null for a cross-partition operation.</param>
-  /// <param name="cancellationToken">Cancellation token to abort the operation (required).</param>
-  /// <returns>Asynchronous task.</returns>
-  /// <exception cref="OperationCanceledException">Thrown if the operation is cancelled.</exception>
-  Task DeleteMerchantObject(Guid identifier, Guid? parentCompanyId, CancellationToken cancellationToken);
-  #endregion
 }

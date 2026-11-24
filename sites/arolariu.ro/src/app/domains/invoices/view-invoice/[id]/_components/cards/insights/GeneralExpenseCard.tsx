@@ -1,11 +1,12 @@
 "use client";
 
+import {invoiceCategoryLabel} from "@/app/domains/invoices/_utils/labelUtilities";
 import {formatCurrency, formatDate} from "@/lib/utils.generic";
-import {Badge, Button, Card, CardContent, CardHeader, CardTitle, Checkbox, Label, Progress} from "@arolariu/components";
+import {Button, Card, CardContent, CardHeader, CardTitle, Checkbox, Label, Progress} from "@arolariu/components";
 import {useLocale} from "next-intl";
 import {useTranslations} from "next-intl-selector";
 import {useCallback, useState} from "react";
-import {TbBriefcase, TbChartBar, TbCheck, TbDownload, TbFileText, TbFolderOpen, TbHistory, TbRefresh, TbTag} from "react-icons/tb";
+import {TbBriefcase, TbChartBar, TbDownload, TbFileText, TbFolderOpen, TbHistory, TbTag} from "react-icons/tb";
 import {useInvoiceContext} from "../../../_context/InvoiceContext";
 import styles from "./GeneralExpenseCard.module.scss";
 
@@ -15,10 +16,6 @@ export function GeneralExpenseCard(): React.JSX.Element {
   const {invoice} = useInvoiceContext();
   const {paymentInformation} = invoice;
   const {currency, totalCostAmount: totalAmount} = paymentInformation;
-
-  // Auto-detected category (mock)
-  const detectedCategory = t((m) => m.cards.invoices.generalExpenseCard.detectedCategory);
-  const confidence = 87;
 
   // Budget categories (mock)
   const budgets = [
@@ -66,32 +63,12 @@ export function GeneralExpenseCard(): React.JSX.Element {
       </CardHeader>
       <CardContent>
         <div className={styles["contentSpaced"]}>
-          {/* Auto-detected Category */}
           <div>
-            <h4 className={styles["sectionTitle"]}>{t((m) => m.cards.invoices.generalExpenseCard.sections.autoDetectedCategory)}</h4>
+            <h4 className={styles["sectionTitle"]}>{t((m) => m.categories.ui.invoice)}</h4>
             <div className={styles["detectedBox"]}>
-              <div className={styles["detectedRow"]}>
-                <div className={styles["detectedLabel"]}>
-                  <TbTag className={styles["iconIndigo"]} />
-                  <span className={styles["detectedName"]}>{detectedCategory}</span>
-                </div>
-                <Badge variant='secondary'>{t((m) => m.cards.invoices.generalExpenseCard.confidence, {value: String(confidence)})}</Badge>
-              </div>
-              <div className={styles["detectedActions"]}>
-                <Button
-                  variant='outline'
-                  size='sm'
-                  aria-label={t((m) => m.cards.invoices.generalExpenseCard.aria.confirmCategory)}>
-                  <TbCheck className={styles["iconSmColored"]} />
-                  {t((m) => m.cards.invoices.generalExpenseCard.buttons.correct)}
-                </Button>
-                <Button
-                  variant='ghost'
-                  size='sm'
-                  aria-label={t((m) => m.cards.invoices.generalExpenseCard.aria.changeCategory)}>
-                  <TbRefresh className={styles["iconSmColored"]} />
-                  {t((m) => m.cards.invoices.generalExpenseCard.buttons.change)}
-                </Button>
+              <div className={styles["detectedLabel"]}>
+                <TbTag className={styles["iconIndigo"]} />
+                <span className={styles["detectedName"]}>{invoiceCategoryLabel(t, invoice.category)}</span>
               </div>
             </div>
           </div>

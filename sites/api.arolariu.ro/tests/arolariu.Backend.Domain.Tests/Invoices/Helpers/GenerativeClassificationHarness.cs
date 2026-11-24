@@ -21,12 +21,10 @@ internal sealed class GenerativeClassificationHarness
       ? new AnalysisFoundationService(
         Mock.Of<IDocumentIntelligenceBroker>(),
         broker,
-        TaxonomyBrokerTestFactory.Create(),
         NullLoggerFactory.Instance)
       : new AnalysisFoundationService(
         Mock.Of<IDocumentIntelligenceBroker>(),
         broker,
-        TaxonomyBrokerTestFactory.Create(),
         NullLoggerFactory.Instance,
         retryPolicy);
   }

@@ -5,7 +5,7 @@
  *
  * @remarks
  * Leaf behavior comes from the in-memory harness (seeded `.env` and locale files, scripted exp and
- * pinned taxonomy inputs and the test clock), never from stubbing
+ * the test clock), never from stubbing
  * the leaf modules. Only the terminal prompt boundary is replaced for the Ctrl+C case and only the
  * `HttpClient` boundary for the interruption case.
  */
@@ -17,7 +17,6 @@ import {HttpClient} from "effect/http";
 import {TestClock} from "effect/testing";
 import {describe, expect} from "vitest";
 
-import {pinnedTaxonomyFixtureFiles} from "../../common/taxonomy-fixtures.testing.ts";
 import {Prompts} from "../../platform/Prompts.ts";
 import {effectTest, makeTestLayer, repositoryFixtureRoot, type TestHarness, type TestLayerOptions} from "../../platform/testing.ts";
 import {renderGenerateCompletion} from "./cli.ts";
@@ -71,7 +70,7 @@ const WORKSPACE_FILES: Readonly<Record<string, string>> = {
 function generateHarness(overrides: TestLayerOptions = {}): TestHarness {
   return makeTestLayer({
     context: "test::generate",
-    files: {".env": COMPLETE_ENV, ...SYNCHRONIZED_LOCALES, ...WORKSPACE_FILES, ...pinnedTaxonomyFixtureFiles(repositoryFixtureRoot)},
+    files: {".env": COMPLETE_ENV, ...SYNCHRONIZED_LOCALES, ...WORKSPACE_FILES},
     ...overrides,
     environment: {platform: "linux", ...overrides.environment},
     clock: "test",
@@ -155,8 +154,8 @@ describe("runGenerate", () => {
         {stream: "stdout", text: "[arolariu::test::generate] ✅ i18n synchronization completed with 0 missing key(s) added."},
         {stream: "stdout", text: "[arolariu::test::generate] ℹ️ Running GraphQL types generator..."},
         {stream: "stdout", text: "[arolariu::test::generate] ✅ GraphQL generation completed (placeholder)."},
-        {stream: "stdout", text: "[arolariu::test::generate] ℹ️ Running pinned taxonomy and Website license preparation..."},
-        {stream: "stdout", text: "[arolariu::test::generate] ✅ Verified 3 pinned taxonomy pairs; generated 1 Website license file(s)."},
+        {stream: "stdout", text: "[arolariu::test::generate] ℹ️ Running Website license preparation..."},
+        {stream: "stdout", text: "[arolariu::test::generate] ✅ Generated 1 Website license file(s)."},
         {stream: "stdout", text: ""},
         {stream: "stdout", text: "[arolariu::test::generate] ✅ All requested generation tasks completed."},
         {stream: "stdout", text: "   Executed 4 task(s)."},
@@ -173,9 +172,7 @@ describe("runGenerate", () => {
       expect(result).toEqual({selected: ["gql", "artifacts"], completed: ["gql", "artifacts"]});
       const texts = records(harness).map((record) => record.text);
       const gqlSummary = texts.indexOf("[arolariu::test::generate] ✅ GraphQL generation completed (placeholder).");
-      const artifactsSummary = texts.indexOf(
-        "[arolariu::test::generate] ✅ Verified 3 pinned taxonomy pairs; generated 1 Website license file(s).",
-      );
+      const artifactsSummary = texts.indexOf("[arolariu::test::generate] ✅ Generated 1 Website license file(s).");
       expect(gqlSummary).toBeGreaterThan(-1);
       expect(artifactsSummary).toBeGreaterThan(gqlSummary);
       expect(harness.httpCalls()).toEqual([]);

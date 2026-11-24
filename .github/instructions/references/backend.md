@@ -22,7 +22,7 @@ The Invoices bounded context is the fully implemented reference for The Standard
 | Orchestration | `AnalysisOrchestrationService`     | `IAnalysisFoundationService`, `IAnalysisQueueFoundationService`                                  |
 | Foundation    | `InvoiceStorageFoundationService`  | `IDatabaseBroker`                                                                                |
 | Foundation    | `MerchantStorageFoundationService` | `IDatabaseBroker`                                                                                |
-| Foundation    | `AnalysisFoundationService`        | `IDocumentIntelligenceBroker`, `IGenerativeAnalysisBroker`, `ITaxonomyBroker`                    |
+| Foundation    | `AnalysisFoundationService`        | `IDocumentIntelligenceBroker`, `IGenerativeAnalysisBroker`                                       |
 | Foundation    | `AnalysisQueueFoundationService`   | `IQueueBroker`                                                                                   |
 
 This graph is enforced by reflection, not just convention:
@@ -84,10 +84,10 @@ public static partial class AuthEndpoints
 
 ## CRUD, analysis, and queue patterns
 
-Foundation CRUD (shown above) is the simplest shape. Analysis composition lives in `AnalysisOrchestrationService`, which composes OCR,
-generative, and taxonomy capabilities through the unified `IAnalysisFoundationService` (queue work goes through
-`IAnalysisQueueFoundationService`) and returns a tuple of the mutated aggregate plus the options that failed or were dependency-blocked — it
-does not throw for a partial capability failure; Processing decides what that means for persistence and retry.
+Foundation CRUD (shown above) is the simplest shape. Analysis composition lives in `AnalysisOrchestrationService`, which composes OCR and
+generative capabilities through the unified `IAnalysisFoundationService` (queue work goes through `IAnalysisQueueFoundationService`) and
+returns a tuple of the mutated aggregate plus the options that failed or were dependency-blocked — it does not throw for a partial
+capability failure; Processing decides what that means for persistence and retry.
 
 Durable queue work is validated at construction, not at enqueue time:
 
@@ -198,7 +198,6 @@ New services are registered exactly once, in the owning bounded context's `WebAp
 // Broker services:
 services.AddScoped<IDatabaseBroker, CosmosDatabaseBroker>();
 services.AddScoped<IQueueBroker, AzureStorageQueueBroker>();
-services.AddSingleton<ITaxonomyBroker, JsonTaxonomyBroker>();
 
 // Foundation services:
 services.AddScoped<IInvoiceStorageFoundationService, InvoiceStorageFoundationService>();
@@ -216,9 +215,7 @@ services.AddScoped<IInvoiceManagementService, InvoiceManagementService>();
 services.AddHostedService<AnalysisWorker>();
 ```
 
-`ITaxonomyBroker` is the one `AddSingleton` among the Brokers because `JsonTaxonomyBroker` loads immutable embedded GS1/ECOICOP/NACE
-artifacts at startup; every other Broker and service is `AddScoped` to match Cosmos/EF Core scoping. Do not default a new registration to
-`AddSingleton` without the same immutable-state justification.
+Category data is an immutable local resource, not a Broker collaborator.
 
 ## Tests
 
@@ -263,13 +260,13 @@ Foundation-test shapes those categories build on.
 
 ## Anti-pattern corrections summary
 
-| Anti-pattern                                                                 | Why it fails here                                                                            | Correction                                                                                          |
-| ---------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------- |
-| An endpoint injecting `IInvoiceStorageFoundationService` directly            | Bypasses Management's classification boundary and Processing's workflow policy               | Inject only `IInvoiceManagementService`; extend Management if a use case is missing                 |
-| A new Foundation calling another Foundation                                  | Sideways coupling prohibited by RFC 2001 §2.3                                                | Route composition through an Orchestration                                                          |
-| Adding a Foundation/Orchestration/Processing layer to Core.Auth for symmetry | Core.Auth intentionally has no Standard hierarchy; auth changes are an escalation regardless | Confirm the change is actually approved auth work before touching `Core.Auth/*`                     |
-| Registering a new service as `AddSingleton` "to be safe"                     | Breaks Cosmos/EF Core per-request scoping used by every other Broker/service                 | Match `AddScoped` unless the type holds genuinely immutable startup state like `JsonTaxonomyBroker` |
-| Dropping the `userIdentifier`/partition parameter in a pass-through layer    | Silently converts an owner-scoped call into an unscoped one                                  | Thread the discriminator unchanged from endpoint to Broker                                          |
+| Anti-pattern                                                                 | Why it fails here                                                                            | Correction                                                                          |
+| ---------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------- |
+| An endpoint injecting `IInvoiceStorageFoundationService` directly            | Bypasses Management's classification boundary and Processing's workflow policy               | Inject only `IInvoiceManagementService`; extend Management if a use case is missing |
+| A new Foundation calling another Foundation                                  | Sideways coupling prohibited by RFC 2001 §2.3                                                | Route composition through an Orchestration                                          |
+| Adding a Foundation/Orchestration/Processing layer to Core.Auth for symmetry | Core.Auth intentionally has no Standard hierarchy; auth changes are an escalation regardless | Confirm the change is actually approved auth work before touching `Core.Auth/*`     |
+| Registering a new service as `AddSingleton` "to be safe"                     | Breaks Cosmos/EF Core per-request scoping used by every other Broker/service                 | Match the live owning registration lifetime                                         |
+| Dropping the `userIdentifier`/partition parameter in a pass-through layer    | Silently converts an owner-scoped call into an unscoped one                                  | Thread the discriminator unchanged from endpoint to Broker                          |
 
 ## Live source pointers
 

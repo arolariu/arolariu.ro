@@ -1,7 +1,7 @@
 "use client";
 
 import {formatCurrency} from "@/lib/utils.generic";
-import {ClassificationSystem, type StandardClassification} from "@/types/invoices";
+import {ProductCategory} from "@/types/invoices";
 import {Card, CardContent, CardHeader, CardTitle} from "@arolariu/components";
 import {useLocale} from "next-intl";
 import {useTranslations} from "next-intl-selector";
@@ -9,20 +9,18 @@ import {TbHome, TbLeaf, TbPackage, TbSpray, TbStar} from "react-icons/tb";
 import {useInvoiceContext} from "../../../_context/InvoiceContext";
 import styles from "./HomeInventoryCard.module.scss";
 
-/** GS1 GPC segment for cleaning and hygiene products. */
-const GS1_CLEANING_HYGIENE_SEGMENT_CODE = "47000000";
+const cleaningCategories = new Set<ProductCategory>([
+  ProductCategory.HouseholdCleaners,
+  ProductCategory.LaundryProducts,
+  ProductCategory.DishwashingProducts,
+  ProductCategory.CleaningTools,
+  ProductCategory.TrashBags,
+  ProductCategory.PaperTowelsTissues,
+]);
 
-/**
- * Determines whether a product has explicit GS1 cleaning/hygiene taxonomy evidence.
- *
- * @param classification - The product classification to inspect.
- * @returns `true` only when the GS1 hierarchy contains the cleaning/hygiene segment.
- */
-export function isGs1CleaningOrHygieneClassification(classification: StandardClassification | null): boolean {
-  return (
-    classification?.system === ClassificationSystem.Gs1Gpc
-    && classification.hierarchy.some((node) => node.level === "segment" && node.code === GS1_CLEANING_HYGIENE_SEGMENT_CODE)
-  );
+/** Whether a product category belongs in the household supply view. */
+export function isCleaningProductCategory(category: ProductCategory | null): boolean {
+  return category !== null && cleaningCategories.has(category);
 }
 
 /**
@@ -50,7 +48,7 @@ export function HomeInventoryCard(): React.JSX.Element {
   const {currency} = paymentInformation;
 
   const supplies: SupplyItem[] = items
-    .filter((item) => isGs1CleaningOrHygieneClassification(item.classification))
+    .filter((item) => isCleaningProductCategory(item.category))
     .map((item) => ({
       id: `cleaning-${item.productCode}`,
       name: item.name,

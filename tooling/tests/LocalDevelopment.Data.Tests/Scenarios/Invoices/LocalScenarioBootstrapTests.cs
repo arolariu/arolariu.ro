@@ -159,6 +159,7 @@ public sealed class LocalScenarioBootstrapTests
   [TestMethod]
   [DataRow("v1")]
   [DataRow("v2")]
+  [DataRow("v3")]
   public async Task RunAsync_LegacyCompletedReceipt_RefusesAllSeedWrites(string legacyVersion)
   {
     var operations = new List<string>();

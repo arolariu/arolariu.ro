@@ -1,10 +1,8 @@
 namespace arolariu.Backend.Domain.Invoices.Services.Orchestration.InvoiceService;
 
 using System;
-using System.Collections.Generic;
 using System.Threading.Tasks;
 
-using arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices;
 using arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices.Exceptions.Outer.Foundation;
 using arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices.Exceptions.Outer.Orchestration;
 
@@ -12,9 +10,6 @@ public partial class InvoiceOrchestrationService
 {
   private delegate Task ReturningAnalysisFunction();
 
-  private delegate Task<Invoice> ReturningInvoiceFunction();
-
-  private delegate Task<IEnumerable<Invoice>> ReturningInvoicesFunction();
 
   private async Task TryCatchAsync(ReturningAnalysisFunction returningAnalysisFunction)
   {
@@ -33,28 +28,11 @@ public partial class InvoiceOrchestrationService
     }
   }
 
-  private async Task<Invoice> TryCatchAsync(ReturningInvoiceFunction returningInvoiceFunction)
+  private async Task<TResult> TryCatchAsync<TResult>(Func<Task<TResult>> operation)
   {
     try
     {
-      return await returningInvoiceFunction().ConfigureAwait(false);
-    }
-    catch (OperationCanceledException)
-    {
-      // Cancellation is not a fault. Bare rethrow preserves the original stack trace.
-      throw;
-    }
-    catch (Exception exception)
-    {
-      throw Classify(exception);
-    }
-  }
-
-  private async Task<IEnumerable<Invoice>> TryCatchAsync(ReturningInvoicesFunction returningInvoicesFunction)
-  {
-    try
-    {
-      return await returningInvoicesFunction().ConfigureAwait(false);
+      return await operation().ConfigureAwait(false);
     }
     catch (OperationCanceledException)
     {

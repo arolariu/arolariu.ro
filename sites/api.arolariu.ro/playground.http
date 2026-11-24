@@ -161,51 +161,44 @@ Accept: application/json
 
 ### Add Product to Invoice
 # Add a new product/item to an invoice.
-# rawName is required and used as a unique identifier.
+# Provide a product name and, optionally, a numeric product category.
 POST {{baseUrl}}/rest/{{apiVersion}}/invoices/{{invoiceId}}/products
 Authorization: Bearer {{authToken}}
 Content-Type: application/json
 
 {
-  "rawName": "Fresh Milk 1L",
-  "detectedAllergens": [],
-  "category": 1,
+  "name": "Fresh Milk 1L",
+  "category": 1014,
   "quantity": 2,
   "quantityUnit": "piece",
-  "price": 8.50,
-  "totalPrice": 17.00
+  "price": 8.50
 }
 
 ###
 
 ### Update Product in Invoice
-# Update an existing product's details.
-# The product is identified by rawName in the body.
+# Set the category of a uniquely named product. Send -1 to clear it.
+# If the invoice changed before the write, refresh after the 409 response.
 PUT {{baseUrl}}/rest/{{apiVersion}}/invoices/{{invoiceId}}/products
 Authorization: Bearer {{authToken}}
 Content-Type: application/json
 
 {
-  "rawName": "Fresh Milk 1L",
-  "detectedAllergens": ["lactose"],
-  "category": 1,
-  "quantity": 3,
-  "quantityUnit": "piece",
-  "price": 8.50,
-  "totalPrice": 25.50
+  "originalProductName": "Fresh Milk 1L",
+  "category": 1014
 }
 
 ###
 
 ### Remove Product from Invoice
 # Remove a product from the invoice.
-# Product is identified by rawName in the request body.
+# Product is identified by its current name.
 DELETE {{baseUrl}}/rest/{{apiVersion}}/invoices/{{invoiceId}}/products
 Authorization: Bearer {{authToken}}
 Content-Type: application/json
 
 {
-  "rawName": "Fresh Milk 1L"
+  "productName": "Fresh Milk 1L"
 }
 
 ###############################################################################
@@ -230,9 +223,9 @@ Content-Type: application/json
 
 {
   "name": "Sample Supermarket",
-  "address": "123 Main Street, Bucharest, Romania",
-  "phoneNumber": "+40 21 123 4567",
-  "category": "Retail",
+  "description": "Grocery retailer",
+  "address": {"address": "123 Main Street, Bucharest, Romania", "phoneNumber": "+40 21 123 4567"},
+  "category": 2001,
   "parentCompanyId": "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee"
 }
 
@@ -344,9 +337,8 @@ Content-Type: application/json
 
 {
   "name": "New Grocery Store",
-  "address": "456 Commerce Ave, Cluj-Napoca, Romania",
-  "phoneNumber": "+40 264 987 654",
-  "category": "Grocery",
+  "description": "Neighborhood grocery store",
+  "address": {"address": "456 Commerce Ave, Cluj-Napoca, Romania", "phoneNumber": "+40 264 987 654"},
   "parentCompanyId": "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee"
 }
 
@@ -360,73 +352,15 @@ Accept: application/json
 
 ###
 
-### Update Merchant (Full Replace)
-# Completely replace a merchant's data.
+### Clear Merchant Category
+# Update the category alone without changing merchant details.
 PUT {{baseUrl}}/rest/{{apiVersion}}/merchants/{{merchantId}}
 Authorization: Bearer {{authToken}}
 Content-Type: application/json
 
 {
-  "name": "Updated Store Name",
-  "address": "789 New Address, Timisoara, Romania",
-  "phoneNumber": "+40 256 111 222",
-  "category": "Supermarket",
-  "parentCompanyId": "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee"
+  "category": -1
 }
-
-###
-
-### Delete Merchant
-# Permanently delete a merchant.
-# Returns: 204 No Content on success.
-DELETE {{baseUrl}}/rest/{{apiVersion}}/merchants/{{merchantId}}?parentCompanyId=aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee
-Authorization: Bearer {{authToken}}
-
-###############################################################################
-# MERCHANT INVOICES - Relationship Management
-###############################################################################
-
-### Get Merchant Invoices
-# Retrieve all invoices associated with a merchant.
-# Returns: Array of Invoice objects.
-GET {{baseUrl}}/rest/{{apiVersion}}/merchants/{{merchantId}}/invoices
-Authorization: Bearer {{authToken}}
-Accept: application/json
-
-###
-
-### Add Invoice to Merchant
-# Associate existing invoice(s) with a merchant.
-# Provide array of invoice identifiers.
-PATCH {{baseUrl}}/rest/{{apiVersion}}/merchants/{{merchantId}}/invoices
-Authorization: Bearer {{authToken}}
-Content-Type: application/json
-
-{
-  "invoiceIdentifiers": ["{{invoiceId}}"]
-}
-
-###
-
-### Remove Invoice from Merchant
-# Disassociate invoice(s) from a merchant.
-# The invoices themselves are not deleted.
-DELETE {{baseUrl}}/rest/{{apiVersion}}/merchants/{{merchantId}}/invoices
-Authorization: Bearer {{authToken}}
-Content-Type: application/json
-
-{
-  "invoiceIdentifiers": ["{{invoiceId}}"]
-}
-
-###
-
-### Get Merchant Products
-# Retrieve all products across all invoices for a merchant.
-# Useful for aggregate reporting and analytics.
-GET {{baseUrl}}/rest/{{apiVersion}}/merchants/{{merchantId}}/products
-Authorization: Bearer {{authToken}}
-Accept: application/json
 
 ###############################################################################
 # ERROR SCENARIOS - Testing Edge Cases

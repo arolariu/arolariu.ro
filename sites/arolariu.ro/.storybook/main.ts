@@ -36,7 +36,7 @@ const config: StorybookConfig = {
           {find: /^client-only$/, replacement: resolve(import.meta.dirname, "../tests/stubs/client-only.ts")},
           // `@/instrumentation.server` imports Node-only OpenTelemetry/Azure SDKs.
           // Client Components that transitively import a `"use server"` action
-          // (e.g. ClassificationPicker -> searchClassifications) would otherwise
+          // would otherwise
           // bundle that Node SDK graph into the browser, crashing with
           // `ReferenceError: __dirname is not defined`.
           {

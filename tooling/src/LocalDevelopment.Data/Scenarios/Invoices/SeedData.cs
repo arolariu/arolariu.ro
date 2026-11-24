@@ -8,9 +8,10 @@ using arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices;
 using arolariu.Backend.Domain.Invoices.DDD.Entities.Merchants;
 using arolariu.Backend.Domain.Invoices.DDD.ValueObjects;
 using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Allergens;
-using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Classifications;
+using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Categories;
 using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Products;
 using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Recipes;
+using arolariu.Backend.Domain.Invoices.Serialization;
 
 /// <summary>
 /// Loads and materializes the deterministic local development scenario.
@@ -24,7 +25,13 @@ internal static class SeedData
     PropertyNameCaseInsensitive = true,
     RespectRequiredConstructorParameters = true,
     RespectNullableAnnotations = true,
-    Converters = { new JsonStringEnumConverter() },
+    Converters =
+    {
+      new StrictNumericCategoryConverter<InvoiceCategory>(),
+      new StrictNumericCategoryConverter<ProductCategory>(),
+      new StrictNumericCategoryConverter<MerchantCategory>(),
+      new JsonStringEnumConverter(),
+    },
   };
 
   internal static SeedScenarioManifest LoadScenario(string directoryPath)
@@ -97,9 +104,6 @@ internal static class SeedData
         utcAnchorDate,
         oldestInvoiceDays.GetValueOrDefault(definition.Key)))
       .ToList();
-    Dictionary<Guid, Merchant> merchantsById =
-      merchants.ToDictionary(merchant => merchant.id);
-
     var invoices = new List<Invoice>(manifest.Invoices.Count);
 
     foreach (SeedInvoiceDefinition definition in manifest.Invoices)
@@ -115,7 +119,6 @@ internal static class SeedData
         manifest.Version,
         utcAnchorDate);
       invoices.Add(invoice);
-      merchantsById[merchantDefinition.Id].ReferencedInvoices.Add(invoice.id);
     }
 
     List<MaterializedSeedBlob> blobs = manifest.Blobs
@@ -140,13 +143,7 @@ internal static class SeedData
       Name = definition.Name,
       Description = definition.Description,
       ParentCompanyId = definition.ParentCompanyId,
-      Classification = CreateClassification(
-        ClassificationSystem.Nace21,
-        "2.1",
-        definition.ClassificationCode,
-        definition.ClassificationLabel,
-        definition.ClassificationPath,
-        ClassificationOrigin.Analysis),
+      Category = definition.Category,
       Address = new ContactInformation
       {
         FullName = definition.Name,
@@ -186,17 +183,7 @@ internal static class SeedData
       CreatedBy = owner.UserIdentifier,
       IsImportant = definition.IsImportant,
       MerchantReference = merchant.Id,
-      Classification = definition.ClassificationCode is null
-        ? null
-        : CreateClassification(
-          ClassificationSystem.EcoicopV2,
-          "2",
-          definition.ClassificationCode,
-          definition.ClassificationLabel
-            ?? definition.ClassificationCode,
-          definition.ClassificationPath
-            ?? throw new InvalidDataException($"Invoice '{definition.Key}' has no classification path."),
-          ClassificationOrigin.Analysis),
+      Category = definition.Category,
       PaymentInformation = new PaymentInformation
       {
         TransactionDate = transactionDate,
@@ -264,46 +251,15 @@ internal static class SeedData
       QuantityUnit = definition.QuantityUnit,
       ProductCode = definition.ProductCode,
       Price = definition.Price,
-      Classification = definition.ClassificationCode is null
-        ? null
-        : CreateClassification(
-          ClassificationSystem.Gs1Gpc,
-          "2026-05",
-          definition.ClassificationCode,
-          definition.ClassificationLabel
-            ?? definition.ClassificationCode,
-          definition.ClassificationPath
-            ?? throw new InvalidDataException($"Product '{definition.ProductCode}' has no classification path."),
-          definition.IsEdited
-            ? ClassificationOrigin.Manual
-            : ClassificationOrigin.Analysis),
+      Category = definition.Category,
       AllergenAssessment = CreateAllergenAssessment(definition),
       Metadata = new ProductMetadata
       {
         IsEdited = definition.IsEdited,
-        IsComplete = definition.ClassificationCode is not null,
-        Confidence = definition.ClassificationCode is null ? 0 : 0.91,
+        IsComplete = definition.Category is not null,
+        Confidence = definition.Category is null ? 0 : 0.91,
       },
     };
-
-  private static StandardClassification CreateClassification(
-    ClassificationSystem system,
-    string version,
-    string code,
-    string label,
-    IReadOnlyList<ClassificationNode> path,
-    ClassificationOrigin origin) =>
-    new(
-      system,
-      version,
-      code,
-      label,
-      path,
-      origin,
-      origin == ClassificationOrigin.Analysis ? 0.91 : null,
-      origin == ClassificationOrigin.Analysis
-        ? [new ClassificationEvidence("seed.fixture", label)]
-        : []);
 
   private static AllergenAssessment? CreateAllergenAssessment(SeedProductDefinition definition) =>
     definition.AllergenState.ToLowerInvariant() switch

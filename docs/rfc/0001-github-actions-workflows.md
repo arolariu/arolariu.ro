@@ -348,8 +348,8 @@ step names and final logging step in `.github/actions/setup-workspace/action.yml
 `artifacts gql i18n` and hygiene selects `artifacts`. With generation enabled, omitting `workspace-generate-args` also runs the `env`
 generator, which outside `INFRA=azure` reads `.env` and prompts for missing required keys.
 
-**Use Case:** Jobs that need generated workspace artifacts (taxonomy and license artifacts, synchronized locale files) before they build or
-test. The `gql` generator currently writes only a placeholder (`scripts/__generated__/gql/README.placeholder.txt`).
+**Use Case:** Jobs that need generated workspace artifacts (license artifacts and synchronized locale files) before they build or test. The
+`gql` generator currently writes only a placeholder (`scripts/__generated__/gql/README.placeholder.txt`).
 
 **Example:**
 

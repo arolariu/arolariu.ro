@@ -6,6 +6,7 @@ using System.Diagnostics.CodeAnalysis;
 
 using arolariu.Backend.Common.DDD.ValueObjects;
 using arolariu.Backend.Domain.Invoices.DDD.Entities.Merchants;
+using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Categories;
 
 
 /// <summary>
@@ -25,13 +26,12 @@ public static class MerchantTestDataBuilder
     ParentCompanyId = Guid.NewGuid(),
     Name = GetRandomString(),
     Description = GetRandomString(),
-    Classification = ClassificationTestData.Nace("47.91", "Retail sale via mail order houses or via Internet"),
+    Category = MerchantCategory.Supermarket,
     Address = new ContactInformation(),
     IsImportant = Random.Next(0, 2) == 1,
     CreatedBy = Guid.NewGuid(),
     CreatedAt = GetRandomDateTimeOffset(),
     NumberOfUpdates = Random.Next(0, 10),
-    ReferencedInvoices = [Guid.NewGuid()]
   };
 
   /// <summary>Creates a merchant overriding selected properties while randomizing the rest.</summary>
@@ -49,13 +49,12 @@ public static class MerchantTestDataBuilder
       ParentCompanyId = parentCompanyId ?? merchant.ParentCompanyId,
       Name = name ?? merchant.Name,
       Description = merchant.Description,
-      Classification = merchant.Classification,
+      Category = merchant.Category,
       Address = merchant.Address,
       IsImportant = merchant.IsImportant,
       CreatedBy = merchant.CreatedBy,
       CreatedAt = merchant.CreatedAt,
       NumberOfUpdates = merchant.NumberOfUpdates,
-      ReferencedInvoices = merchant.ReferencedInvoices
     };
   }
 

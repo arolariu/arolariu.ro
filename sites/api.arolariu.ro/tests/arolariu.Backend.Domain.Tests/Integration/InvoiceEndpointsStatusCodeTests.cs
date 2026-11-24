@@ -6,6 +6,7 @@ using System.ComponentModel.DataAnnotations;
 using System.Diagnostics;
 using System.Linq;
 using System.Security.Claims;
+using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -15,7 +16,7 @@ using arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices;
 using arolariu.Backend.Domain.Invoices.DDD.Analysis.Enums;
 using arolariu.Backend.Domain.Invoices.DDD.Entities.Merchants;
 using arolariu.Backend.Domain.Invoices.DDD.ValueObjects;
-using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Classifications;
+using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Categories;
 using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Products;
 using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Recipes;
 using arolariu.Backend.Domain.Invoices.DTOs.Requests;
@@ -195,6 +196,9 @@ public sealed class InvoiceEndpointsStatusCodeTests
   private static Mock<IInvoiceManagementService> CreateServiceMockThatThrowsOnMerchantRead(Exception exceptionToThrow)
   {
     var mock = new Mock<IInvoiceManagementService>(MockBehavior.Strict);
+    mock.Setup(s => s.ReadInvoices(It.IsAny<Guid>(), It.IsAny<CancellationToken>(), It.Is<Guid?>(id => id.HasValue)))
+      .ReturnsAsync((Guid userId, CancellationToken _, Guid? merchantId) =>
+        [new Invoice { id = Guid.NewGuid(), UserIdentifier = userId, MerchantReference = merchantId.GetValueOrDefault() }]);
     mock
       .Setup(s => s.ReadMerchant(It.IsAny<Guid>(), It.IsAny<Guid?>(), It.IsAny<CancellationToken>()))
       .ThrowsAsync(exceptionToThrow);
@@ -398,6 +402,16 @@ public sealed class InvoiceEndpointsStatusCodeTests
 
     Assert.AreEqual(typeof(InvoiceScan), parameter.ParameterType);
     Assert.IsNotNull(parameter.GetCustomAttributes(typeof(RequiredAttribute), inherit: false).SingleOrDefault());
+  }
+
+  /// <summary>Rejects incomplete JSON before binding can supply empty owner or scan defaults.</summary>
+  [TestMethod]
+  [DataRow("""{"invalidField":"invalid value"}""")]
+  [DataRow("""{"userIdentifier":"7f4f2ec0-4f3b-4d2b-9c1a-8e6a0d4f7b21"}""")]
+  [DataRow("""{"initialScan":{"type":2,"location":"https://example.invalid/receipt.png"}}""")]
+  public void CreateInvoiceRequestDto_RequiredFieldsOmitted_RejectsJson(string body)
+  {
+    Assert.ThrowsExactly<JsonException>(() => JsonSerializer.Deserialize<CreateInvoiceRequestDto>(body, JsonSerializerOptions.Web));
   }
   #endregion
 
@@ -649,15 +663,15 @@ public sealed class InvoiceEndpointsStatusCodeTests
   #endregion
 
   #region Product replacement workflow tests
-  /// <summary>Verifies a whitespace product classification code rejected by Management maps to bad request.</summary>
+  /// <summary>Verifies an invalid product category rejected by Management maps to bad request.</summary>
   [TestMethod]
-  public async Task AddProductToInvoiceAsync_WhitespaceClassificationCode_ReturnsBadRequest()
+  public async Task AddProductToInvoiceAsync_InvalidCategory_ReturnsBadRequest()
   {
     Guid invoiceId = Guid.NewGuid();
     Guid userId = Guid.NewGuid();
     var request = new CreateProductRequestDto(
       Name: "Milk",
-      ClassificationCode: " ",
+      Category: (ProductCategory)2001,
       Quantity: 1m,
       QuantityUnit: "pcs",
       ProductCode: null,
@@ -673,9 +687,8 @@ public sealed class InvoiceEndpointsStatusCodeTests
         invoiceId,
         userId,
         It.IsAny<Product>(),
-        " ",
         It.IsAny<CancellationToken>()))
-      .ThrowsAsync(new BadHttpRequestException("Classification code must not be whitespace."));
+      .ThrowsAsync(new BadHttpRequestException("The category was invalid."));
 
     IResult result = await InvoiceEndpoints.AddProductToInvoiceAsync(
       service.Object,
@@ -687,59 +700,24 @@ public sealed class InvoiceEndpointsStatusCodeTests
     service.VerifyAll();
   }
 
-  /// <summary>Verifies product replacement composes Management get, delete, and add calls in order.</summary>
+  /// <summary>Verifies the product edit handler calls the Management update only once.</summary>
   [TestMethod]
-  public async Task UpdateProductInInvoiceAsync_ValidReplacement_ComposesManagementCallsInOrder()
+  public async Task UpdateProductInInvoiceAsync_ValidReplacement_DelegatesOneUpdate()
   {
     Guid invoiceId = Guid.NewGuid();
     Guid userId = Guid.NewGuid();
-    StandardClassification classification = CreateClassification(
-      ClassificationSystem.Gs1Gpc,
-      "2026-05",
-      "10000025",
-      "Food or beverage products");
     var request = new UpdateProductRequestDto(
       OriginalProductName: "Old Milk",
       Name: "New Milk",
-      ClassificationCode: classification.Code,
+      Category: null,
       Quantity: 2m,
       QuantityUnit: "pcs",
       ProductCode: string.Empty,
       Price: 9m,
       AllergenAssessment: null);
     var service = new Mock<IInvoiceManagementService>(MockBehavior.Strict);
-    var persistedProduct = new Product
-    {
-      Name = "Old Milk",
-      Classification = classification,
-      Metadata = new ProductMetadata { IsComplete = true },
-    };
-    Product? addedProduct = null;
-    var sequence = new MockSequence();
-    service.InSequence(sequence)
-      .Setup(candidate => candidate.GetProduct(
-        invoiceId,
-        userId,
-        "Old Milk",
-        It.IsAny<CancellationToken>()))
-      .ReturnsAsync(persistedProduct);
-    service.InSequence(sequence)
-      .Setup(candidate => candidate.DeleteProduct(
-        invoiceId,
-        userId,
-        "Old Milk",
-        It.IsAny<CancellationToken>()))
-      .Returns(Task.CompletedTask);
-    service.InSequence(sequence)
-      .Setup(candidate => candidate.AddProduct(
-        invoiceId,
-        userId,
-        It.IsAny<Product>(),
-        classification.Code,
-        It.IsAny<CancellationToken>()))
-      .Callback<Guid, Guid?, Product, string?, CancellationToken>(
-        (_, _, product, _, _) => addedProduct = product)
-      .Returns(Task.CompletedTask);
+    service.Setup(candidate => candidate.UpdateProduct(invoiceId, userId, request, It.IsAny<CancellationToken>()))
+      .ReturnsAsync(new Product { Name = "New Milk", Quantity = 2m, Price = 9m, Category = ProductCategory.Milk });
 
     IResult result = await InvoiceEndpoints.UpdateProductInInvoiceAsync(
       service.Object,
@@ -748,13 +726,8 @@ public sealed class InvoiceEndpointsStatusCodeTests
       request);
 
     Assert.AreEqual(StatusCodes.Status202Accepted, GetStatusCode(result));
-    Assert.IsNotNull(addedProduct);
-    Assert.AreEqual("New Milk", addedProduct.Name);
-    Assert.AreEqual(2m, addedProduct.Quantity);
-    Assert.AreSame(classification, addedProduct.Classification);
-    Assert.IsTrue(addedProduct.Metadata.IsEdited);
-    Assert.IsTrue(addedProduct.Metadata.IsComplete);
-    service.VerifyAll();
+    service.Verify(candidate => candidate.UpdateProduct(invoiceId, userId, request, It.IsAny<CancellationToken>()), Times.Once);
+    service.VerifyNoOtherCalls();
   }
   #endregion
 
@@ -764,9 +737,7 @@ public sealed class InvoiceEndpointsStatusCodeTests
   /// </summary>
   /// <remarks>
   /// <para><c>parentCompanyId</c> narrows the caller's own visible set. It must never act as an
-  /// alternate path that skips ownership filtering: <c>MerchantResponseDto</c> exposes
-  /// <c>referencedInvoiceIds</c> and <c>createdBy</c>, so an unscoped partition read would
-  /// disclose other users' invoice and user identifiers to any authenticated caller.</para>
+  /// alternate path that skips caller visibility filtering.</para>
   /// </remarks>
   [TestMethod]
   public async Task RetrieveAllMerchantsAsync_WithParentCompanyId_StillScopesToCaller()
@@ -779,9 +750,7 @@ public sealed class InvoiceEndpointsStatusCodeTests
     var service = new Mock<IInvoiceManagementService>(MockBehavior.Strict);
     service
       .Setup(candidate => candidate.ReadMerchantsVisibleToUser(userId, It.IsAny<CancellationToken>()))
-      .ReturnsAsync((
-        new List<Merchant> { inPartition, outOfPartition },
-        new List<Invoice>()));
+      .ReturnsAsync([inPartition, outOfPartition]);
 
     IResult result = await InvoiceEndpoints.RetrieveAllMerchantsAsync(
       service.Object,
@@ -791,6 +760,8 @@ public sealed class InvoiceEndpointsStatusCodeTests
       CancellationToken.None);
 
     Assert.AreEqual(StatusCodes.Status200OK, GetStatusCode(result));
+    var values = Assert.IsInstanceOfType<IEnumerable<MerchantResponseDto>>(((IValueHttpResult)result).Value);
+    Assert.AreEqual(inPartition.id, values.Single().Id);
 
     // The owner-scoped read is the ONLY source of merchants; the unscoped partition read
     // must never be reached. MockBehavior.Strict makes any other call fail the test.
@@ -800,37 +771,26 @@ public sealed class InvoiceEndpointsStatusCodeTests
   }
 
   /// <summary>
-  /// Verifies collection responses expose only caller-owned invoice references and redact unrelated audit principals.
+  /// Verifies collection responses redact unrelated audit principals.
   /// </summary>
   [TestMethod]
   public async Task RetrieveAllMerchantsAsync_SharedMerchant_ReturnsCallerScopedProjection()
   {
     Guid userId = Guid.NewGuid();
-    Guid callerInvoiceId = Guid.NewGuid();
-    Guid otherUserInvoiceId = Guid.NewGuid();
     Guid otherUserId = Guid.NewGuid();
     Guid merchantId = Guid.NewGuid();
     var merchant = new Merchant
     {
       id = merchantId,
-      ReferencedInvoices = [callerInvoiceId, otherUserInvoiceId],
       CreatedBy = otherUserId,
     };
     typeof(Merchant)
       .GetProperty(nameof(Merchant.LastUpdatedBy))!
       .SetValue(merchant, otherUserId);
-    var callerInvoice = new Invoice
-    {
-      id = callerInvoiceId,
-      UserIdentifier = userId,
-      MerchantReference = merchantId,
-    };
     var service = new Mock<IInvoiceManagementService>(MockBehavior.Strict);
     service
       .Setup(candidate => candidate.ReadMerchantsVisibleToUser(userId, It.IsAny<CancellationToken>()))
-      .ReturnsAsync((
-        new List<Merchant> { merchant },
-        new List<Invoice> { callerInvoice }));
+      .ReturnsAsync([merchant]);
 
     IResult result = await InvoiceEndpoints.RetrieveAllMerchantsAsync(
       service.Object,
@@ -842,8 +802,7 @@ public sealed class InvoiceEndpointsStatusCodeTests
     IEnumerable<MerchantResponseDto> values =
       Assert.IsInstanceOfType<IEnumerable<MerchantResponseDto>>(((IValueHttpResult)result).Value);
     MerchantResponseDto response = values.Single();
-    CollectionAssert.AreEqual(new[] { callerInvoiceId }, response.ReferencedInvoiceIds.ToArray());
-    Assert.AreEqual(1, response.ReferencedInvoiceCount);
+    Assert.AreEqual(merchantId, response.Id);
     Assert.AreEqual(Guid.Empty, response.CreatedBy);
     Assert.AreEqual(Guid.Empty, response.LastUpdatedBy);
     Assert.AreNotEqual(otherUserId, response.CreatedBy);
@@ -852,20 +811,18 @@ public sealed class InvoiceEndpointsStatusCodeTests
   }
 
   /// <summary>
-  /// Verifies a specific shared merchant response applies the same caller relationship and audit projection.
+  /// Verifies a specific shared merchant response applies the same caller audit projection.
   /// </summary>
   [TestMethod]
   public async Task RetrieveSpecificMerchantAsync_SharedMerchant_ReturnsCallerScopedProjection()
   {
     Guid userId = Guid.NewGuid();
     Guid callerInvoiceId = Guid.NewGuid();
-    Guid otherUserInvoiceId = Guid.NewGuid();
     Guid otherUserId = Guid.NewGuid();
     Guid merchantId = Guid.NewGuid();
     var merchant = new Merchant
     {
       id = merchantId,
-      ReferencedInvoices = [callerInvoiceId, otherUserInvoiceId],
       CreatedBy = otherUserId,
     };
     var callerInvoice = new Invoice
@@ -882,7 +839,7 @@ public sealed class InvoiceEndpointsStatusCodeTests
         It.IsAny<CancellationToken>()))
       .ReturnsAsync(merchant);
     service
-      .Setup(candidate => candidate.ReadInvoices(userId, It.IsAny<CancellationToken>()))
+      .Setup(candidate => candidate.ReadInvoices(userId, It.IsAny<CancellationToken>(), merchantId))
       .ReturnsAsync([callerInvoice]);
 
     IResult result = await InvoiceEndpoints.RetrieveSpecificMerchantAsync(
@@ -894,21 +851,20 @@ public sealed class InvoiceEndpointsStatusCodeTests
 
     MerchantResponseDto response =
       Assert.IsExactInstanceOfType<MerchantResponseDto>(((IValueHttpResult)result).Value);
-    CollectionAssert.AreEqual(new[] { callerInvoiceId }, response.ReferencedInvoiceIds.ToArray());
+    Assert.AreEqual(merchantId, response.Id);
     Assert.AreEqual(Guid.Empty, response.CreatedBy);
     Assert.AreNotEqual(otherUserId, response.CreatedBy);
     service.VerifyAll();
   }
 
   /// <summary>
-  /// Verifies the invoice merchant subresource cannot disclose references or audit principals from other users.
+  /// Verifies the invoice merchant subresource cannot disclose audit principals from other users.
   /// </summary>
   [TestMethod]
   public async Task RetrieveMerchantFromInvoiceAsync_SharedMerchant_ReturnsInvoiceScopedProjection()
   {
     Guid userId = Guid.NewGuid();
     Guid invoiceId = Guid.NewGuid();
-    Guid otherUserInvoiceId = Guid.NewGuid();
     Guid otherUserId = Guid.NewGuid();
     Guid merchantId = Guid.NewGuid();
     var invoice = new Invoice
@@ -920,7 +876,6 @@ public sealed class InvoiceEndpointsStatusCodeTests
     var merchant = new Merchant
     {
       id = merchantId,
-      ReferencedInvoices = [invoiceId, otherUserInvoiceId],
       CreatedBy = otherUserId,
     };
     var service = new Mock<IInvoiceManagementService>(MockBehavior.Strict);
@@ -945,7 +900,7 @@ public sealed class InvoiceEndpointsStatusCodeTests
 
     MerchantResponseDto response =
       Assert.IsExactInstanceOfType<MerchantResponseDto>(((IValueHttpResult)result).Value);
-    CollectionAssert.AreEqual(new[] { invoiceId }, response.ReferencedInvoiceIds.ToArray());
+    Assert.AreEqual(merchantId, response.Id);
     Assert.AreEqual(Guid.Empty, response.CreatedBy);
     Assert.AreNotEqual(otherUserId, response.CreatedBy);
     service.VerifyAll();
@@ -993,21 +948,17 @@ public sealed class InvoiceEndpointsStatusCodeTests
   {
     Guid invoiceId = Guid.NewGuid();
     Guid userId = Guid.NewGuid();
-    StandardClassification classification = CreateClassification(
-      ClassificationSystem.EcoicopV2,
-      "2",
-      "01.1",
-      "Food products");
+    var classification = InvoiceCategory.Groceries;
     var invoice = new Invoice
     {
       id = invoiceId,
       UserIdentifier = userId,
-      Classification = classification,
+      Category = classification,
     };
     var request = new UpdateInvoiceRequestDto(
       Name: "Groceries",
       Description: "Weekly shop",
-      ClassificationCode: null,
+      Category: null,
       PaymentInformation: new PaymentInformation(),
       MerchantReference: null,
       IsImportant: false,
@@ -1039,7 +990,7 @@ public sealed class InvoiceEndpointsStatusCodeTests
 
     Assert.AreEqual(StatusCodes.Status202Accepted, GetStatusCode(result));
     Assert.IsNotNull(capturedInvoice);
-    Assert.AreSame(classification, capturedInvoice.Classification);
+    Assert.AreEqual(classification, capturedInvoice.Category);
   }
 
   /// <summary>Verifies invoice PUT treats a whitespace classification code as omission.</summary>
@@ -1048,21 +999,17 @@ public sealed class InvoiceEndpointsStatusCodeTests
   {
     Guid invoiceId = Guid.NewGuid();
     Guid userId = Guid.NewGuid();
-    StandardClassification classification = CreateClassification(
-      ClassificationSystem.EcoicopV2,
-      "2",
-      "01.1",
-      "Food products");
+    var classification = InvoiceCategory.Groceries;
     var invoice = new Invoice
     {
       id = invoiceId,
       UserIdentifier = userId,
-      Classification = classification,
+      Category = classification,
     };
     var request = new UpdateInvoiceRequestDto(
       Name: "Groceries",
       Description: "Weekly shop",
-      ClassificationCode: "   ",
+      Category: null,
       PaymentInformation: new PaymentInformation(),
       MerchantReference: null,
       IsImportant: false,
@@ -1094,8 +1041,7 @@ public sealed class InvoiceEndpointsStatusCodeTests
 
     Assert.AreEqual(StatusCodes.Status202Accepted, GetStatusCode(result));
     Assert.IsNotNull(capturedInvoice);
-    Assert.AreSame(classification, capturedInvoice.Classification);
-    Assert.AreEqual("   ", capturedInvoice.ClassificationCode);
+    Assert.AreEqual(classification, capturedInvoice.Category);
     service.VerifyAll();
   }
 
@@ -1121,7 +1067,7 @@ public sealed class InvoiceEndpointsStatusCodeTests
     var request = new UpdateInvoiceRequestDto(
       Name: "Groceries",
       Description: "Weekly shop",
-      ClassificationCode: null,
+      Category: null,
       PaymentInformation: new PaymentInformation(),
       MerchantReference: null,
       IsImportant: false,
@@ -1153,21 +1099,18 @@ public sealed class InvoiceEndpointsStatusCodeTests
     Guid merchantId = Guid.NewGuid();
     Guid parentCompanyId = Guid.NewGuid();
     Guid userId = Guid.NewGuid();
-    StandardClassification classification = CreateClassification(
-      ClassificationSystem.Nace21,
-      "2.1",
-      "47.11",
-      "Retail sale in non-specialised stores");
+    var classification = MerchantCategory.Supermarket;
     var merchant = new Merchant
     {
       id = merchantId,
       ParentCompanyId = parentCompanyId,
-      Classification = classification,
+      Category = classification,
+      CreatedBy = userId,
     };
     var request = new UpdateMerchantRequestDto(
       Name: "Store",
       Description: "Description",
-      ClassificationCode: null,
+      Category: null,
       Address: null,
       ParentCompanyId: parentCompanyId,
       AdditionalMetadata: null);
@@ -1176,7 +1119,8 @@ public sealed class InvoiceEndpointsStatusCodeTests
     service
       .Setup(candidate => candidate.ReadInvoices(
         userId,
-        It.IsAny<CancellationToken>()))
+        It.IsAny<CancellationToken>(),
+        merchantId))
       .ReturnsAsync([new Invoice { id = Guid.NewGuid(), UserIdentifier = userId, MerchantReference = merchantId }]);
     service
       .Setup(candidate => candidate.ReadMerchant(
@@ -1189,10 +1133,9 @@ public sealed class InvoiceEndpointsStatusCodeTests
         merchantId,
         parentCompanyId,
         It.IsAny<Merchant>(),
-        null,
         It.IsAny<CancellationToken>()))
-      .Callback<Guid, Guid?, Merchant, string?, CancellationToken>(
-        (_, _, updated, _, _) => capturedMerchant = updated)
+      .Callback<Guid, Guid?, Merchant, CancellationToken>(
+        (_, _, updated, _) => capturedMerchant = updated)
       .ReturnsAsync(merchant);
 
     IResult result = await InvoiceEndpoints.UpdateSpecificMerchantAsync(
@@ -1203,7 +1146,8 @@ public sealed class InvoiceEndpointsStatusCodeTests
 
     Assert.AreEqual(StatusCodes.Status202Accepted, GetStatusCode(result));
     Assert.IsNotNull(capturedMerchant);
-    Assert.IsNull(capturedMerchant.Classification);
+    Assert.AreEqual(classification, capturedMerchant.Category);
+    Assert.AreSame(merchant, capturedMerchant);
     service.VerifyAll();
   }
 
@@ -1216,7 +1160,7 @@ public sealed class InvoiceEndpointsStatusCodeTests
     var request = new UpdateMerchantRequestDto(
       Name: "Store",
       Description: "Description",
-      ClassificationCode: null,
+      Category: null,
       Address: null,
       ParentCompanyId: Guid.NewGuid(),
       AdditionalMetadata: null);
@@ -1224,8 +1168,9 @@ public sealed class InvoiceEndpointsStatusCodeTests
     service
       .Setup(candidate => candidate.ReadInvoices(
         userId,
-        It.IsAny<CancellationToken>()))
-      .ReturnsAsync([new Invoice { id = Guid.NewGuid(), UserIdentifier = userId, MerchantReference = Guid.NewGuid() }]);
+        It.IsAny<CancellationToken>(),
+        merchantId))
+      .ReturnsAsync([]);
 
     IResult result = await InvoiceEndpoints.UpdateSpecificMerchantAsync(
       service.Object,
@@ -1243,24 +1188,9 @@ public sealed class InvoiceEndpointsStatusCodeTests
       It.IsAny<Guid>(),
       It.IsAny<Guid?>(),
       It.IsAny<Merchant>(),
-      It.IsAny<string?>(),
       It.IsAny<CancellationToken>()), Times.Never);
   }
 
-  private static StandardClassification CreateClassification(
-    ClassificationSystem system,
-    string version,
-    string code,
-    string label) =>
-    new(
-      system,
-      version,
-      code,
-      label,
-      [new ClassificationNode("leaf", code, label)],
-      ClassificationOrigin.Manual,
-      null,
-      []);
   #endregion
 
   #region ProblemDetails traceId extension tests

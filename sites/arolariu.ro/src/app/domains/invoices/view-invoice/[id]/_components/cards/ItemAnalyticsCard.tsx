@@ -42,7 +42,7 @@
  * @see {@link useInvoiceContext} for invoice data access
  */
 
-import {getClassificationGroup} from "@/app/domains/invoices/_utils/labelUtilities";
+import {productCategoryLabel} from "@/app/domains/invoices/_utils/labelUtilities";
 import {getAllergenEvidenceLevelLabelKey, getAllergenLabelKey} from "@/types/invoices";
 import {
   Badge,
@@ -195,16 +195,16 @@ export function ItemAnalyticsCard(): React.JSX.Element {
     return filteredItems.toSorted((a, b) => {
       const aWithGroup = {
         ...a,
-        classificationGroup: getClassificationGroup(a.classification ?? null) ?? "",
+        classificationGroup: productCategoryLabel(t, a.category),
       };
       const bWithGroup = {
         ...b,
-        classificationGroup: getClassificationGroup(b.classification ?? null) ?? "",
+        classificationGroup: productCategoryLabel(t, b.category),
       };
       const comparison = resolveSortComparison(aWithGroup, bWithGroup, sortField, locale);
       return sortDirection === "asc" ? comparison : -comparison;
     });
-  }, [filteredItems, sortField, sortDirection, locale]);
+  }, [filteredItems, sortField, sortDirection, locale, t]);
 
   /**
    * Computes aggregated totals for quantity and price.
@@ -248,7 +248,7 @@ export function ItemAnalyticsCard(): React.JSX.Element {
     }
 
     const sortedByPrice = invoice.items.toSorted((a, b) => b.totalPrice - a.totalPrice);
-    const uniqueGroups = new Set(invoice.items.map((item) => getClassificationGroup(item.classification ?? null) ?? "unclassified"));
+    const uniqueGroups = new Set(invoice.items.map((item) => item.category));
     const allAllergens = new Set(
       invoice.items.flatMap((item) =>
         item.allergenAssessment?.status === "detected" ? item.allergenAssessment.signals.map((s) => s.code) : [],
@@ -304,7 +304,6 @@ export function ItemAnalyticsCard(): React.JSX.Element {
   const handleSortByQuantity = useCallback(() => handleSort("quantity"), [handleSort]);
 
   // Pre-translate unclassified label once per render
-  const unclassifiedLabel = t((m) => m.shared.invoices.classification.unclassified);
 
   // Empty state: no items in invoice
   if (invoice.items.length === 0) {
@@ -477,7 +476,7 @@ export function ItemAnalyticsCard(): React.JSX.Element {
                             </div>
                           </TableCell>
                           <TableCell>
-                            <Badge variant='outline'>{getClassificationGroup(item.classification ?? null) ?? unclassifiedLabel}</Badge>
+                            <Badge variant='outline'>{productCategoryLabel(t, item.category)}</Badge>
                           </TableCell>
                           <TableCell>{item.price.toFixed(2)}</TableCell>
                           <TableCell>

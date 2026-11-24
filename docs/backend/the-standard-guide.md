@@ -38,7 +38,7 @@ Core.Auth does not use this hierarchy. Framework-owned routes are registered thr
 | `MerchantOrchestrationService`       | merchant storage Foundation                             |
 | `AnalysisOrchestrationService`       | analysis and analysis-queue Foundations                 |
 | Invoice/merchant storage Foundations | database Broker                                         |
-| `AnalysisFoundationService`          | document, generative, and taxonomy Brokers              |
+| `AnalysisFoundationService`          | document and generative Brokers                         |
 | `AnalysisQueueFoundationService`     | queue Broker                                            |
 
 Root `AGENTS.md` owns the direct-domain collaborator budget. Exceeding it is a signal to move coordination to the appropriate higher role,
@@ -129,7 +129,6 @@ Do not add a poison queue, database workflow-state store, or alternate retry ord
 ## Dependency injection
 
 Registrations live once in the owning Invoices module and are grouped by role. Ordinary Brokers and services are scoped.
-`JsonTaxonomyBroker` is the current singleton exception because it loads immutable embedded taxonomy artifacts.
 
 Constructor architecture tests and real service-collection resolution answer different questions: reflection pins dependency direction,
 while resolution proves implementation choice and lifetime.

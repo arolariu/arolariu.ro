@@ -63,14 +63,4 @@ public interface IMerchantOrchestrationService
   Task<Merchant> UpdateMerchantObject(Merchant updatedMerchant, Guid merchantIdentifier, Guid? parentCompanyId, CancellationToken cancellationToken);
   #endregion
 
-  #region Delete Merchant API
-  /// <summary>
-  /// Deletes one merchant through the merchant storage foundation.
-  /// </summary>
-  /// <param name="identifier">The merchant identifier.</param>
-  /// <param name="parentCompanyId">The optional parent-company partition.</param>
-  /// <param name="cancellationToken">Cancellation token to abort the operation (required).</param>
-  /// <returns>A task that completes after deletion.</returns>
-  Task DeleteMerchantObject(Guid identifier, Guid? parentCompanyId, CancellationToken cancellationToken);
-  #endregion
 }

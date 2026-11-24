@@ -49,7 +49,7 @@ public interface IInvoiceProcessingService
 
   #region Create Invoice API
   /// <summary>
-  /// Canonicalizes any manual ECOICOP selection and persists a new invoice through Orchestration.
+  /// Persists a new invoice through Orchestration.
   /// </summary>
   /// <remarks>
   /// <para><b>Workflow:</b> Resolve a supplied code-only classification, then delegate persistence to Invoice Orchestration.</para>
@@ -79,7 +79,8 @@ public interface IInvoiceProcessingService
   /// <param name="userIdentifier">Partition / tenant context.</param>
   /// <param name="cancellationToken">Cancellation token to abort the operation (required).</param>
   /// <returns>The invoices returned for the user partition.</returns>
-  Task<IEnumerable<Invoice>> ReadInvoices(Guid userIdentifier, CancellationToken cancellationToken);
+  /// <param name="merchantIdentifier">The optional merchant reference to match.</param>
+  Task<IEnumerable<Invoice>> ReadInvoices(Guid userIdentifier, CancellationToken cancellationToken, Guid? merchantIdentifier = null);
   #endregion
 
   #region Update Invoice API
@@ -127,15 +128,16 @@ public interface IInvoiceProcessingService
   /// <param name="invoiceIdentifier">Target invoice id.</param>
   /// <param name="userIdentifier">Partition / tenant context; pass null for a cross-partition operation.</param>
   /// <param name="product">Product to add.</param>
-  /// <param name="classificationCode">The optional GS1 GPC code to resolve canonically.</param>
   /// <param name="cancellationToken">Cancellation token to abort the operation (required).</param>
   /// <returns>A task that completes after the aggregate update.</returns>
   Task AddProduct(
     Guid invoiceIdentifier,
     Guid? userIdentifier,
     Product product,
-    string? classificationCode,
     CancellationToken cancellationToken);
+
+  /// <summary>Conditionally updates one unambiguously named product in its invoice.</summary>
+  Task<Product> UpdateProduct(Guid invoiceIdentifier, Guid userIdentifier, UpdateProductRequestDto request, CancellationToken cancellationToken);
   #endregion
 
   #region Get Invoice Products API
@@ -147,18 +149,6 @@ public interface IInvoiceProcessingService
   /// <param name="cancellationToken">Cancellation token to abort the operation (required).</param>
   /// <returns>The products currently stored on the invoice.</returns>
   Task<IEnumerable<Product>> GetProducts(Guid invoiceIdentifier, Guid? userIdentifier, CancellationToken cancellationToken);
-  #endregion
-
-  #region Get Invoice Product API
-  /// <summary>
-  /// Retrieves a single product by name from an invoice.
-  /// </summary>
-  /// <param name="invoiceIdentifier">Invoice id.</param>
-  /// <param name="userIdentifier">Partition / tenant context; pass null for a cross-partition operation.</param>
-  /// <param name="productName">Product name (case sensitivity policy defined by implementation).</param>
-  /// <param name="cancellationToken">Cancellation token to abort the operation (required).</param>
-  /// <returns>The first matching product, or a default product when no item matches.</returns>
-  Task<Product> GetProduct(Guid invoiceIdentifier, Guid? userIdentifier, string productName, CancellationToken cancellationToken);
   #endregion
 
   #region Delete Invoice Product API
@@ -268,14 +258,13 @@ public interface IInvoiceProcessingService
 
   #region Create Merchant API
   /// <summary>
-  /// Canonicalizes any manual NACE selection and persists a merchant through Orchestration.
+  /// Persists a merchant through Orchestration.
   /// </summary>
   /// <param name="merchant">Merchant aggregate.</param>
   /// <param name="parentCompanyId">Partition / company scope; pass null for a cross-partition operation.</param>
-  /// <param name="classificationCode">The optional NACE 2.1 code to resolve canonically.</param>
   /// <param name="cancellationToken">Cancellation token to abort the operation (required).</param>
   /// <returns>A task that completes after merchant persistence.</returns>
-  Task CreateMerchant(Merchant merchant, Guid? parentCompanyId, string? classificationCode, CancellationToken cancellationToken);
+  Task CreateMerchant(Merchant merchant, Guid? parentCompanyId, CancellationToken cancellationToken);
   #endregion
 
   #region Read Merchant API
@@ -309,8 +298,8 @@ public interface IInvoiceProcessingService
   /// </remarks>
   /// <param name="userIdentifier">The authenticated user whose invoices are inspected.</param>
   /// <param name="cancellationToken">Cancellation token to abort the operation (required).</param>
-  /// <returns>The distinct visible merchants and the caller-owned invoice snapshot used to derive them.</returns>
-  Task<(IReadOnlyCollection<Merchant> Merchants, IReadOnlyCollection<Invoice> Invoices)> ReadMerchantsVisibleToUser(
+  /// <returns>The distinct visible merchants.</returns>
+  Task<IEnumerable<Merchant>> ReadMerchantsVisibleToUser(
     Guid userIdentifier,
     CancellationToken cancellationToken);
   #endregion
@@ -322,26 +311,13 @@ public interface IInvoiceProcessingService
   /// <param name="identifier">Merchant id.</param>
   /// <param name="parentCompanyId">Company / partition scope; pass null for a cross-partition operation.</param>
   /// <param name="updatedMerchant">New merchant state.</param>
-  /// <param name="classificationCode">The optional NACE 2.1 code to resolve canonically.</param>
   /// <param name="cancellationToken">Cancellation token to abort the operation (required).</param>
   /// <returns>Updated merchant.</returns>
   Task<Merchant> UpdateMerchant(
     Guid identifier,
     Guid? parentCompanyId,
     Merchant updatedMerchant,
-    string? classificationCode,
     CancellationToken cancellationToken);
-  #endregion
-
-  #region Delete Merchant API
-  /// <summary>
-  /// Deletes a merchant aggregate.
-  /// </summary>
-  /// <param name="identifier">Merchant id.</param>
-  /// <param name="parentCompanyId">Company / partition scope; pass null for a cross-partition operation.</param>
-  /// <param name="cancellationToken">Cancellation token to abort the operation (required).</param>
-  /// <returns>A task that completes after merchant deletion.</returns>
-  Task DeleteMerchant(Guid identifier, Guid? parentCompanyId, CancellationToken cancellationToken);
   #endregion
 
   #region Analysis Queue

@@ -191,7 +191,7 @@ public sealed class MerchantDescriptionGenerationTests
 
     StringAssert.Contains(systemPrompt, "untrusted data", StringComparison.Ordinal);
     StringAssert.Contains(systemPrompt, "merchant fields", StringComparison.Ordinal);
-    StringAssert.Contains(systemPrompt, "related invoice evidence", StringComparison.Ordinal);
+    Assert.DoesNotContain("referencedInvoices", payload, StringComparison.Ordinal);
     StringAssert.Contains(payload, "Corner Shop SRL", StringComparison.Ordinal);
   }
 }

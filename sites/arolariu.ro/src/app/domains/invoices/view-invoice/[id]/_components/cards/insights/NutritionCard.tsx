@@ -6,7 +6,7 @@
  *
  * @remarks
  * **Decision D5** — The food-grouping subsection has been removed. It derived from
- * the deprecated numeric category enum which has no valid taxonomy mapping.
+ * assumptions about product category labels.
  *
  * This card now renders the EU-14 structured allergen assessment for each product
  * via {@link AllergenAssessmentView}.

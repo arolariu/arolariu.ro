@@ -9,7 +9,7 @@ using System.Reflection;
 using arolariu.Backend.Common.Telemetry.Metering;
 using arolariu.Backend.Domain.Invoices;
 using arolariu.Backend.Domain.Invoices.DDD.Analysis.Enums;
-using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Classifications;
+using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Categories;
 using arolariu.Backend.Domain.Invoices.Services.Foundation.Analysis;
 
 using Microsoft.Extensions.Logging;
@@ -283,7 +283,7 @@ public sealed class AnalysisTelemetryTests
         AnalysisTargetType.Invoice,
         AnalysisOutcome.Failure,
         987.0,
-        AnalysisFailureReason.Taxonomy),
+        AnalysisFailureReason.InvalidStructuredOutput),
       "invoices.analysis.messages",
       "invoices.analysis.message.duration");
 
@@ -291,8 +291,8 @@ public sealed class AnalysisTelemetryTests
     var duration = measurements.Single(m => m.InstrumentName == "invoices.analysis.message.duration");
 
     AssertTag(outcome.Tags, "outcome", "failure");
-    AssertTag(outcome.Tags, "failure.reason", "taxonomy");
-    AssertTag(duration.Tags, "failure.reason", "taxonomy");
+    AssertTag(outcome.Tags, "failure.reason", "invalid_structured_output");
+    AssertTag(duration.Tags, "failure.reason", "invalid_structured_output");
   }
 
   /// <summary>
@@ -432,22 +432,7 @@ public sealed class AnalysisTelemetryTests
 
   #endregion
 
-  #region Taxonomy And Token Telemetry
-
-  /// <summary>
-  /// Verifies that a taxonomy validation failure is counted with the bounded classification system tag.
-  /// </summary>
-  [TestMethod]
-  public void RecordTaxonomyValidationFailure_ValidSystem_RecordsSystemTag()
-  {
-    var measurements = CaptureMeasurements(
-      () => InvoiceMetrics.RecordTaxonomyValidationFailure(ClassificationSystem.EcoicopV2),
-      "invoices.analysis.taxonomy.validation_failures");
-
-    var measurement = measurements.Single();
-    Assert.AreEqual(1L, measurement.Value);
-    AssertTag(measurement.Tags, "system", "ecoicop_v2");
-  }
+  #region Token Telemetry
 
   /// <summary>
   /// Verifies that both input and output token counts are recorded with capability and model tags.
@@ -457,7 +442,7 @@ public sealed class AnalysisTelemetryTests
   {
     var measurements = CaptureMeasurements(
       () => InvoiceMetrics.RecordTokenUsage(
-        GenerativeTelemetryCatalog.ForNonTaxonomyCapability(AnalysisCapability.InvoiceSummary),
+        GenerativeTelemetryCatalog.ForCapability(AnalysisCapability.InvoiceSummary),
         "model-router",
         120,
         45),
@@ -481,7 +466,7 @@ public sealed class AnalysisTelemetryTests
   {
     var measurements = CaptureMeasurements(
       () => InvoiceMetrics.RecordTokenUsage(
-        GenerativeTelemetryCatalog.ForNonTaxonomyCapability(AnalysisCapability.InvoiceSummary),
+        GenerativeTelemetryCatalog.ForCapability(AnalysisCapability.InvoiceSummary),
         "provider-controlled-model-8f172fb9-9f81-4db7-b856-c38f7543b4e4",
         120,
         outputTokens: null),
@@ -500,7 +485,7 @@ public sealed class AnalysisTelemetryTests
   {
     var measurements = CaptureMeasurements(
       () => InvoiceMetrics.RecordTokenUsage(
-        GenerativeTelemetryCatalog.ForNonTaxonomyCapability(AnalysisCapability.DescriptionGeneration),
+        GenerativeTelemetryCatalog.ForCapability(AnalysisCapability.DescriptionGeneration),
         "model-router",
         null,
         7),
@@ -520,7 +505,7 @@ public sealed class AnalysisTelemetryTests
   {
     var measurements = CaptureMeasurements(
       () => InvoiceMetrics.RecordTokenUsage(
-        GenerativeTelemetryCatalog.ForNonTaxonomyCapability(AnalysisCapability.InvoiceSummary),
+        GenerativeTelemetryCatalog.ForCapability(AnalysisCapability.InvoiceSummary),
         "model-router",
         9,
         null),
@@ -565,13 +550,6 @@ public sealed class AnalysisTelemetryTests
     => AssertExhaustiveMapping(Enum.GetValues<AnalysisFailureReason>(), InvoiceMetrics.ToTag);
 
   /// <summary>
-  /// Verifies that every declared <see cref="ClassificationSystem"/> maps to a distinct, non-<c>unknown</c> tag value.
-  /// </summary>
-  [TestMethod]
-  public void ToTag_EveryClassificationSystem_MapsToDistinctBoundedValue()
-    => AssertExhaustiveMapping(Enum.GetValues<ClassificationSystem>(), InvoiceMetrics.ToTag);
-
-  /// <summary>
   /// Verifies that an undeclared target type value falls back to the bounded <c>unknown</c> tag instead of
   /// leaking an arbitrary numeric value into the metric dimension.
   /// </summary>
@@ -599,17 +577,6 @@ public sealed class AnalysisTelemetryTests
   [TestMethod]
   public void ToTag_UndeclaredFailureReason_FallsBackToUnknown()
     => Assert.AreEqual("unknown", InvoiceMetrics.ToTag((AnalysisFailureReason)9999));
-
-  /// <summary>
-  /// Verifies that an undeclared classification system value falls back to the bounded <c>unknown</c> tag.
-  /// </summary>
-  [TestMethod]
-  public void ToTag_UndeclaredClassificationSystem_FallsBackToUnknown()
-    => Assert.AreEqual("unknown", InvoiceMetrics.ToTag((ClassificationSystem)9999));
-
-  #endregion
-
-  #region Log Methods
 
   /// <summary>
   /// Verifies that logging a queued run records the run identifier and target type under event id 300220.
@@ -712,21 +679,6 @@ public sealed class AnalysisTelemetryTests
   }
 
   /// <summary>
-  /// Verifies that logging a taxonomy validation failure records the classification system.
-  /// </summary>
-  [TestMethod]
-  public void LogAnalysisTaxonomyValidationFailed_ValidSystem_RecordsSystem()
-  {
-    var logger = new CapturingLogger();
-
-    logger.LogAnalysisTaxonomyValidationFailed(ClassificationSystem.Nace21);
-
-    var entry = logger.Entries.Single();
-    Assert.AreEqual(300_229, entry.EventId.Id);
-    AssertProperty(entry.Properties, "classificationSystem", ClassificationSystem.Nace21);
-  }
-
-  /// <summary>
   /// Verifies that logging a lease recovery records the run identifier, target type, and attempt count.
   /// </summary>
   [TestMethod]
@@ -772,7 +724,7 @@ public sealed class AnalysisTelemetryTests
     var logger = new CapturingLogger();
 
     logger.LogAnalysisTokenUsageObserved(
-      GenerativeTelemetryCatalog.ForNonTaxonomyCapability(AnalysisCapability.InvoiceSummary),
+      GenerativeTelemetryCatalog.ForCapability(AnalysisCapability.InvoiceSummary),
       "gpt-4o-mini",
       120,
       45);
@@ -782,7 +734,6 @@ public sealed class AnalysisTelemetryTests
     AssertProperty(entry.Properties, "modelId", "gpt-4o-mini");
     AssertProperty(entry.Properties, "schemaVersion", "invoice-summary-schema-v1");
     AssertProperty(entry.Properties, "promptVersion", "invoice-summary-prompt-v1");
-    AssertProperty(entry.Properties, "taxonomyVersion", "not_applicable");
     AssertProperty(entry.Properties, "inputTokens", 120L);
     AssertProperty(entry.Properties, "outputTokens", 45L);
   }

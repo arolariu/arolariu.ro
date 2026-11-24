@@ -4,6 +4,12 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.IO;
+using System.Linq;
+using System.Reflection;
+using System.Text.Json.Nodes;
+using System.Threading.Tasks;
+
+using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Categories;
 
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
@@ -44,6 +50,52 @@ using Swashbuckle.AspNetCore.SwaggerUI;
 [ExcludeFromCodeCoverage] // Infrastructure code is not tested as it primarily consists of configuration logic.
 internal static class SwaggerConfigurationService
 {
+  /// <summary>Registers the two public API document generators.</summary>
+  /// <param name="services">The API host service collection.</param>
+  internal static void AddApiDocumentation(IServiceCollection services)
+  {
+    services.AddOpenApi(options => options.AddSchemaTransformer((schema, context, _) =>
+    {
+      // Native OpenAPI wraps nullable converter schemas in a separate null branch.
+      Type type = context.JsonTypeInfo.Type;
+      DescribeCategorySchema(schema, Nullable.GetUnderlyingType(type) ?? type);
+      return Task.CompletedTask;
+    }));
+    services.AddSwaggerGen(GetSwaggerGenOptions());
+  }
+
+  private static void DescribeCategorySchema(OpenApiSchema schema, Type declaredType)
+  {
+    Type? underlyingType = Nullable.GetUnderlyingType(declaredType);
+    Type categoryType = underlyingType ?? declaredType;
+    if (categoryType != typeof(ProductCategory) && categoryType != typeof(MerchantCategory) && categoryType != typeof(InvoiceCategory))
+    {
+      return;
+    }
+
+    var values = ((int[])Enum.GetValuesAsUnderlyingType(categoryType)).Select(id => (JsonNode)JsonValue.Create(id)).ToList();
+    schema.Type = JsonSchemaType.Integer;
+    if (underlyingType is not null)
+    {
+      schema.Type |= JsonSchemaType.Null;
+      values.Add(null!); // JsonNode represents JSON null as a null reference.
+    }
+
+    schema.Format = "int32";
+    schema.Enum = values;
+  }
+
+  private sealed class CategorySchemaFilter : ISchemaFilter
+  {
+    public void Apply(IOpenApiSchema schema, SchemaFilterContext context)
+    {
+      if (schema is OpenApiSchema category)
+      {
+        DescribeCategorySchema(category, (context.MemberInfo as PropertyInfo)?.PropertyType ?? context.Type);
+      }
+    }
+  }
+
   /// <summary>
   /// Configures the Swagger UI presentation options and behavior.
   /// This method customizes the interactive documentation interface for enhanced developer experience.
@@ -183,7 +235,7 @@ internal static class SwaggerConfigurationService
   /// client code generation and interactive testing.
   /// </para>
   /// </remarks>
-  internal static Action<SwaggerGenOptions> GetSwaggerGenOptions()
+  private static Action<SwaggerGenOptions> GetSwaggerGenOptions()
   {
     var options = new Action<SwaggerGenOptions>(options =>
     {
@@ -211,6 +263,7 @@ internal static class SwaggerConfigurationService
       });
 
       options.EnableAnnotations();
+      options.AddSchemaFilterInstance(new CategorySchemaFilter());
       options.UseInlineDefinitionsForEnums();
       options.DocumentFilter<SwaggerFilterService>();
 
