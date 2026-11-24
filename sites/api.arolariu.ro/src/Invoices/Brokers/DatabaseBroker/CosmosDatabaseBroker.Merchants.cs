@@ -53,7 +53,6 @@ public partial class CosmosDatabaseBroker
     var database = CosmosClient.GetDatabase("primary");
     var container = database.GetContainer("merchants");
 
-    Merchant? merchant;
     if (parentCompanyId.HasValue)
     {
       activity?.SetTag("db.query.type", "point_read");
@@ -66,7 +65,12 @@ public partial class CosmosDatabaseBroker
 
       activity?.SetCosmosDbRequestCharge(response.RequestCharge);
       InvoiceMetrics.RecordCosmosDbCharge(response.RequestCharge, "read", "merchants");
-      merchant = response.Resource;
+      activity?.RecordSuccess();
+
+      var merchant = response.Resource;
+      return merchant is not null && merchant.IsSoftDeleted
+        ? throw new MerchantLockedException(merchantIdentifier)
+        : merchant;
     }
     else
     {
@@ -79,7 +83,7 @@ public partial class CosmosDatabaseBroker
 
       using var iterator = container.GetItemQueryIterator<Merchant>(query);
       double totalCharge = 0;
-      merchant = null;
+      Merchant? merchant = null;
       while (merchant is null && iterator.HasMoreResults)
       {
         cancellationToken.ThrowIfCancellationRequested();
@@ -92,11 +96,10 @@ public partial class CosmosDatabaseBroker
 
       activity?.SetCosmosDbRequestCharge(totalCharge);
       InvoiceMetrics.RecordCosmosDbCharge(totalCharge, "query", "merchants");
+      if (merchant?.IsSoftDeleted == true) throw new MerchantLockedException(merchantIdentifier);
+      activity?.RecordSuccess();
+      return merchant;
     }
-
-    if (merchant?.IsSoftDeleted == true) throw new MerchantLockedException(merchantIdentifier);
-    activity?.RecordSuccess();
-    return merchant;
   }
 
   /// <inheritdoc/>
