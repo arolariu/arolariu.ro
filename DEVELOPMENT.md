@@ -374,10 +374,12 @@ The API and website ship matching flat JSON catalogs for products, merchants, an
 `sites/api.arolariu.ro/src/Invoices/Resources/Categories/`; Next.js bundles its copies from `sites/arolariu.ro/src/data/categories/`. No
 publisher or lookup request is needed.
 
-Each domain has 100 explicit numeric IDs including Other. Null means uncategorized. Never renumber or reuse a released ID. Update both
-copies byte-for-byte and align the C# and TypeScript definitions and the English, Romanian and French dictionaries. Run
-`npm exec --no -- vitest run category-catalog-parity.test.ts --coverage.enabled=false` from the root with the applicable API and website
-checks. Product entries marked `isFood` can be used as purchased recipe ingredients.
+Each domain has 100 explicit numeric IDs including Other. The API returns `null` for uncategorized records. In update requests, omit
+`category` or send `null` to preserve the saved value; send `-1` to clear it.
+
+Never renumber or reuse a released ID. Update both copies byte-for-byte and align the C# and TypeScript definitions and the English,
+Romanian and French dictionaries. Run `npm exec --no -- vitest run category-catalog-parity.test.ts --coverage.enabled=false` from the root
+with the applicable API and website checks. Product entries marked `isFood` can be used as purchased recipe ingredients.
 
 The initial cutover assumes fresh invoice and merchant stores, empty analysis queues, and controlled empty browser caches. There is no
 automatic migration or legacy reader. Release matched API and website artifacts with writes paused. A rollback to the previous contract
