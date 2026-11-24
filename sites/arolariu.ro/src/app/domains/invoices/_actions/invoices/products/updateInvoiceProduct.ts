@@ -19,7 +19,7 @@ import {fetchBFFUserFromAuthService} from "@/lib/actions/user/fetchUser";
 import {validateStringIsGuidType} from "@/lib/utils.generic";
 import {createErrorResult, createHttpErrorResult, fetchWithTimeout, type ServerActionResult} from "@/lib/utils.server";
 import type {Product, ProductCategory} from "@/types/invoices";
-import {parseProductResponse, serializeCategoryRequest, tryParse} from "@/types/invoices/transport";
+import {parseProductResponse, serializeCategoryUpdate, tryParse} from "@/types/invoices/transport";
 import {revalidatePath} from "next/cache";
 
 /**
@@ -63,7 +63,7 @@ type ServerActionOutputType = ServerActionResult<Readonly<Product>>;
  * and preserves the other product fields. A full edit flattens `updatedProduct`
  * to its editable fields (including `name`, `quantity`, and `price`), not a nested
  * object or a copy of server-owned metadata. Passing a category ID assigns it,
- * `null` clears it, and omission on a full edit preserves the stored category.
+ * a null input sends `-1` to clear it, and omission on a full edit preserves it.
  * The category inside `updatedProduct` is never sent as write intent.
  *
  * **Result and side effects:** The API responds with `202 Accepted` and the
@@ -147,7 +147,7 @@ export async function updateInvoiceProduct({invoiceId, payload}: ServerActionInp
           Authorization: `Bearer ${authToken}`,
           "Content-Type": "application/json",
         },
-        body: serializeCategoryRequest(requestBody),
+        body: serializeCategoryUpdate(requestBody),
       });
       addSpanEvent("bff.request.update-invoice-product.complete");
 

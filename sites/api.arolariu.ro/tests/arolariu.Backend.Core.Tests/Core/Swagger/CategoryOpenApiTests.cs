@@ -48,14 +48,18 @@ public sealed class CategoryOpenApiTests
     var body = Resolve(root, operation.GetProperty("requestBody").GetProperty("content").GetProperty("application/json").GetProperty("schema"));
     Assert.IsFalse(body.TryGetProperty("required", out var required)
       && required.EnumerateArray().Any(property => property.GetString() == "category"));
-    AssertCategory(root, body.GetProperty("properties").GetProperty("category"), allowClearAlias: true);
+    var requestField = Resolve(root, body.GetProperty("properties").GetProperty("category"));
+    var requestType = requestField.GetProperty("type");
+    Assert.IsTrue(requestType.ValueKind == JsonValueKind.Array
+      ? requestType.EnumerateArray().Any(type => type.GetString() == "integer")
+      : requestType.GetString() == "integer");
 
     var response = Resolve(root, operation.GetProperty("responses").GetProperty("202")
       .GetProperty("content").GetProperty("application/json").GetProperty("schema"));
-    AssertCategory(root, response.GetProperty("properties").GetProperty("category"), allowClearAlias: false);
+    AssertCategory(root, response.GetProperty("properties").GetProperty("category"));
   }
 
-  private static void AssertCategory(JsonElement root, JsonElement field, bool allowClearAlias)
+  private static void AssertCategory(JsonElement root, JsonElement field)
   {
     var schema = Resolve(root, field);
     bool separateNull = schema.TryGetProperty("oneOf", out var alternatives);
@@ -85,8 +89,7 @@ public sealed class CategoryOpenApiTests
     var allowed = schema.GetProperty("enum");
     Assert.AreEqual(!separateNull, allowed.EnumerateArray().Any(value => value.ValueKind == JsonValueKind.Null));
     var ids = allowed.EnumerateArray().Where(value => value.ValueKind != JsonValueKind.Null).Select(value => value.GetInt32());
-    var expected = Enum.GetValues<ProductCategory>().Select(category => (int)category);
-    CollectionAssert.AreEquivalent((allowClearAlias ? expected.Prepend(-1) : expected).ToArray(), ids.ToArray());
+    CollectionAssert.AreEquivalent(Enum.GetValues<ProductCategory>().Select(category => (int)category).ToArray(), ids.ToArray());
   }
 
   private static bool IsNullSchema(JsonElement schema) =>

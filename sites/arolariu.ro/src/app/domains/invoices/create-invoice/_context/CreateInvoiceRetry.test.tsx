@@ -162,7 +162,7 @@ it("retries only unfinished attachments, preserving a category clear on the exis
   expect(requests[0]?.body).not.toHaveProperty("name");
   expect(requests[1]?.body).toHaveProperty("name", "April receipts");
   expect(requests[1]?.body).toHaveProperty("category", 3001);
-  expect(requests[4]?.body).toHaveProperty("category", null);
+  expect(requests[4]?.body).toHaveProperty("category", -1);
   expect(requests.at(-1)?.body).toEqual({profile: "comprehensive"});
   expect(useScansStore.getState().scans.map(({status, metadata}) => [status, metadata.attachedTo])).toEqual(
     scans.map(() => ["attached", invoiceId]),

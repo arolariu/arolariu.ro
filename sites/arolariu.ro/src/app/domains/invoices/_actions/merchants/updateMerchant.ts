@@ -13,7 +13,7 @@ import {fetchBFFUserFromAuthService} from "@/lib/actions/user/fetchUser";
 import {validateStringIsGuidType} from "@/lib/utils.generic";
 import {createErrorResult, createHttpErrorResult, fetchWithTimeout, type ServerActionResult} from "@/lib/utils.server";
 import type {Merchant, MerchantCategory} from "@/types/invoices";
-import {parseMerchantResponse, serializeCategoryRequest, tryParse} from "@/types/invoices/transport";
+import {parseMerchantResponse, serializeCategoryUpdate, tryParse} from "@/types/invoices/transport";
 
 type ServerActionInputType = Readonly<{merchantId: string}>
   & (Readonly<{category: MerchantCategory | null; merchant?: never}> | Readonly<{category?: MerchantCategory | null; merchant: Merchant}>);
@@ -28,7 +28,7 @@ type ServerActionOutputType = ServerActionResult<Readonly<Merchant>>;
  * **Endpoint**: `/rest/v1/merchants/{merchantId}`
  * **Response**: `202 Accepted` with the updated merchant body.
  *
- * @param input - The merchant ID and the edit. Omit category to preserve it, or send null to clear it.
+ * @param input - The merchant ID and the edit. Omit category to preserve it; null sends the API's `-1` clear command.
  * @returns A result object containing the updated merchant, or an error result.
  */
 export async function updateMerchant({merchantId, merchant, category}: ServerActionInputType): ServerActionOutputType {
@@ -67,7 +67,7 @@ export async function updateMerchant({merchantId, merchant, category}: ServerAct
           Authorization: `Bearer ${authToken}`,
           "Content-Type": "application/json",
         },
-        body: serializeCategoryRequest(requestDto),
+        body: serializeCategoryUpdate(requestDto),
       });
       addSpanEvent("bff.request.update-merchant.complete");
 

@@ -30,7 +30,7 @@ import {fetchBFFUserFromAuthService} from "@/lib/actions/user/fetchUser";
 import {validateStringIsGuidType} from "@/lib/utils.generic";
 import {createErrorResult, createHttpErrorResult, fetchWithTimeout, type ServerActionResult} from "@/lib/utils.server";
 import type {Invoice, InvoiceCategory} from "@/types/invoices";
-import {parseInvoiceResponse, serializeCategoryRequest, tryParse} from "@/types/invoices/transport";
+import {parseInvoiceResponse, serializeCategoryUpdate, tryParse} from "@/types/invoices/transport";
 
 type ServerActionInputType = Readonly<{
   /** The identifier of the invoice to update. */
@@ -132,7 +132,7 @@ export async function updateInvoice({invoiceId, invoice, category}: ServerAction
           Authorization: `Bearer ${authToken}`,
           "Content-Type": "application/json",
         },
-        body: serializeCategoryRequest(requestDto),
+        body: serializeCategoryUpdate(requestDto),
       });
       addSpanEvent("bff.request.update-invoice.complete");
 

@@ -177,7 +177,7 @@ Content-Type: application/json
 ###
 
 ### Update Product in Invoice
-# Set the category of a uniquely named product. Send null to clear it.
+# Set the category of a uniquely named product. Send -1 to clear it.
 # If the invoice changed before the write, refresh after the 409 response.
 PUT {{baseUrl}}/rest/{{apiVersion}}/invoices/{{invoiceId}}/products
 Authorization: Bearer {{authToken}}
@@ -359,7 +359,7 @@ Authorization: Bearer {{authToken}}
 Content-Type: application/json
 
 {
-  "category": null
+  "category": -1
 }
 
 ###

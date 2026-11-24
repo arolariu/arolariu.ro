@@ -22,7 +22,7 @@ using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Products;
 /// <param name="ProductCode">The optional replacement SKU or barcode.</param>
 /// <param name="Price">The required replacement unit price.</param>
 /// <param name="AllergenAssessment">Optional replacement structured allergen assessment.</param>
-/// <param name="Category">Omit to preserve the category, send null or -1 to clear it, or send a valid product category ID.</param>
+/// <param name="Category">A valid product category ID to assign, or -1 to clear. Omitted or null preserves it.</param>
 /// <seealso cref="CreateProductRequestDto"/>
 /// <seealso cref="DeleteProductRequestDto"/>
 [Serializable]
@@ -35,14 +35,13 @@ public readonly record struct UpdateProductRequestDto(
   string? ProductCode,
   decimal? Price,
   AllergenAssessment? AllergenAssessment,
-  [property: JsonConverter(typeof(CategoryUpdate<ProductCategory>.JsonConverter))]
-  [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
-  CategoryUpdate<ProductCategory> Category = default)
+  [property: JsonNumberHandling(JsonNumberHandling.Strict)] int? Category = null)
 {
-  private bool IsCategoryOnly => Category.IsSpecified && Name is null && Quantity is null && Price is null
+  private bool IsCategoryOnly => Category.HasValue && Name is null && Quantity is null && Price is null
     && QuantityUnit is null && ProductCode is null && AllergenAssessment is null;
 
   internal bool IsValid => !string.IsNullOrWhiteSpace(OriginalProductName)
+    && CategorySelection.IsValid<ProductCategory>(Category)
     && (IsCategoryOnly || (!string.IsNullOrWhiteSpace(Name) && Quantity.HasValue && Price.HasValue));
 
   /// <summary>Maps client-editable fields onto a replacement while preserving server-owned product state.</summary>
@@ -59,7 +58,7 @@ public readonly record struct UpdateProductRequestDto(
     return new Product
     {
       Name = IsCategoryOnly ? persistedProduct.Name : Name?.Trim() ?? string.Empty,
-      Category = Category.ApplyTo(persistedProduct.Category),
+      Category = CategorySelection.Apply(Category, persistedProduct.Category),
       Quantity = Quantity ?? persistedProduct.Quantity,
       QuantityUnit = IsCategoryOnly ? persistedProduct.QuantityUnit : QuantityUnit?.Trim() ?? string.Empty,
       ProductCode = IsCategoryOnly ? persistedProduct.ProductCode : ProductCode?.Trim() ?? string.Empty,

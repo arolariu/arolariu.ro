@@ -48,7 +48,7 @@ using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Categories;
 /// Optional extensible key-value metadata. A non-empty dictionary replaces existing client-editable metadata;
 /// null or an empty dictionary retains persisted metadata and server enrichment.
 /// </param>
-/// <param name="Category">Omit to preserve the category, send null or -1 to clear it, or send a valid merchant category ID.</param>
+/// <param name="Category">A valid merchant category ID to assign, or -1 to clear. Omitted or null preserves it.</param>
 /// <example>
 /// <code>
 /// var request = new UpdateMerchantRequestDto(
@@ -72,14 +72,13 @@ public readonly record struct UpdateMerchantRequestDto(
   ContactInformation? Address,
   Guid? ParentCompanyId,
   IDictionary<string, string>? AdditionalMetadata,
-  [property: JsonConverter(typeof(CategoryUpdate<MerchantCategory>.JsonConverter))]
-  [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
-  CategoryUpdate<MerchantCategory> Category = default)
+  [property: JsonNumberHandling(JsonNumberHandling.Strict)] int? Category = null)
 {
-  internal bool IsCategoryOnly => Category.IsSpecified && Name is null && Description is null
+  private bool IsCategoryOnly => Category.HasValue && Name is null && Description is null
     && Address is null && ParentCompanyId is null && AdditionalMetadata is null;
 
-  internal bool IsValid => IsCategoryOnly || (!string.IsNullOrWhiteSpace(Name) && !string.IsNullOrWhiteSpace(Description));
+  internal bool IsValid => CategorySelection.IsValid<MerchantCategory>(Category)
+    && (IsCategoryOnly || (!string.IsNullOrWhiteSpace(Name) && !string.IsNullOrWhiteSpace(Description)));
 
   /// <summary>Applies only editable values, retaining the merchant's identity, revision and references.</summary>
   internal void ApplyTo(Merchant merchant)
@@ -97,6 +96,6 @@ public readonly record struct UpdateMerchantRequestDto(
       }
     }
 
-    merchant.Category = Category.ApplyTo(merchant.Category);
+    merchant.Category = CategorySelection.Apply(Category, merchant.Category);
   }
 }

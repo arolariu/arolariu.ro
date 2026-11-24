@@ -62,7 +62,7 @@ using arolariu.Backend.Domain.Invoices.DDD.ValueObjects;
 /// Extensible key-value metadata for client-specific data.
 /// Null or empty dictionary replaces any existing metadata.
 /// </param>
-/// <param name="Category">Omit to preserve the category, send null or -1 to clear it, or send a valid invoice category ID.</param>
+/// <param name="Category">A valid invoice category ID to assign, or -1 to clear. Omitted or null preserves it.</param>
 /// <example>
 /// <code>
 /// var request = new UpdateInvoiceRequestDto(
@@ -91,9 +91,7 @@ public readonly record struct UpdateInvoiceRequestDto(
   bool IsImportant,
   [property: JsonPropertyName("possibleRecipes")] IReadOnlyList<RecipeSuggestionRequestDto>? PossibleRecipes,
   IDictionary<string, object>? AdditionalMetadata,
-  [property: JsonConverter(typeof(CategoryUpdate<InvoiceCategory>.JsonConverter))]
-  [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
-  CategoryUpdate<InvoiceCategory> Category = default)
+  [property: JsonNumberHandling(JsonNumberHandling.Strict)] int? Category = null)
 {
   /// <summary>
   /// Converts this DTO to an <see cref="Invoice"/> domain aggregate.
@@ -131,7 +129,7 @@ public readonly record struct UpdateInvoiceRequestDto(
       UserIdentifier = userIdentifier,
       Name = Name,
       Description = Description,
-      Category = Category.ApplyTo(currentCategory),
+      Category = CategorySelection.Apply(Category, currentCategory),
       PaymentInformation = PaymentInformation,
       MerchantReference = MerchantReference ?? Guid.Empty,
       IsImportant = IsImportant,

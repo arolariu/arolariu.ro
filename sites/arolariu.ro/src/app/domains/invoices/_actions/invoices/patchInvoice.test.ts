@@ -61,7 +61,7 @@ describe("patchInvoice", () => {
     expect(result).toMatchObject({success: true});
     expect(requestBody()).toEqual({
       description: payload.description,
-      category: payload.category,
+      category: -1,
       paymentInformation: {...invoice.paymentInformation, transactionDate: invoice.paymentInformation.transactionDate.toISOString()},
       merchantReference: payload.merchantReference,
       isImportant: false,

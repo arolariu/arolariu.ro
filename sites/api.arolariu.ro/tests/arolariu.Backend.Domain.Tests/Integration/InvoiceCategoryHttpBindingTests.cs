@@ -68,14 +68,14 @@ public sealed class InvoiceCategoryHttpBindingTests
     management.Verify(service => service.UpdateInvoice(invoice.id, userId, It.IsAny<Invoice>(), It.IsAny<CancellationToken>()), Times.Never);
   }
 
-  /// <summary>Both receipt routes distinguish an absent category from a clear or assignment in JSON.</summary>
+  /// <summary>Both receipt routes use -1 to clear; absent and null both preserve.</summary>
   [TestMethod]
   [DataRow("PUT", "", "3001")]
-  [DataRow("PUT", "null", "null")]
+  [DataRow("PUT", "null", "3001")]
   [DataRow("PUT", "-1", "null")]
   [DataRow("PUT", "3074", "3074")]
   [DataRow("PATCH", "", "3001")]
-  [DataRow("PATCH", "null", "null")]
+  [DataRow("PATCH", "null", "3001")]
   [DataRow("PATCH", "-1", "null")]
   [DataRow("PATCH", "3074", "3074")]
   public async Task EditInvoice_CategoryIntent_BindsOmissionClearAndAssignment(string method, string category, string expected)
@@ -152,10 +152,9 @@ public sealed class InvoiceCategoryHttpBindingTests
   /// <summary>Real merchant JSON writes distinguish assigning, clearing, and leaving category unchanged.</summary>
   [TestMethod]
   [DataRow("""{"category":2005}""", "2005", false)]
-  [DataRow("""{"category":null}""", "null", false)]
   [DataRow("""{"category":-1}""", "null", false)]
   [DataRow("""{"name":"New name","description":"New description"}""", "2001", true)]
-  [DataRow("""{"name":"New name","description":"New description","category":null}""", "null", true)]
+  [DataRow("""{"name":"New name","description":"New description","category":null}""", "2001", true)]
   public async Task PutMerchant_CategoryIntent_PreservesUneditedState(string payload, string expected, bool details)
   {
     Guid userId = Guid.NewGuid();
@@ -416,7 +415,7 @@ public sealed class InvoiceCategoryHttpBindingTests
 
   /// <summary>Edits commit once against the observed version and leave ambiguous/stale targets unchanged.</summary>
   [TestMethod]
-  [DataRow("null", false, false, true, HttpStatusCode.Accepted)]
+  [DataRow("null", false, false, true, HttpStatusCode.BadRequest)]
   [DataRow("-1", false, false, true, HttpStatusCode.Accepted)]
   [DataRow("1100", false, false, true, HttpStatusCode.Accepted)]
   [DataRow("1100", false, true, true, HttpStatusCode.BadRequest)]
@@ -455,7 +454,7 @@ public sealed class InvoiceCategoryHttpBindingTests
 
     Assert.AreEqual(expected, response.StatusCode);
     database.Verify(item => item.UpdateInvoiceAsync(invoice.id, invoice, It.IsAny<CancellationToken>()),
-      duplicate ? Times.Never() : Times.Once());
+      expected == HttpStatusCode.BadRequest ? Times.Never() : Times.Once());
     if (expected == HttpStatusCode.Accepted)
     {
       using var json = JsonDocument.Parse(await response.Content.ReadAsStringAsync().ConfigureAwait(false));

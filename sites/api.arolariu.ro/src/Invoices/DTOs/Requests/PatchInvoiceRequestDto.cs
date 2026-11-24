@@ -28,7 +28,7 @@ using arolariu.Backend.Domain.Invoices.DDD.ValueObjects;
 /// <list type="bullet">
 ///   <item><description>Null values preserve the original field value.</description></item>
 ///   <item><description><see cref="Guid.Empty"/> for <c>MerchantReference</c> means "no change".</description></item>
-///   <item><description>Omitting category preserves it; explicit null clears it.</description></item>
+///   <item><description>Omitting category or sending null preserves it; -1 clears it.</description></item>
 ///   <item><description>Empty or whitespace strings for Name/Description mean "no change".</description></item>
 /// </list>
 /// </para>
@@ -73,7 +73,7 @@ using arolariu.Backend.Domain.Invoices.DDD.ValueObjects;
 /// Optional metadata entries to merge with existing metadata. Existing keys are
 /// overwritten; new keys are added. Null or empty dictionary means no metadata changes.
 /// </param>
-/// <param name="Category">Omit to preserve the category, send null or -1 to clear it, or send a valid invoice category ID.</param>
+/// <param name="Category">A valid invoice category ID to assign, or -1 to clear. Omitted or null preserves it.</param>
 /// <example>
 /// <code>
 /// // Update only the name and importance flag
@@ -104,9 +104,7 @@ public readonly record struct PatchInvoiceRequestDto(
   ICollection<Guid>? SharedWith,
   [property: JsonPropertyName("possibleRecipes")] IReadOnlyList<RecipeSuggestionRequestDto>? PossibleRecipes,
   IDictionary<string, object>? AdditionalMetadata,
-  [property: JsonConverter(typeof(CategoryUpdate<InvoiceCategory>.JsonConverter))]
-  [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
-  CategoryUpdate<InvoiceCategory> Category = default)
+  [property: JsonNumberHandling(JsonNumberHandling.Strict)] int? Category = null)
 {
   /// <summary>
   /// Applies this partial update to an existing <see cref="Invoice"/> instance.
@@ -121,7 +119,7 @@ public readonly record struct PatchInvoiceRequestDto(
   /// <list type="bullet">
   ///   <item><description><see cref="Name"/>: Applied only if non-null and non-whitespace.</description></item>
   ///   <item><description><see cref="Description"/>: Applied only if non-null and non-whitespace.</description></item>
-  ///   <item><description>Category: Omitted preserves; explicit null or -1 clears.</description></item>
+  ///   <item><description>Category: Omitted or null preserves; -1 clears.</description></item>
   ///   <item><description><see cref="PaymentInformation"/>: Applied only if non-null.</description></item>
   ///   <item><description><see cref="MerchantReference"/>: Applied only if has value and not <c>Empty</c>.</description></item>
   ///   <item><description><see cref="IsImportant"/>: Applied only if has value.</description></item>
@@ -159,7 +157,7 @@ public readonly record struct PatchInvoiceRequestDto(
       StorageETag = existing.StorageETag,
       Name = !string.IsNullOrWhiteSpace(Name) ? Name : existing.Name,
       Description = !string.IsNullOrWhiteSpace(Description) ? Description : existing.Description,
-      Category = Category.ApplyTo(existing.Category),
+      Category = CategorySelection.Apply(Category, existing.Category),
       CreatedAt = existing.CreatedAt,
       CreatedBy = existing.CreatedBy,
       NumberOfUpdates = existing.NumberOfUpdates,

@@ -37,7 +37,7 @@ describe("updateMerchant", () => {
   it.each([2001, null] as const)("saves only explicit category intent (%s)", async (category) => {
     await updateMerchant({merchantId, category});
     const [, init] = fetchMock.mock.calls[0]!;
-    expect(JSON.parse(String(init?.body))).toEqual({category});
+    expect(JSON.parse(String(init?.body))).toEqual({category: category ?? -1});
   });
 
   it("uses PUT and targets the merchant route", async () => {

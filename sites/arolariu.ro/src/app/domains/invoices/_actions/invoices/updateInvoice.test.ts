@@ -36,7 +36,7 @@ describe("updateInvoice", () => {
     expect(requestBody).toEqual({
       name: invoice.name,
       description: invoice.description,
-      ...(category === undefined ? {} : {category}),
+      ...(category === undefined ? {} : {category: category ?? -1}),
       paymentInformation: {...invoice.paymentInformation, transactionDate: invoice.paymentInformation.transactionDate.toISOString()},
       merchantReference: invoice.merchantReference,
       isImportant: invoice.isImportant,

@@ -49,6 +49,11 @@ export function serializeCategoryRequest<T extends Readonly<{category?: number |
   return JSON.stringify(typeof category === "number" && !Number.isFinite(category) ? {...request, category: String(category)} : request);
 }
 
+/** Encodes the editor's explicit clear (null) as the API's update-only sentinel. */
+export function serializeCategoryUpdate<T extends Readonly<{category?: number | null}>>(request: T): string {
+  return serializeCategoryRequest(request.category === null ? {...request, category: -1} : request);
+}
+
 // ============================================================
 // TransportValidationError
 // ============================================================

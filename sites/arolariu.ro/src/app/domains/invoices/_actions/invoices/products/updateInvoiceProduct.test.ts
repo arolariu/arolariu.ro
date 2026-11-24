@@ -53,7 +53,7 @@ describe("updateInvoiceProduct", () => {
     expect(result).toMatchObject({success: true, data: {category}});
     expect(fetchAtHttp).toHaveBeenCalledExactlyOnceWith(
       endpoint,
-      expect.objectContaining({method: "PUT", body: JSON.stringify({originalProductName: "Milk", category})}),
+      expect.objectContaining({method: "PUT", body: JSON.stringify({originalProductName: "Milk", category: category ?? -1})}),
     );
   });
 

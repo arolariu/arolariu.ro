@@ -52,15 +52,18 @@ function seedBackend() {
     const body: unknown = JSON.parse(String(options?.body));
     writes.push({path: pathname, body});
     if (pathname === invoicePath && options?.method === "PATCH") {
-      invoice = {...invoice, ...(body as Pick<typeof invoice, "category">)};
+      const {category} = body as Readonly<{category?: typeof invoice.category | -1}>;
+      invoice = {...invoice, category: category === -1 ? null : (category ?? invoice.category)};
       return Response.json(invoice, {status: 202});
     }
     if (pathname === merchantPath && options?.method === "PUT") {
-      merchant = {...merchant, ...(body as Pick<typeof merchant, "category">)};
+      const {category} = body as Readonly<{category?: typeof merchant.category | -1}>;
+      merchant = {...merchant, category: category === -1 ? null : (category ?? merchant.category)};
       return Response.json(merchant, {status: 202});
     }
     if (pathname === productPath && options?.method === "PUT") {
-      product = {...product, category: (body as Pick<typeof product, "category">).category};
+      const {category} = body as Readonly<{category?: typeof product.category | -1}>;
+      product = {...product, category: category === -1 ? null : (category ?? product.category)};
       invoice = {...invoice, items: [product]};
       return Response.json(product, {status: 202});
     }
@@ -140,7 +143,7 @@ describe("individual category editors", () => {
     expect(screen.getByRole("combobox", {name: "Receipt category"})).toHaveValue("Groceries");
     await act(() => user.click(screen.getByRole("button", {name: "Clear category"})));
     await act(() => user.click(screen.getByRole("button", {name: saveReceipt})));
-    expect(writes.at(-1)).toEqual({path: invoicePath, body: {category: null}});
+    expect(writes.at(-1)).toEqual({path: invoicePath, body: {category: -1}});
 
     page.unmount();
     await mountEditors();
@@ -164,7 +167,7 @@ describe("individual category editors", () => {
     await act(() => user.click(edit));
     await act(() => user.click(row().getByRole("button", {name: "Clear category"})));
     await act(() => user.click(row().getByRole("button", {name: "Save category"})));
-    expect(writes.at(-1)).toEqual({path: productPath, body: {originalProductName: "Dairy carton", category: null}});
+    expect(writes.at(-1)).toEqual({path: productPath, body: {originalProductName: "Dairy carton", category: -1}});
 
     page.unmount();
     await mountEditors();
@@ -191,7 +194,7 @@ describe("individual category editors", () => {
     expect(dialog.getByRole("combobox", {name: "Merchant category"})).toHaveValue("Supermarket");
     await act(() => user.click(dialog.getByRole("button", {name: "Clear category"})));
     await act(() => user.click(dialog.getByRole("button", {name: "Save category"})));
-    expect(writes.at(-1)).toEqual({path: merchantPath, body: {category: null}});
+    expect(writes.at(-1)).toEqual({path: merchantPath, body: {category: -1}});
 
     page.unmount();
     await mountEditors();

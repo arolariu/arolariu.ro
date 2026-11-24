@@ -13,6 +13,7 @@ using arolariu.Backend.Common.Telemetry.Tracing;
 using arolariu.Backend.Domain.Invoices;
 using arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices;
 using arolariu.Backend.Domain.Invoices.DDD.Entities.Merchants;
+using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Categories;
 using arolariu.Backend.Domain.Invoices.DTOs.Requests;
 using arolariu.Backend.Domain.Invoices.DTOs.Responses;
 using arolariu.Backend.Domain.Invoices.Services.Management;
@@ -245,6 +246,11 @@ public static partial class InvoiceEndpoints
         activity.SetOperationType("CRUD.Update");
       }
 
+      if (!CategorySelection.IsValid<InvoiceCategory>(invoicePayload.Category))
+      {
+        return TypedResults.BadRequest("The category must be an invoice category ID or -1 to clear.");
+      }
+
       var potentialUserIdentifier = RetrieveUserIdentifierClaimFromPrincipal(httpContext);
       activity?.SetInvoiceContext(id, potentialUserIdentifier);
 
@@ -328,6 +334,11 @@ public static partial class InvoiceEndpoints
       {
         activity.SetLayerContext("Endpoint", nameof(InvoiceEndpoints));
         activity.SetOperationType("CRUD.Patch");
+      }
+
+      if (!CategorySelection.IsValid<InvoiceCategory>(invoicePayload.Category))
+      {
+        return TypedResults.BadRequest("The category must be an invoice category ID or -1 to clear.");
       }
 
       var potentialUserIdentifier = RetrieveUserIdentifierClaimFromPrincipal(httpContext);

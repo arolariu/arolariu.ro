@@ -150,7 +150,7 @@ public static partial class InvoiceEndpoints
     [FromServices] IInvoiceManagementService invoiceManagementService,
     [FromServices] IHttpContextAccessor httpContext,
     [FromRoute, SwaggerParameter("The unique identifier of the invoice to update.", Required = true)] Guid id,
-    [FromBody, SwaggerRequestBody("The invoice payload that will replace the existing invoice.", Required = true)] UpdateInvoiceRequestDto invoicePayload);
+    [FromBody, SwaggerRequestBody("The invoice replacement. Omit category or send null to preserve it; send -1 to clear it.", Required = true)] UpdateInvoiceRequestDto invoicePayload);
   #endregion
 
   #region HTTP PATCH /rest/v1/invoices/{id}
@@ -184,7 +184,7 @@ public static partial class InvoiceEndpoints
     [FromServices] IInvoiceManagementService invoiceManagementService,
     [FromServices] IHttpContextAccessor httpContext,
     [FromRoute, SwaggerParameter("The unique identifier of the invoice to patch.", Required = true)] Guid id,
-    [FromBody, SwaggerRequestBody("The partial invoice payload to apply as a patch.", Required = true)] PatchInvoiceRequestDto invoicePayload);
+    [FromBody, SwaggerRequestBody("The partial invoice edit. Omit category or send null to preserve it; send -1 to clear it.", Required = true)] PatchInvoiceRequestDto invoicePayload);
   #endregion
 
   #region HTTP DELETE /rest/v1/invoices/{id}
@@ -363,7 +363,7 @@ public static partial class InvoiceEndpoints
   [SwaggerOperation(
     Summary = "Updates a product in a specific invoice in the system.",
     Description = "Selects the product by its exact, case-insensitive original name. " +
-    "Supplying category alone changes only that field; null clears it. A full edit without category preserves the current category. " +
+    "Supplying a category ID or -1 alone changes only that field. Send -1 to clear it. Omitting category or sending null preserves it on a full edit. " +
     "A unique match is required and the invoice is replaced once against the observed version.",
     OperationId = nameof(UpdateProductInInvoiceAsync),
     Tags = [EndpointNameTag])]
@@ -821,7 +821,7 @@ public static partial class InvoiceEndpoints
     [FromServices] IInvoiceManagementService invoiceManagementService,
     [FromServices] IHttpContextAccessor httpContext,
     [FromRoute, SwaggerParameter("The unique identifier of the merchant.", Required = true)] Guid id,
-    [FromBody, SwaggerRequestBody("The updated merchant object.", Required = true)] UpdateMerchantRequestDto merchantPayload);
+    [FromBody, SwaggerRequestBody("A merchant edit. Omit category or send null to preserve it; send -1 to clear it.", Required = true)] UpdateMerchantRequestDto merchantPayload);
   #endregion
 
   #region HTTP DELETE /rest/v1/merchants/{id}

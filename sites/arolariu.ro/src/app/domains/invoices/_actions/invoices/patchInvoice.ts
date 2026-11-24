@@ -21,7 +21,7 @@ import {fetchBFFUserFromAuthService} from "@/lib/actions/user/fetchUser";
 import {validateStringIsGuidType} from "@/lib/utils.generic";
 import {createErrorResult, createHttpErrorResult, fetchWithTimeout, type ServerActionResult} from "@/lib/utils.server";
 import type {Invoice, InvoiceCategory, PaymentInformation, Product, RecipeSuggestion} from "@/types/invoices";
-import {parseInvoiceResponse, serializeCategoryRequest, tryParse} from "@/types/invoices/transport";
+import {parseInvoiceResponse, serializeCategoryUpdate, tryParse} from "@/types/invoices/transport";
 import {revalidatePath} from "next/cache";
 
 type ServerActionInputType = Readonly<{
@@ -53,7 +53,7 @@ type ServerActionOutputType = ServerActionResult<Readonly<Invoice>>;
  *
  * **Patch Semantics**:
  * - Only provided fields are updated
- * - Omission preserves category; explicit category null clears it
+ * - Omission preserves category; a null input sends the API's `-1` clear command
  * - `sharedWith` replaces the entire list when provided
  * - `additionalMetadata` merges with existing metadata
  *
@@ -113,7 +113,7 @@ export async function patchInvoice({invoiceId, payload}: ServerActionInputType):
           Authorization: `Bearer ${authToken}`,
           "Content-Type": "application/json",
         },
-        body: serializeCategoryRequest({
+        body: serializeCategoryUpdate({
           ...(payload.name !== undefined ? {name: payload.name} : {}),
           ...(payload.description !== undefined ? {description: payload.description} : {}),
           ...(payload.category !== undefined ? {category: payload.category} : {}),
