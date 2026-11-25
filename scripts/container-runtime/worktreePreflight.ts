@@ -13,6 +13,7 @@ import {inspectSolution, projectAppHostParameterKeys} from "../inspection/dotnet
 import {inspectPath} from "../inspection/files.ts";
 import {inspectionProbeRunner, probes} from "../inspection/probes.ts";
 import {matchesLocalPythonPin, parseConfigurationObject} from "../inspection/python.ts";
+import {currentWorktreeRestoreEvidence} from "../inspection/worktreeRestore.ts";
 import {Environment, type EnvironmentSnapshot} from "../platform/Environment.ts";
 import {ReadOnlyFiles} from "../platform/Files.ts";
 import {Process} from "../platform/Process.ts";
@@ -848,16 +849,76 @@ function inspectToolPayload(
       const stem = entry.slice(0, -".dll".length);
       const runtime = record(parseJson(yield* readManifest(`${stem}.runtimeconfig.json`)));
       const deps = record(parseJson(yield* readManifest(`${stem}.deps.json`)));
-      const targets = record(deps?.["targets"]);
+      const options = record(runtime?.["runtimeOptions"]);
+      const version = framework.slice("net".length);
+      const expected = `.NETCoreApp,Version=v${version}`;
+      const targetName = record(deps?.["runtimeTarget"])?.["name"];
+      const rid = `win-${architecture}`;
+      if (options?.["tfm"] !== framework || (targetName !== expected && targetName !== `${expected}/${rid}`)) return false;
+      const frameworks =
+        Array.isArray(options["frameworks"]) && !Object.hasOwn(options, "framework")
+          ? options["frameworks"]
+          : !Object.hasOwn(options, "frameworks")
+            ? [options["framework"]]
+            : [];
+      const declared = frameworks.map(record);
       if (
-        record(runtime?.["runtimeOptions"])?.["tfm"] !== framework
-        || !targets
-        || !Object.values(targets).some((value) =>
-          Object.keys(record(value) ?? {}).some(
-            (key) => key.toLowerCase() === `aspire.cli/${pin}` || key.toLowerCase() === `aspire/${pin}`,
-          ),
+        Object.hasOwn(options, "includedFrameworks")
+        || declared.filter((item) => item?.["name"] === "Microsoft.NETCore.App").length !== 1
+        || !declared.every(
+          (item) =>
+            ["Microsoft.NETCore.App", "Microsoft.AspNetCore.App"].includes(String(item?.["name"]))
+            && typeof item?.["version"] === "string"
+            && new RegExp(`^${version.replace(".", "\\.")}\\.\\d+$`, "u").test(item["version"]),
         )
       )
+        return false;
+      if (["rollForward", "applyPatches", "rollForwardOnNoCandidateFx"].some((key) => Object.hasOwn(options, key))) return false;
+      const runtimes = yield* run(probes.dotnet.runtimeList(), {cwd: root, env: dotnetEnvironment});
+      if (
+        runtimes.kind !== "succeeded"
+        || !declared.every((required) => {
+          const requested = String(required?.["version"]);
+          const current = Number(requested.split(".").at(-1));
+          return runtimes.stdout.split(/\r?\n/u).some((line) => {
+            const match = /^(Microsoft\.(?:NETCore|AspNetCore)\.App) (\d+\.\d+)\.(\d+) \[[^\r\n]+\]$/u.exec(line.trim());
+            return match?.[1] === required?.["name"] && match?.[2] === version && Number(match?.[3]) >= current;
+          });
+        })
+      )
+        return false;
+      const target = record(record(deps?.["targets"])?.[targetName]);
+      if (!target || Object.keys(target).length > 512) return false;
+      const owner = Object.entries(target).filter(([key]) => [`aspire.cli/${pin}`, `aspire/${pin}`].includes(key.toLowerCase()));
+      if (owner.length !== 1 || !Object.hasOwn(record(record(owner[0]?.[1])?.["runtime"]) ?? {}, path)) return false;
+      const companions = new Set<string>();
+      for (const value of Object.values(target)) {
+        const item = record(value);
+        if (!item) return false;
+        for (const section of ["runtime", "native", "resources", "runtimeTargets"]) {
+          if (!Object.hasOwn(item, section)) continue;
+          const files = record(item[section]);
+          if (!files) return false;
+          for (const [file, metadata] of Object.entries(files)) {
+            if (!ARTIFACT_PATH.test(file) || !record(metadata)) return false;
+            if (file.split("/").at(-1) === "_._") continue;
+            if (section === "runtimeTargets") {
+              // A portable target's RID fallback graph is not modeled. For an explicit
+              // Windows target, accept only its exact published RID companion paths.
+              if (targetName !== `${expected}/${rid}` || record(metadata)?.["rid"] !== rid) return false;
+              companions.add(file);
+            } else {
+              // Published app-local .deps.json assets use the basename (or culture subdir).
+              const basename = win32.basename(file);
+              const locale = record(metadata)?.["locale"];
+              if (section === "resources" && (typeof locale !== "string" || !/^[a-z0-9-]+$/iu.test(locale))) return false;
+              companions.add(section === "resources" ? `${String(locale)}/${basename}` : basename);
+            }
+            if (companions.size > 1024) return false;
+          }
+        }
+      }
+      if (!(yield* Effect.forEach(companions, (file) => ownedFile(win32.join(toolDir, file)), {concurrency: 16})).every(Boolean))
         return false;
       return yield* inspectPayload(root, entry, architecture, "cli", pin);
     }
@@ -926,6 +987,13 @@ function inspectPinnedBundle(
       "aspireuseclibundle",
       "aspirehostingsdkversion",
       "dcpdir",
+      "dcpclipath",
+      "dcpextensionsdir",
+      "dotnet_roll_forward",
+      "dotnet_roll_forward_to_prerelease",
+      "dotnet_root",
+      "dotnet_root_x64",
+      "dotnet_root_arm64",
       "aspiredashboarddir",
       "aspiredashboardpath",
       "aspireterminalhostdir",
@@ -938,9 +1006,13 @@ function inspectPinnedBundle(
       "msbuildprojectextensionspath",
       "dotnet_cli_home",
       "custombeforemicrosoftcommontargets",
-      "customaftermicrosoftcommontargets",
     ];
     if (pin !== "13.6.5" || unsupported.some((name) => names.has(name)) || machineType(env.architecture) === undefined) return false;
+    for (const key of ["customaftermicrosoftcommontargets", "customaftermicrosoftcommoncrosstargetingtargets"]) {
+      if (!names.has(key)) continue;
+      const hook = selectedVariable(env, key);
+      if (!localDrivePath(hook) || (yield* inspectPath(hook)).kind !== "missing") return false;
+    }
     const app = project.replaceAll(/<!--[\s\S]*?-->/gu, "");
     const settings = [...app.matchAll(/<PropertyGroup>\s*([\s\S]*?)<\/PropertyGroup>/gu)].map(([, group]) => group ?? "");
     if (
@@ -951,7 +1023,7 @@ function inspectPinnedBundle(
       )
       || (app.match(/<AspireUseCliBundle\b/giu)?.length ?? 0) !== 1
       || (app.match(/<AspireCliInvocationMode\b/giu)?.length ?? 0) !== 1
-      || /<(?:Import|Choose|AspireCliBundlePath|AspireCliPath|DcpDir|AspireDashboardDir|AspireDashboardPath|AspireHostingSDKVersion)\b/iu.test(
+      || /<(?:Import|Choose|AspireCliBundlePath|AspireCliPath|DcpDir|DcpCliPath|DcpExtensionsDir|AspireDashboardDir|AspireDashboardPath|AspireHostingSDKVersion)\b/iu.test(
         app,
       )
       || !/<PackageReference Include="Aspire\.Hosting\.AppHost"\s*\/>/u.test(app)
@@ -959,6 +1031,8 @@ function inspectPinnedBundle(
       return false;
     // The resolver assembly is supplied by the Hosting.AppHost package, not just the SDK declaration.
     const pins = yield* readManifest(win32.join(root, "tooling/Directory.Packages.props"));
+    const buildProps = yield* readManifest(win32.join(root, "tooling/Directory.Build.props"));
+    if (/<(?:DcpCliPath|DcpExtensionsDir)\b/iu.test(`${pins}\n${buildProps}`)) return false;
     if (
       !/<PackageVersion Include="Aspire\.Hosting\.AppHost" Version="13\.6\.5"\s*\/>/u.test(pins)
       || (pins.match(/<PackageVersion\b[^>]*(?:Include|Update)="Aspire\.Hosting\.AppHost"/giu)?.length ?? 0) !== 1
@@ -1023,7 +1097,7 @@ function inspectBundle(
   paths: RepositoryPaths,
   env: EnvironmentSnapshot,
   names: ReadonlySet<string>,
-): Effect.Effect<readonly WorktreeCapability[], never, ReadOnlyFiles | Process> {
+): Effect.Effect<readonly WorktreeCapability[], never, ReadOnlyFiles | Process | Environment> {
   return Effect.gen(function* () {
     const project = yield* readManifest(win32.join(paths.root, appHost));
     const props = yield* readManifest(win32.join(paths.root, "tooling/Directory.Build.props"));
@@ -1037,15 +1111,16 @@ function inspectBundle(
         .split(/\r?\n/u)
         .some((line) => line.startsWith(`${framework[1]}.${framework[2]}.`) && /^\d+\.\d+\.\d+ \[.+\]$/u.test(line));
     const checked = new Map<string, boolean>();
+    const receiptBefore = yield* currentWorktreeRestoreEvidence(paths);
     let appHostObserved = false;
     const solution = yield* inspectSolution(paths, (project) => {
       if (samePath(project, win32.join(paths.root, appHost))) appHostObserved = true;
       return inspectRestoreProject(paths.root, project, checked);
     });
     const assets = appHostObserved && solution.issues.length === 0 && solution.restoreIssues.length === 0;
-    // NuGet's dgSpecHash covers the evaluated graph, not the current project/import contents.
-    // There is no authoritative offline input fingerprint to compare here. Never infer freshness
-    // from old files, paths or timestamps, or run MSBuild/restore to generate new evidence.
+    const fresh = assets && receiptBefore !== undefined && (yield* currentWorktreeRestoreEvidence(paths)) === receiptBefore;
+    const refresh =
+      "When separately approved, run npm run setup -- --refresh-worktree-restore-evidence to force the existing dotnet.solution-restore action.";
     const bundle = !!(
       pin
       && sdk
@@ -1061,11 +1136,11 @@ function inspectBundle(
       ),
       capability(
         "nuget-assets",
-        false,
-        "",
+        fresh,
+        "Setup's checkout-bound restore receipt matches the current inputs and graph; the referenced local NuGet package files were observed.",
         assets
-          ? "Worktree preparation: local NuGet artifacts were observed, but restore freshness cannot be established against current project and central inputs without authoritative evidence."
-          : "Worktree preparation: solution restore artifacts could not be verified. See Setup action dotnet.solution-restore.",
+          ? `Worktree preparation: local NuGet artifacts were observed, but the checkout-bound restore freshness evidence is absent, stale, or unavailable. ${refresh}`
+          : `Worktree preparation: solution restore artifacts could not be verified. ${refresh}`,
       ),
       capability(
         "aspire-bundle",
@@ -1112,7 +1187,7 @@ function inspect(
   env: EnvironmentSnapshot,
   input: Readonly<WorktreePreflightInput>,
   names: ReadonlySet<string>,
-): Effect.Effect<WorktreePreflightResult, never, Process | ReadOnlyFiles> {
+): Effect.Effect<WorktreePreflightResult, never, Process | ReadOnlyFiles | Environment> {
   return Effect.gen(function* () {
     if (env.platform !== "win32" || input.engine !== "podman") {
       return {

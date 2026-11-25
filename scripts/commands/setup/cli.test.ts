@@ -49,6 +49,13 @@ async function run(argv: readonly string[]): Promise<{code: CommandExitCode; inp
 }
 
 describe("setup command", () => {
+  it("accepts an explicit restore evidence refresh in dry-run mode", async () => {
+    const result = await run(["setup", "--refresh-worktree-restore-evidence", "--dry-run"]);
+
+    expect(result.code).toBe(0);
+    expect(result.inputs).toEqual([{verbose: false, dryRun: true, yes: false, refreshWorktreeRestoreEvidence: true}]);
+  });
+
   it("maps setup flags", async () => {
     // Arrange
     const argv = ["setup", "--dry-run", "--yes", "--engine", "podman", "--verbose"];

@@ -662,6 +662,11 @@ function dotnetSdkList(): InspectionProbe {
   return registerProbe("dotnet.sdk-list", {command: "dotnet", args: ["--list-sdks"]});
 }
 
+/** Read-only installed shared framework inventory. */
+function dotnetRuntimeList(): InspectionProbe {
+  return registerProbe("dotnet.runtimes", {command: "dotnet", args: ["--list-runtimes"]});
+}
+
 /** Read-only `dotnet --info` probe. */
 function dotnetInfo(): InspectionProbe {
   return registerProbe("dotnet.info", {command: "dotnet", args: ["--info"]});
@@ -960,6 +965,7 @@ export const probes = {
   dotnet: {
     version: dotnetVersion,
     sdkList: dotnetSdkList,
+    runtimeList: dotnetRuntimeList,
     info: dotnetInfo,
     workloads: dotnetWorkloads,
     nugetLocals: dotnetNugetLocals,

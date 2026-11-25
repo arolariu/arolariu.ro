@@ -97,12 +97,24 @@ export function makeSetupCommand(program: SetupProgram = runSetup): CliSubcomman
         Flag.withDescription("Plan every phase mutation without executing it."),
       ),
       yes: Flag.Boolean("yes").pipe(Flag.withDefault(false), Flag.withDescription("Approve system-scoped mutations without prompting.")),
+      refreshWorktreeRestoreEvidence: Flag.Boolean("refresh-worktree-restore-evidence").pipe(
+        Flag.withDefault(false),
+        Flag.withDescription("Force the existing solution restore and refresh its checkout-local Windows worktree evidence."),
+      ),
       engine: EngineFlag,
     },
-    ({dryRun, yes, engine}) =>
+    ({dryRun, yes, engine, refreshWorktreeRestoreEvidence}) =>
       Effect.gen(function* () {
         const verbose = yield* VerboseFlag;
-        yield* renderSetupCompletion(yield* program({verbose, dryRun, yes, ...engineInput(engine)}));
+        yield* renderSetupCompletion(
+          yield* program({
+            verbose,
+            dryRun,
+            yes,
+            ...engineInput(engine),
+            ...(refreshWorktreeRestoreEvidence ? {refreshWorktreeRestoreEvidence} : {}),
+          }),
+        );
       }).pipe(withCommandOutput("setup")),
   ).pipe(
     Command.withDescription(

@@ -880,6 +880,20 @@ export function inspectSolution(
   });
 }
 
+/**
+ * Projects normalized solution project paths without evaluating MSBuild.
+ *
+ * @param source - Solution XML.
+ * @returns Declared projects, or `undefined` for unsupported or ambiguous declarations.
+ */
+export function solutionProjectPaths(source: string): readonly string[] | undefined {
+  const declarations = parseSolutionProjectDeclarations(source);
+  if (!declarations || declarations.hasInvalidPath || declarations.declarationCount === 0) return undefined;
+  const paths = declarations.paths.map(normalizeSolutionProjectPath);
+  if (paths.some((path) => path === undefined) || new Set(paths.map((path) => path?.toLowerCase())).size !== paths.length) return undefined;
+  return paths.filter((path) => path !== undefined);
+}
+
 function skipJsonWhitespace(state: JsonScanState): void {
   while (/\s/u.test(state.source[state.cursor] ?? "")) {
     state.cursor += 1;
