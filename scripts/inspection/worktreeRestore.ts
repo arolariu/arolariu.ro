@@ -11,7 +11,7 @@ import type {RepositoryPaths} from "../common/repository-paths.ts";
 import {Environment, type EnvironmentSnapshot} from "../platform/Environment.ts";
 import {ReadOnlyFiles} from "../platform/Files.ts";
 import type {Process} from "../platform/Process.ts";
-import {solutionProjectPaths} from "./dotnet.ts";
+import {solutionProjectPaths, supportsLiteralNuGetConfig} from "./dotnet.ts";
 import {inspectPath} from "./files.ts";
 import {inspectionProbeRunner, probes} from "./probes.ts";
 
@@ -21,6 +21,13 @@ export const worktreeRestorePaths = {
   receipt: "worktree-restore-evidence.json",
   lock: ".worktree-restore-evidence.lock",
 } as const;
+
+/** Redacted, conditional recovery advice shared by preflight and Setup. */
+export const worktreeRestoreRemediation =
+  "For missing restore artifacts or a missing or outdated config inventory, complete an ordinary approved Setup restore (npm run setup without the refresh flag) first, then request the opt-in receipt refresh. "
+  + "For unsupported MSBuild or NuGet inputs, use supported inputs before refreshing. "
+  + "When separately approved, refresh with npm run setup -- --refresh-worktree-restore-evidence.";
+
 const MAX_INPUT = 8 * 1024 * 1024;
 const MAX_NUGET_CONFIG_FILES = 64;
 const inputs = [
@@ -80,10 +87,21 @@ function ownedBytes(path: string, limit = MAX_INPUT): Effect.Effect<Uint8Array |
   }).pipe(Effect.orElseSucceed(() => undefined));
 }
 
+/**
+ * Detects build-file selectors outside the static restore/bundle profile.
+ *
+ * @param xml - Build input text with comments removed.
+ * @returns Whether the input can redirect or suppress a modeled build-file lookup.
+ */
+export function hasUnmodeledBuildFileSelector(xml: string): boolean {
+  return /<(?:DirectoryBuild(?:Props|Targets)Path|ImportDirectoryBuild(?:Props|Targets))(?=[\s/>])/iu.test(xml);
+}
+
 function supportedInput(path: string, content: string, listed: ReadonlySet<string>): boolean {
   const xml = content.replaceAll(/<!--[\s\S]*?-->/gu, "");
   if (
-    /[\u0000\ufffd]|<!|<\/?[\w.-]+:|<(?:UsingTask|ItemDefinitionGroup|CustomBefore[^ >]*|CustomAfter[^ >]*|Restore[^ >]*|MSBuildProjectExtensionsPath|BaseIntermediateOutputPath|MSBuildSDKsPath|DcpCliPath|DcpExtensionsDir)\b/iu.test(
+    hasUnmodeledBuildFileSelector(xml)
+    || /[\u0000\ufffd]|<!|<\/?[\w.-]+:|<(?:UsingTask|ItemDefinitionGroup|CustomBefore[^ >]*|CustomAfter[^ >]*|Restore[^ >]*|MSBuildProjectExtensionsPath|BaseIntermediateOutputPath|MSBuildSDKsPath|DcpCliPath|DcpExtensionsDir)\b/iu.test(
       xml,
     )
   )
@@ -173,8 +191,8 @@ function configInputs(env: EnvironmentSnapshot, projects: readonly string[]): Ef
     const entries: [string, string][] = [];
     for (const path of effective) {
       const bytes = yield* ownedBytes(path);
-      if (!bytes?.length) return undefined;
-      // Hash opaque bytes in-process. Neither filenames nor config bytes are persisted.
+      if (!bytes || !supportsLiteralNuGetConfig(bytes)) return undefined;
+      // Only the byte digest contributes to evidence; no settings are expanded or persisted.
       entries.push([path.toLowerCase(), digest(bytes)]);
     }
     return digest(JSON.stringify(entries));

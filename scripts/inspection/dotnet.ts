@@ -556,7 +556,7 @@ function parseXmlTag(source: string): ParsedXmlTag | undefined {
   return {attributes, closing: false, name: parsedName.name, selfClosing: false};
 }
 
-function isValidXmlDeclaration(instruction: string): boolean {
+function isValidXmlDeclaration(instruction: string, utf8Only: boolean): boolean {
   const declaration = parseXmlTag(instruction);
   if (declaration === undefined || declaration.closing || declaration.selfClosing || declaration.name !== "xml") {
     return false;
@@ -572,7 +572,7 @@ function isValidXmlDeclaration(instruction: string): boolean {
 
   const encoding = attributes[cursor];
   if (encoding?.[0] === "encoding") {
-    if (!/^[A-Za-z][A-Za-z0-9._-]*$/u.test(encoding[1])) {
+    if (utf8Only ? encoding[1].toLowerCase() !== "utf-8" : !/^[A-Za-z][A-Za-z0-9._-]*$/u.test(encoding[1])) {
       return false;
     }
     cursor += 1;
@@ -588,11 +588,16 @@ function isValidXmlDeclaration(instruction: string): boolean {
   return cursor === attributes.length;
 }
 
-function parseSolutionProjectDeclarations(source: string): SolutionProjectDeclarations | undefined {
-  const paths: string[] = [];
+function scanXml(
+  source: string,
+  options: Readonly<{
+    root: string;
+    utf8Only?: boolean;
+    element: (tag: ParsedXmlTag) => boolean;
+    text?: (value: string) => boolean;
+  }>,
+): boolean {
   const openElements: string[] = [];
-  let declarationCount = 0;
-  let hasInvalidPath = false;
   let rootSeen = false;
   let xmlDeclarationSeen = false;
   let cursor = 0;
@@ -601,9 +606,14 @@ function parseSolutionProjectDeclarations(source: string): SolutionProjectDeclar
     const opening = source.indexOf("<", cursor);
     const textEnd = opening < 0 ? source.length : opening;
     const text = source.slice(cursor, textEnd);
-    if (text.includes("]]>") || decodeXmlReferences(text) === undefined || (openElements.length === 0 && text.trim() !== "")) {
-      return undefined;
-    }
+    const decoded = decodeXmlReferences(text);
+    if (
+      text.includes("]]>")
+      || decoded === undefined
+      || (openElements.length === 0 && text.trim() !== "")
+      || options.text?.(decoded) === false
+    )
+      return false;
     if (opening < 0) {
       break;
     }
@@ -612,7 +622,7 @@ function parseSolutionProjectDeclarations(source: string): SolutionProjectDeclar
       const end = source.indexOf("-->", opening + 4);
       const comment = end < 0 ? undefined : source.slice(opening + 4, end);
       if (comment === undefined || !hasValidXmlCharacters(comment) || comment.includes("--") || comment.endsWith("-")) {
-        return undefined;
+        return false;
       }
       cursor = end + 3;
       continue;
@@ -620,8 +630,8 @@ function parseSolutionProjectDeclarations(source: string): SolutionProjectDeclar
     if (source.startsWith("<![CDATA[", opening)) {
       const end = source.indexOf("]]>", opening + 9);
       const cdata = end < 0 ? undefined : source.slice(opening + 9, end);
-      if (cdata === undefined || openElements.length === 0 || !hasValidXmlCharacters(cdata)) {
-        return undefined;
+      if (cdata === undefined || openElements.length === 0 || !hasValidXmlCharacters(cdata) || options.text?.(cdata) === false) {
+        return false;
       }
       cursor = end + 3;
       continue;
@@ -641,9 +651,9 @@ function parseSolutionProjectDeclarations(source: string): SolutionProjectDeclar
             || rootSeen
             || xmlDeclarationSeen
             || (opening !== 0 && !(opening === 1 && source.codePointAt(0) === 0xfeff))
-            || !isValidXmlDeclaration(instruction)))
+            || !isValidXmlDeclaration(instruction, options.utf8Only === true)))
       ) {
-        return undefined;
+        return false;
       }
       if (reservedXmlTarget) {
         xmlDeclarationSeen = true;
@@ -652,46 +662,89 @@ function parseSolutionProjectDeclarations(source: string): SolutionProjectDeclar
       continue;
     }
     if (source.startsWith("<!", opening)) {
-      return undefined;
+      return false;
     }
 
     const tagEnd = findXmlTagEnd(source, opening + 1);
     if (tagEnd === undefined) {
-      return undefined;
+      return false;
     }
     const tag = parseXmlTag(source.slice(opening + 1, tagEnd));
     cursor = tagEnd + 1;
     if (tag === undefined) {
-      return undefined;
+      return false;
     }
     if (tag.closing) {
       if (openElements.pop() !== tag.name) {
-        return undefined;
+        return false;
       }
       continue;
     }
 
     if (openElements.length === 0) {
-      if (rootSeen || tag.name !== "Solution") {
-        return undefined;
+      if (rootSeen || tag.name !== options.root) {
+        return false;
       }
       rootSeen = true;
     }
-    if (tag.name === "Project") {
-      declarationCount += 1;
-      const projectPath = tag.attributes.get("Path");
-      if (projectPath === undefined || projectPath.trim() === "") {
-        hasInvalidPath = true;
-      } else {
-        paths.push(projectPath);
-      }
-    }
+    if (!options.element(tag)) return false;
     if (!tag.selfClosing) {
       openElements.push(tag.name);
     }
   }
 
-  return rootSeen && openElements.length === 0 ? {declarationCount, hasInvalidPath, paths} : undefined;
+  return rootSeen && openElements.length === 0;
+}
+
+function parseSolutionProjectDeclarations(source: string): SolutionProjectDeclarations | undefined {
+  const paths: string[] = [];
+  let declarationCount = 0;
+  let hasInvalidPath = false;
+  const valid = scanXml(source, {
+    root: "Solution",
+    element: (tag) => {
+      if (tag.name === "Project") {
+        declarationCount += 1;
+        const projectPath = tag.attributes.get("Path");
+        if (projectPath === undefined || projectPath.trim() === "") {
+          hasInvalidPath = true;
+        } else {
+          paths.push(projectPath);
+        }
+      }
+      return true;
+    },
+  });
+  return valid ? {declarationCount, hasInvalidPath, paths} : undefined;
+}
+
+/**
+ * Checks whether bounded NuGet config bytes fit the literal-only receipt profile.
+ * No settings, variable names or expanded values are returned.
+ *
+ * @param bytes - Config bytes read within the caller's size limit.
+ * @returns Whether the config is supported UTF-8 XML with no environment-dependent values.
+ */
+export function supportsLiteralNuGetConfig(bytes: Uint8Array): boolean {
+  let xml: string;
+  try {
+    xml = new TextDecoder("utf-8", {fatal: true}).decode(bytes);
+  } catch {
+    return false;
+  }
+  return scanXml(xml, {
+    root: "configuration",
+    utf8Only: true,
+    element: ({attributes}) => {
+      for (const value of attributes.values()) {
+        if (/%[^%]+%/u.test(value)) return false;
+      }
+      return true;
+    },
+    // Settings are normally attributes. Refuse percent markers in element text too,
+    // without attempting to model how adjacent text and CDATA might be combined.
+    text: (value) => !value.includes("%"),
+  });
 }
 
 /**

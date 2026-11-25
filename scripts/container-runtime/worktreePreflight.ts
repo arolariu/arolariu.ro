@@ -13,7 +13,7 @@ import {inspectSolution, projectAppHostParameterKeys} from "../inspection/dotnet
 import {inspectPath} from "../inspection/files.ts";
 import {inspectionProbeRunner, probes} from "../inspection/probes.ts";
 import {matchesLocalPythonPin, parseConfigurationObject} from "../inspection/python.ts";
-import {currentWorktreeRestoreEvidence} from "../inspection/worktreeRestore.ts";
+import {currentWorktreeRestoreEvidence, hasUnmodeledBuildFileSelector, worktreeRestoreRemediation} from "../inspection/worktreeRestore.ts";
 import {Environment, type EnvironmentSnapshot} from "../platform/Environment.ts";
 import {ReadOnlyFiles} from "../platform/Files.ts";
 import {Process} from "../platform/Process.ts";
@@ -957,13 +957,14 @@ function inspectToolPayload(
 }
 
 const bundleBuildOverride =
-  /[\u0000\ufffd]|<!|<\/?[\w.-]+:|<(?:Import(?:Group|DirectoryBuildProps|DirectoryBuildTargets)?|Choose|Target|UsingTask|AspireCliBundlePath|AspireCliPath|DcpDir|DcpCliPath|DcpExtensionsDir|AspireDashboardDir|AspireDashboardPath|AspireHostingSDKVersion)\b/iu;
+  /[\u0000\ufffd]|<!|<\/?[\w.-]+:|<(?:Import(?:Group)?|Choose|Target|UsingTask|AspireCliBundlePath|AspireCliPath|DcpDir|DcpCliPath|DcpExtensionsDir|AspireDashboardDir|AspireDashboardPath|AspireHostingSDKVersion)\b/iu;
 
 function supportsBundleBuildFile(text: string): boolean {
   const xml = text.replaceAll(/<!--[\s\S]*?-->/gu, "");
   return (
     xml.trim() !== ""
     && !bundleBuildOverride.test(xml)
+    && !hasUnmodeledBuildFileSelector(xml)
     && !/<(?:Sdk|AspireUseCliBundle|AspireCliInvocationMode)\b|<Project\b[^>]*\bSdk\s*=/iu.test(xml)
   );
 }
@@ -1085,6 +1086,7 @@ function inspectPinnedBundle(
       || (app.match(/<AspireUseCliBundle\b/giu)?.length ?? 0) !== 1
       || (app.match(/<AspireCliInvocationMode\b/giu)?.length ?? 0) !== 1
       || bundleBuildOverride.test(app)
+      || hasUnmodeledBuildFileSelector(app)
       || !/<PackageReference Include="Aspire\.Hosting\.AppHost"\s*\/>/u.test(app)
     )
       return false;
@@ -1180,8 +1182,6 @@ function inspectBundle(
     });
     const assets = appHostObserved && solution.issues.length === 0 && solution.restoreIssues.length === 0;
     const fresh = assets && receiptBefore !== undefined && (yield* currentWorktreeRestoreEvidence(paths)) === receiptBefore;
-    const refresh =
-      "When separately approved, run npm run setup -- --refresh-worktree-restore-evidence to force the existing dotnet.solution-restore action.";
     const bundle = !!(
       pin
       && sdk
@@ -1200,8 +1200,8 @@ function inspectBundle(
         fresh,
         "Setup's checkout-bound restore receipt matches the current inputs and graph; the referenced local NuGet package files were observed.",
         assets
-          ? `Worktree preparation: local NuGet artifacts were observed, but the checkout-bound restore freshness evidence is absent, stale, or unavailable. ${refresh}`
-          : `Worktree preparation: solution restore artifacts could not be verified. ${refresh}`,
+          ? `Worktree preparation: local NuGet artifacts were observed, but the checkout-bound restore freshness evidence is absent, stale, or unavailable. ${worktreeRestoreRemediation}`
+          : `Worktree preparation: solution restore artifacts could not be verified. ${worktreeRestoreRemediation}`,
       ),
       capability(
         "aspire-bundle",

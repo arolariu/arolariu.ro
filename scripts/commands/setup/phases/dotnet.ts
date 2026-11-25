@@ -33,6 +33,7 @@ import {Clock, Effect, Redacted} from "effect";
 import {satisfiesMinimum, type MinimumVersion} from "../../../common/requirements.ts";
 import type {DotnetFacts} from "../../../inspection/dotnet.ts";
 import type {InspectionOutcome} from "../../../inspection/types.ts";
+import {worktreeRestoreRemediation} from "../../../inspection/worktreeRestore.ts";
 import {recordWorktreeRestoreEvidence} from "../worktreeRestoreEvidence.ts";
 import {Environment} from "../../../platform/Environment.ts";
 import {formatProcessRequest, Process, type ProcessError, type ProcessRequest} from "../../../platform/Process.ts";
@@ -591,8 +592,7 @@ function runRestoreActions(
               if (!recorded)
                 return yield* new SetupActionFailed({
                   actionId: restore.id,
-                  message:
-                    "Checkout-local restore evidence could not be refreshed. Check for unsupported inputs, a concurrent refresh, or changed inputs.",
+                  message: `Checkout-local restore evidence could not be refreshed. Check for a concurrent refresh or changed inputs. ${worktreeRestoreRemediation}`,
                 });
             })
           : execute,

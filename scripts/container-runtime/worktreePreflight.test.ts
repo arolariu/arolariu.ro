@@ -2,7 +2,7 @@
 import {Effect, FileSystem, Layer, PlatformError} from "effect";
 import {describe, expect, it} from "vitest";
 
-import type {ProcessRequest} from "../platform/Process.ts";
+import {Process, type ProcessRequest} from "../platform/Process.ts";
 import {createRepositoryPaths} from "../common/repository-paths.ts";
 import {setupActionsLayer} from "../commands/setup/actions.ts";
 import {createDotnetSetupPhase} from "../commands/setup/phases/dotnet.ts";
@@ -15,7 +15,8 @@ import {inspectWorktreeAspire} from "./worktreePreflight.ts";
 
 const root = "C:/worktrees/task";
 const commonGitDir = "C:/repo/.git";
-const forcedRestore = `dotnet restore ${createRepositoryPaths(root).solution} --force`;
+const forcedRestoreRequest = {command: "dotnet", args: ["restore", createRepositoryPaths(root).solution, "--force"]} as const;
+const forcedRestore = commandLine(forcedRestoreRequest);
 const head = "0123456789abcdef0123456789abcdef01234567";
 const gitCheckoutArgs = ["rev-parse", "--show-toplevel", "--absolute-git-dir", "--git-common-dir", "--show-superproject-working-tree"];
 const canary = "must-not-appear-in-preflight";
@@ -43,6 +44,9 @@ const toolDir = `${tool}/tools/net10.0/any`;
 const profile = "C:/user";
 const aspireHome = `${profile}/.aspire`;
 const appHostName = "tooling/src/AppHost/AppHost.csproj";
+const appHostProject = `<Project Sdk="Microsoft.NET.Sdk"><Sdk Name="Aspire.AppHost.Sdk" Version="13.6.5" />
+  <PropertyGroup><AspireUseCliBundle>true</AspireUseCliBundle><AspireCliInvocationMode>DnxPinned</AspireCliInvocationMode><UserSecretsId>test-apphost</UserSecretsId></PropertyGroup>
+  <ItemGroup><PackageReference Include="Aspire.Hosting.AppHost" /></ItemGroup></Project>`;
 const receiptPath = "tooling/src/AppHost/obj/worktree-restore-evidence.json";
 const graphPath = "tooling/src/AppHost/obj/project.assets.json";
 const lockPath = "tooling/src/AppHost/obj/.worktree-restore-evidence.lock";
@@ -210,9 +214,7 @@ function fixture(
     },
     files: {
       "package.json": JSON.stringify({name: "@arolariu/monorepo"}),
-      "tooling/src/AppHost/AppHost.csproj": `<Project Sdk="Microsoft.NET.Sdk"><Sdk Name="Aspire.AppHost.Sdk" Version="13.6.5" />
-        <PropertyGroup><AspireUseCliBundle>true</AspireUseCliBundle><AspireCliInvocationMode>DnxPinned</AspireCliInvocationMode><UserSecretsId>test-apphost</UserSecretsId></PropertyGroup>
-        <ItemGroup><PackageReference Include="Aspire.Hosting.AppHost" /></ItemGroup></Project>`,
+      [appHostName]: appHostProject,
       "tooling/Directory.Packages.props":
         '<Project><ItemGroup><PackageVersion Include="Aspire.Hosting.AppHost" Version="13.6.5" /></ItemGroup></Project>',
       "tooling/src/AppHost/Properties/launchSettings.json": JSON.stringify({
@@ -435,6 +437,61 @@ describe("worktree Aspire preflight", () => {
     expect(test.processCalls()).toEqual([]);
     expect((await test.inspect()).capabilities).toContainEqual(expect.objectContaining({id: "aspire-bundle", status: "blocked"}));
     expect(test.processCalls().some(({options}) => options.env?.["AROLARIU_PREFLIGHT_PAYLOAD_ROLE"] !== undefined)).toBe(false);
+  });
+
+  it.runIf(process.platform === "win32").each([
+    [appHostName, "DirectoryBuildTargetsPath", appHostProject],
+    ["tooling/Directory.Build.props", "DirectoryBuildTargetsPath", "<Project><TargetFramework>net10.0</TargetFramework></Project>"],
+    [
+      "tooling/Directory.Packages.props",
+      "DirectoryBuildPropsPath",
+      '<Project><ItemGroup><PackageVersion Include="Aspire.Hosting.AppHost" Version="13.6.5" /></ItemGroup></Project>',
+    ],
+    ["tooling/src/Directory.Build.targets", "dIrEcToRyBuIlDpRoPsPaTh", "<Project></Project>"],
+    ["ambient", "DirectoryBuildTargetsPath", ""],
+    ["ambient", "DirectoryBuildPropsPath", ""],
+  ] as const)("blocks unmodeled build-file selectors in %s (%s) before probing or refreshing", async (path, key, xml) => {
+    const alternate = "C:/synthetic/alternate.build.xml";
+    const property = `<PropertyGroup><${key}>${alternate}</${key}></PropertyGroup>`;
+    const test = fixture({NUGET_PACKAGES: cache, ...(path === "ambient" ? {[key]: alternate} : {})}, payloadFixtures, {
+      ...restoreFiles,
+      ...pinnedCliFiles,
+      ...resolverBundle(`${aspireHome}/bundle`),
+      ...(path === "ambient" ? {} : {[path]: xml.replace("</Project>", `${property}</Project>`)}),
+    });
+    const observed = await test.inspect();
+    test.expectReadOnly();
+    const recorded = await Effect.runPromise(
+      recordWorktreeRestoreEvidence(
+        createRepositoryPaths(root),
+        Effect.flatMap(Process, (process) => process.run(forcedRestoreRequest)),
+      ).pipe(Effect.provide(test.layer)),
+    );
+    expect.soft(observed.capabilities).toContainEqual(expect.objectContaining({id: "aspire-bundle", status: "blocked"}));
+    expect.soft(test.processCalls().some(({options}) => options.env?.["AROLARIU_PREFLIGHT_PAYLOAD_ROLE"] !== undefined)).toBe(false);
+    expect.soft(recorded).toBe(false);
+    expect.soft(test.processCalls().some(({request}) => commandLine(request) === forcedRestore)).toBe(false);
+    expect(test.files().keys()).not.toContain(`${root}/${receiptPath}`);
+    test.expectNoTransport();
+  });
+
+  it.runIf(process.platform === "win32").each([
+    ["percent variable", "%SYNTHETIC_CACHE%"],
+    ["XML character references", "&#x25;SYNTHETIC_CACHE&#37;"],
+    ["unsupported encoding", Buffer.from('\ufeff<?xml version="1.0" encoding="utf-16"?><configuration/>', "utf16le")],
+  ] as const)("does not run the scripted refresh for NuGet %s", async (_label, value) => {
+    const config = typeof value === "string" ? configFiles[machineConfig].replace("C:/nuget", value) : value;
+    const test = fixture({SYNTHETIC_CACHE: canary}, {}, {...restoreFiles, [machineConfig]: config});
+    const paths = createRepositoryPaths(root);
+    const recorded = await Effect.runPromise(
+      recordWorktreeRestoreEvidence(
+        paths,
+        Effect.flatMap(Process, (process) => process.run(forcedRestoreRequest)),
+      ).pipe(Effect.provide(test.layer)),
+    );
+    expect.soft(recorded).toBe(false);
+    expect.soft(test.processCalls()).toEqual([]);
+    test.expectReadOnly();
   });
 
   it.runIf(process.platform === "win32").each([
@@ -960,7 +1017,9 @@ describe("worktree Aspire preflight", () => {
     test.expectReadOnly();
   });
 
-  it.runIf(process.platform === "win32").each(["prepared", "restore failed", "unlock failed"] as const)(
+  it
+    .runIf(process.platform === "win32")
+    .each(["prepared", "restore failed", "unlock failed", "outdated inventory", "unsupported config"] as const)(
     "handles %s at the approved Setup action boundary without emitting raw restore diagnostics",
     async (scenario) => {
       const test = fixture(
@@ -987,6 +1046,15 @@ describe("worktree Aspire preflight", () => {
           ...restoreFiles,
           ...pinnedCliFiles,
           ...resolverBundle(`${aspireHome}/bundle`),
+          ...(scenario === "outdated inventory" ? {"C:/Program Files (x86)/NuGet/Config/New.config": "<configuration/>"} : {}),
+          ...(scenario === "unsupported config"
+            ? {[machineConfig]: configFiles[machineConfig].replace("C:/nuget", "%SYNTHETIC_CACHE%")}
+            : {}),
+          ...(scenario === "prepared"
+            ? {
+                [userConfig]: `\ufeff<?xml version="1.0" encoding="utf-8"?>\n<!-- example: %NOT_A_SETTING% -->${configFiles[userConfig].replace("Example.*", "Example&#46;*")}`,
+              }
+            : {}),
           "tooling/Directory.Build.targets": "<Project><PropertyGroup><ExampleProperty>1</ExampleProperty></PropertyGroup></Project>",
           "node_modules/@next/swc-win32-x64-msvc/next-swc.win32-x64-msvc.node": portableExecutable(),
           "sites/arolariu.ro/licenses.json": "{}",
@@ -1090,6 +1158,16 @@ describe("worktree Aspire preflight", () => {
       expect(phase.status).toBe(scenario === "prepared" ? "succeeded" : "failed");
       expect(JSON.stringify([phase, test.output()]).includes("synthetic-auth-diagnostic")).toBe(false);
       const refreshCalls = test.processCalls().filter(({request}) => commandLine(request) === forcedRestore);
+      if (scenario === "outdated inventory" || scenario === "unsupported config") {
+        expect.soft(refreshCalls).toHaveLength(0);
+        expect.soft(JSON.stringify([result.capabilities, phase.evidence])).not.toContain("SYNTHETIC_CACHE");
+        for (const detail of [result.capabilities.find(({id}) => id === "nuget-assets")?.detail, phase.evidence.join("\n")]) {
+          expect.soft(detail).toMatch(/missing or outdated config inventory.*ordinary approved Setup restore.*then.*receipt refresh/iu);
+          expect.soft(detail).toMatch(/unsupported (?:MSBuild or NuGet )?inputs.*use supported inputs/iu);
+        }
+        expect([...test.files().keys()].some((path) => path.endsWith(receiptPath) || path.endsWith(lockPath))).toBe(false);
+        return;
+      }
       expect(refreshCalls).toHaveLength(1);
       expect(refreshCalls[0]?.options).toMatchObject({
         output: "capture",
