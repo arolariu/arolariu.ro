@@ -122,6 +122,10 @@ disposable stack, and verified local endpoints. It deletes that persona's invoic
 [local environment runbook](infra/Local/readme.md) for stack lifecycle, and keep using regular clones for Windows checkouts opened inside
 Linux Dev Containers as described below.
 
+On Windows, a successful `git worktree remove` can unregister a checkout yet leave ignored npm workspace junctions or generated output.
+After closing the session and its processes, check both `git worktree list` and the specific checkout path. If anything remains, verify that
+it belongs to that checkout and remove the named links or generated directories only; do not follow junction targets or force-prune.
+
 ---
 
 ## Quick Start
