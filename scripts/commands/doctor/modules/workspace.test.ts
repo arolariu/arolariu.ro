@@ -12,7 +12,7 @@
  * and configuration files) use a real temporary directory.
  */
 
-import {mkdir, mkdtemp, readFile, rm, writeFile} from "node:fs/promises";
+import {mkdir, mkdtemp, readFile, realpath, rm, symlink, writeFile} from "node:fs/promises";
 import {tmpdir} from "node:os";
 import {dirname, join, resolve} from "node:path";
 import {fileURLToPath} from "node:url";
@@ -268,14 +268,20 @@ async function createWorkspaceFixture(
     requirementsValid?: boolean;
     probeOverrides?: ReadonlyMap<string, ProbeOutcome>;
     checkoutOutput?: (root: string) => string;
+    prepareGitDirectories?: (root: string) => Promise<void>;
+    platform?: NodeJS.Platform;
     inspectionOverrides?: ReadonlyMap<string, InspectionOutcome<unknown>>;
     omitConfigPaths?: readonly string[];
     accessFailure?: PlatformError.PlatformError;
   }> = {},
 ): Promise<WorkspaceFixture> {
-  const root = await mkdtemp(join(tmpdir(), "arolariu-doctor-workspace-"));
+  const root = await realpath(await mkdtemp(join(tmpdir(), "arolariu-doctor-workspace-")));
   fixtureRoots.push(root);
   const paths = createRepositoryPaths(root);
+  const platform = input.platform ?? process.platform;
+  const simulatedPosix = process.platform === "win32" && platform !== "win32";
+  const toGitPath = (path: string): string => (simulatedPosix ? path.slice(2).replaceAll("\\", "/") : path);
+  const checkoutRoot = toGitPath(root);
   const cacheRoot = resolve(root, ".npm-cache");
   const omitted = new Set(input.omitConfigPaths ?? []);
 
@@ -287,6 +293,7 @@ async function createWorkspaceFixture(
       ),
     ),
     mkdir(cacheRoot, {recursive: true}),
+    input.prepareGitDirectories?.(root) ?? mkdir(join(root, ".git")),
   ]);
 
   const probeResponses = new Map<string, ProbeOutcome>([
@@ -295,7 +302,7 @@ async function createWorkspaceFixture(
     ["workspace.git.last-commit", commandResult({stdout: "abc1234 example\n"})],
     [
       "workspace.git.checkout",
-      commandResult({stdout: input.checkoutOutput?.(root) ?? `${root}\n${join(root, ".git")}\n${join(root, ".git")}\n`}),
+      commandResult({stdout: input.checkoutOutput?.(checkoutRoot) ?? `${checkoutRoot}\n${toGitPath(join(root, ".git"))}\n.git\n`}),
     ],
     ["workspace.node.version", commandResult({stdout: "v26.3.1\n"})],
     ["workspace.npm.version", commandResult({stdout: "11.16.0\n"})],
@@ -330,7 +337,7 @@ async function createWorkspaceFixture(
         return response;
       }),
     ],
-    environment: fixtureEnvironment({PATH: resolve(root, "bin")}),
+    environment: fixtureEnvironment({PATH: resolve(root, "bin")}, platform),
   });
   const inspected: string[] = [];
   const options = doctorOptions(input.options);
@@ -350,11 +357,23 @@ async function createWorkspaceFixture(
             return session.inspect(key);
           },
         };
-        const context: DoctorContext = {options, paths, requirements, inspection: recording, probes: inspectionProbeRunner};
+        const context: DoctorContext = {
+          options,
+          paths: {...paths, root: checkoutRoot},
+          requirements,
+          inspection: recording,
+          probes: inspectionProbeRunner,
+        };
         const program = Effect.provideService(workspaceDoctorModule.run(context), Clock.Clock, countingClock());
-        return yield* failure === undefined
-          ? program
-          : Effect.updateService(program, ReadOnlyFiles, (files) => ({...files, access: () => Effect.fail(failure)}));
+        return yield* Effect.updateService(program, ReadOnlyFiles, (files) => ({
+          ...files,
+          ...(failure === undefined ? {} : {access: () => Effect.fail(failure)}),
+          ...(simulatedPosix
+            ? {
+                realPath: (path: string) => files.realPath(`${root.slice(0, 2)}${path}`).pipe(Effect.map(toGitPath)),
+              }
+            : {}),
+        }));
       }),
       Layer.merge(harness.layer, unscriptedNetwork),
     );
@@ -422,13 +441,17 @@ describe("workspaceDoctorModule", () => {
   });
 
   it.each(["primary", "linked-worktree", "submodule"])("identifies a %s checkout without assuming .git is a directory", async (kind) => {
-    const common = "C:\\Shared Git Metadata\\.git";
     const fixture = await createWorkspaceFixture({
+      prepareGitDirectories: async (root) => {
+        await mkdir(join(root, "Git Metadata", kind), {recursive: true});
+      },
       checkoutOutput: (root) => {
-        const reportedRoot = root.replaceAll("\\", "/").toUpperCase();
-        if (kind === "primary") return `${reportedRoot}\n${common}\nC:/Shared Git Metadata/.GIT\n`;
-        if (kind === "linked-worktree") return `${reportedRoot}\n${common}\\worktrees\\lane\n${common}\n`;
-        return `${reportedRoot}\n${common}\\modules\\lane\n${common}\nC:\\Superproject\n`;
+        const portableRoot = root.replaceAll("\\", "/");
+        const reportedRoot = process.platform === "win32" ? portableRoot.toUpperCase() : portableRoot;
+        const common = `${portableRoot}/Git Metadata`;
+        const gitDirectory = kind === "primary" ? common : `${common}/${kind}`;
+        const superproject = kind === "submodule" ? `\n${portableRoot}` : "";
+        return `${reportedRoot}\n${gitDirectory}\n${common}${superproject}\n`;
       },
       probeOverrides: new Map([["workspace.git.status", commandResult({stdout: "## HEAD (no branch)\n"})]]),
     });
@@ -449,6 +472,53 @@ describe("workspaceDoctorModule", () => {
     );
   });
 
+  it.each(["primary", "linked-worktree"])("reports a symlinked common Git directory by canonical name for a %s checkout", async (kind) => {
+    const fixture = await createWorkspaceFixture({
+      prepareGitDirectories: async (root) => {
+        const target = join(root, "Git Metadata");
+        await mkdir(join(target, "worktrees", "lane"), {recursive: true});
+        await symlink(target, join(root, ".git"), process.platform === "win32" ? "junction" : "dir");
+      },
+      checkoutOutput: (root) => {
+        const target = join(root, "Git Metadata");
+        const gitDirectory = kind === "primary" ? target : join(target, "worktrees", "lane");
+        return `${root}\n${gitDirectory}\n.git\n`;
+      },
+    });
+
+    const report = createDoctorReport(await fixture.run(), "2026-08-29T00:00:00.000Z", {verbose: false});
+    const git = resultById(report.checks, "workspace.git");
+
+    expect(git.status).toBe("pass");
+    expect(git.evidence).toContainEqual(expect.stringContaining(`Checkout: ${kind}`));
+    expect(git.evidence).toContain(`Git common directory: ${join(fixture.root, "Git Metadata")}`);
+  });
+
+  it.each(["primary", "linked-worktree", "other-root"])("handles POSIX Git metadata for %s", async (kind) => {
+    const fixture = await createWorkspaceFixture({
+      platform: "linux",
+      prepareGitDirectories: async (root) => {
+        await mkdir(join(root, ".git", "worktrees", "lane"), {recursive: true});
+      },
+      checkoutOutput: (root) => {
+        const reportedRoot = kind === "other-root" ? root.replace("arolariu-doctor-workspace-", "AROLARIU-doctor-workspace-") : root;
+        const gitDirectory = kind === "linked-worktree" ? `${root}/.git/worktrees/lane` : `${root}/.git`;
+        return `${reportedRoot}\n${gitDirectory}\n.git\n`;
+      },
+    });
+
+    const git = resultById(await fixture.run(), "workspace.git");
+
+    if (kind === "other-root") {
+      expect(git.status).toBe("fail");
+      expect(git.evidence).toContainEqual(expect.stringContaining("git rev-parse"));
+    } else {
+      expect(git.status).toBe("pass");
+      expect(git.evidence).toContainEqual(expect.stringContaining(`Checkout: ${kind}`));
+      expect(git.evidence).toContainEqual(expect.stringMatching(/^Git common directory: \/.*\/\.git$/u));
+    }
+  });
+
   it("resolves a relative Git common directory against the probed checkout", async () => {
     const fixture = await createWorkspaceFixture({
       checkoutOutput: (root) => `${root}\n${join(root, ".git")}\n.git\n`,
@@ -464,17 +534,25 @@ describe("workspaceDoctorModule", () => {
     expect(git.evidence).toContainEqual(expect.stringContaining("Checkout: primary"));
   });
 
-  it.each(["missing metadata", "not this checkout"])("fails instead of guessing a checkout type when Git reports %s", async (problem) => {
-    const fixture = await createWorkspaceFixture({
-      checkoutOutput: (root) => (problem === "missing metadata" ? `${root}\n` : `C:\\Other Repo\n${root}\\.git\n${root}\\.git\n`),
-    });
+  it.each(["missing metadata", "not this checkout", "an unavailable common directory"])(
+    "fails instead of guessing a checkout type when Git reports %s",
+    async (problem) => {
+      const fixture = await createWorkspaceFixture({
+        checkoutOutput: (root) => {
+          if (problem === "missing metadata") return `${root}\n`;
+          const checkoutRoot = problem === "not this checkout" ? `${root}-other` : root;
+          const commonDirectory = problem === "an unavailable common directory" ? "missing-directory" : ".git";
+          return `${checkoutRoot}\n${join(root, ".git")}\n${commonDirectory}\n`;
+        },
+      });
 
-    const report = createDoctorReport(await fixture.run(), "2026-08-29T00:00:00.000Z", {verbose: false});
-    const git = resultById(report.checks, "workspace.git");
+      const report = createDoctorReport(await fixture.run(), "2026-08-29T00:00:00.000Z", {verbose: false});
+      const git = resultById(report.checks, "workspace.git");
 
-    expect(git.status).toBe("fail");
-    expect(git.evidence.some((entry) => entry.includes("git rev-parse"))).toBe(true);
-  });
+      expect(git.status).toBe("fail");
+      expect(git.evidence.some((entry) => entry.includes("git rev-parse"))).toBe(true);
+    },
+  );
 
   it("reports a checkout probe command failure without losing the other checks", async () => {
     const fixture = await createWorkspaceFixture({
@@ -494,6 +572,7 @@ describe("workspaceDoctorModule", () => {
       probeOverrides: new Map([
         ["workspace.git.version", commandResult({code: 127, stderr: "'git' is not recognized as an internal or external command"})],
         ["workspace.executable-resolution:git.exe", commandResult({code: 1, stdout: ""})],
+        ["workspace.executable-resolution:git", commandResult({code: 1, stdout: ""})],
       ]),
     });
 

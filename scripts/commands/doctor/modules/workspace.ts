@@ -384,33 +384,47 @@ function describeGitCheckout(
   stdout: string,
   expectedRoot: string,
   platform: NodeJS.Platform,
-): {readonly kind: "primary" | "linked-worktree" | "submodule"; readonly root: string; readonly commonDirectory: string} | undefined {
-  const paths = platform === "win32" ? win32 : posix;
-  const normalize = (path: string): string => {
-    const resolved = paths.resolve(path);
-    return platform === "win32" ? resolved.toLowerCase() : resolved;
-  };
-  const lines = stdout.trimEnd().split(/\r?\n/u);
-  const [root, gitDirectory, reportedCommonDirectory, superproject] = lines;
-  if (
-    lines.length > 4
-    || !root
-    || !gitDirectory
-    || !reportedCommonDirectory
-    || !paths.isAbsolute(root)
-    || !paths.isAbsolute(gitDirectory)
-    || (superproject !== undefined && !paths.isAbsolute(superproject))
-    || normalize(root) !== normalize(expectedRoot)
-  ) {
-    return undefined;
-  }
-  const commonDirectory = paths.resolve(expectedRoot, reportedCommonDirectory);
-  if (superproject !== undefined) return {kind: "submodule", root, commonDirectory};
-  const kind = normalize(gitDirectory) === normalize(commonDirectory) ? "primary" : "linked-worktree";
-  return {kind, root, commonDirectory};
+): Effect.Effect<
+  {readonly kind: "primary" | "linked-worktree" | "submodule"; readonly root: string; readonly commonDirectory: string} | undefined,
+  never,
+  ReadOnlyFiles
+> {
+  return Effect.gen(function* () {
+    const paths = platform === "win32" ? win32 : posix;
+    const normalize = (path: string): string => {
+      const resolved = paths.resolve(path);
+      return platform === "win32" ? resolved.toLowerCase() : resolved;
+    };
+    const lines = stdout.trimEnd().split(/\r?\n/u);
+    const [root, gitDirectory, reportedCommonDirectory, superproject] = lines;
+    if (
+      lines.length > 4
+      || !root
+      || !gitDirectory
+      || !reportedCommonDirectory
+      || !paths.isAbsolute(root)
+      || !paths.isAbsolute(gitDirectory)
+      || (superproject !== undefined && !paths.isAbsolute(superproject))
+      || normalize(root) !== normalize(expectedRoot)
+    ) {
+      return undefined;
+    }
+
+    // Git canonicalizes --absolute-git-dir, but --git-common-dir can still name a symlink.
+    const files = yield* ReadOnlyFiles;
+    const canonicalGitDirectory = yield* files.realPath(gitDirectory);
+    const commonDirectory = yield* files.realPath(paths.resolve(expectedRoot, reportedCommonDirectory));
+    const kind =
+      superproject !== undefined
+        ? "submodule"
+        : normalize(canonicalGitDirectory) === normalize(commonDirectory)
+          ? "primary"
+          : "linked-worktree";
+    return {kind, root, commonDirectory} as const;
+  }).pipe(Effect.orElseSucceed(() => undefined));
 }
 
-function diagnoseGit(context: Readonly<ModuleRunContext>): Effect.Effect<DiagnosticResult, never, Process> {
+function diagnoseGit(context: Readonly<ModuleRunContext>): Effect.Effect<DiagnosticResult, never, Process | ReadOnlyFiles> {
   return Effect.gen(function* () {
     const startedAt = context.monotonicNow();
     const version = yield* context.probes.run(probes.workspace.gitVersion(), {cwd: context.paths.root});
@@ -457,7 +471,7 @@ function diagnoseGit(context: Readonly<ModuleRunContext>): Effect.Effect<Diagnos
 
     const checkoutResult = yield* context.probes.run(probes.workspace.gitCheckout(), {cwd: context.paths.root});
     const checkout = isSuccessfulCommand(checkoutResult)
-      ? describeGitCheckout(checkoutResult.stdout, context.paths.root, context.environment.platform)
+      ? yield* describeGitCheckout(checkoutResult.stdout, context.paths.root, context.environment.platform)
       : undefined;
     if (checkout === undefined) {
       return issueDiagnostic(context, startedAt, {
@@ -465,7 +479,7 @@ function diagnoseGit(context: Readonly<ModuleRunContext>): Effect.Effect<Diagnos
         name: "Git",
         status: "fail",
         summary: "Git could not identify the requested checkout.",
-        evidence: ["git rev-parse did not return valid checkout metadata for the expected root.", ...commandEvidence(checkoutResult)],
+        evidence: ["git rev-parse metadata could not be resolved for the expected checkout root.", ...commandEvidence(checkoutResult)],
         potentialCauses: [{cause: "Checkout metadata is incomplete, inaccessible, or belongs to a different root.", confidence: "medium"}],
         fixes: [{description: "Run doctor from the intended worktree and verify that Git can read its common directory."}],
       });
