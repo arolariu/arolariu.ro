@@ -144,6 +144,7 @@ export function makeDevCommand(options: DevCommandOptions = {}): CliSubcommand {
   const worktree = Command.make("worktree").pipe(Command.withSubcommands([preflight, lifecycle("status"), lifecycle("stop")]));
   return Command.make("dev").pipe(
     Command.withDescription("Local development environments."),
-    Command.withSubcommands([aspire, selfhost, worktree]),
+    // npm prepends `dev aspire`; reuse the same subtree and let effect/cli parse both routes.
+    Command.withSubcommands([aspire.pipe(Command.withSubcommands([worktree])), selfhost, worktree]),
   );
 }

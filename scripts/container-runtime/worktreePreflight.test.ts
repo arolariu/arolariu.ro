@@ -1,23 +1,27 @@
 // @vitest-environment node
-import {Effect, FileSystem, Layer, PlatformError} from "effect";
+import {Effect, FileSystem, Layer, PlatformError, Sink, Stream} from "effect";
+import {type ChildProcess, ChildProcessSpawner} from "effect/process";
 import {describe, expect, it} from "vitest";
 
-import {Process, type ProcessRequest} from "../platform/Process.ts";
+import {Process, ProcessLive, type ProcessRequest} from "../platform/Process.ts";
 import {createRepositoryPaths} from "../common/repository-paths.ts";
 import {setupActionsLayer} from "../commands/setup/actions.ts";
 import {createDotnetSetupPhase} from "../commands/setup/phases/dotnet.ts";
 import {recordingInspection} from "../commands/setup/phase-testing.ts";
 import {recordWorktreeRestoreEvidence} from "../commands/setup/worktreeRestoreEvidence.ts";
+import {inspectionProbeRunner, probes} from "../inspection/probes.ts";
 import {currentWorktreeRestoreEvidence} from "../inspection/worktreeRestore.ts";
 import {Environment} from "../platform/Environment.ts";
 import {ReadOnlyFiles} from "../platform/Files.ts";
 import {makeTestLayer, scriptedOutcomes} from "../platform/testing.ts";
+import {localWorktreePlatform} from "./worktreePlatform.ts";
 import {inspectWorktreeAspire, observeWorktreeCheckout, observeWorktreeEngine} from "./worktreePreflight.ts";
 
 const root = "C:/worktrees/task";
 const commonGitDir = "C:/repo/.git";
 const forcedRestoreRequest = {command: "dotnet", args: ["restore", createRepositoryPaths(root).solution, "--force"]} as const;
 const forcedRestore = commandLine(forcedRestoreRequest);
+const guardedRestore = commandLine({...forcedRestoreRequest, args: [...forcedRestoreRequest.args, "-noAutoResponse"]});
 const head = "0123456789abcdef0123456789abcdef01234567";
 const gitCheckoutArgs = ["rev-parse", "--show-toplevel", "--absolute-git-dir", "--git-common-dir", "--show-superproject-working-tree"];
 const canary = "must-not-appear-in-preflight";
@@ -36,6 +40,7 @@ const localMachineInspect = {
   Rootful: false,
   ConfigDir: {Path: "C:/podman/wsl"},
   SSHConfig: localMachineSsh,
+  Created: "2026-11-25T10:20:30.123456789Z",
 };
 const exp = "sites/exp.arolariu.ro";
 const venv = `${exp}/.venv`;
@@ -87,6 +92,7 @@ const assetPackage = "example.sdk/1.2.3";
 const assetFile = "lib/net10.0/Example.dll";
 const packageDir = `${cache}/${assetPackage}`;
 const restoreFiles = {
+  "C:/sdk/10.0.404/MSBuild.dll": "synthetic SDK directory marker",
   "arolariu.slnx": `<Solution><Project Path="${appHostName}" /></Solution>`,
   "tooling/src/AppHost/obj/project.assets.json": JSON.stringify({
     version: 4,
@@ -245,7 +251,7 @@ function fixture(
           if (trustedDotnet) return {kind: "succeeded", exitCode: 0, stdout: "", stderr: canary, durationMs: 0};
           return {kind: "exited", exitCode: 7, stdout: "", stderr: canary, durationMs: 0};
         }
-        if (command === forcedRestore) {
+        if (command === forcedRestore || command === guardedRestore) {
           const diagnostic = `synthetic-auth-diagnostic:${canary}`;
           const output = {stdout: diagnostic, stderr: diagnostic, durationMs: 0};
           return failRestore ? {kind: "exited", exitCode: 1, ...output} : {kind: "succeeded", exitCode: 0, ...output};
@@ -309,6 +315,165 @@ function fixture(
 }
 
 describe("worktree Aspire preflight", () => {
+  it.runIf(process.platform === "win32")("suppresses tracing in actual scoped Git child options, not in other probes", async () => {
+    const variables = {
+      gIt_TrAcE: "C:/synthetic/trace",
+      GIT_TRACE_PACKET: "C:/synthetic/packet",
+      GIT_TRACE_FSMONITOR: "C:/synthetic/fsmonitor",
+      git_trace2_event: "C:/synthetic/event",
+      GIT_TRACE2_PERF: "C:/synthetic/perf",
+      GIT_CONFIG_NOSYSTEM: "1",
+    };
+    const test = fixture(variables);
+    const gitOutputs = new Map([
+      [gitCheckoutArgs.join(" "), `${root}\n${commonGitDir}/worktrees/task\n../../repo/.git\n`],
+      ["symbolic-ref --quiet HEAD", "refs/heads/chore/task\n"],
+      ["rev-parse --verify HEAD", `${head}\n`],
+      ["worktree list --porcelain -z", registeredWorktree],
+    ]);
+    const spawned: {readonly args: string; readonly env: ChildProcess.CommandOptions["env"]}[] = [];
+    const spawner = Layer.succeed(
+      ChildProcessSpawner.ChildProcessSpawner,
+      ChildProcessSpawner.make((command) =>
+        Effect.sync(() => {
+          if (command._tag !== "StandardCommand" || command.command !== "git") throw new Error("Unexpected child");
+          const args = command.args.join(" ");
+          const stdout = gitOutputs.get(args);
+          if (stdout === undefined) throw new Error("Unexpected Git probe");
+          spawned.push({args, env: command.options.env});
+          expect(command.options.extendEnv).toBe(false);
+          return ChildProcessSpawner.makeHandle({
+            pid: ChildProcessSpawner.ProcessId(1),
+            exitCode: Effect.succeed(ChildProcessSpawner.ExitCode(0)),
+            isRunning: Effect.succeed(false),
+            kill: () => Effect.void,
+            stdin: Sink.drain,
+            stdout: Stream.make(new TextEncoder().encode(stdout)),
+            stderr: Stream.empty,
+            all: Stream.empty,
+            getInputFd: () => Sink.drain,
+            getOutputFd: () => Stream.empty,
+            unref: Effect.succeed(Effect.void),
+          });
+        }),
+      ),
+    );
+    await Effect.runPromise(
+      Effect.gen(function* () {
+        const scripted = yield* Process;
+        const live = yield* Effect.gen(function* () {
+          return yield* Process;
+        }).pipe(Effect.provide(ProcessLive), Effect.provide(spawner));
+        yield* Effect.gen(function* () {
+          const preflight = yield* inspectWorktreeAspire({engine: "podman"});
+          expect(preflight.checkout?.head).toBe(head);
+          const platform = yield* localWorktreePlatform();
+          expect((yield* platform.checkout)?.head).toBe(head);
+          yield* inspectionProbeRunner.run(probes.workspace.gitBranch(), {cwd: root});
+        }).pipe(
+          Effect.provideService(Process, {
+            run: (request, options) => (request.command === "git" ? live : scripted).run(request, options),
+          }),
+        );
+      }).pipe(Effect.provide(test.layer)),
+    );
+    const scoped = spawned.slice(0, -1);
+    expect(scoped.map(({args}) => args)).toEqual([...gitOutputs.keys(), ...gitOutputs.keys()]);
+    for (const {env} of scoped) {
+      expect(Object.fromEntries(Object.entries(env ?? {}).filter(([key]) => /^git_trace/iu.test(key)))).toEqual({
+        GIT_TRACE2: "0",
+        GIT_TRACE2_EVENT: "0",
+        GIT_TRACE2_PERF: "0",
+      });
+      expect(env?.["GIT_CONFIG_NOSYSTEM"]).toBe("1");
+    }
+    expect(spawned.at(-1)?.env).toMatchObject(variables);
+    test.expectReadOnly();
+  });
+
+  it
+    .runIf(process.platform === "win32")
+    .each([
+      "Directory.Build.rsp",
+      "tooling/src/AppHost/Directory.Build.rsp",
+      "C:/worktrees/Directory.Build.rsp",
+      "C:/sdk/10.0.404/MSBuild.rsp",
+    ])("rejects automatic response-file evidence at %s before restore and on read", async (responseFile) => {
+    const test = fixture({}, {}, restoreFiles);
+    const paths = createRepositoryPaths(root);
+    await Effect.runPromise(
+      Effect.gen(function* () {
+        const fs = yield* FileSystem.FileSystem;
+        expect(yield* recordWorktreeRestoreEvidence(paths, Effect.void)).toBe(true);
+        expect(yield* currentWorktreeRestoreEvidence(paths)).toMatch(/^[a-f0-9]{64}$/u);
+        const receipt = yield* fs.readFileString(receiptPath);
+        yield* fs.writeFileString(responseFile, "# inert synthetic response-file marker");
+        const before = test.files();
+        expect.soft(yield* currentWorktreeRestoreEvidence(paths)).toBeUndefined();
+        let ran = false;
+        const refreshed = yield* recordWorktreeRestoreEvidence(
+          paths,
+          Effect.sync(() => {
+            ran = true;
+          }),
+        );
+        expect.soft(refreshed).toBe(false);
+        expect.soft(ran).toBe(false);
+        expect(test.files()).toEqual(before);
+        expect(yield* fs.readFileString(receiptPath)).toBe(receipt);
+      }).pipe(Effect.provide(test.layer)),
+    );
+    test.expectNoTransport();
+  });
+
+  it.runIf(process.platform === "win32")("rejects the older receipt version without response-file policy", async () => {
+    const test = fixture({}, {}, restoreFiles);
+    const paths = createRepositoryPaths(root);
+    await Effect.runPromise(
+      Effect.gen(function* () {
+        const fs = yield* FileSystem.FileSystem;
+        expect(yield* recordWorktreeRestoreEvidence(paths, Effect.void)).toBe(true);
+        const receipt = JSON.parse(yield* fs.readFileString(receiptPath)) as Record<string, unknown>;
+        yield* fs.writeFileString(receiptPath, `${JSON.stringify({...receipt, version: 1})}\n`);
+        const before = test.files();
+        expect(yield* currentWorktreeRestoreEvidence(paths)).toBeUndefined();
+        expect(test.files()).toEqual(before);
+      }).pipe(Effect.provide(test.layer)),
+    );
+  });
+
+  it.runIf(process.platform === "win32").each([
+    {label: "ambiguous SDK inventory", listing: "10.0.404 [C:/sdk]\n10.0.404 [C:/other-sdk]\n", globalJson: "{}"},
+    {label: "unobservable selected SDK directory", listing: "10.0.404 [C:/other-sdk]\n", globalJson: "{}"},
+    {label: "SDK search-path override", listing: "10.0.404 [C:/sdk]\n", globalJson: '{"sdk":{"paths":[".dotnet"]}}'},
+  ])("blocks $label before the synthetic restore", async ({listing, globalJson}) => {
+    const test = fixture({}, {"dotnet --list-sdks": listing}, {...restoreFiles, "global.json": globalJson});
+    const recorded = await Effect.runPromise(
+      recordWorktreeRestoreEvidence(createRepositoryPaths(root), Effect.die("unsupported SDK evidence reached restore")).pipe(
+        Effect.provide(test.layer),
+      ),
+    );
+    expect(recorded).toBe(false);
+    test.expectReadOnly();
+  });
+
+  it.runIf(process.platform === "win32")("invalidates a receipt if a response file appears during the synthetic refresh", async () => {
+    const test = fixture({}, {}, restoreFiles);
+    const paths = createRepositoryPaths(root);
+    await Effect.runPromise(
+      Effect.gen(function* () {
+        const fs = yield* FileSystem.FileSystem;
+        expect(yield* recordWorktreeRestoreEvidence(paths, Effect.void)).toBe(true);
+        expect(yield* recordWorktreeRestoreEvidence(paths, fs.writeFileString("Directory.Build.rsp", "# inert synthetic marker"))).toBe(
+          false,
+        );
+        expect(yield* currentWorktreeRestoreEvidence(paths)).toBeUndefined();
+      }).pipe(Effect.provide(test.layer)),
+    );
+    expect([...test.files().keys()].some((path) => path.endsWith(receiptPath) || path.endsWith(lockPath))).toBe(false);
+    test.expectNoTransport();
+  });
+
   it.runIf(process.platform === "win32")("pins the local machine registration without a backend request", async () => {
     const observe = async (created: string, variables: Readonly<Record<string, string>> = {}) => {
       const test = fixture(variables, {
@@ -1085,7 +1250,7 @@ describe("worktree Aspire preflight", () => {
 
   it
     .runIf(process.platform === "win32")
-    .each(["prepared", "restore failed", "unlock failed", "outdated inventory", "unsupported config"] as const)(
+    .each(["prepared", "unpinnable Podman", "restore failed", "unlock failed", "outdated inventory", "unsupported config"] as const)(
     "handles %s at the approved Setup action boundary without emitting raw restore diagnostics",
     async (scenario) => {
       const test = fixture(
@@ -1102,6 +1267,9 @@ describe("worktree Aspire preflight", () => {
         },
         {
           "podman info --format json": trustedBackend,
+          ...(scenario === "unpinnable Podman"
+            ? {"podman machine inspect local-machine": JSON.stringify([{...localMachineInspect, Created: ""}])}
+            : {}),
           "mkcert --version": "v1.4.4",
           pwsh: "trusted",
           "pwsh:swc": "verified",
@@ -1143,9 +1311,15 @@ describe("worktree Aspire preflight", () => {
 
       const result = await test.inspect(root);
 
-      expect(result.capabilities.filter(({status}) => status === "blocked")).toEqual([
-        expect.objectContaining({id: "nuget-assets", detail: expect.stringContaining("freshness")}),
-      ]);
+      expect(
+        result.capabilities
+          .filter(({status}) => status === "blocked")
+          .map(({id}) => id)
+          .sort(),
+      ).toEqual(scenario === "unpinnable Podman" ? ["nuget-assets", "podman-backend"] : ["nuget-assets"]);
+      expect(result.capabilities).toContainEqual(
+        expect.objectContaining({id: "nuget-assets", status: "blocked", detail: expect.stringContaining("freshness")}),
+      );
       expect(result).toMatchObject({status: "blocked", checkout: {head}});
       expect(JSON.stringify(result)).not.toContain(canary);
       test.expectReadOnly();
@@ -1195,7 +1369,7 @@ describe("worktree Aspire preflight", () => {
         definition.run({...context, options: plan}).pipe(Effect.provide(Layer.provideMerge(setupActionsLayer(plan), test.layer))),
       );
       expect([...test.files().keys()].some((path) => path.endsWith(receiptPath))).toBe(false);
-      expect(test.processCalls().some(({request}) => commandLine(request) === forcedRestore)).toBe(false);
+      expect(test.processCalls().some(({request}) => [forcedRestore, guardedRestore].includes(commandLine(request)))).toBe(false);
       let publishedBeforeUnlock = false;
       const setup = Effect.gen(function* () {
         const fs = yield* FileSystem.FileSystem;
@@ -1221,9 +1395,9 @@ describe("worktree Aspire preflight", () => {
       });
       const phase = await Effect.runPromise(setup.pipe(Effect.provide(Layer.provideMerge(setupActionsLayer(options), test.layer))));
       const prepared = await test.inspect(root);
-      expect(phase.status).toBe(scenario === "prepared" ? "succeeded" : "failed");
+      expect(phase.status).toBe(scenario === "prepared" || scenario === "unpinnable Podman" ? "succeeded" : "failed");
       expect(JSON.stringify([phase, test.output()]).includes("synthetic-auth-diagnostic")).toBe(false);
-      const refreshCalls = test.processCalls().filter(({request}) => commandLine(request) === forcedRestore);
+      const refreshCalls = test.processCalls().filter(({request}) => [forcedRestore, guardedRestore].includes(commandLine(request)));
       if (scenario === "outdated inventory" || scenario === "unsupported config") {
         expect.soft(refreshCalls).toHaveLength(0);
         expect.soft(JSON.stringify([result.capabilities, phase.evidence])).not.toContain("SYNTHETIC_CACHE");
@@ -1234,12 +1408,12 @@ describe("worktree Aspire preflight", () => {
         expect([...test.files().keys()].some((path) => path.endsWith(receiptPath) || path.endsWith(lockPath))).toBe(false);
         return;
       }
-      expect(refreshCalls).toHaveLength(1);
+      expect(refreshCalls.map(({request}) => commandLine(request))).toEqual([guardedRestore]);
       expect(refreshCalls[0]?.options).toMatchObject({
         output: "capture",
         echo: false,
       });
-      if (scenario !== "prepared") {
+      if (scenario !== "prepared" && scenario !== "unpinnable Podman") {
         expect(phase.evidence.join("\n")).toContain(scenario === "unlock failed" ? "finalize" : "Forced solution NuGet restore failed");
         expect(JSON.stringify(test.output()).includes("Executed setup action 'dotnet.solution-restore'")).toBe(false);
         expect(prepared.capabilities).toContainEqual(expect.objectContaining({id: "nuget-assets", status: "blocked"}));
@@ -1249,8 +1423,17 @@ describe("worktree Aspire preflight", () => {
         return;
       }
       expect(phase.evidence.join("\n")).toContain("Executed and verified action: dotnet.solution-restore");
-      expect(prepared.capabilities.filter(({status}) => status === "blocked")).toEqual([]);
-      expect(prepared).toMatchObject({status: "prepared", checkout: {head}});
+      expect(prepared.capabilities.filter(({status}) => status === "blocked").map(({id}) => id)).toEqual(
+        scenario === "unpinnable Podman" ? ["podman-backend"] : [],
+      );
+      expect(prepared).toMatchObject({status: scenario === "unpinnable Podman" ? "blocked" : "prepared", checkout: {head}});
+      if (scenario === "unpinnable Podman")
+        expect(prepared.capabilities).toContainEqual({
+          id: "podman-backend",
+          status: "blocked",
+          detail: "Machine bootstrap: No pinned default Windows Podman machine was verified. See Podman Desktop in infra/Local/readme.md.",
+        });
+      expect(test.processCalls().some(({request}) => commandLine(request) === "podman info --format json")).toBe(scenario === "prepared");
       expect(JSON.stringify(prepared)).not.toContain(canary);
       test.expectNoTransport();
     },

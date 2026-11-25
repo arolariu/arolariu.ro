@@ -189,20 +189,35 @@ function observeCheckout(
       if (expected === undefined || !samePath(expected, root)) return undefined;
     }
 
-    const metadata = yield* run(probes.workspace.gitCheckout(), {cwd: root});
+    // Clear case variants from the inherited Windows environment. Explicitly disable
+    // Trace2 targets so Git cannot fall back to file-backed system/user config.
+    const gitOptions = {
+      cwd: root,
+      env: {
+        ...Object.fromEntries(
+          Object.keys(env.variables)
+            .filter((key) => /^git_trace/iu.test(key))
+            .map((key) => [key, undefined]),
+        ),
+        GIT_TRACE2: "0",
+        GIT_TRACE2_EVENT: "0",
+        GIT_TRACE2_PERF: "0",
+      },
+    };
+    const metadata = yield* run(probes.workspace.gitCheckout(), gitOptions);
     if (metadata.kind !== "succeeded") return undefined;
     const checkout = yield* describeGitCheckout(metadata.stdout, root, env.platform);
     if (checkout?.kind !== "linked-worktree" || !localDrivePath(checkout.commonDirectory)) return undefined;
     const manifest = yield* readManifest(win32.join(root, "package.json"));
     if (record(parseJson(manifest))?.["name"] !== "@arolariu/monorepo") return undefined;
 
-    const branch = yield* run(probes.workspace.gitBranch(), {cwd: root});
-    const head = yield* run(probes.workspace.gitHead(), {cwd: root});
+    const branch = yield* run(probes.workspace.gitBranch(), gitOptions);
+    const head = yield* run(probes.workspace.gitHead(), gitOptions);
     if (branch.kind !== "succeeded" || head.kind !== "succeeded") return undefined;
     const branchName = /^refs\/heads\/([\p{L}\p{N}._/-]+)$/u.exec(branch.stdout.trimEnd())?.[1];
     const hash = head.stdout.trimEnd();
     if (branchName === undefined || !/^(?:[a-f0-9]{40}|[a-f0-9]{64})$/u.test(hash)) return undefined;
-    const listing = yield* run(probes.workspace.gitWorktreeList(), {cwd: root});
+    const listing = yield* run(probes.workspace.gitWorktreeList(), gitOptions);
     if (listing.kind !== "succeeded" || !listing.stdout.endsWith("\0\0")) return undefined;
     const registrations = listing.stdout.split("\0\0").map((entry) => entry.split("\0"));
     const matches = registrations.filter(([path]) => path?.startsWith("worktree ") && samePath(path.slice(9), root));
@@ -228,7 +243,7 @@ export function observeWorktreeCheckout(): Effect.Effect<WorktreeCheckout | unde
   });
 }
 
-type PodmanRegistration = {readonly uri: string; readonly identity: string; readonly fingerprint?: string};
+type PodmanRegistration = {readonly uri: string; readonly identity: string; readonly fingerprint: string};
 
 function registeredPodmanConnection(
   root: string,
@@ -305,18 +320,19 @@ function registeredPodmanConnection(
     }
     const created = selected["Created"];
     const canonical = yield* canonicalPath(configDir);
-    const fingerprint =
-      typeof created === "string"
-      && /^\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d(?:\.\d{1,9})?(?:Z|[+-]\d\d:\d\d)$/u.test(created)
-      && Number.isFinite(Date.parse(created))
-      && !created.startsWith("0001-")
-      && canonical !== undefined
-      && samePath(canonical, configDir)
-        ? createHash("sha256")
-            .update(JSON.stringify([name, uri, win32.normalize(identity).toLowerCase(), canonical.toLowerCase(), created]))
-            .digest("hex")
-        : undefined;
-    return {uri, identity, ...(fingerprint === undefined ? {} : {fingerprint})};
+    if (
+      typeof created !== "string"
+      || !/^\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d(?:\.\d{1,9})?(?:Z|[+-]\d\d:\d\d)$/u.test(created)
+      || !Number.isFinite(Date.parse(created))
+      || created.startsWith("0001-")
+      || canonical === undefined
+      || !samePath(canonical, configDir)
+    )
+      return undefined;
+    const fingerprint = createHash("sha256")
+      .update(JSON.stringify([name, uri, win32.normalize(identity).toLowerCase(), canonical.toLowerCase(), created]))
+      .digest("hex");
+    return {uri, identity, fingerprint};
   });
 }
 
@@ -383,7 +399,7 @@ function inspectPodman(root: string, names: ReadonlySet<string>): Effect.Effect<
       return blocked("Podman connection overrides are unsupported. Select the local Podman Desktop machine without overrides.");
     }
     if (registration === undefined) {
-      return blocked("No supported default Windows Podman machine connection was observed. See Podman Desktop in infra/Local/readme.md.");
+      return blocked("No pinned default Windows Podman machine was verified. See Podman Desktop in infra/Local/readme.md.");
     }
     const info = yield* run(probes.infrastructure.runtimeInfo("podman"), {
       cwd: root,
@@ -399,7 +415,7 @@ function inspectPodman(root: string, names: ReadonlySet<string>): Effect.Effect<
     return capability(
       "podman-backend",
       responsive,
-      "The registered local Podman machine returned structured Linux engine information.",
+      "The pinned local Podman machine returned structured Linux engine information.",
       "Machine bootstrap: the local Podman backend did not return valid engine information. Verify the selected Podman machine separately.",
     );
   });

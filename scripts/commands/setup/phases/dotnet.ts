@@ -33,7 +33,7 @@ import {Clock, Effect, Redacted} from "effect";
 import {satisfiesMinimum, type MinimumVersion} from "../../../common/requirements.ts";
 import type {DotnetFacts} from "../../../inspection/dotnet.ts";
 import type {InspectionOutcome} from "../../../inspection/types.ts";
-import {worktreeRestoreRemediation} from "../../../inspection/worktreeRestore.ts";
+import {worktreeNoAutoResponse, worktreeRestoreRemediation} from "../../../inspection/worktreeRestore.ts";
 import {recordWorktreeRestoreEvidence} from "../worktreeRestoreEvidence.ts";
 import {Environment} from "../../../platform/Environment.ts";
 import {formatProcessRequest, Process, type ProcessError, type ProcessRequest} from "../../../platform/Process.ts";
@@ -489,7 +489,11 @@ function restores(context: SetupContext): readonly RestoreDefinition[] {
         : "Restore solution NuGet dependencies.",
       command: {
         command: "dotnet",
-        args: ["restore", context.paths.solution, ...(context.options.refreshWorktreeRestoreEvidence ? ["--force"] : [])],
+        args: [
+          "restore",
+          context.paths.solution,
+          ...(context.options.refreshWorktreeRestoreEvidence ? ["--force", worktreeNoAutoResponse] : []),
+        ],
       },
       verify: ({after}) =>
         after.solutionRestoreIssues.length > 0

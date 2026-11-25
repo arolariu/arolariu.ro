@@ -135,6 +135,58 @@ describe("dev command", () => {
     expect(result.calls).toEqual([]);
   });
 
+  it.each([
+    ["--json", "worktree", "--verbose", "preflight", "--engine", "podman"],
+    ["--json", "worktree", "--log-level", "warn", "preflight", "--engine", "podman"],
+    ["--log-level", "none", "worktree", "status", "--json", "--engine=podman"],
+    ["--verbose=false", "worktree", "--log-level=none", "stop", "--engine", "podman", "--json"],
+    ["worktree", "preflight", "--engine", "podman", "--verbose", "--json"],
+  ])("routes the npm worktree alias with global flags (%j)", async (...args) => {
+    const harness = makeTestLayer({environment: {platform: "linux"}});
+    const exit = await Effect.runPromiseExit(
+      runCli(["dev", "aspire", ...args], makeRootCommand([makeDevCommand()])).pipe(Effect.provide(harness.layer)),
+    );
+    expect(exitCodeFor(exit, undefined)).toBe(1);
+    const stdout = harness.output().filter(({stream}) => stream === "stdout");
+    expect(stdout).toHaveLength(1);
+    expect(JSON.parse(stdout[0]?.text ?? "")).toMatchObject({status: "blocked"});
+    expect(harness.processCalls()).toEqual([]);
+  });
+
+  it.each([
+    {args: ["--verbose", "worktree", "--help"], usage: "worktree <subcommand>", flag: "preflight"},
+    {args: ["worktree", "--json", "stop", "-h"], usage: "worktree stop", flag: "--expected-run"},
+    {args: ["--help", "worktree", "preflight"], usage: "worktree preflight", flag: "--expected-root"},
+  ])("shows scoped help through the npm worktree alias ($usage)", async ({args, usage, flag}) => {
+    const harness = makeTestLayer();
+    const exit = await Effect.runPromiseExit(
+      runCli(["dev", "aspire", ...args], makeRootCommand([makeDevCommand()])).pipe(Effect.provide(harness.layer)),
+    );
+    expect(exitCodeFor(exit, undefined)).toBe(0);
+    const output = harness
+      .output()
+      .map(({text}) => text)
+      .join("");
+    expect(output).toContain(usage);
+    expect(output).toContain(flag);
+    expect(harness.processCalls()).toEqual([]);
+  });
+
+  it.each([
+    ["--verbose", "worktree", "start", "--engine", "podman"],
+    ["--json", "worktree", "--unknown", "status", "--engine", "podman"],
+    ["--json=maybe", "worktree", "status", "--engine", "podman"],
+    ["--log-level", "worktree", "status", "--engine", "podman"],
+    ["--engine", "podman", "worktree", "status"],
+    ["worktree", "stop", "--engine"],
+    ["worktree", "status", "--engine", "podman", "extra"],
+    ["--", "worktree", "status"],
+  ])("rejects malformed npm worktree arguments without invoking legacy Aspire (%j)", async (...args) => {
+    const result = await run(["dev", "aspire", ...args], {AROLARIU_CONTAINER_ENGINE: "podman"});
+    expect(result.code).toBe(2);
+    expect(result.calls).toEqual([]);
+  });
+
   it.each(["b".repeat(32), "not-an-id?token=fake-token"])(
     "keeps guarded worktree stop blocked without verified authority",
     async (runId) => {
@@ -230,7 +282,7 @@ describe("dev command", () => {
 
   it("maps aspire engine", async () => {
     // Arrange
-    const argv = ["dev", "aspire", "--engine", "rancher"];
+    const argv = ["dev", "aspire", "--log-level", "warn", "--engine", "rancher", "--verbose"];
 
     // Act
     const result = await run(argv, {AROLARIU_CONTAINER_ENGINE: "podman", ASPIRE_CONTAINER_RUNTIME: "podman"});

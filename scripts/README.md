@@ -47,9 +47,10 @@ Pass arguments through npm after `--`: `npm run doctor -- --quick --json`, `npm 
 group run without a subcommand (`arolariu`, `arolariu docs`, `arolariu dev`) print help and exit `0`. Slash aliases (`/h`, `/v`, `/q`, `/?`,
 …) do not exist.
 
-`npm run dev -- worktree …` is also routed to these scoped actions. There is no scoped `start` or live browser command. Preflight and
-ownership do not imply readiness; see the
-[scoped gates and acceptance checklist](../infra/Local/readme.md#scoped-aspire-gates-windows-podman).
+`npm run dev -- worktree …` also accepts these scoped actions. Global flags can be interleaved, for example
+`npm run dev -- --json worktree --log-level warn preflight --engine podman`. Use `npm run dev -- worktree --help` for the group or
+`npm run dev -- worktree stop --help` for an action. There is no scoped `start` or live browser command. Preflight and ownership do not
+imply readiness; see the [scoped gates and acceptance checklist](../infra/Local/readme.md#scoped-aspire-gates-windows-podman).
 
 ### Global flags
 

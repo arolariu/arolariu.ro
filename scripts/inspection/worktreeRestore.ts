@@ -26,10 +26,15 @@ export const worktreeRestorePaths = {
 export const worktreeRestoreRemediation =
   "For missing restore artifacts or a missing or outdated config inventory, complete an ordinary approved Setup restore (npm run setup without the refresh flag) first, then request the opt-in receipt refresh. "
   + "For unsupported MSBuild or NuGet inputs, use supported inputs before refreshing. "
+  + "The scoped profile does not support MSBuild response files. "
   + "When separately approved, refresh with npm run setup -- --refresh-worktree-restore-evidence.";
+
+/** Required for any scoped invocation that evaluates MSBuild; never pass explicit `@` response files. */
+export const worktreeNoAutoResponse = "-noAutoResponse";
 
 const MAX_INPUT = 8 * 1024 * 1024;
 const MAX_NUGET_CONFIG_FILES = 64;
+const directoryResponseFile = "Directory.Build.rsp";
 const inputs = [
   "Directory.Build.props",
   "Directory.Build.targets",
@@ -89,6 +94,33 @@ function ownedBytes(path: string, limit = MAX_INPUT): Effect.Effect<Uint8Array |
     const files = yield* ReadOnlyFiles;
     if (!samePath(yield* files.realPath(path), path) || (yield* inspectPath(path)).kind !== "file") return undefined;
     return yield* files.readBytesBounded(path, limit);
+  }).pipe(Effect.orElseSucceed(() => undefined));
+}
+
+function observeResponseFreeSdk(root: string): Effect.Effect<string | undefined, never, ReadOnlyFiles | Process> {
+  return Effect.gen(function* () {
+    const options = {cwd: root, env: dotnetEnv};
+    const selected = yield* inspectionProbeRunner.run(probes.dotnet.version(), options);
+    const version = selected.kind === "succeeded" ? selected.stdout.trim() : "";
+    if (!/^\d+\.\d+\.\d+$/u.test(version)) return undefined;
+    const listed = yield* inspectionProbeRunner.run(probes.dotnet.sdkList(), options);
+    if (listed.kind !== "succeeded") return undefined;
+    const matches = listed.stdout
+      .split(/\r?\n/u)
+      .map((line) => /^(\S+)\s+\[([^\]\r\n]+)\]$/u.exec(line.trim()))
+      .filter((match) => match?.[1] === version);
+    const base = matches[0]?.[2];
+    if (matches.length !== 1 || base === undefined || !localPath.test(base)) return undefined;
+    const sdk = win32.join(base, version);
+    const files = yield* ReadOnlyFiles;
+    const canonicalSdk = yield* files.realPath(sdk);
+    if (
+      !samePath(canonicalSdk, sdk)
+      || (yield* inspectPath(sdk)).kind !== "directory"
+      || (yield* inspectPath(win32.join(sdk, "MSBuild.rsp"))).kind !== "missing"
+    )
+      return undefined;
+    return canonicalSdk.toLowerCase();
   }).pipe(Effect.orElseSucceed(() => undefined));
 }
 
@@ -264,6 +296,7 @@ export function snapshotWorktreeRestoreInputs(
       }
     }
     for (const directory of directories) {
+      if ((yield* inspectPath(win32.join(directory, directoryResponseFile))).kind !== "missing") return undefined;
       for (const name of inputs) {
         const path = win32.join(directory, name);
         const present = yield* inspectPath(path);
@@ -281,12 +314,21 @@ export function snapshotWorktreeRestoreInputs(
           const config: unknown = yield* Effect.try(() => JSON.parse(new TextDecoder().decode(bytes)));
           if (typeof config !== "object" || config === null || Array.isArray(config) || Object.keys(config).some((key) => key !== "sdk"))
             return undefined;
+          // SDK search path overrides can select a location outside the host's SDK list.
+          if (
+            "sdk" in config
+            && (typeof config.sdk !== "object"
+              || config.sdk === null
+              || Array.isArray(config.sdk)
+              || Object.keys(config.sdk).some((key) => key.toLowerCase() === "paths"))
+          )
+            return undefined;
         }
         entries.set(win32.relative(root, path), digest(bytes));
       }
     }
     for (let dir = win32.dirname(root); dir !== root; dir = win32.dirname(dir)) {
-      for (const name of parentInputs) {
+      for (const name of [...parentInputs, directoryResponseFile]) {
         if ((yield* inspectPath(win32.join(dir, name))).kind !== "missing") return undefined;
       }
       if (dir === win32.dirname(dir)) break;
@@ -294,16 +336,15 @@ export function snapshotWorktreeRestoreInputs(
     const managed = projectPaths.filter((project) => /\.(?:csproj|fsproj|vbproj)$/iu.test(project));
     const configs = yield* configInputs(env, managed);
     if (configs === undefined) return undefined;
-    const sdk = yield* inspectionProbeRunner.run(probes.dotnet.version(), {cwd: root, env: dotnetEnv});
-    const version = sdk.kind === "succeeded" ? sdk.stdout.trim() : "";
-    if (!/^\d+\.\d+\.\d+$/u.test(version)) return undefined;
+    const sdk = yield* observeResponseFreeSdk(root);
+    if (sdk === undefined) return undefined;
     return {
       root,
       projects: managed,
       digest: digest(
         JSON.stringify([
           env.architecture,
-          version,
+          sdk,
           packageRoot,
           configs,
           [...absentHooks].sort(),
@@ -338,7 +379,7 @@ function graphDigest(input: RestoreInputs): Effect.Effect<string | undefined, ne
  */
 export function renderWorktreeRestoreEvidence(input: RestoreInputs): Effect.Effect<string | undefined, never, ReadOnlyFiles> {
   return Effect.map(graphDigest(input), (graph) =>
-    graph === undefined ? undefined : `${JSON.stringify({version: 1, checkout: input.root, inputs: input.digest, graph})}\n`,
+    graph === undefined ? undefined : `${JSON.stringify({version: 2, checkout: input.root, inputs: input.digest, graph})}\n`,
   );
 }
 
