@@ -53,7 +53,10 @@ internal static class WebsiteResources
     // A literal-IPv4 .NET probe cannot validate an exact browser-only DNS SAN. A verified
     // scope-local host/SNI health adapter must precede real launch.
     return scope.WithTelemetry(scope.WithNativeEndpoint(website, "website", "https")
-      .WithUrls(context => context.Urls.Clear())
-      .WithUrl(scope.WebsiteOrigin, "Website"));
+      .WithUrls(context =>
+      {
+        context.Urls.Clear();
+        context.Urls.Add(new ResourceUrlAnnotation { Url = scope.WebsiteOrigin, DisplayText = "Website" });
+      }));
   }
 }

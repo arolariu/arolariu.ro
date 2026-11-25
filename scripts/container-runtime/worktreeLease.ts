@@ -12,6 +12,9 @@ import {setTimeout as sleep} from "node:timers/promises";
 
 import type {WorktreeCheckout} from "./worktreePreflight.ts";
 
+/** Both persisted authority records use this schema, within the existing protected registry route. */
+export const worktreeLaunchVersion = 2;
+
 /** Named host-side ports; these are reservations, not an observation of service health. */
 export const worktreePortNames = [
   "dashboardHttps",
@@ -29,6 +32,7 @@ export const worktreePortNames = [
   "sql",
   "cosmos",
   "cosmosDataExplorer",
+  "cosmosReadiness",
   "azuriteBlob",
   "azuriteQueue",
   "azuriteTable",
@@ -186,7 +190,7 @@ function decodeLease(value: unknown, scope: string): WorktreeLease {
   if (!worktreeRecord(value)) throw new Error("Invalid lease");
   const {scopeId, runId, root, commonGitDir, engineId, phase, mode, ports, volumes, processIdentity, resourceOwnership} = value;
   if (
-    value["version"] !== 1
+    value["version"] !== worktreeLaunchVersion
     || scopeId !== scope
     || typeof root !== "string"
     || typeof commonGitDir !== "string"
@@ -221,6 +225,51 @@ function decodeLease(value: unknown, scope: string): WorktreeLease {
     ...(processIdentity === undefined ? {} : {processIdentity}),
     ...(resourceOwnership === undefined ? {} : {resourceOwnership}),
   };
+}
+
+/** Projects a descriptor from the current lease, never a caller-supplied set of names or ports. */
+export function worktreeDescriptorFor(lease: WorktreeLease) {
+  const {root, scopeId, runId, ports, volumes, mode} = lease;
+  return {
+    version: worktreeLaunchVersion,
+    root,
+    scopeId,
+    runId,
+    mode,
+    ports,
+    volumes,
+    loopbackHost: "127.0.0.1",
+    // A proposal until an owned native launch verifies browser DNS/TLS.
+    websiteOrigin: `https://wt-${scopeId}.localhost:${ports.website}`,
+  } as const;
+}
+
+async function verifyWorktreeDescriptor(directory: string, lease: WorktreeLease): Promise<void> {
+  const staged = await worktreeDirectory(join(directory, lease.runId));
+  if (lease.phase === "reserved") {
+    // A crash can leave an exclusive stage before the pending lease is published.
+    if (staged) throw new Error("Reserved run already has a stage");
+    return;
+  }
+  if (!staged) throw new Error("Missing worktree stage");
+  const descriptor = await readWorktreeJson(join(directory, lease.runId, "descriptor.json"));
+  const {ports, volumes, ...header} = worktreeDescriptorFor(lease);
+  if (
+    !worktreeRecord(descriptor)
+    || Object.keys(descriptor).length !== Object.keys(header).length + 2
+    || Object.entries(header).some(([key, value]) => descriptor[key] !== value)
+  )
+    throw new Error("Invalid worktree descriptor");
+  const stagedPorts = descriptor["ports"];
+  const stagedVolumes = descriptor["volumes"];
+  if (
+    !isWorktreePorts(stagedPorts)
+    || worktreePortNames.some((name) => stagedPorts[name] !== ports[name])
+    || !worktreeRecord(stagedVolumes)
+    || Object.keys(stagedVolumes).length !== Object.keys(volumes).length
+    || Object.entries(volumes).some(([key, value]) => stagedVolumes[key] !== value)
+  )
+    throw new Error("Worktree descriptor does not match its lease");
 }
 
 /** Tests for a specific filesystem error without suppressing other failures. */
@@ -300,7 +349,10 @@ export async function readWorktreeLease(registry: string, scope: string): Promis
   const directory = join(registry, scope);
   if (!(await worktreeDirectory(directory))) return null;
   const value = await readWorktreeJson(join(directory, "lease.json"));
-  return value === undefined ? null : decodeLease(value, scope);
+  if (value === undefined) return null;
+  const lease = decodeLease(value, scope);
+  await verifyWorktreeDescriptor(directory, lease);
+  return lease;
 }
 
 /** Read-only callers avoid reporting snapshots while any mutation is unresolved. */
@@ -322,7 +374,7 @@ export async function readStableWorktreeLease(registry: string, scope: string): 
 
 /** Updates the current lease atomically, while the registry mutation lock is held. */
 export async function writeWorktreeLease(registry: string, lease: WorktreeLease): Promise<void> {
-  const data = {...lease, version: 1};
+  const data = {...lease, version: worktreeLaunchVersion};
   decodeLease(data, lease.scopeId);
   const directory = join(registry, lease.scopeId);
   if (!(await worktreeDirectory(directory))) throw new Error("Missing scope");
@@ -361,7 +413,11 @@ async function reservePorts(registry: string, candidate: () => number, publish: 
   const unavailable = new Set<number>();
   for (const name of names.filter((entry) => scopePattern.test(entry))) {
     const lease = await readWorktreeLease(registry, name);
-    if (lease !== null) Object.values(lease.ports).forEach((port) => unavailable.add(port));
+    if (lease === null) continue;
+    for (const port of Object.values(lease.ports)) {
+      if (unavailable.has(port)) throw new Error("Existing scope allocations collide");
+      unavailable.add(port);
+    }
   }
   const sockets: Awaited<ReturnType<typeof listenWorktreePort>>[] = [];
   const allocation: Partial<WorktreePorts> = {};
@@ -442,9 +498,9 @@ export function claimWorktreeLease(
         return withWorktreeLock(registry, async () => {
           if ((await readWorktreeLease(registry, scopeId)) !== null) throw new Error("Scope already claimed");
           const directory = join(registry, scopeId);
-          if (!(await worktreeDirectory(directory))) await mkdir(directory, {mode: 0o700});
           let lease: WorktreeLease | undefined;
           await reservePorts(registry, platform.candidatePort, async (ports) => {
+            if (!(await worktreeDirectory(directory))) await mkdir(directory, {mode: 0o700});
             lease = {
               scopeId,
               runId: randomBytes(16).toString("hex"),

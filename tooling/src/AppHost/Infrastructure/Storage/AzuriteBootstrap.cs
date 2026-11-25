@@ -5,6 +5,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using global::Aspire.Hosting;
 using global::Aspire.Hosting.ApplicationModel;
+using Azure.Core.Pipeline;
 using Azure.Storage.Blobs;
 using Azure.Storage.Queues;
 using AppHost.LocalDevelopment;
@@ -50,6 +51,9 @@ internal static class AzuriteBootstrap
       "Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw==";
 
   private const string HealthCheckName = "azurite-bootstrap";
+
+  /// <summary>Optional in-process scoped SDK transport for exercising the registration without sockets.</summary>
+  internal sealed record SdkTransport(HttpPipelineTransport Transport);
 
   private static readonly Action<ILogger, Exception?> ProvisioningCompleted = LoggerMessage.Define(
     LogLevel.Information, new EventId(0), "Azurite bootstrap completed (CORS + blob container + queue creation).");
@@ -114,8 +118,13 @@ internal static class AzuriteBootstrap
     async Task ProvisionAsync(IServiceProvider services, CancellationToken ct)
     {
       ILogger logger = services.GetRequiredService<ILoggerFactory>().CreateLogger("AzuriteBootstrap");
-      var blobServiceClient = new BlobServiceClient(connectionString);
-      var queueServiceClient = new QueueServiceClient(connectionString);
+      var transport = scope is null ? null : services.GetService<SdkTransport>()?.Transport;
+      var blobServiceClient = transport is null
+        ? new BlobServiceClient(connectionString)
+        : new BlobServiceClient(connectionString, new BlobClientOptions { Transport = transport });
+      var queueServiceClient = transport is null
+        ? new QueueServiceClient(connectionString)
+        : new QueueServiceClient(connectionString, new QueueClientOptions { Transport = transport });
       await ApplyCorsWithRetryAsync(blobServiceClient, logger, scope, ct).ConfigureAwait(false);
       await EnsureContainersWithRetryAsync(
         blobServiceClient,
@@ -259,13 +268,10 @@ internal static class AzuriteBootstrap
       + $"QueueEndpoint=http://localhost:{queuePort}/{AzuriteAccountName};";
   }
 
-  internal static string CreateScopedConnectionString(WorktreeLaunchScope scope) =>
+  private static string CreateScopedConnectionString(WorktreeLaunchScope scope) =>
     $"DefaultEndpointsProtocol=http;AccountName={AzuriteAccountName};AccountKey={AzuriteAccountKey};"
     + $"BlobEndpoint={scope.BlobUrl};QueueEndpoint={scope.QueueUrl};"
     + $"TableEndpoint={scope.Url("azuriteTable", "http")}/{AzuriteAccountName};";
-
-  internal static Task ApplyScopedCorsAsync(BlobServiceClient blobs, WorktreeLaunchScope scope, CancellationToken ct) =>
-    StorageDataProvider.ApplyStartupCorsAsync(blobs, scope.WebsiteOrigin, ct);
 
   // Match the storage resource itself or any descendant (e.g. the Azurite container
   // child resource that RunAsEmulator spawns).
@@ -291,7 +297,7 @@ internal static class AzuriteBootstrap
       }
       else
       {
-        await ApplyScopedCorsAsync(blobs, scope, token).ConfigureAwait(false);
+        await StorageDataProvider.ApplyStartupCorsAsync(blobs, scope.WebsiteOrigin, token).ConfigureAwait(false);
         if (logger is not null) { ScopedCorsApplied(logger, null); }
       }
     }, logger, Task.Delay, ct);

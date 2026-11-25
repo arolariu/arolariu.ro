@@ -40,6 +40,14 @@ internal static class InfrastructureResources
         .WithEnvironment("AZURE_COSMOS_EMULATOR_ENABLE_DATA_PLANE_HTTP", "true"))
       .WithEndpoint("emulator", endpoint => endpoint.IsProxied = true)
       .WithIconName("DatabaseMultiple");
+    if (scope is not null)
+    {
+      // The pinned integration owns the probe and its target. Only the host port is leased.
+      var readiness = cosmos.Resource.Annotations.OfType<EndpointAnnotation>()
+        .SingleOrDefault(endpoint => endpoint.Name == "emulatorhealth")
+        ?? throw new InvalidOperationException("The pinned Cosmos readiness endpoint is required for scoped composition.");
+      readiness.Port = scope.Port("cosmosReadiness");
+    }
     var database = cosmos.AddCosmosDatabase(LocalDataContract.CosmosDatabaseName);
     var invoices = database.AddContainer(
       LocalDataContract.CosmosInvoicesContainer, partitionKeyPath: LocalDataContract.CosmosInvoicesPartitionKey);

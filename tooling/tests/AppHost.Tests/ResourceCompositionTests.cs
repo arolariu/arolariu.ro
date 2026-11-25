@@ -5,11 +5,9 @@ using System.Text.Json;
 using System.Xml.Linq;
 using Aspire.Hosting;
 using Aspire.Hosting.ApplicationModel;
+using Aspire.Hosting.Eventing;
 using Aspire.Hosting.JavaScript;
 using Azure.Core.Pipeline;
-using Azure.Storage.Blobs;
-using Azure.Storage.Blobs.Specialized;
-using Azure.Storage.Queues;
 using global::AppHost.Applications.Exp;
 using global::AppHost.Infrastructure;
 using global::AppHost.Infrastructure.Storage;
@@ -44,17 +42,45 @@ public sealed class ResourceCompositionTests
   }
 
   [TestMethod]
-  public void Compose_Scoped_CosmosReadinessRequiresAContractDecisionBeforeDispatch()
+  public void Compose_Scoped_MapsEveryResourceEndpointAndPreservesCosmosReadiness()
   {
-    var graph = CreateScopedGraph(ScopeFixture.Create('a', 24000));
-    var unallocated = graph.Resources
-      .SelectMany(resource => resource.Annotations.OfType<EndpointAnnotation>()
-        .Where(endpoint => !endpoint.Port.HasValue)
-        .Select(endpoint => $"{resource.Name}/{endpoint.Name}"))
-      .ToArray();
-    // The pinned integration registers a separate readiness endpoint. Do not silently
-    // assign a twentieth host port or replace the existing readiness mechanism.
-    CollectionAssert.AreEqual(new[] { "cosmos/emulatorhealth" }, unallocated);
+    var fixture = ScopeFixture.Create('a', 24000);
+    var graph = CreateScopedGraph(fixture);
+    var actual = graph.Resources.SelectMany(resource => resource.Annotations.OfType<EndpointAnnotation>()
+      .Select(endpoint => (Key: $"{resource.Name}/{endpoint.Name}", Endpoint: endpoint)))
+      .ToDictionary(entry => entry.Key, entry => entry.Endpoint, StringComparer.Ordinal);
+    (string Endpoint, string Port, string? NativeScheme)[] expected =
+    [
+      ("website/http", "website", "https"), ("api/http", "api", "https"),
+      ("exp/http", "exp", "http"), ("cv/http", "cv", "http"), ("docs/http", "docs", "http"),
+      ("status/http", "status", "http"), ("local-identities/http", "localIdentity", "http"),
+      ("mssql/tcp", "sql", null), ("cosmos/emulator", "cosmos", null),
+      ("cosmos/data-explorer", "cosmosDataExplorer", null), ("cosmos/emulatorhealth", "cosmosReadiness", null),
+      ("storage/blob", "azuriteBlob", null), ("storage/queue", "azuriteQueue", null),
+      ("storage/table", "azuriteTable", null), ("redis/tcp", "redis", null),
+    ];
+    CollectionAssert.AreEquivalent(expected.Select(entry => entry.Endpoint).ToArray(), actual.Keys.ToArray());
+    foreach (var (name, key, nativeScheme) in expected)
+    {
+      EndpointAnnotation endpoint = actual[name];
+      Assert.AreEqual(fixture.Ports[key], endpoint.Port, name);
+      if (nativeScheme is null) continue;
+      Assert.AreEqual("127.0.0.1", endpoint.TargetHost, name);
+      Assert.AreEqual(endpoint.Port, endpoint.TargetPort, name);
+      Assert.AreEqual(nativeScheme, endpoint.UriScheme, name);
+      Assert.IsFalse(endpoint.IsProxied, name);
+    }
+    var legacyCosmos = CreateGraph().Infrastructure.Cosmos.Resource;
+    var legacyReadiness = legacyCosmos.Annotations.OfType<EndpointAnnotation>().Single(endpoint => endpoint.Name == "emulatorhealth");
+    var readiness = actual["cosmos/emulatorhealth"];
+    Assert.IsNull(legacyReadiness.Port);
+    Assert.AreEqual(legacyReadiness.TargetPort, readiness.TargetPort);
+    Assert.AreEqual(legacyReadiness.TargetHost, readiness.TargetHost);
+    Assert.AreEqual(legacyReadiness.UriScheme, readiness.UriScheme);
+    Assert.AreEqual(legacyReadiness.IsProxied, readiness.IsProxied);
+    CollectionAssert.AreEquivalent(legacyCosmos.Annotations.OfType<HealthCheckAnnotation>().Select(item => item.Key).ToArray(),
+      graph.Resources.Single(resource => resource.Name == "cosmos").Annotations.OfType<HealthCheckAnnotation>()
+        .Select(item => item.Key).ToArray());
   }
 
   [TestMethod]
@@ -98,8 +124,6 @@ public sealed class ResourceCompositionTests
     Assert.IsFalse(graph.Resources.Any(resource => resource.Name.Contains("install", StringComparison.Ordinal)));
     Assert.IsFalse(graph.Resources.Any(resource => resource.Annotations.OfType<ResourceCommandAnnotation>()
       .Any(command => command.Name == "reset-local-data")));
-    Assert.IsTrue(graph.Resources.SelectMany(resource => resource.Annotations.OfType<EndpointAnnotation>())
-      .All(endpoint => !endpoint.IsExternal));
     var arguments = await ResolveArgumentsAsync(Find("website"));
     CollectionAssert.Contains(arguments, "--experimental-https-cert");
     CollectionAssert.Contains(arguments, fixture.Runtime.WebsiteCertificatePath);
@@ -107,6 +131,100 @@ public sealed class ResourceCompositionTests
     Assert.IsFalse(arguments.OfType<string>().Any(arg => arg.Contains("inspect", StringComparison.Ordinal)));
     Assert.IsTrue(new Uri((string)website["API_URL"]).IsLoopback);
     Assert.IsFalse(new Uri((string)website["SITE_URL"]).IsLoopback);
+
+    var urls = new List<ResourceUrlAnnotation> { new() { Url = "https://127.0.0.1:24005" } };
+    var urlContext = new ResourceUrlsCallbackContext(graph.ExecutionContext, Find("website"), urls, TestContext.CancellationToken);
+    foreach (var callback in Find("website").Annotations.OfType<ResourceUrlsCallbackAnnotation>())
+      await callback.Callback(urlContext);
+    CollectionAssert.AreEqual(new[] { fixture.WebsiteOrigin }, urls.Select(url => url.Url).ToArray());
+
+    void AssertCompletion(string child, string dependency)
+    {
+      var wait = Find(child).Annotations.OfType<WaitAnnotation>().Single(annotation => annotation.Resource.Name == dependency);
+      Assert.AreEqual(WaitType.WaitForCompletion, wait.WaitType);
+      Assert.AreEqual(0, wait.ExitCode);
+    }
+    void AssertHealth(string child, params string[] dependencies)
+    {
+      foreach (string dependency in dependencies)
+      {
+        var wait = Find(child).Annotations.OfType<WaitAnnotation>().Single(annotation => annotation.Resource.Name == dependency);
+        Assert.AreEqual(WaitType.WaitUntilHealthy, wait.WaitType);
+      }
+    }
+    AssertHealth("local-bootstrap", "invoices", "merchants", "blobs", "queues");
+    AssertHealth("exp", "arolariu-sql", "cosmos", "storage");
+    AssertHealth("local-identities", "exp");
+    AssertHealth("api", "exp", "local-identities");
+    AssertHealth("website", "api");
+    AssertCompletion("exp", "local-bootstrap");
+    AssertCompletion("api", "local-bootstrap");
+  }
+
+  [TestMethod]
+  public async Task Compose_Scoped_RegisteredStartupEventBlocksWithoutStartingHost()
+  {
+    var graph = CreateScopedGraph(ScopeFixture.Create('a', 24000));
+    // Aspire's prior subscriber names model resources via validated options. These placeholders
+    // are never executed: only the before-start event is published, not an application start.
+    graph.Configuration["DcpPublisher:CliPath"] = Path.Combine(HostDirectory(), "not-a-dcp-binary");
+    graph.Configuration["DcpPublisher:DashboardPath"] = Path.Combine(HostDirectory(), "not-a-dashboard-binary");
+    using ServiceProvider services = graph.Services.BuildServiceProvider();
+    var evt = new BeforeStartEvent(services, new DistributedApplicationModel(graph.Resources));
+    var error = await Assert.ThrowsExactlyAsync<InvalidOperationException>(() => graph.Eventing.PublishAsync(
+      evt, EventDispatchBehavior.BlockingSequential, TestContext.CancellationToken));
+    Assert.AreEqual(WorktreeLaunchScope.LaunchBlocked, error.Message);
+  }
+
+  [TestMethod]
+  public async Task Compose_ScopedEmulatorParameters_IgnoreAmbientDefaults()
+  {
+    var fixture = ScopeFixture.Create('a', 24000);
+    var graph = CreateScopedGraph(fixture);
+    ParameterResource Parameter(string name) => graph.Resources.OfType<ParameterResource>().Single(resource => resource.Name == name);
+    Assert.IsTrue(Parameter("sql-password").Secret);
+    Assert.IsTrue(Parameter("redis-password").Secret);
+    Assert.IsTrue(await Parameter("sql-password").GetValueAsync(TestContext.CancellationToken) == fixture.Runtime.ReadSqlPassword());
+    Assert.IsTrue(await Parameter("redis-password").GetValueAsync(TestContext.CancellationToken) == fixture.Runtime.ReadRedisPassword());
+    var noSql = fixture with { Runtime = fixture.Runtime with { ReadSqlPassword = () => "" } };
+    var noRedis = fixture with { Runtime = fixture.Runtime with { ReadRedisPassword = () => "" } };
+    Assert.ThrowsExactly<InvalidOperationException>(() => CreateScopedGraph(noSql));
+    Assert.ThrowsExactly<InvalidOperationException>(() => CreateScopedGraph(noRedis));
+  }
+
+  [TestMethod]
+  [DataRow("env")]
+  [DataRow("arg")]
+  [DataRow("assignment")]
+  public void Startup_ScopedMarker_NeverReachesLegacy(string marker)
+  {
+    string[] args = marker switch
+    {
+      "arg" => ["--worktree-descriptor", "fixture.json"],
+      "assignment" => ["--worktree-descriptor=fixture.json"],
+      _ => [],
+    };
+    var error = Assert.ThrowsExactly<InvalidOperationException>(() =>
+      AppHostStartup.Run(args, marker == "env" ? "fixture.json" : null, _ => Assert.Fail("Legacy startup reached.")));
+    Assert.AreEqual(WorktreeLaunchScope.LaunchBlocked, error.Message);
+  }
+
+  [TestMethod]
+  public void Startup_NoMarker_ForwardsArgumentsToLegacy()
+  {
+    string[] args = ["--environment", "Development"];
+    string[]? forwarded = null;
+    AppHostStartup.Run(args, null, values => forwarded = values);
+    Assert.AreSame(args, forwarded);
+  }
+
+  [TestMethod]
+  public void Load_MissingVerifiedReceipt_IsBlocked()
+  {
+    var fixture = ScopeFixture.Create('a', 24000);
+    var error = Assert.ThrowsExactly<InvalidOperationException>(() =>
+      WorktreeLaunchScope.Load(fixture.Path, fixture.Root, (_, _) => null));
+    Assert.AreEqual(WorktreeLaunchScope.LaunchBlocked, error.Message);
   }
 
   [TestMethod]
@@ -118,46 +236,57 @@ public sealed class ResourceCompositionTests
   }
 
   [TestMethod]
-  public async Task ScopedStorage_UploadAndCorsUseTheSameScope()
+  public async Task ScopedStorage_RegisteredBootstrapUsesComposedWebsiteAndScopedTargets()
   {
-    WorktreeLaunchScope scope = ScopeFixture.Create('a', 24000).Load();
-    using var fixture = new StorageTransport();
-    using var http = new HttpClient(fixture);
-    string connection = AzuriteBootstrap.CreateScopedConnectionString(scope);
-    var service = new BlobServiceClient(connection, new BlobClientOptions { Transport = new HttpClientTransport(http) });
-    var queue = new QueueServiceClient(connection, new QueueClientOptions { Transport = new HttpClientTransport(http) });
-    var config = ExpResources.CreateScopedEndpointOverrides("synthetic-only", scope);
-    Assert.AreEqual("http://127.0.0.1:24015/devstoreaccount1", config["Endpoints:Storage:Blob"]);
-    Assert.AreEqual(config["Endpoints:Storage:Blob"], service.Uri.AbsoluteUri);
-    Assert.AreEqual("http://127.0.0.1:24016/devstoreaccount1", config["Endpoints:Storage:Queue"]);
-    Assert.AreEqual(config["Endpoints:Storage:Queue"], queue.Uri.AbsoluteUri);
-    Assert.AreEqual("https://127.0.0.1:24006", config["Endpoints:Service:Api"]);
-    Assert.AreEqual("", config["Endpoints:Observability:Telemetry"]);
-    StringAssert.Contains(config["Endpoints:Database:SQL"], "127.0.0.1,24012");
-    StringAssert.Contains(config["Endpoints:Database:NoSQL"], "http://127.0.0.1:24013/");
-
+    var fixture = ScopeFixture.Create('a', 24000);
+    fixture.Ports["azuriteQueue"] = 24789; // A separate lease value, not blob + 1.
+    var graph = CreateScopedGraph(fixture);
+    using var transport = new StorageTransport();
+    using var http = new HttpClient(transport);
+    graph.Services.AddSingleton(new AzuriteBootstrap.SdkTransport(new HttpClientTransport(http)));
+    using ServiceProvider services = graph.Services.BuildServiceProvider();
     CancellationToken token = TestContext.CancellationToken;
-    await AzuriteBootstrap.ApplyScopedCorsAsync(service, scope, token);
-    var blob = service.GetBlobContainerClient("invoices").GetBlockBlobClient("scan.png");
-    using Stream payload = BinaryData.FromString("synthetic").ToStream();
-    await blob.UploadAsync(payload, cancellationToken: token);
-    Assert.AreEqual("http://127.0.0.1:24015/devstoreaccount1/invoices/scan.png", blob.Uri.AbsoluteUri);
-    Assert.AreEqual(blob.Uri, fixture.UploadTarget);
-    Assert.AreEqual(scope.WebsiteOrigin, fixture.AllowedOrigin);
+    var storage = graph.Resources.Single(resource => resource.Name == "storage");
+    // The AppHost bootstrap also observes its descendants. This leaves the unrelated pinned
+    // integration callback (which requires allocated native endpoints) out of the synthetic event.
+    var ready = new ResourceReadyEvent(new StorageChild("synthetic-storage-child", storage), services);
+    await graph.Eventing.PublishAsync(ready, EventDispatchBehavior.BlockingSequential, token);
+    var check = services.GetRequiredService<IOptions<HealthCheckServiceOptions>>().Value.Registrations
+      .Single(item => item.Name == "azurite-bootstrap").Factory(services);
+    Assert.AreEqual(HealthStatus.Healthy, (await check.CheckHealthAsync(new HealthCheckContext(), token)).Status);
+    var website = await ResolveEnvironmentAsync(graph, graph.Resources.Single(resource => resource.Name == "website"));
+    var config = ExpResources.CreateScopedEndpointOverrides("synthetic-only", fixture.Load());
+    var blob = (string)website["STORAGE_BLOB_ENDPOINT"];
+    Assert.AreEqual(config["Endpoints:Storage:Blob"], blob);
+    Assert.AreEqual("http://127.0.0.1:24789/devstoreaccount1", config["Endpoints:Storage:Queue"]);
+    Assert.AreEqual(website["SITE_URL"], transport.AllowedOrigin);
+    CollectionAssert.AreEquivalent(new[]
+    {
+      ("GET", $"{blob}/", "comp=properties&restype=service"),
+      ("PUT", $"{blob}/", "comp=properties&restype=service"),
+      ("PUT", $"{blob}/invoices", "restype=container"),
+      ("PUT", $"{config["Endpoints:Storage:Queue"]}/invoice-analysis", ""),
+    }, transport.Requests.ToArray(), $"Observed SDK requests: {string.Join(", ", transport.Requests)}");
   }
 
   public TestContext TestContext { get; set; } = null!;
 
+  private sealed class StorageChild(string name, IResource parent) : Resource(name), IResourceWithParent
+  {
+    public IResource Parent { get; } = parent;
+  }
+
   private sealed class StorageTransport : HttpMessageHandler
   {
-    internal Uri? UploadTarget { get; private set; }
+    internal List<(string Method, string Url, string Query)> Requests { get; } = [];
     internal string? AllowedOrigin { get; private set; }
 
     protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
     {
       var target = request.RequestUri!;
-      Assert.AreEqual("127.0.0.1", target.Host);
-      Assert.AreEqual(24015, target.Port);
+      string query = string.Join('&', target.Query.TrimStart('?').Split('&', StringSplitOptions.RemoveEmptyEntries)
+        .Order(StringComparer.Ordinal));
+      Requests.Add((request.Method.Method, target.GetLeftPart(UriPartial.Path), query));
       if (target.Query.Contains("comp=properties", StringComparison.Ordinal))
       {
         if (request.Method == HttpMethod.Get)
@@ -173,8 +302,6 @@ public sealed class ResourceCompositionTests
         AllowedOrigin = cors.Descendants("AllowedOrigins").Single().Value;
         return new(System.Net.HttpStatusCode.Accepted);
       }
-      Assert.AreEqual(HttpMethod.Put, request.Method);
-      UploadTarget = target;
       return new(System.Net.HttpStatusCode.Created)
       {
         Headers = { ETag = new System.Net.Http.Headers.EntityTagHeaderValue("\"synthetic\"") },
@@ -217,7 +344,8 @@ public sealed class ResourceCompositionTests
     {
       RegistryDirectory = Path.Combine(fixture.Root, "other-registry"),
     }));
-    Assert.ThrowsExactly<InvalidOperationException>(() => (fixture with { Version = 2 }).Load());
+    Assert.ThrowsExactly<InvalidOperationException>(() => (fixture with { Version = 1 }).Load());
+    Assert.ThrowsExactly<InvalidOperationException>(() => fixture.Load(change: evidence => evidence with { LeaseVersion = 1 }));
     Assert.ThrowsExactly<InvalidOperationException>(() => fixture.Load(change: evidence => evidence with
     {
       LeasePorts = ScopeFixture.Create('a', 25000).Ports,
@@ -225,14 +353,21 @@ public sealed class ResourceCompositionTests
   }
 
   [TestMethod]
-  public void Load_IncompleteOrOverlappingV1Ports_RejectsScope()
+  [DataRow("cosmosDataExplorer")]
+  [DataRow("cosmosReadiness")]
+  [DataRow("azuriteTable")]
+  public void Load_MissingV2Port_RejectsScope(string name)
   {
     var incomplete = ScopeFixture.Create('a', 24000);
-    incomplete.Ports.Remove("cosmosDataExplorer");
-    incomplete.Ports.Remove("azuriteTable");
+    incomplete.Ports.Remove(name);
     Assert.ThrowsExactly<InvalidOperationException>(() => incomplete.Load());
+  }
+
+  [TestMethod]
+  public void Load_CollidingV2Ports_RejectsScope()
+  {
     var overlapping = ScopeFixture.Create('a', 24000);
-    overlapping.Ports["azuriteQueue"] = overlapping.Ports["azuriteBlob"];
+    overlapping.Ports["cosmosReadiness"] = overlapping.Ports["cosmos"];
     Assert.ThrowsExactly<InvalidOperationException>(() => overlapping.Load());
   }
 
@@ -263,7 +398,7 @@ public sealed class ResourceCompositionTests
 
   private sealed record ScopeFixture(string Root, string ScopeId, string RunId, string Registry,
     Dictionary<string, int> Ports, Dictionary<string, string> Volumes, string WebsiteOrigin,
-    WorktreeRuntimeInputs Runtime, int Version = 1)
+    WorktreeRuntimeInputs Runtime, int Version = 2)
   {
     internal string Path => System.IO.Path.Combine(Registry, ScopeId, RunId, "descriptor.json");
 
@@ -276,7 +411,7 @@ public sealed class ResourceCompositionTests
       string runtime = System.IO.Path.Combine(registry, scope, run, "runtime");
       string[] keys = ["dashboardHttps", "dashboardHttp", "dashboardOtlpGrpc", "dashboardOtlpHttp", "resourceService",
         "website", "api", "exp", "cv", "docs", "status", "localIdentity", "sql", "cosmos", "cosmosDataExplorer",
-        "azuriteBlob", "azuriteQueue", "azuriteTable", "redis"];
+        "azuriteBlob", "azuriteQueue", "azuriteTable", "redis", "cosmosReadiness"];
       return new(root, scope, run, registry,
         keys.Select((name, index) => (name, port: firstPort + index)).ToDictionary(item => item.name, item => item.port),
         new()
@@ -307,7 +442,7 @@ public sealed class ResourceCompositionTests
         volumes = Volumes,
         websiteOrigin = WebsiteOrigin,
       });
-      var stage = new VerifiedWorktreeStage(descriptor, Registry, Root, ScopeId, RunId, "podman", new('e', 64),
+      var stage = new VerifiedWorktreeStage(descriptor, 2, Registry, Root, ScopeId, RunId, "podman", new('e', 64),
         Ports, Volumes, Runtime);
       return WorktreeLaunchScope.Load(Path, expectedRoot ?? Root, (_, _) => change?.Invoke(stage) ?? stage);
     }

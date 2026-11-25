@@ -21,7 +21,7 @@ internal sealed record WorktreeRuntimeInputs(
 
 /// <summary>
 /// Receipt from an internal supervisor boundary, not a receipt that can be loaded from an arbitrary file.
-/// The verifier must attest the canonical, protected registry route, current pending lease on the pinned
+/// The verifier must attest the canonical, protected registry route, current pending v2 lease on the pinned
 /// Podman engine, and exact descriptor bytes read from that run. It must positively verify storage
 /// ownership on that engine, not merely repeat its proposed names. Runtime evidence must attest
 /// existing prepared dependencies, validated scope-owned exp input (including the derived endpoints),
@@ -31,6 +31,7 @@ internal sealed record WorktreeRuntimeInputs(
 /// </summary>
 internal sealed record VerifiedWorktreeStage(
   ReadOnlyMemory<byte> Descriptor,
+  int LeaseVersion,
   string RegistryDirectory,
   string Root,
   string ScopeId,
@@ -41,12 +42,13 @@ internal sealed record VerifiedWorktreeStage(
   IReadOnlyDictionary<string, string>? OwnedVolumes,
   WorktreeRuntimeInputs? Runtime);
 
-/// <summary>A validated descriptor-v1 graph input. Not permission to start processes or mount volumes.</summary>
+/// <summary>A validated descriptor-v2 graph input. Not permission to start processes or mount volumes.</summary>
 internal sealed class WorktreeLaunchScope
 {
   internal const string DescriptorEnvironmentVariable = "AROLARIU_WORKTREE_DESCRIPTOR";
   internal const string LaunchBlocked = "Scoped AppHost execution requires a verified native launch adapter.";
   internal const string LoopbackHost = "127.0.0.1";
+  private const int LaunchVersion = 2;
 
   private static readonly string[] DescriptorKeys =
     ["version", "root", "scopeId", "runId", "mode", "loopbackHost", "ports", "volumes", "websiteOrigin"];
@@ -55,7 +57,7 @@ internal sealed class WorktreeLaunchScope
   [
     "dashboardHttps", "dashboardHttp", "dashboardOtlpGrpc", "dashboardOtlpHttp", "resourceService",
     "website", "api", "exp", "cv", "docs", "status", "localIdentity", "sql", "cosmos",
-    "cosmosDataExplorer", "azuriteBlob", "azuriteQueue", "azuriteTable", "redis",
+    "cosmosDataExplorer", "cosmosReadiness", "azuriteBlob", "azuriteQueue", "azuriteTable", "redis",
   ];
 
   private static readonly string[] TelemetrySignals = ["TRACES", "METRICS", "LOGS"];
@@ -82,14 +84,14 @@ internal sealed class WorktreeLaunchScope
 
   /// <summary>Direct startup has no verifier. Never open a caller-supplied file or fall back to the legacy graph.</summary>
   internal static WorktreeLaunchScope Load(string descriptorPath, string expectedWorktreeRoot) =>
-    Load(descriptorPath, expectedWorktreeRoot, static (_, _) => throw new InvalidOperationException(LaunchBlocked));
+    Load(descriptorPath, expectedWorktreeRoot, static (_, _) => null);
 
   internal static WorktreeLaunchScope Load(string descriptorPath, string expectedWorktreeRoot,
-    Func<string, string, VerifiedWorktreeStage> verify)
+    Func<string, string, VerifiedWorktreeStage?> verify)
   {
     ArgumentNullException.ThrowIfNull(verify);
-    VerifiedWorktreeStage stage = verify(descriptorPath, expectedWorktreeRoot);
-    Ensure(stage.Engine == "podman" && IsLowerHex(stage.EnginePin, 64)
+    VerifiedWorktreeStage stage = verify(descriptorPath, expectedWorktreeRoot) ?? throw new InvalidOperationException(LaunchBlocked);
+    Ensure(stage.LeaseVersion == LaunchVersion && stage.Engine == "podman" && IsLowerHex(stage.EnginePin, 64)
       && IsLowerHex(stage.ScopeId, 32) && IsLowerHex(stage.RunId, 32));
     Ensure(SameCanonicalPath(expectedWorktreeRoot, stage.Root) && IsCanonicalPath(stage.RegistryDirectory));
     string runDirectory = Path.Combine(stage.RegistryDirectory, stage.ScopeId, stage.RunId);
@@ -102,7 +104,7 @@ internal sealed class WorktreeLaunchScope
       using JsonDocument document = JsonDocument.Parse(stage.Descriptor);
       JsonElement descriptor = document.RootElement;
       Ensure(HasKeys(descriptor, DescriptorKeys));
-      Ensure(descriptor.GetProperty("version").GetInt32() == 1
+      Ensure(descriptor.GetProperty("version").GetInt32() == LaunchVersion
         && SameCanonicalPath(descriptor.GetProperty("root").GetString(), stage.Root)
         && descriptor.GetProperty("mode").GetString() == "aspire"
         && descriptor.GetProperty("loopbackHost").GetString() == LoopbackHost
@@ -159,7 +161,6 @@ internal sealed class WorktreeLaunchScope
     Ensure(SameCanonicalPath(layoutRoot, Root));
     // This is a model, not an executable launch path. Even a fixture or an internal caller
     // holding a valid scope cannot accidentally dispatch it through builder.Build().Run().
-    // In particular, the pinned Cosmos integration's separate health endpoint is not in v1.
     builder.Eventing.Subscribe<BeforeStartEvent>(static (_, _) =>
       Task.FromException(new InvalidOperationException(LaunchBlocked)));
     builder.Configuration["urls"] = $"{Url("dashboardHttps", "https")};{Url("dashboardHttp", "http")}";

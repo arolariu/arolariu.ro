@@ -20,6 +20,7 @@ import {
   sameWorktreeProcess,
   withWorktreeLock,
   WorktreeLaunchError,
+  worktreeDescriptorFor,
   type WorktreeContainerIdentity,
   type WorktreeLaunchPlatform,
   type WorktreeLease,
@@ -101,19 +102,7 @@ export function beginWorktreeLaunch(lease: WorktreeLease): Effect.Effect<Worktre
     await mkdir(directory, {mode: 0o700}); // Exclusive; do not adopt a pre-existing run directory.
     await mkdir(build, {mode: 0o700});
     await mkdir(runtime, {mode: 0o700});
-    const {root, scopeId, runId, ports, volumes, mode} = current;
-    await publishWorktreeJson(descriptor, {
-      version: 1,
-      root,
-      scopeId,
-      runId,
-      mode,
-      ports,
-      volumes,
-      loopbackHost: "127.0.0.1",
-      // Proposed binding only. Task 4/5 must prove browser/DNS/TLS before publishing any URL.
-      websiteOrigin: `https://wt-${scopeId}.localhost:${ports.website}`,
-    });
+    await publishWorktreeJson(descriptor, worktreeDescriptorFor(current));
     await writeWorktreeLease(registry, {...current, phase: "pending"});
     return {directory, descriptor, build, runtime};
   });
