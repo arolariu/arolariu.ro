@@ -21,7 +21,7 @@ import {LocalBlobStorageLive, type LocalBlobStorage} from "../../container-runti
 import {runSelfhost} from "../../container-runtime/selfhost.ts";
 import type {ContainerEngineInput, SelfhostAction, SelfhostInput} from "../../container-runtime/types.ts";
 import {inspectWorktreeLaunch, stopWorktreeLaunch} from "../../container-runtime/worktreeAspire.ts";
-import {isWorktreeRunId, readWorktreeLaunch, WorktreePlatform} from "../../container-runtime/worktreeLease.ts";
+import {isWorktreeRunId, readWorktreeLaunch, type WorktreeLaunchPlatform, WorktreePlatform} from "../../container-runtime/worktreeLease.ts";
 import {localWorktreePlatform} from "../../container-runtime/worktreePlatform.ts";
 import {inspectWorktreeAspire} from "../../container-runtime/worktreePreflight.ts";
 import {ReportedFailure} from "../../platform/exit.ts";
@@ -36,12 +36,14 @@ const selfhostActions = ["start", "stop", "logs"] as const satisfies readonly Se
 export interface DevCommandOptions {
   /** Blob storage layer `dev selfhost` provisions Azurite through; defaults to {@link LocalBlobStorageLive}. */
   readonly localBlobStorage?: Layer.Layer<LocalBlobStorage>;
+  /** OS/engine boundary for scoped status and stop; defaults to {@link localWorktreePlatform}. */
+  readonly worktreePlatform?: Effect.Effect<WorktreeLaunchPlatform>;
 }
 
 /**
  * Builds the `dev` command group.
  *
- * @param options - Optional blob storage layer override; tests pass a recording layer.
+ * @param options - Optional blob storage and scoped lifecycle boundary overrides.
  * @returns The `dev` group with its Aspire, Selfhost and worktree subcommands.
  */
 export function makeDevCommand(options: DevCommandOptions = {}): CliSubcommand {
@@ -105,7 +107,7 @@ export function makeDevCommand(options: DevCommandOptions = {}): CliSubcommand {
           const runId = expectedRun === undefined ? undefined : Option.getOrUndefined(expectedRun);
           if (runId !== undefined && !isWorktreeRunId(runId))
             return {status: "blocked", reason: "The expected run ID is invalid."} as const;
-          const platform = yield* localWorktreePlatform();
+          const platform = yield* options.worktreePlatform ?? localWorktreePlatform();
           const checkout = yield* platform.checkout;
           if (checkout === undefined)
             return {status: "blocked", reason: "Run from the current canonical Windows linked worktree."} as const;

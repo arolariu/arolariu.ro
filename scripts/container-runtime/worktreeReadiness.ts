@@ -39,18 +39,35 @@ interface WorktreeProbeTarget {
   readonly origins: Readonly<Record<Endpoint, string>>;
 }
 
+type HealthPhase = "initial-health" | "final-health";
+type EvidencePhase = HealthPhase | SmokeName;
+type EvidenceAcquisition<Phase extends EvidencePhase = EvidencePhase> = Readonly<{phase: Phase}>;
+
 /**
  * Trusted, read-only dependency, intentionally not implemented for native Aspire.
- * Each call must freshly verify the selected run, actual connected listener and transport before
- * returning evidence. A response body, non-owned listener, origin string, or replay is not proof.
+ * The gate issues a one-use, in-process acquisition object for exactly one phase of one attempt.
+ * Start a fresh acquisition only after receiving it; return the same object as `acquisition` on
+ * the run envelope and on every listener and endpoint receipt. Never replay prior samples,
+ * relabel cached data with a new acquisition, or accept a token echoed by the target as proof.
+ * Verify the selected run, actual listener and transport independently for each acquisition.
  * Calls must honor cancellation, not follow redirects or contact foreign origins, and never log
  * raw response bodies, secrets, or provider errors. This is not an interface for arbitrary commands.
  */
 export interface WorktreeReadinessSource {
-  /** Run receipt, launcher-exit proof, AppHost states, independently verified owned listeners, and actual endpoint connections. */
-  readonly observe: (target: WorktreeProbeTarget, signal: AbortSignal) => Promise<unknown>;
+  /**
+   * Run receipt with fresh AppHost states and still-valid launcher-exit proof. Report independent
+   * listener receipts for the exact address, port and process instance, not inferred from HTTP.
+   * Dashboard evidence is a direct strict HTTPS handshake to the exact token-free authority,
+   * not an HTTP response. Other endpoints must be exact, non-redirected HTTP responses.
+   */
+  readonly observe: (target: WorktreeProbeTarget, acquisition: EvidenceAcquisition<HealthPhase>, signal: AbortSignal) => Promise<unknown>;
   /** Run receipt, the fixed probe name, and content assertions plus connection proofs (not response bodies). */
-  readonly smoke: (name: SmokeName, target: WorktreeProbeTarget, signal: AbortSignal) => Promise<unknown>;
+  readonly smoke: (
+    name: SmokeName,
+    target: WorktreeProbeTarget,
+    acquisition: EvidenceAcquisition<SmokeName>,
+    signal: AbortSignal,
+  ) => Promise<unknown>;
 }
 
 const blockedReasons = {
@@ -81,6 +98,8 @@ function blocked(stage: BlockedStage): BlockedHandoff {
 }
 
 interface VerifiedConnection {
+  readonly address: string;
+  readonly port: number;
   readonly listener: WorktreeProcessIdentity;
   readonly leafSha256: string | null;
 }
@@ -101,33 +120,69 @@ function probeTarget(run: OwnedWorktreeAspire): WorktreeProbeTarget {
   });
 }
 
-function receiptMatches(raw: unknown, run: OwnedWorktreeAspire): raw is Readonly<Record<string, unknown>> {
-  return worktreeRecord(raw) && matchesWorktreeReceipt(raw, run, run.processIdentity);
+function receiptMatches(
+  raw: unknown,
+  run: OwnedWorktreeAspire,
+  acquisition: EvidenceAcquisition,
+): raw is Readonly<Record<string, unknown>> {
+  return worktreeRecord(raw) && raw["acquisition"] === acquisition && matchesWorktreeReceipt(raw, run, run.processIdentity);
 }
 
-function verifyConnection(raw: unknown, run: OwnedWorktreeAspire, origin: string, path: string | null): VerifiedConnection | null {
-  if (!receiptMatches(raw, run)) return null;
-  const {url, responseUrl, status, redirected, remoteAddress, remotePort, listener, tls} = raw;
+function verifyConnection(
+  raw: unknown,
+  run: OwnedWorktreeAspire,
+  acquisition: EvidenceAcquisition,
+  origin: string,
+  path: string | null,
+): VerifiedConnection | null {
+  if (!receiptMatches(raw, run, acquisition)) return null;
+  const {kind, url, responseUrl, status, redirected, remoteAddress, remotePort, listener, tls} = raw;
   const {hostname, port, protocol} = new URL(origin);
-  if (url !== origin + (path ?? "") || remoteAddress !== "127.0.0.1" || remotePort !== Number(port) || !isWorktreeProcessIdentity(listener))
+  if (redirected !== false || remoteAddress !== "127.0.0.1" || remotePort !== Number(port) || !isWorktreeProcessIdentity(listener))
     return null;
-  if (path !== null && (redirected !== false || responseUrl !== url || status !== 200)) return null;
+  if (path === null) {
+    if (
+      protocol !== "https:"
+      || kind !== "direct-https-handshake"
+      || raw["authority"] !== origin
+      || url !== undefined
+      || responseUrl !== undefined
+      || status !== undefined
+    )
+      return null;
+  } else if (kind !== "http-response" || url !== origin + path || responseUrl !== url || status !== 200) return null;
   // Snapshot only the verified identity fields; the adapter retains no mutable reference into our baseline.
-  const identity = {pid: listener.pid, started: listener.started, image: listener.image};
-  if (protocol === "http:") return tls === null ? {listener: identity, leafSha256: null} : null;
+  const socket = {
+    address: remoteAddress,
+    port: remotePort,
+    listener: {pid: listener.pid, started: listener.started, image: listener.image},
+  };
+  if (protocol === "http:") return tls === null ? {...socket, leafSha256: null} : null;
   if (!worktreeRecord(tls) || tls["verified"] !== true || tls["exactSan"] !== hostname) return null;
   const leafSha256 = tls["leafSha256"];
-  return typeof leafSha256 === "string" && /^[a-f0-9]{64}$/u.test(leafSha256) ? {listener: identity, leafSha256} : null;
+  return typeof leafSha256 === "string" && /^[a-f0-9]{64}$/u.test(leafSha256) ? {...socket, leafSha256} : null;
 }
 
 type Connections = ReadonlyMap<Endpoint, VerifiedConnection>;
 
 function sameConnection(next: VerifiedConnection, baseline: VerifiedConnection | undefined): boolean {
-  return baseline !== undefined && sameWorktreeProcess(baseline.listener, next.listener) && baseline.leafSha256 === next.leafSha256;
+  return (
+    baseline !== undefined
+    && baseline.address === next.address
+    && baseline.port === next.port
+    && sameWorktreeProcess(baseline.listener, next.listener)
+    && baseline.leafSha256 === next.leafSha256
+  );
 }
 
-function verifyHealth(raw: unknown, run: OwnedWorktreeAspire, target: WorktreeProbeTarget, baseline?: Connections): Connections | null {
-  if (!receiptMatches(raw, run)) return null;
+function verifyHealth(
+  raw: unknown,
+  run: OwnedWorktreeAspire,
+  target: WorktreeProbeTarget,
+  acquisition: EvidenceAcquisition<HealthPhase>,
+  baseline?: Connections,
+): Connections | null {
+  if (!receiptMatches(raw, run, acquisition)) return null;
   const {survivedLauncherExit, bootstrapExitCode, resources, listeners, endpoints} = raw;
   if (
     survivedLauncherExit !== true
@@ -140,12 +195,15 @@ function verifyHealth(raw: unknown, run: OwnedWorktreeAspire, target: WorktreePr
     return null;
   const connections = new Map<Endpoint, VerifiedConnection>();
   for (const [name, path] of healthRoutes) {
-    const connection = verifyConnection(endpoints[name], run, target.origins[name], path);
+    const connection = verifyConnection(endpoints[name], run, acquisition, target.origins[name], path);
     const ownedListener = listeners[name];
     if (
       !connection
-      || !isWorktreeProcessIdentity(ownedListener)
-      || !sameWorktreeProcess(ownedListener, connection.listener)
+      || !receiptMatches(ownedListener, run, acquisition)
+      || ownedListener["address"] !== connection.address
+      || ownedListener["port"] !== connection.port
+      || !isWorktreeProcessIdentity(ownedListener["listener"])
+      || !sameWorktreeProcess(ownedListener["listener"], connection.listener)
       || (baseline && !sameConnection(connection, baseline.get(name)))
     )
       return null;
@@ -154,22 +212,39 @@ function verifyHealth(raw: unknown, run: OwnedWorktreeAspire, target: WorktreePr
   return connections;
 }
 
-function verifySmoke(raw: unknown, name: SmokeName, run: OwnedWorktreeAspire, target: WorktreeProbeTarget, baseline: Connections): boolean {
-  if (!receiptMatches(raw, run) || raw["name"] !== name || raw["passed"] !== true) return false;
+function verifySmoke(
+  raw: unknown,
+  name: SmokeName,
+  run: OwnedWorktreeAspire,
+  target: WorktreeProbeTarget,
+  acquisition: EvidenceAcquisition<SmokeName>,
+  baseline: Connections,
+): boolean {
+  if (!receiptMatches(raw, run, acquisition) || raw["name"] !== name || raw["passed"] !== true) return false;
   const {assertions, endpoints} = raw;
   return (
     worktreeRecord(assertions)
     && worktreeRecord(endpoints)
     && smokeChecks[name].every(([endpoint, path, assertion]) => {
-      const connection = verifyConnection(endpoints[endpoint], run, target.origins[endpoint], path);
+      const connection = verifyConnection(endpoints[endpoint], run, acquisition, target.origins[endpoint], path);
       return assertions[assertion] === true && connection !== null && sameConnection(connection, baseline.get(endpoint));
     })
   );
 }
 
-function readEvidence<A>(operation: (signal: AbortSignal) => Promise<A>): Effect.Effect<A | null> {
-  // Neither a thrown string nor a rejected error/object becomes user-facing text.
-  return Effect.tryPromise({try: operation, catch: () => null}).pipe(Effect.orElseSucceed(() => null));
+function acquireEvidence<Phase extends EvidencePhase, A>(
+  phase: Phase,
+  operation: (acquisition: EvidenceAcquisition<Phase>, signal: AbortSignal) => Promise<unknown>,
+  verify: (raw: unknown, acquisition: EvidenceAcquisition<Phase>) => A,
+): Effect.Effect<A | null> {
+  return Effect.suspend(() => {
+    // Object identity, not the phase text or a timestamp, binds this one callback result to this execution.
+    const acquisition = Object.freeze({phase});
+    return Effect.tryPromise({try: (signal) => operation(acquisition, signal), catch: () => null}).pipe(
+      Effect.map((raw) => verify(raw, acquisition)),
+      Effect.orElseSucceed(() => null),
+    );
+  });
 }
 
 const maxHandoffMs = 30_000;
@@ -195,21 +270,33 @@ export function validateWorktreeHandoff(
       const target = probeTarget(run);
 
       stage = "readiness";
-      const baseline = verifyHealth(yield* readEvidence((signal) => source.observe(target, signal)), run, target);
+      const baseline = yield* acquireEvidence(
+        "initial-health",
+        (acquisition, signal) => source.observe(target, acquisition, signal),
+        (raw, acquisition) => verifyHealth(raw, run, target, acquisition),
+      );
       if (!baseline) return blocked(stage);
 
       for (const name of smokeNames) {
         stage = "revalidation";
         if (!(yield* observeOwnedWorktreeAspire(checkout, runId, run))) return blocked(stage);
         stage = "smoke";
-        const smoke = yield* readEvidence((signal) => source.smoke(name, target, signal));
-        if (!verifySmoke(smoke, name, run, target, baseline)) return blocked(stage);
+        const smoke = yield* acquireEvidence(
+          name,
+          (acquisition, signal) => source.smoke(name, target, acquisition, signal),
+          (raw, acquisition) => verifySmoke(raw, name, run, target, acquisition, baseline),
+        );
+        if (!smoke) return blocked(stage);
       }
 
       stage = "revalidation";
       if (!(yield* observeOwnedWorktreeAspire(checkout, runId, run))) return blocked(stage);
-      const refreshed = yield* readEvidence((signal) => source.observe(target, signal));
-      if (!verifyHealth(refreshed, run, target, baseline) || !(yield* observeOwnedWorktreeAspire(checkout, runId, run))) {
+      const refreshed = yield* acquireEvidence(
+        "final-health",
+        (acquisition, signal) => source.observe(target, acquisition, signal),
+        (raw, acquisition) => verifyHealth(raw, run, target, acquisition, baseline),
+      );
+      if (!refreshed || !(yield* observeOwnedWorktreeAspire(checkout, runId, run))) {
         return blocked(stage);
       }
       return {

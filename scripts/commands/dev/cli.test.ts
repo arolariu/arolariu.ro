@@ -11,10 +11,15 @@
  */
 
 import {Effect} from "effect";
+import {readFile} from "node:fs/promises";
+import {join} from "node:path";
 import {describe, expect, it} from "vitest";
 
 import {makeRootCommand, runCli} from "../../cli.ts";
 import {SELFHOST_SQL_PASSWORD, selfhostFixture} from "../../container-runtime/selfhost.testing.ts";
+import {beginWorktreeLaunch, recordWorktreeOwnership, worktreeProcessReceipt} from "../../container-runtime/worktreeAspire.ts";
+import {claimWorktreeLaunch, publishWorktreeJson, readWorktreeJson, WorktreePlatform} from "../../container-runtime/worktreeLease.ts";
+import {leaseFixture} from "../../container-runtime/worktreeLease.testing.ts";
 import {exitCodeFor, type CommandExitCode} from "../../platform/exit.ts";
 import {makeTestLayer, type RecordedProcessCall} from "../../platform/testing.ts";
 import {makeDevCommand} from "./cli.ts";
@@ -146,6 +151,82 @@ describe("dev command", () => {
       expect(harness.processCalls()).toEqual([]);
     },
   );
+
+  it.each(["absent", "matching", "stale"])("applies the expected-run guard in a canonical owned scope (%s)", async (guard) => {
+    const fixture = await leaseFixture();
+    try {
+      const supervisor = {pid: 100, started: "638500000000000000", image: "offline-supervisor.exe"};
+      const dispatchChecks: string[] = [];
+      const processChecks: number[] = [];
+      let observedProcess: typeof supervisor | null = supervisor;
+      const platform = {
+        ...fixture.platform,
+        containers: {
+          verifyCompleteDispatch: async ({runId}: {runId: string}) => {
+            dispatchChecks.push(runId);
+            return true;
+          },
+          inspect: async () => {
+            throw new Error("No containers in the fixture");
+          },
+          removeExact: async () => {
+            throw new Error("No removals authorized");
+          },
+        },
+        processIdentity: async (pid: number) => {
+          processChecks.push(pid);
+          return observedProcess;
+        },
+      };
+      const runScoped = <A, E>(effect: Effect.Effect<A, E, WorktreePlatform>) =>
+        Effect.runPromise(effect.pipe(Effect.provideService(WorktreePlatform, platform)));
+      const lease = await runScoped(claimWorktreeLaunch(fixture.checkout));
+      const stage = await runScoped(beginWorktreeLaunch(lease));
+      const receipt = worktreeProcessReceipt(lease, supervisor);
+      const processPath = join(stage.directory, "process.json");
+      const exitPath = join(stage.directory, "exit.json");
+      const leasePath = join(fixture.directory, lease.scopeId, "lease.json");
+      await publishWorktreeJson(processPath, {...receipt, boundPorts: lease.ports});
+      await runScoped(recordWorktreeOwnership(lease, {phase: "owned", processIdentity: supervisor, boundPorts: lease.ports}));
+      const files = [leasePath, stage.descriptor, processPath];
+      const original = await Promise.all(files.map((path) => readFile(path)));
+      dispatchChecks.length = processChecks.length = 0;
+      if (guard !== "stale") {
+        // Positively acknowledged prior cooperative shutdown; no actual child process is involved.
+        await publishWorktreeJson(exitPath, {...receipt, reason: "stop"});
+        observedProcess = null;
+      }
+      const staleId = `${lease.runId[0] === "b" ? "a" : "b"}${lease.runId.slice(1)}`;
+      const flag = guard === "absent" ? [] : ["--expected-run", guard === "matching" ? lease.runId : staleId];
+      const argv = ["dev", "aspire", "worktree", "stop", "--engine", "podman", "--json", ...flag];
+      const harness = makeTestLayer({environment: {platform: "linux"}});
+      const options = {worktreePlatform: Effect.succeed(platform)};
+      const exit = await Effect.runPromiseExit(
+        runCli(argv, makeRootCommand([makeDevCommand(options)])).pipe(Effect.provide(harness.layer)),
+      );
+      const stdout = harness.output().filter(({stream}) => stream === "stdout");
+
+      expect(harness.processCalls()).toEqual([]);
+      expect(stdout).toHaveLength(1);
+      expect(await readWorktreeJson(join(stage.directory, "stop.json"))).toBeUndefined();
+      if (guard === "stale") {
+        expect(exitCodeFor(exit, undefined)).toBe(1);
+        expect(JSON.parse(stdout[0]?.text ?? "")).toEqual({status: "blocked", reason: "The expected scoped run is not current."});
+        expect(dispatchChecks).toEqual([]);
+        expect(processChecks).toEqual([]);
+        expect(await readWorktreeJson(exitPath)).toBeUndefined();
+        expect(await Promise.all(files.map((path) => readFile(path)))).toEqual(original);
+      } else {
+        expect(exitCodeFor(exit, undefined)).toBe(0);
+        expect(JSON.parse(stdout[0]?.text ?? "")).toEqual({status: "stopped", runId: lease.runId, preservedVolumes: lease.volumes});
+        expect(dispatchChecks).toEqual([lease.runId]);
+        expect(processChecks).toEqual([supervisor.pid]);
+        expect(await readWorktreeJson(leasePath)).toBeUndefined();
+      }
+    } finally {
+      await fixture.dispose();
+    }
+  });
 
   it("maps aspire engine", async () => {
     // Arrange
