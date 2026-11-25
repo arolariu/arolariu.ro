@@ -66,6 +66,36 @@ async function runSelfhostCli(argv: readonly string[]): Promise<{
 }
 
 describe("dev command", () => {
+  it.each([
+    ["dev", "worktree"],
+    ["dev", "aspire", "worktree"],
+  ])("reports blocked worktree preflight as one JSON document (%s)", async (...prefix) => {
+    const harness = makeTestLayer({environment: {platform: "win32", cwd: "C:/repo"}});
+    const argv = [...prefix, "preflight", "--engine", "podman", "--expected-root", "C:/missing", "--json"];
+
+    const exit = await Effect.runPromiseExit(runCli(argv, makeRootCommand([makeDevCommand()])).pipe(Effect.provide(harness.layer)));
+
+    expect(exitCodeFor(exit, undefined)).toBe(1);
+    const stdout = harness
+      .output()
+      .filter((record) => record.stream === "stdout")
+      .map((record) => record.text);
+    expect(stdout).toHaveLength(1);
+    expect(JSON.parse(stdout.join(""))).toMatchObject({
+      status: "blocked",
+      checkout: null,
+      capabilities: [{id: "checkout", status: "blocked"}],
+    });
+    expect(harness.processCalls()).toEqual([]);
+  });
+
+  it.each([[], ["--engine", "rancher"]])("requires explicit Podman for worktree preflight", async (...engine) => {
+    const result = await run(["dev", "worktree", "preflight", ...engine], {AROLARIU_CONTAINER_ENGINE: "podman"});
+
+    expect(result.code).toBe(2);
+    expect(result.calls).toEqual([]);
+  });
+
   it("maps aspire engine", async () => {
     // Arrange
     const argv = ["dev", "aspire", "--engine", "rancher"];

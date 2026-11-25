@@ -12,14 +12,17 @@
  * through {@link reportChildExit}.
  */
 
-import {Effect, type Layer} from "effect";
-import {Argument, Command} from "effect/cli";
+import {Effect, type Layer, Option} from "effect";
+import {Argument, Command, Flag} from "effect/cli";
 
 import type {CliSubcommand} from "../../cli.ts";
 import {runAspire} from "../../container-runtime/aspire.ts";
 import {LocalBlobStorageLive, type LocalBlobStorage} from "../../container-runtime/selfhost.bootstrap.ts";
 import {runSelfhost} from "../../container-runtime/selfhost.ts";
 import type {ContainerEngineInput, SelfhostAction, SelfhostInput} from "../../container-runtime/types.ts";
+import {inspectWorktreeAspire} from "../../container-runtime/worktreePreflight.ts";
+import {ReportedFailure} from "../../platform/exit.ts";
+import {Presenter, toJsonValue} from "../../platform/Output.ts";
 import {renderContainerCompletion, reportChildExit} from "../containers/output.ts";
 import {EngineFlag, engineInput, withCommandOutput} from "../flags.ts";
 
@@ -36,7 +39,7 @@ export interface DevCommandOptions {
  * Builds the `dev` command group.
  *
  * @param options - Optional blob storage layer override; tests pass a recording layer.
- * @returns The `dev` group with its `aspire` and `selfhost` subcommands.
+ * @returns The `dev` group with its Aspire, Selfhost and worktree subcommands.
  */
 export function makeDevCommand(options: DevCommandOptions = {}): CliSubcommand {
   const localBlobStorage = options.localBlobStorage ?? LocalBlobStorageLive;
@@ -63,5 +66,32 @@ export function makeDevCommand(options: DevCommandOptions = {}): CliSubcommand {
         yield* renderContainerCompletion(result, `Selfhost ${result.action} completed for engine '${result.engine}'.`);
       }).pipe(Effect.catchTag("ProcessExited", reportChildExit), Effect.provide(localBlobStorage), withCommandOutput("selfhost")),
   ).pipe(Command.withDescription("Runs selfhost container orchestration for the selected local engine."));
-  return Command.make("dev").pipe(Command.withDescription("Local development environments."), Command.withSubcommands([aspire, selfhost]));
+  const preflight = Command.make(
+    "preflight",
+    {
+      engine: Flag.Literals("engine", ["podman"]).pipe(Flag.withDescription("Explicit Windows Podman engine selection.")),
+      expectedRoot: Flag.String("expected-root").pipe(Flag.optional, Flag.withDescription("Expected canonical linked-worktree root.")),
+    },
+    ({engine, expectedRoot}) =>
+      Effect.gen(function* () {
+        const result = yield* inspectWorktreeAspire({
+          engine,
+          ...Option.match(expectedRoot, {onNone: () => ({}), onSome: (root) => ({expectedRoot: root})}),
+        });
+        const presenter = yield* Presenter;
+        yield* Effect.orDie(presenter.json(toJsonValue(result)));
+        yield* presenter.line("stdout", `Worktree Aspire preflight: ${result.status}. No AppHost or provider service was exercised.`);
+        for (const {id, status, detail} of result.capabilities) {
+          yield* presenter.line("stdout", `  ${id}: ${status} — ${detail}`);
+        }
+        if (result.status === "blocked") {
+          return yield* new ReportedFailure({exitCode: 1, message: "Worktree Aspire preflight is blocked."});
+        }
+      }).pipe(withCommandOutput("worktree-preflight")),
+  ).pipe(Command.withDescription("Inspects native Windows Aspire worktree prerequisites without preparing or launching anything."));
+  const worktree = Command.make("worktree").pipe(Command.withSubcommands([preflight]));
+  return Command.make("dev").pipe(
+    Command.withDescription("Local development environments."),
+    Command.withSubcommands([aspire, selfhost, worktree]),
+  );
 }

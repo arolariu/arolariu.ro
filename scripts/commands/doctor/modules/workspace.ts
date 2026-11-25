@@ -380,7 +380,15 @@ function diagnoseRepositoryRoot(context: Readonly<ModuleRunContext>): Effect.Eff
   });
 }
 
-function describeGitCheckout(
+/**
+ * Resolves Git checkout metadata against the expected root and canonicalizes the Git directories.
+ *
+ * @param stdout - Output from `probes.workspace.gitCheckout()` at the expected root.
+ * @param expectedRoot - Canonical checkout root.
+ * @param platform - Platform whose path semantics Git used.
+ * @returns Canonical checkout facts, or `undefined` if the metadata cannot be corroborated.
+ */
+export function describeGitCheckout(
   stdout: string,
   expectedRoot: string,
   platform: NodeJS.Platform,

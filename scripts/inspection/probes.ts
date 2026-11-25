@@ -485,6 +485,35 @@ function gitCheckout(): InspectionProbe {
   });
 }
 
+/** Read-only branch probe; a detached HEAD exits nonzero. */
+function gitBranch(): InspectionProbe {
+  return registerProbe("workspace.git.branch", {command: "git", args: ["symbolic-ref", "--quiet", "HEAD"]});
+}
+
+/** Read-only full object ID probe. */
+function gitHead(): InspectionProbe {
+  return registerProbe("workspace.git.head", {command: "git", args: ["rev-parse", "--verify", "HEAD"]});
+}
+
+/** Checks the existing public mkcert root in the Windows trust store without certificate downloads. */
+function windowsMkcertTrust(): InspectionProbe {
+  return registerProbe("infrastructure.mkcert.windows-trust", {
+    command: "pwsh",
+    args: [
+      "-NoLogo",
+      "-NoProfile",
+      "-NonInteractive",
+      "-Command",
+      [
+        "$ErrorActionPreference = 'Stop'",
+        "$cert = [Security.Cryptography.X509Certificates.X509Certificate2]::CreateFromPem([IO.File]::ReadAllText($env:AROLARIU_PREFLIGHT_PUBLIC_CA))",
+        "$chain = [Security.Cryptography.X509Certificates.X509Chain]::new()",
+        "try { $chain.ChainPolicy.DisableCertificateDownloads = $true; $chain.ChainPolicy.RevocationMode = 'NoCheck'; if ($chain.Build($cert)) { 'trusted'; exit 0 }; exit 1 } finally { $chain.Dispose(); $cert.Dispose() }",
+      ].join("; "),
+    ],
+  });
+}
+
 /**
  * Builds the exact, platform-specific read-only executable-resolution probe command.
  *
@@ -821,6 +850,8 @@ export const probes = {
     gitStatus,
     gitLastCommit,
     gitCheckout,
+    gitBranch,
+    gitHead,
     executableResolution,
   },
   dotnet: {
@@ -852,6 +883,7 @@ export const probes = {
     containerList: infrastructureContainerList,
     mkcertVersion: infrastructureMkcertVersion,
     mkcertCaRoot: infrastructureMkcertCaRoot,
+    windowsMkcertTrust,
     portOwners: infrastructurePortOwners,
   },
 } as const;

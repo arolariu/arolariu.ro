@@ -789,7 +789,13 @@ function inspectSolutionProject(
   });
 }
 
-function inspectSolution(paths: RepositoryPaths): Effect.Effect<SolutionInspection, never, ReadOnlyFiles> {
+/**
+ * Checks declared managed projects and their local restore-asset files, without running restore.
+ *
+ * @param paths - Canonical repository paths.
+ * @returns Solution integrity issues and missing or invalid restore artifacts.
+ */
+export function inspectSolution(paths: RepositoryPaths): Effect.Effect<SolutionInspection, never, ReadOnlyFiles> {
   return Effect.gen(function* () {
     const canonicalRoot = yield* Effect.result(realPath(paths.root));
     if (Result.isFailure(canonicalRoot)) {

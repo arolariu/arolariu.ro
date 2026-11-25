@@ -295,11 +295,14 @@ function invocationStdio(argv: readonly string[]): Stdio.Stdio {
  */
 export function runCli(argv: readonly string[], root: RootCommand = rootCommand): Effect.Effect<void, unknown, BaseServices> {
   const json = requestsJsonOutput(argv);
+  // The root npm dev script prepends `dev aspire`. Route only the exact worktree preflight invocation.
+  const args =
+    argv[0] === "dev" && argv[1] === "aspire" && argv[2] === "worktree" && argv[3] === "preflight" ? ["dev", ...argv.slice(2)] : argv;
   return Effect.gen(function* () {
     const sink = yield* Sink;
-    yield* Command.runWith(root, {version})(argv).pipe(
+    yield* Command.runWith(root, {version})(args).pipe(
       Effect.tapCause((cause) => renderInvocationFailure(cause, json)),
-      Effect.provideService(Stdio.Stdio, invocationStdio(argv)),
+      Effect.provideService(Stdio.Stdio, invocationStdio(args)),
       Effect.provideService(Console.Console, sinkConsole(sink, json)),
     );
   });
