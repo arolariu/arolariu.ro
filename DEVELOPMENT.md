@@ -113,8 +113,9 @@ try {
 
 The opt-in starts and stops its own loopback server, sets the child's `SITE_URL` to that preview, and fails if its port is taken or its
 certificate pair is missing. It does not accept CI, remote test targets, `E2E_USE_PROD=true`, or a `BASE_URL` override. Keep one website
-build, dev server, or Playwright run per worktree at a time: they can overwrite the same `.next` or test state. Use a separate worktree for
-a concurrent website preview.
+build, typecheck, dev server, or Playwright run per worktree at a time: they can overwrite the same `.next` or test state. Likewise,
+serialize .NET builds and tests that share referenced projects within one worktree. Use a separate worktree when those checks must run
+concurrently.
 
 ### Reserve one full-stack integration slot
 
