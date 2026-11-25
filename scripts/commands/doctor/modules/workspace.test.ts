@@ -436,16 +436,18 @@ describe("workspaceDoctorModule", () => {
       probeOverrides: new Map([["workspace.git.status", commandResult({stdout: "## HEAD (no branch)\n"})]]),
     });
 
-    const git = resultById(await fixture.run(), "workspace.git");
+    const report = createDoctorReport(await fixture.run(), "2026-08-29T00:00:00.000Z", {verbose: false});
+    const git = resultById(report.checks, "workspace.git");
 
     expect(git.status).toBe("pass");
     expect(git.evidence).toEqual(
       expect.arrayContaining([
-        `Checkout: ${kind}`,
+        expect.stringContaining(`Checkout: ${kind}`),
         expect.stringMatching(/^Root: .+/u),
         expect.stringMatching(/^Git common directory: .+/u),
-        "Branch: (detached HEAD)",
-        "HEAD: abc1234 example",
+        expect.stringContaining("Branch: (detached HEAD)"),
+        expect.stringContaining("HEAD: abc1234 example"),
+        expect.stringContaining("0 changed paths."),
       ]),
     );
   });
@@ -455,10 +457,24 @@ describe("workspaceDoctorModule", () => {
       checkoutOutput: (root) => (problem === "missing metadata" ? `${root}\n` : `C:\\Other Repo\n${root}\\.git\n${root}\\.git\n`),
     });
 
-    const git = resultById(await fixture.run(), "workspace.git");
+    const report = createDoctorReport(await fixture.run(), "2026-08-29T00:00:00.000Z", {verbose: false});
+    const git = resultById(report.checks, "workspace.git");
 
     expect(git.status).toBe("fail");
     expect(git.evidence.some((entry) => entry.includes("git rev-parse"))).toBe(true);
+  });
+
+  it("reports a checkout probe command failure without losing the other checks", async () => {
+    const fixture = await createWorkspaceFixture({
+      probeOverrides: new Map([["workspace.git.checkout", commandResult({code: 128, stderr: "fatal: unable to read Git directory"})]]),
+    });
+
+    const report = createDoctorReport(await fixture.run(), "2026-08-29T00:00:00.000Z", {verbose: false});
+
+    const git = resultById(report.checks, "workspace.git");
+    expect(git.status).toBe("fail");
+    expect(git.evidence).toContain("Command exited with code 128.");
+    expect(resultById(report.checks, "workspace.repository-root").status).toBe("pass");
   });
 
   it("fails git diagnostic when the git version probe fails", async () => {

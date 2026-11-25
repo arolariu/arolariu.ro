@@ -463,6 +463,7 @@ function diagnoseGit(context: Readonly<ModuleRunContext>): Effect.Effect<Diagnos
         status: "fail",
         summary: "Git could not identify the requested checkout.",
         evidence: ["git rev-parse did not return valid checkout metadata for the expected root.", ...commandEvidence(checkoutResult)],
+        potentialCauses: [{cause: "Checkout metadata is incomplete, inaccessible, or belongs to a different root.", confidence: "medium"}],
         fixes: [{description: "Run doctor from the intended worktree and verify that Git can read its common directory."}],
       });
     }
@@ -472,12 +473,10 @@ function diagnoseGit(context: Readonly<ModuleRunContext>): Effect.Effect<Diagnos
     const branch = branchHeading === "HEAD (no branch)" ? "(detached HEAD)" : branchHeading;
     const changedPaths = lines.filter((line) => !line.startsWith("##")).length;
     return passDiagnostic(context, startedAt, "workspace.git", "Git", "Git and checkout metadata are readable.", [
-      version.stdout.trim(),
-      `Checkout: ${checkout.kind}`,
+      `Checkout: ${checkout.kind} | ${version.stdout.trim()}`,
       `Root: ${checkout.root}`,
       `Git common directory: ${checkout.commonDirectory}`,
-      `Branch: ${branch}`,
-      `${String(changedPaths)} changed path${changedPaths === 1 ? "" : "s"}.`,
+      `Branch: ${branch} | ${String(changedPaths)} changed path${changedPaths === 1 ? "" : "s"}.`,
       `HEAD: ${logResult.stdout.trim()}`,
     ]);
   });
