@@ -481,14 +481,7 @@ function gitLastCommit(): InspectionProbe {
 function gitCheckout(): InspectionProbe {
   return registerProbe("workspace.git.checkout", {
     command: "git",
-    args: [
-      "rev-parse",
-      "--path-format=absolute",
-      "--show-toplevel",
-      "--absolute-git-dir",
-      "--git-common-dir",
-      "--show-superproject-working-tree",
-    ],
+    args: ["rev-parse", "--show-toplevel", "--absolute-git-dir", "--git-common-dir", "--show-superproject-working-tree"],
   });
 }
 

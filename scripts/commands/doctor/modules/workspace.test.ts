@@ -111,10 +111,7 @@ const PROBE_IDS_BY_COMMAND: ReadonlyMap<string, string> = new Map([
   ["git --version", "workspace.git.version"],
   ["git status --short --branch", "workspace.git.status"],
   ["git log --oneline -1 HEAD", "workspace.git.last-commit"],
-  [
-    "git rev-parse --path-format=absolute --show-toplevel --absolute-git-dir --git-common-dir --show-superproject-working-tree",
-    "workspace.git.checkout",
-  ],
+  ["git rev-parse --show-toplevel --absolute-git-dir --git-common-dir --show-superproject-working-tree", "workspace.git.checkout"],
   ["node --version", "workspace.node.version"],
   ["npm --version", "workspace.npm.version"],
   ["npm config get cache", "workspace.npm.cache"],
@@ -450,6 +447,21 @@ describe("workspaceDoctorModule", () => {
         expect.stringContaining("0 changed paths."),
       ]),
     );
+  });
+
+  it("resolves a relative Git common directory against the probed checkout", async () => {
+    const fixture = await createWorkspaceFixture({
+      checkoutOutput: (root) => `${root}\n${join(root, ".git")}\n.git\n`,
+      probeOverrides: new Map([["workspace.git.version", commandResult({stdout: "git version 2.25.1\n"})]]),
+    });
+
+    const report = createDoctorReport(await fixture.run(), "2026-08-29T00:00:00.000Z", {verbose: false});
+    const git = resultById(report.checks, "workspace.git");
+
+    expect(git.status).toBe("pass");
+    const commonDirectory = join(fixture.root, ".git").replaceAll("\\", "/");
+    expect(git.evidence.map((entry) => entry.replaceAll("\\", "/"))).toContain(`Git common directory: ${commonDirectory}`);
+    expect(git.evidence).toContainEqual(expect.stringContaining("Checkout: primary"));
   });
 
   it.each(["missing metadata", "not this checkout"])("fails instead of guessing a checkout type when Git reports %s", async (problem) => {

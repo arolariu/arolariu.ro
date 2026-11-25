@@ -391,17 +391,20 @@ function describeGitCheckout(
     return platform === "win32" ? resolved.toLowerCase() : resolved;
   };
   const lines = stdout.trimEnd().split(/\r?\n/u);
-  const [root, gitDirectory, commonDirectory, superproject] = lines;
+  const [root, gitDirectory, reportedCommonDirectory, superproject] = lines;
   if (
     lines.length > 4
     || !root
     || !gitDirectory
-    || !commonDirectory
-    || !lines.every((path) => paths.isAbsolute(path))
+    || !reportedCommonDirectory
+    || !paths.isAbsolute(root)
+    || !paths.isAbsolute(gitDirectory)
+    || (superproject !== undefined && !paths.isAbsolute(superproject))
     || normalize(root) !== normalize(expectedRoot)
   ) {
     return undefined;
   }
+  const commonDirectory = paths.resolve(expectedRoot, reportedCommonDirectory);
   if (superproject !== undefined) return {kind: "submodule", root, commonDirectory};
   const kind = normalize(gitDirectory) === normalize(commonDirectory) ? "primary" : "linked-worktree";
   return {kind, root, commonDirectory};
