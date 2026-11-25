@@ -354,6 +354,33 @@ function pep440ExactMatch(expected: Pep440Version, installed: Pep440Version): bo
   );
 }
 
+/**
+ * Compares a locally observed distribution with an exact or ordinary numeric compatible-release pin.
+ *
+ * @param operator - Supported requirement comparison.
+ * @param expected - Declared version specifier.
+ * @param actual - Observed distribution version.
+ * @returns Whether the supported pin is satisfied; unsupported or invalid forms fail closed.
+ */
+export function matchesLocalPythonPin(operator: "==" | "~=", expected: string, actual: string): boolean {
+  const pin = parsePep440Version(expected);
+  const installed = parsePep440Version(actual);
+  if (!pin || !installed) return false;
+  if (operator === "==") return pep440ExactMatch(pin, installed);
+
+  // The checked-in compatible pin is a final numeric release. Do not guess prerelease ordering.
+  const numeric = /^\d+(?:\.\d+)+$/u;
+  if (!numeric.test(pin.normalized) || !numeric.test(installed.normalized)) return false;
+  const minimum = pin.normalized.split(".");
+  const observed = installed.normalized.split(".");
+  if (!minimum.slice(0, -1).every((part, index) => part === (observed[index] ?? "0"))) return false;
+  for (let index = 0; index < Math.max(minimum.length, observed.length); index++) {
+    const difference = BigInt(observed[index] ?? "0") - BigInt(minimum[index] ?? "0");
+    if (difference !== 0n) return difference > 0n;
+  }
+  return true;
+}
+
 function parsePythonVersionText(value: string): ParsedPythonVersion | undefined {
   const text = safeText(value, MAX_VERSION_LENGTH);
   if (text === undefined) {
@@ -1111,7 +1138,13 @@ function compareRequirements(
   return boundGeneratedFacts(mismatches, "requirement mismatches");
 }
 
-function parseConfigurationObject(contents: string): readonly string[] | undefined {
+/**
+ * Projects an exp configuration object to validated top-level key names only.
+ *
+ * @param contents - Local JSON document, never echoed on failure.
+ * @returns Its keys, or `undefined` when the shape is unsupported.
+ */
+export function parseConfigurationObject(contents: string): readonly string[] | undefined {
   let parsed: unknown;
   try {
     parsed = JSON.parse(contents);

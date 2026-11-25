@@ -9,8 +9,11 @@ import {Effect} from "effect";
 
 import {describeGitCheckout} from "../commands/doctor/modules/workspace.ts";
 import {createRepositoryPaths, type RepositoryPaths} from "../common/repository-paths.ts";
-import {inspectSolution} from "../inspection/dotnet.ts";
+import {inspectSolution, projectAppHostParameterKeys} from "../inspection/dotnet.ts";
+import {inspectPath} from "../inspection/files.ts";
+import {inspectEnvironmentContent} from "../inspection/frontend.ts";
 import {inspectionProbeRunner, probes} from "../inspection/probes.ts";
+import {matchesLocalPythonPin, parseConfigurationObject} from "../inspection/python.ts";
 import {Environment, type EnvironmentSnapshot} from "../platform/Environment.ts";
 import {ReadOnlyFiles} from "../platform/Files.ts";
 import {Process} from "../platform/Process.ts";
@@ -107,6 +110,41 @@ function readManifest(path: string): Effect.Effect<string, never, ReadOnlyFiles>
   }).pipe(Effect.orElseSucceed(() => ""));
 }
 
+function machineType(architecture: string): number | undefined {
+  return architecture === "x64" ? 0x8664 : architecture === "arm64" ? 0xaa64 : undefined;
+}
+
+function isPortableExecutable(path: string, architecture: string, managed = false): Effect.Effect<boolean, never, ReadOnlyFiles> {
+  return Effect.gen(function* () {
+    const machine = machineType(architecture);
+    if (machine === undefined || !(yield* ownedFile(path))) return false;
+    const files = yield* ReadOnlyFiles;
+    const bytes = yield* files.readPrefix(path);
+    if (bytes.length < 88 || bytes[0] !== 0x4d || bytes[1] !== 0x5a) return false;
+    const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
+    const offset = view.getUint32(60, true);
+    if (offset < 64 || offset > bytes.length - 24 || view.getUint32(offset, true) !== 0x4550) return false;
+    const target = view.getUint16(offset + 4, true);
+    if (target !== machine && !(managed && target === 0x014c)) return false;
+    const sectionCount = view.getUint16(offset + 6, true);
+    const optionalSize = view.getUint16(offset + 20, true);
+    const table = offset + 24 + optionalSize;
+    if (sectionCount < 1 || optionalSize < 96 || table + sectionCount * 40 > bytes.length) return false;
+    if (view.getUint16(offset + 24, true) !== (target === 0x014c ? 0x010b : 0x020b)) return false;
+    const length = (yield* files.stat(path)).size;
+    let hasPayload = false;
+    for (let section = 0; section < sectionCount; section++) {
+      const start = table + section * 40;
+      const size = view.getUint32(start + 16, true);
+      if (size === 0) continue;
+      const position = view.getUint32(start + 20, true);
+      if (position < table + sectionCount * 40 || position + size > length) return false;
+      hasPayload = true;
+    }
+    return hasPayload;
+  }).pipe(Effect.orElseSucceed(() => false));
+}
+
 function observeCheckout(
   input: Readonly<WorktreePreflightInput>,
   env: EnvironmentSnapshot,
@@ -134,11 +172,98 @@ function observeCheckout(
     const branchName = /^refs\/heads\/([\p{L}\p{N}._/-]+)$/u.exec(branch.stdout.trimEnd())?.[1];
     const hash = head.stdout.trimEnd();
     if (branchName === undefined || !/^(?:[a-f0-9]{40}|[a-f0-9]{64})$/u.test(hash)) return undefined;
+    const listing = yield* run(probes.workspace.gitWorktreeList(), {cwd: root});
+    if (listing.kind !== "succeeded" || !listing.stdout.endsWith("\0\0")) return undefined;
+    const registrations = listing.stdout.split("\0\0").map((entry) => entry.split("\0"));
+    const matches = registrations.filter(([path]) => path?.startsWith("worktree ") && samePath(path.slice(9), root));
+    const [registration] = matches;
+    if (
+      matches.length !== 1
+      || !registration
+      || registration.filter((entry) => entry.startsWith("HEAD ")).join() !== `HEAD ${hash}`
+      || registration.filter((entry) => entry.startsWith("branch ")).join() !== `branch refs/heads/${branchName}`
+      || registration.some((entry) => /^(?:bare|detached|prunable)(?: |$)/u.test(entry))
+    )
+      return undefined;
     return {root, commonGitDir: checkout.commonDirectory, branch: branchName, head: hash};
   });
 }
 
-function inspectPodman(root: string, names: ReadonlySet<string>): Effect.Effect<WorktreeCapability, never, Process> {
+function registeredPodmanConnection(
+  root: string,
+  name: string,
+  uri: string,
+  identity: string,
+): Effect.Effect<boolean, never, Process | ReadOnlyFiles> {
+  return Effect.gen(function* () {
+    const endpoint = URL.parse(uri);
+    if (endpoint === null) return false;
+    const port = Number(endpoint.port);
+    const listing = yield* run(probes.infrastructure.podmanMachineList(), {cwd: root});
+    const machines = listing.kind === "succeeded" ? parseJson(listing.stdout) : undefined;
+    if (!Array.isArray(machines)) return false;
+    const registrations = machines.map(record);
+    const candidates = registrations.filter((entry) => entry?.["Name"] === name || `${String(entry?.["Name"])}-root` === name);
+    const [candidate] = candidates;
+    const machine = candidate?.["Name"];
+    if (
+      candidates.length !== 1
+      || !candidate
+      || typeof machine !== "string"
+      || !/^[a-z0-9](?:[a-z0-9._-]*[a-z0-9])?$/iu.test(machine)
+      || candidate["Running"] !== true
+      || candidate["Starting"] !== false
+      || registrations.filter((entry) => entry?.["Running"] === true && entry["Port"] === port).length !== 1
+    )
+      return false;
+    const user = candidate["RemoteUsername"];
+    const listedIdentity = candidate["IdentityPath"];
+    if (
+      candidate["Port"] !== port
+      || typeof user !== "string"
+      || !/^[a-z0-9_.-]+$/iu.test(user)
+      || typeof listedIdentity !== "string"
+      || !samePath(identity, listedIdentity)
+    )
+      return false;
+    const sshMatches = (ssh: Readonly<Record<string, unknown>> | undefined): boolean => {
+      const path = ssh?.["IdentityPath"];
+      return ssh?.["Port"] === port && ssh["RemoteUsername"] === user && typeof path === "string" && samePath(path, identity);
+    };
+
+    const inspection = yield* run(probes.infrastructure.podmanMachineInspect(machine), {cwd: root});
+    const result = inspection.kind === "succeeded" ? parseJson(inspection.stdout) : undefined;
+    const selected = Array.isArray(result) && result.length === 1 ? record(result[0]) : undefined;
+    const configDir = record(selected?.["ConfigDir"])?.["Path"];
+    const rootful = selected?.["Rootful"];
+    if (
+      selected?.["Name"] !== machine
+      || selected["State"] !== "running"
+      || typeof rootful !== "boolean"
+      || !sshMatches(record(selected["SSHConfig"]))
+      || typeof configDir !== "string"
+      || !localDrivePath(configDir)
+    )
+      return false;
+
+    // Machine inspect describes SSH but not the guest UID needed to identify the rootless socket.
+    const document = record(parseJson(yield* readManifest(win32.join(configDir, `${machine}.json`))));
+    const hostUser = record(document?.["HostUser"]);
+    const uid = hostUser?.["UID"];
+    if (
+      document?.["Name"] !== machine
+      || hostUser?.["Rootful"] !== rootful
+      || !sshMatches(record(document["SSH"]))
+      || (!rootful && (typeof uid !== "number" || !Number.isSafeInteger(uid) || uid < 1))
+    )
+      return false;
+    const expectedName = rootful ? `${machine}-root` : machine;
+    const socket = rootful ? "/run/podman/podman.sock" : `/run/user/${String(uid)}/podman/podman.sock`;
+    return name === expectedName && uri === `ssh://${rootful ? "root" : user}@127.0.0.1:${port}${socket}` && (yield* ownedFile(identity));
+  });
+}
+
+function inspectPodman(root: string, names: ReadonlySet<string>): Effect.Effect<WorktreeCapability, never, Process | ReadOnlyFiles> {
   return Effect.gen(function* () {
     const blocked = (detail: string) => capability("podman-backend", false, "", `Machine bootstrap: ${detail}`);
     if (
@@ -155,17 +280,21 @@ function inspectPodman(root: string, names: ReadonlySet<string>): Effect.Effect<
     }
     const context = yield* run(probes.infrastructure.runtimeContext("podman"), {cwd: root});
     const connections = context.kind === "succeeded" ? parseJson(context.stdout) : undefined;
-    const defaults = Array.isArray(connections) ? connections.map(record).filter((entry) => entry?.["Default"] === true) : [];
+    const entries = Array.isArray(connections) ? connections.map(record) : [];
+    const defaults = entries.filter((entry) => entry?.["Default"] === true);
     const uri = defaults[0]?.["URI"];
     const identity = defaults[0]?.["Identity"];
-    // A named Compose provider or an arbitrary remote connection is not engine evidence.
+    const name = defaults[0]?.["Name"];
     if (
       defaults.length !== 1
+      || typeof name !== "string"
+      || entries.filter((entry) => entry?.["Name"] === name).length !== 1
       || typeof uri !== "string"
       || !/^ssh:\/\/[a-z0-9_.-]+@127\.0\.0\.1:[1-9]\d{0,4}\/run\/(?:user\/\d+\/)?podman\/podman\.sock$/iu.test(uri)
       || URL.parse(uri) === null
       || typeof identity !== "string"
       || !localDrivePath(identity)
+      || !(yield* registeredPodmanConnection(root, name, uri, identity))
     ) {
       return blocked("No supported default Windows Podman machine connection was observed. See Podman Desktop in infra/Local/readme.md.");
     }
@@ -184,20 +313,147 @@ function inspectPodman(root: string, names: ReadonlySet<string>): Effect.Effect<
     return capability(
       "podman-backend",
       responsive,
-      "The selected loopback Podman backend returned structured Linux engine information.",
+      "The registered local Podman machine returned structured Linux engine information.",
       "Machine bootstrap: the local Podman backend did not return valid engine information. Verify the selected Podman machine separately.",
     );
   });
 }
 
-function keyEvidence(id: string, keys: readonly string[], names: ReadonlySet<string>, remediation: string): WorktreeCapability {
-  const missing = keys.filter((key) => !names.has(key.toLowerCase()) && !names.has(key.replaceAll(":", "__").toLowerCase()));
+function keyEvidence(
+  id: string,
+  keys: readonly string[],
+  sources: readonly ReadonlyMap<string, boolean>[],
+  remediation: string,
+): WorktreeCapability {
+  const missing = keys.filter((key) => sources.find((source) => source.has(key))?.get(key) !== true);
   return capability(
     id,
     missing.length === 0,
-    "Required environment key names are present; values and provider behavior were not inspected.",
-    `Worktree preparation: key presence not observed: ${missing.join(", ")}. ${remediation} This check observes only environment key names, not secret files.`,
+    "Required keys are configured in the supported launch configuration sources; provider behavior was not verified.",
+    `Worktree preparation: required keys are missing or blank: ${missing.join(", ")}. ${remediation}`,
   );
+}
+
+function environmentKeys(
+  env: EnvironmentSnapshot,
+  keys: readonly string[],
+  normalize: (key: string) => string,
+): ReadonlyMap<string, boolean> | undefined {
+  const facts = new Map<string, boolean>();
+  const canonical = new Map(keys.map((key) => [key.toLowerCase(), key]));
+  for (const name of Object.keys(env.variables)) {
+    const key = canonical.get(normalize(name).toLowerCase());
+    if (key === undefined) continue;
+    if (facts.has(key)) return undefined;
+    facts.set(key, (env.variables[name]?.trim().length ?? 0) > 0);
+  }
+  return facts;
+}
+
+function projectConfigFile<T>(
+  path: string,
+  project: (source: string) => T | undefined,
+): Effect.Effect<T | null | undefined, never, ReadOnlyFiles> {
+  return Effect.gen(function* () {
+    const metadata = yield* inspectPath(path);
+    if (metadata.kind === "missing") return null;
+    if (metadata.kind !== "file") return undefined;
+    const actual = yield* canonicalPath(path);
+    if (actual === undefined || !samePath(actual, path)) return undefined;
+    const files = yield* ReadOnlyFiles;
+    const data = yield* files.readBytesBounded(actual, MAX_MANIFEST_BYTES);
+    return yield* Effect.try(() => project(new TextDecoder("utf-8", {fatal: true}).decode(data)));
+  }).pipe(Effect.orElseSucceed(() => undefined));
+}
+
+function inspectAppHostConfig(root: string, env: EnvironmentSnapshot): Effect.Effect<WorktreeCapability, never, ReadOnlyFiles> {
+  return Effect.gen(function* () {
+    const remediation = "See the user-scoped Setup action dotnet.user-secrets.set; no secret values were returned.";
+    const blocked = capability(
+      "apphost-config",
+      false,
+      "",
+      `Worktree preparation: could not determine the effective AppHost Development parameter keys. ${remediation}`,
+    );
+    const hostDir = win32.join(root, "tooling/src/AppHost");
+    const project = yield* readManifest(win32.join(root, appHost));
+    const ids = [...project.matchAll(/<UserSecretsId>([a-z0-9][a-z0-9.-]*)<\/UserSecretsId>/giu)];
+    const id = ids.length === 1 ? ids[0]?.[1] : undefined;
+    const launch = record(parseJson(yield* readManifest(win32.join(hostDir, "Properties/launchSettings.json"))));
+    const profiles = record(launch?.["profiles"]);
+    const first = record(Object.values(profiles ?? {})[0]);
+    const variables = record(first?.["environmentVariables"]);
+    const redirectsConfig = (key: string) => /^(?:Parameters(?::|__)|(?:ASPNETCORE_|DOTNET_)?CONTENTROOT$)/iu.test(key);
+    if (
+      first?.["commandName"] !== "Project"
+      || variables?.["DOTNET_ENVIRONMENT"] !== "Development"
+      || variables["ASPNETCORE_ENVIRONMENT"] !== "Development"
+      || (Object.hasOwn(first, "commandLineArgs") && first["commandLineArgs"] !== "")
+      || (Object.hasOwn(first, "workingDirectory") && first["workingDirectory"] !== "")
+      || Object.keys(variables).some(
+        (key) => redirectsConfig(key) || (/^(?:DOTNET|ASPNETCORE)_ENVIRONMENT$/iu.test(key) && key !== key.toUpperCase()),
+      )
+      || Object.keys(env.variables).some((key) => /^(?:(?:ASPNETCORE_|DOTNET_)?CONTENTROOT)$/iu.test(key))
+    )
+      return blocked;
+    const appData = env.variables["APPDATA"];
+    if (id === undefined || !localDrivePath(appData)) return blocked;
+    const environment = environmentKeys(env, parameters, (name) => name.replaceAll("__", ":"));
+    const sources = yield* Effect.all([
+      projectConfigFile(win32.join(appData, "Microsoft/UserSecrets", id, "secrets.json"), projectAppHostParameterKeys),
+      projectConfigFile(win32.join(hostDir, "appsettings.Development.json"), projectAppHostParameterKeys),
+      projectConfigFile(win32.join(hostDir, "appsettings.json"), projectAppHostParameterKeys),
+    ]);
+    if (!environment || sources.some((source) => source === undefined)) return blocked;
+    return keyEvidence("apphost-config", parameters, [environment, ...sources.filter((source) => source != null)], remediation);
+  });
+}
+
+function projectWebsiteKeys(source: string): ReadonlyMap<string, boolean> | undefined {
+  if (inspectEnvironmentContent(source).syntaxErrors.length > 0) return undefined;
+  const facts = new Map<string, boolean>();
+  for (const input of source.split(/\r\n|\n|\r/u)) {
+    const line = input.trim();
+    if (line === "" || line.startsWith("#")) continue;
+    const match = /^([a-zA-Z_]\w*)\s*=\s*(?:"([^"\\$]*)"|'([^'\\$]*)'|([^'"`\\$#]*))\s*(?:#.*)?$/u.exec(line);
+    const key = match?.[1];
+    if (key === undefined || match === null) return undefined;
+    if (integrationKeys.includes(key)) facts.set(key, ((match[2] ?? match[3] ?? match[4])?.trim().length ?? 0) > 0);
+  }
+  return facts;
+}
+
+function inspectWebsiteConfig(paths: RepositoryPaths, env: EnvironmentSnapshot): Effect.Effect<WorktreeCapability, never, ReadOnlyFiles> {
+  return Effect.gen(function* () {
+    const remediation = "See Setup action react.environment.write; no credential values were returned.";
+    const blocked = capability(
+      "website-config",
+      false,
+      "",
+      `Worktree preparation: the effective Next development environment could not be projected. ${remediation}`,
+    );
+    const nodeEnv = Object.keys(env.variables).find((key) => key.toLowerCase() === "node_env");
+    if (nodeEnv !== undefined && env.variables[nodeEnv] !== "development") return blocked;
+    const environment = environmentKeys(env, integrationKeys, (name) => name);
+    const sources = yield* Effect.forEach([".env.development.local", ".env.local", ".env.development", ".env"], (file) =>
+      projectConfigFile(win32.join(paths.websiteRoot, file), projectWebsiteKeys),
+    );
+    if (!environment || sources.some((source) => source === undefined)) return blocked;
+    return keyEvidence("website-config", integrationKeys, [environment, ...sources.filter((source) => source != null)], remediation);
+  });
+}
+
+function inspectExpConfig(paths: RepositoryPaths): Effect.Effect<WorktreeCapability, never, ReadOnlyFiles> {
+  return Effect.gen(function* () {
+    const required = yield* projectConfigFile(win32.join(paths.expRoot, "config.template.json"), parseConfigurationObject);
+    const local = yield* projectConfigFile(win32.join(paths.expRoot, "config.docker.json"), parseConfigurationObject);
+    return capability(
+      "exp-config",
+      !!required?.length && !!local && required.every((key) => local.includes(key)),
+      "The checkout-owned exp config.docker.json is an object containing the required template keys; provider behavior was not verified.",
+      "Worktree preparation: exp config.docker.json is missing, malformed, not checkout-owned, or lacks required template keys. See the config.template.json instructions in ExpConfigGenerator.",
+    );
+  });
 }
 
 function inspectWebsiteTrust(
@@ -240,7 +496,48 @@ function inspectDotnetTls(root: string): Effect.Effect<WorktreeCapability, never
   );
 }
 
-function inspectNpm(root: string, names: ReadonlySet<string>): Effect.Effect<WorktreeCapability, never, ReadOnlyFiles> {
+function inspectSwc(
+  root: string,
+  architecture: string,
+  version: string,
+  packages: Readonly<Record<string, unknown>>,
+): Effect.Effect<boolean, never, ReadOnlyFiles> {
+  return Effect.gen(function* () {
+    if (machineType(architecture) === undefined) return false;
+    const suffix = `win32-${architecture}-msvc`;
+    const name = `@next/swc-${suffix}`;
+    const filename = `next-swc.${suffix}.node`;
+    const next = win32.join(root, "node_modules/next");
+    const manifest = record(parseJson(yield* readManifest(win32.join(next, "package.json"))));
+    if (record(manifest?.["optionalDependencies"])?.[name] !== version) return false;
+    // Next resolves a nested package before its hoisted sibling, then looks in its own local fallback cache.
+    for (const [prefix, locked] of [
+      ["node_modules/next/node_modules", true],
+      ["node_modules", true],
+      ["node_modules/next/next-swc-fallback", false],
+    ] as const) {
+      const location = `${prefix}/${name}`;
+      const directory = win32.join(root, location);
+      const candidate = record(parseJson(yield* readManifest(win32.join(directory, "package.json"))));
+      if (
+        candidate?.["name"] === name
+        && candidate["version"] === version
+        && candidate["main"] === filename
+        && (!locked || record(packages[location])?.["version"] === version)
+        && (yield* isPortableExecutable(win32.join(directory, filename), architecture))
+      )
+        return true;
+      if (locked && (yield* inspectPath(directory)).kind !== "missing") return false;
+    }
+    return false;
+  }).pipe(Effect.orElseSucceed(() => false));
+}
+
+function inspectNpm(
+  root: string,
+  architecture: string,
+  names: ReadonlySet<string>,
+): Effect.Effect<WorktreeCapability, never, ReadOnlyFiles> {
   return Effect.gen(function* () {
     const blocked = capability(
       "npm-dependencies",
@@ -248,7 +545,8 @@ function inspectNpm(root: string, names: ReadonlySet<string>): Effect.Effect<Wor
       "",
       "Worktree preparation: the checkout-owned npm lockfile install was not verified. See Setup phase workspace.root-dependencies and the root npm ci prerequisite (separate approval).",
     );
-    if (names.has("node_path")) return blocked;
+    if (["node_path", "next_test_native_dir", "next_test_native_ignore_local_install", "next_swc_path"].some((key) => names.has(key)))
+      return blocked;
     const lock = record(parseJson(yield* readManifest(win32.join(root, "package-lock.json"))));
     const packages = record(lock?.["packages"]);
     const manifest = record(parseJson(yield* readManifest(win32.join(root, "package.json"))));
@@ -268,6 +566,14 @@ function inspectNpm(root: string, names: ReadonlySet<string>): Effect.Effect<Wor
       const current = Object.entries(record(manifest[kind]) ?? {});
       const locked = record(lockedRoot[kind]) ?? {};
       if (current.length !== Object.keys(locked).length || current.some(([name, value]) => locked[name] !== value)) return blocked;
+    }
+    if (!(yield* inspectSwc(root, architecture, lockedNext["version"], packages))) {
+      return capability(
+        "npm-dependencies",
+        false,
+        "",
+        "Worktree preparation: the applicable checkout-local Next SWC native binding was not verified. See Setup phase workspace.root-dependencies and the root npm ci prerequisite (separate approval).",
+      );
     }
 
     const entries = Object.entries(packages).filter(([path]) => /(?:^|\/)node_modules\//u.test(path));
@@ -295,7 +601,7 @@ function inspectNpm(root: string, names: ReadonlySet<string>): Effect.Effect<Wor
       ? capability(
           "npm-dependencies",
           true,
-          "Required npm package manifests and workspace links match this checkout's lockfile; native modules were not executed.",
+          "Required npm manifests and workspace links match this checkout's lockfile, and its applicable Next SWC binding was observed without execution.",
           "",
         )
       : blocked;
@@ -343,20 +649,15 @@ function inspectPython(paths: RepositoryPaths): Effect.Effect<WorktreeCapability
       .filter((line) => line && !line.startsWith("#"));
     const match = yield* Effect.forEach(lines, (line) =>
       Effect.gen(function* () {
-        const spec = /^([a-z0-9][a-z0-9_.-]*)(==|~=)(\d+\.\d+)\.(\d+)([ab]\d+|rc\d+)?$/iu.exec(line);
-        const [, name, operator, series, patch, suffix] = spec ?? [];
-        if (!name || !series || !patch || (operator === "~=" && suffix)) return false;
+        const spec = /^([a-z0-9][a-z0-9_.-]*)\s*(==|~=)\s*(\S+)$/iu.exec(line);
+        const [, name, operator, expected] = spec ?? [];
+        if (!name || !expected || (operator !== "==" && operator !== "~=")) return false;
         const prefix = `${name.toLowerCase().replaceAll(/[-_.]+/gu, "_")}-`;
         const candidates = entries.filter((entry) => entry.toLowerCase().startsWith(prefix) && entry.endsWith(".dist-info"));
         const [entry] = candidates;
         if (candidates.length !== 1 || entry === undefined) return false;
         const version = entry.slice(prefix.length, -".dist-info".length);
-        const compatiblePatch = version.startsWith(`${series}.`) ? version.slice(series.length + 1) : "";
-        const matches =
-          operator === "=="
-            ? version === `${series}.${patch}${suffix ?? ""}`
-            : /^\d+$/u.test(compatiblePatch) && Number(compatiblePatch) >= Number(patch);
-        return matches && (yield* ownedFile(win32.join(packages, entry, "METADATA")));
+        return matchesLocalPythonPin(operator, expected, version) && (yield* ownedFile(win32.join(packages, entry, "METADATA")));
       }),
     );
     return lines.length > 0 && match.every(Boolean)
@@ -367,6 +668,148 @@ function inspectPython(paths: RepositoryPaths): Effect.Effect<WorktreeCapability
           "",
         )
       : blocked;
+  });
+}
+
+const ASSET_GROUPS = [
+  "compile",
+  "runtime",
+  "native",
+  "resource",
+  "build",
+  "buildMultiTargeting",
+  "buildTransitive",
+  "contentFiles",
+  "runtimeTargets",
+];
+const ARTIFACT_PATH = /^(?:[a-z0-9_][a-z0-9_.+@-]*\/)*[a-z0-9_][a-z0-9_.+@-]*$/iu;
+const NUGET_DIGEST = /^[a-z0-9+/]{86}==$/iu;
+
+function inspectRestoreProject(root: string, project: string, checked: Map<string, boolean>): Effect.Effect<boolean, never, ReadOnlyFiles> {
+  return Effect.gen(function* () {
+    const directory = win32.dirname(project);
+    const assets = record(parseJson(yield* readManifest(win32.join(directory, "obj/project.assets.json"))));
+    const restore = record(record(assets?.["project"])?.["restore"]);
+    const declaredProject = restore?.["projectPath"];
+    const targets = record(assets?.["targets"]);
+    const libraries = record(assets?.["libraries"]);
+    const groups = record(assets?.["projectFileDependencyGroups"]);
+    const folders = Object.keys(record(assets?.["packageFolders"]) ?? {});
+    if (
+      (assets?.["version"] !== 3 && assets?.["version"] !== 4)
+      || typeof declaredProject !== "string"
+      || !samePath(declaredProject, project)
+      || !(yield* ownedFile(project))
+      || !targets
+      || Object.keys(targets).length === 0
+      || !libraries
+      || !groups
+      || Object.keys(groups).length === 0
+      || folders.length === 0
+      || !folders.every(localDrivePath)
+    )
+      return false;
+
+    const referenced = new Map<string, Set<string>>();
+    for (const [targetName, data] of Object.entries(targets)) {
+      const target = record(data);
+      if (!target || !Object.hasOwn(groups, targetName.split("/")[0] ?? "")) return false;
+      for (const [name, entry] of Object.entries(target)) {
+        const library = record(libraries[name]);
+        const targetEntry = record(entry);
+        if (!library || !targetEntry || library["type"] !== targetEntry["type"]) return false;
+        if (library["type"] === "project") {
+          const path = library["msbuildProject"];
+          if (typeof path !== "string") return false;
+          const linked = win32.resolve(directory, path);
+          const relative = win32.relative(root, linked);
+          if (relative === ".." || relative.startsWith("..\\") || win32.isAbsolute(relative) || !(yield* ownedFile(linked))) return false;
+          continue;
+        }
+        if (library["type"] !== "package") return false;
+        const artifacts = referenced.get(name) ?? new Set<string>();
+        referenced.set(name, artifacts);
+        for (const key of ASSET_GROUPS) {
+          if (!Object.hasOwn(targetEntry, key)) continue;
+          const group = record(targetEntry[key]);
+          if (!group) return false;
+          for (const file of Object.keys(group)) {
+            if (!ARTIFACT_PATH.test(file)) return false;
+            if (file.split("/").at(-1) !== "_._") artifacts.add(file);
+          }
+        }
+      }
+    }
+
+    if (samePath(project, win32.join(root, appHost)) && referenced.size === 0) return false;
+    for (const [name, value] of Object.entries(libraries)) {
+      const library = record(value);
+      if (library?.["type"] === "project") continue;
+      const path = library?.["path"];
+      const hash = library?.["sha512"];
+      const id = name.split("/")[0]?.toLowerCase();
+      if (
+        library?.["type"] !== "package"
+        || typeof path !== "string"
+        || !ARTIFACT_PATH.test(path)
+        || path.toLowerCase() !== name.toLowerCase()
+        || !id
+        || typeof hash !== "string"
+        || !NUGET_DIGEST.test(hash)
+        || !referenced.has(name)
+      )
+        return false;
+      const artifacts = [...(referenced.get(name) ?? [])].sort();
+      const lookup = JSON.stringify([folders, path, hash, artifacts]);
+      let verified = checked.get(lookup);
+      if (verified === undefined) {
+        verified = false;
+        for (const folder of folders) {
+          const packageDir = win32.join(folder, path);
+          const observation = yield* inspectPath(packageDir).pipe(Effect.orElseSucceed(() => undefined));
+          if (observation?.kind === "missing") continue;
+          if (observation?.kind !== "directory") break;
+          const contentHash = yield* projectConfigFile(win32.join(packageDir, ".nupkg.metadata"), (text) => {
+            const value = record(parseJson(text))?.["contentHash"];
+            return typeof value === "string" ? value : undefined;
+          });
+          const packageHash = (yield* readManifest(win32.join(packageDir, `${path.replace("/", ".")}.nupkg.sha512`))).trim();
+          // NuGet uses the first match; do not borrow missing payloads from other folders.
+          const hasManifest = yield* ownedFile(win32.join(packageDir, `${id}.nuspec`));
+          const files = yield* Effect.forEach(artifacts, (file) => ownedFile(win32.join(packageDir, file)), {concurrency: 16});
+          // The assets graph records the extracted package's content hash, not the archive digest.
+          verified = contentHash === hash && NUGET_DIGEST.test(packageHash) && hasManifest && files.every(Boolean);
+          break;
+        }
+        checked.set(lookup, verified);
+      }
+      if (!verified) return false;
+    }
+    return true;
+  });
+}
+
+function inspectManagedPayload(path: string, architecture: string): Effect.Effect<boolean, never, ReadOnlyFiles> {
+  return Effect.gen(function* () {
+    if (!(yield* isPortableExecutable(path, architecture, true))) return false;
+    const stem = path.slice(0, -".dll".length);
+    const runtime = record(parseJson(yield* readManifest(`${stem}.runtimeconfig.json`)));
+    const deps = record(parseJson(yield* readManifest(`${stem}.deps.json`)));
+    return record(runtime?.["runtimeOptions"]) !== undefined && Object.keys(record(deps?.["targets"]) ?? {}).length > 0;
+  });
+}
+
+function inspectToolPayload(toolDir: string, architecture: string): Effect.Effect<boolean, never, ReadOnlyFiles> {
+  return Effect.gen(function* () {
+    const settings = yield* readManifest(win32.join(toolDir, "DotnetToolSettings.xml"));
+    const commands = [...settings.matchAll(/<Command\s+([^>]+?)\/?>/gu)];
+    const attrs = new Map([...(commands[0]?.[1] ?? "").matchAll(/(\w+)\s*=\s*"([^"]+)"/gu)].map(([, key, value]) => [key, value]));
+    const path = attrs.get("EntryPoint");
+    const runner = attrs.get("Runner");
+    if (commands.length !== 1 || attrs.get("Name") !== "aspire" || !path || !ARTIFACT_PATH.test(path)) return false;
+    const entry = win32.join(toolDir, path);
+    if (runner === "dotnet" && path.endsWith(".dll")) return yield* inspectManagedPayload(entry, architecture);
+    return runner === "executable" && path.endsWith(".exe") && (yield* isPortableExecutable(entry, architecture));
   });
 }
 
@@ -387,8 +830,13 @@ function inspectBundle(
       && sdks.stdout
         .split(/\r?\n/u)
         .some((line) => line.startsWith(`${framework[1]}.${framework[2]}.`) && /^\d+\.\d+\.\d+ \[.+\]$/u.test(line));
-    const solution = yield* inspectSolution(paths);
-    const assets = solution.issues.length === 0 && solution.restoreIssues.length === 0;
+    const checked = new Map<string, boolean>();
+    let appHostObserved = false;
+    const solution = yield* inspectSolution(paths, (project) => {
+      if (samePath(project, win32.join(paths.root, appHost))) appHostObserved = true;
+      return inspectRestoreProject(paths.root, project, checked);
+    });
+    const assets = appHostObserved && solution.issues.length === 0 && solution.restoreIssues.length === 0;
 
     const home = env.variables["USERPROFILE"];
     const cache = env.variables["NUGET_PACKAGES"] ?? (localDrivePath(home) ? win32.join(home, ".nuget/packages") : undefined);
@@ -404,8 +852,14 @@ function inspectBundle(
     ) {
       const sdkFile = win32.join(cache, "aspire.apphost.sdk", pin, "Sdk/Sdk.targets");
       const tool = win32.join(cache, "aspire.cli", pin);
-      const cli = yield* ownedFile(win32.join(tool, "aspire.cli.nuspec"));
-      if (cli && (yield* ownedFile(sdkFile))) {
+      const metadata = yield* readManifest(win32.join(tool, "aspire.cli.nuspec"));
+      const cli = /<id>\s*aspire\.cli\s*<\/id>/iu.test(metadata) && /<version>\s*([^<]+?)\s*<\/version>/u.exec(metadata)?.[1] === pin;
+      if (
+        cli
+        && (yield* ownedFile(win32.join(tool, ".nupkg.metadata")))
+        && (yield* ownedFile(sdkFile))
+        && (yield* ownedFile(win32.join(win32.dirname(sdkFile), "Sdk.props")))
+      ) {
         const rid = env.architecture === "x64" || env.architecture === "arm64" ? `win-${env.architecture}` : undefined;
         if (rid && framework) {
           for (const layout of [rid, "any"]) {
@@ -414,9 +868,10 @@ function inspectBundle(
             const explicitBundle = env.variables["AspireCliBundlePath"];
             if (explicitBundle !== undefined && !samePath(explicitBundle, directory)) continue;
             if (
-              (yield* ownedFile(win32.join(toolDir, "DotnetToolSettings.xml")))
-              && (yield* ownedFile(win32.join(directory, "dcp/dcp.exe")))
-              && (yield* ownedFile(win32.join(directory, "dashboard/Aspire.Dashboard.exe")))
+              (yield* inspectToolPayload(toolDir, env.architecture))
+              && (yield* isPortableExecutable(win32.join(directory, "dcp/dcp.exe"), env.architecture))
+              && ((yield* isPortableExecutable(win32.join(directory, "dashboard/Aspire.Dashboard.exe"), env.architecture))
+                || (yield* inspectManagedPayload(win32.join(directory, "dashboard/Aspire.Dashboard.dll"), env.architecture)))
             ) {
               bundle = true;
               break;
@@ -435,13 +890,13 @@ function inspectBundle(
       capability(
         "nuget-assets",
         assets,
-        "Managed projects have checkout-owned restore artifacts; offline restore was not attempted.",
+        "Checkout-owned restore graphs and their referenced local NuGet package files were observed; offline restore was not attempted.",
         "Worktree preparation: solution restore artifacts could not be verified. See Setup action dotnet.solution-restore.",
       ),
       capability(
         "aspire-bundle",
         bundle,
-        "The paired AppHost SDK, DNX tool and colocated Windows Dashboard/DCP bundle files were observed; they were not executed.",
+        "The pinned AppHost SDK and CLI metadata, CLI payload and colocated Windows Dashboard/DCP binaries were observed without execution.",
         "Machine bootstrap: pinned Aspire CLI or paired Dashboard/DCP bundle files are absent or unsupported in the offline cache. See tooling/README.md (Development and debugging) for separately approved bundle preparation.",
       ),
     ];
@@ -450,7 +905,7 @@ function inspectBundle(
 
 /**
  * Inspects an attached, canonical Windows worktree and its bounded local prerequisites.
- * No setup action, credential file read, trust mutation, AppHost or provider launch is performed.
+ * Configuration is projected to key facts in-process; no setup, trust mutation, or launch is performed.
  *
  * @param input - Expected canonical checkout and explicit Podman engine selection.
  * @returns Redacted evidence. Only a separate, approved runtime check can verify an owned launch.
@@ -514,29 +969,16 @@ function inspect(
         inspectPodman(root, names),
         inspectWebsiteTrust(env, root, names),
         inspectDotnetTls(root),
-        inspectNpm(root, names),
+        inspectNpm(root, env.architecture, names),
         inspectWebsiteArtifacts(root),
         inspectPython(paths),
-        Effect.map(ownedFile(win32.join(paths.expRoot, "config.docker.json")), (present) =>
-          capability(
-            "exp-config",
-            present,
-            "The checkout-owned config.docker.json source is present; its keys and values were not loaded.",
-            "Worktree preparation: exp config.docker.json is missing or not checkout-owned. See the config.template.json instructions in ExpConfigGenerator.",
-          ),
-        ),
+        inspectExpConfig(paths),
       ],
       {concurrency: "unbounded"},
     );
     const capabilities = [
       capability("checkout", true, "Canonical, attached linked-worktree identity was observed.", ""),
-      keyEvidence(
-        "apphost-config",
-        parameters,
-        names,
-        "See the user-scoped Setup action dotnet.user-secrets.set for standard development.",
-      ),
-      keyEvidence("website-config", integrationKeys, names, "See Setup action react.environment.write for standard development."),
+      ...(yield* Effect.all([inspectAppHostConfig(root, env), inspectWebsiteConfig(paths, env)], {concurrency: "unbounded"})),
       ...checks,
       ...(yield* inspectBundle(paths, env, names)),
     ];

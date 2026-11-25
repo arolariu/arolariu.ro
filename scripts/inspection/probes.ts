@@ -495,6 +495,29 @@ function gitHead(): InspectionProbe {
   return registerProbe("workspace.git.head", {command: "git", args: ["rev-parse", "--verify", "HEAD"]});
 }
 
+/** Read-only NUL-delimited registry of Git worktrees. */
+function gitWorktreeList(): InspectionProbe {
+  return registerProbe("workspace.git.worktree-list", {command: "git", args: ["worktree", "list", "--porcelain", "-z"]});
+}
+
+/** Lists local Podman machine registrations without connecting to their engines. */
+function podmanMachineList(): InspectionProbe {
+  return registerProbe("infrastructure.podman.machine-list", {command: "podman", args: ["machine", "list", "--format", "json"]});
+}
+
+/**
+ * Inspects one locally registered Podman VM, without checking its engine socket.
+ *
+ * @param name - Bare token from the local machine registry.
+ * @returns Registered inspection probe.
+ */
+function podmanMachineInspect(name: string): InspectionProbe {
+  return registerProbe("infrastructure.podman.machine-inspect", {
+    command: "podman",
+    args: ["machine", "inspect", validateBareTokenName(name, "Podman machine name")],
+  });
+}
+
 /** Checks the existing public mkcert root in the Windows trust store without certificate downloads. */
 function windowsMkcertTrust(): InspectionProbe {
   return registerProbe("infrastructure.mkcert.windows-trust", {
@@ -852,6 +875,7 @@ export const probes = {
     gitCheckout,
     gitBranch,
     gitHead,
+    gitWorktreeList,
     executableResolution,
   },
   dotnet: {
@@ -880,6 +904,8 @@ export const probes = {
     composeVersion: infrastructureComposeVersion,
     runtimeContext: infrastructureRuntimeContext,
     runtimeInfo: infrastructureRuntimeInfo,
+    podmanMachineList,
+    podmanMachineInspect,
     containerList: infrastructureContainerList,
     mkcertVersion: infrastructureMkcertVersion,
     mkcertCaRoot: infrastructureMkcertCaRoot,

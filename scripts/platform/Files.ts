@@ -216,6 +216,8 @@ export type ReadOnlyFileSystemShape = Pick<
     path: string,
     maximumBytes: number,
   ) => Effect.Effect<Uint8Array, PlatformError.PlatformError | MaxBytesExceeded>;
+  /** Reads up to 4096 initial bytes without loading the rest of a potentially large artifact. */
+  readonly readPrefix: (path: string) => Effect.Effect<Uint8Array, PlatformError.PlatformError>;
 };
 
 /** Service tag for the {@link ReadOnlyFileSystemShape} view. */
@@ -238,6 +240,20 @@ export const ReadOnlyFilesLive: Layer.Layer<ReadOnlyFiles, never, FileSystem.Fil
       glob: glob.match,
       readBytesBounded: (path: string, maximumBytes: number) =>
         readBytesBounded(path, maximumBytes).pipe(Effect.provideService(FileSystem.FileSystem, fs)),
+      readPrefix: (path: string) =>
+        Effect.scoped(
+          Effect.gen(function* () {
+            const file = yield* fs.open(path, {flag: "r"});
+            const prefix = new Uint8Array(4096);
+            let length = 0;
+            while (length < prefix.length) {
+              const count = yield* file.read(prefix.subarray(length));
+              if (count === 0) break;
+              length += count;
+            }
+            return prefix.subarray(0, length);
+          }),
+        ),
     });
   }),
 );

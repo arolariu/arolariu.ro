@@ -113,6 +113,7 @@ interface JsonScanState {
   cursor: number;
   duplicateTrackedIdentity: boolean;
   readonly source: string;
+  readonly allowFlattenedParameters: boolean;
 }
 
 type JsonObjectContext = "root" | "parameters" | "other";
@@ -793,9 +794,13 @@ function inspectSolutionProject(
  * Checks declared managed projects and their local restore-asset files, without running restore.
  *
  * @param paths - Canonical repository paths.
+ * @param verifyAssets - Optional stricter verification of the already validated managed project path.
  * @returns Solution integrity issues and missing or invalid restore artifacts.
  */
-export function inspectSolution(paths: RepositoryPaths): Effect.Effect<SolutionInspection, never, ReadOnlyFiles> {
+export function inspectSolution(
+  paths: RepositoryPaths,
+  verifyAssets?: (project: string) => Effect.Effect<boolean, never, ReadOnlyFiles>,
+): Effect.Effect<SolutionInspection, never, ReadOnlyFiles> {
   return Effect.gen(function* () {
     const canonicalRoot = yield* Effect.result(realPath(paths.root));
     if (Result.isFailure(canonicalRoot)) {
@@ -867,6 +872,8 @@ export function inspectSolution(paths: RepositoryPaths): Effect.Effect<SolutionI
       }
       if (project.success.restoreIssue !== undefined) {
         restoreIssues.add(project.success.restoreIssue);
+      } else if (project.success.issue === undefined && verifyAssets !== undefined && requiresRestoreAssets(projectPath)) {
+        if (!(yield* verifyAssets(resolvedProject))) restoreIssues.add(`Unverified NuGet restore artifacts: ${projectPath}`);
       }
     }
     return {issues: [...issues].sort(compareText), restoreIssues: [...restoreIssues].sort(compareText)};
@@ -953,13 +960,15 @@ function scanJsonObject(state: JsonScanState, context: JsonObjectContext): boole
         ? "Parameters"
         : context === "parameters"
           ? canonicalRequiredAppHostParameterKey(`Parameters:${key}`)
-          : undefined;
+          : context === "root" && state.allowFlattenedParameters
+            ? canonicalRequiredAppHostParameterKey(key)
+            : undefined;
     if (trackedIdentity !== undefined) {
       if (trackedIdentities.has(trackedIdentity)) {
         state.duplicateTrackedIdentity = true;
       }
       trackedIdentities.add(trackedIdentity);
-      if (context === "root") {
+      if (trackedIdentity === "Parameters") {
         childContext = "parameters";
       }
     }
@@ -1001,8 +1010,8 @@ function scanJsonValue(state: JsonScanState, objectContext: JsonObjectContext): 
   return true;
 }
 
-function hasDuplicateTrackedConfigurationIdentity(source: string): boolean | undefined {
-  const state: JsonScanState = {source, cursor: 0, duplicateTrackedIdentity: false};
+function hasDuplicateTrackedConfigurationIdentity(source: string, allowFlattenedParameters = false): boolean | undefined {
+  const state: JsonScanState = {source, cursor: 0, duplicateTrackedIdentity: false, allowFlattenedParameters};
   if (!scanJsonValue(state, "root")) {
     return undefined;
   }
@@ -1042,6 +1051,38 @@ function configuredTrackedParameters(document: unknown): readonly string[] | und
     }
   }
   return configured;
+}
+
+/**
+ * Projects the allowlisted AppHost parameters of one JSON provider into nonblank evidence.
+ *
+ * @param source - Appsettings or standard user-secrets JSON, never included in the result.
+ * @returns Configured/blank key facts, or `undefined` for malformed or ambiguous configuration.
+ */
+export function projectAppHostParameterKeys(source: string): ReadonlyMap<RequiredAppHostParameterKey, boolean> | undefined {
+  try {
+    if (hasDuplicateTrackedConfigurationIdentity(source, true) !== false) return undefined;
+    const parsed: unknown = JSON.parse(source);
+    if (!isRecord(parsed)) return undefined;
+    const facts = new Map<RequiredAppHostParameterKey, boolean>();
+    const add = (name: string, value: unknown): boolean => {
+      const key = canonicalRequiredAppHostParameterKey(name);
+      if (key === undefined) return true;
+      if (facts.has(key) || (value !== null && typeof value !== "string")) return false;
+      facts.set(key, typeof value === "string" && value.trim() !== "");
+      return true;
+    };
+    for (const [name, value] of Object.entries(parsed)) {
+      if (name.toLowerCase() === "parameters") {
+        if (!isRecord(value) || !Object.entries(value).every(([key, entry]) => add(`Parameters:${key}`, entry))) return undefined;
+      } else if (!add(name, value)) {
+        return undefined;
+      }
+    }
+    return facts;
+  } catch {
+    return undefined;
+  }
 }
 
 function inspectAppHostFiles(paths: RepositoryPaths): Effect.Effect<AppHostFileOutcome, never, ReadOnlyFiles> {

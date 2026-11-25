@@ -209,11 +209,14 @@ describe("ReadOnlyFiles", () => {
         const root = yield* fs.makeTempDirectoryScoped();
         const file = path.join(root, "read.txt");
         yield* fs.writeFileString(file, "hello");
+        const large = path.join(root, "payload.bin");
+        yield* fs.writeFile(large, new Uint8Array(4097).fill(7));
 
         // Act
         const keys = Object.keys(service);
         const text = yield* service.readFileString(file);
         const bounded = yield* Effect.flip(service.readBytesBounded(file, 4));
+        const prefix = yield* service.readPrefix(large);
         const matches = yield* service.glob("*.txt", {cwd: root, onlyFiles: true});
 
         // Assert
@@ -221,10 +224,22 @@ describe("ReadOnlyFiles", () => {
           expect(keys).not.toContain(member);
         }
         expect(keys.toSorted()).toEqual(
-          ["access", "exists", "glob", "readBytesBounded", "readDirectory", "readFile", "readFileString", "realPath", "stat"].toSorted(),
+          [
+            "access",
+            "exists",
+            "glob",
+            "readBytesBounded",
+            "readDirectory",
+            "readFile",
+            "readFileString",
+            "readPrefix",
+            "realPath",
+            "stat",
+          ].toSorted(),
         );
         expect(text).toBe("hello");
         expect(bounded._tag).toBe("MaxBytesExceeded");
+        expect(prefix).toEqual(new Uint8Array(4096).fill(7));
         expect(matches).toEqual([path.join(root, "read.txt")]);
       }),
     liveLayer,
