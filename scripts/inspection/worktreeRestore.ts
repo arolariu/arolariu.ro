@@ -8,7 +8,7 @@ import {win32} from "node:path";
 import {Effect} from "effect";
 
 import type {RepositoryPaths} from "../common/repository-paths.ts";
-import {Environment} from "../platform/Environment.ts";
+import {Environment, type EnvironmentSnapshot} from "../platform/Environment.ts";
 import {ReadOnlyFiles} from "../platform/Files.ts";
 import type {Process} from "../platform/Process.ts";
 import {solutionProjectPaths} from "./dotnet.ts";
@@ -22,6 +22,7 @@ export const worktreeRestorePaths = {
   lock: ".worktree-restore-evidence.lock",
 } as const;
 const MAX_INPUT = 8 * 1024 * 1024;
+const MAX_NUGET_CONFIG_FILES = 64;
 const inputs = [
   "Directory.Build.props",
   "Directory.Build.targets",
@@ -40,8 +41,9 @@ const dotnetEnv = {
   DOTNET_NOLOGO: "1",
 };
 const drivePath = /^[a-z]:[\\/][^\u0000-\u001f]*$/iu;
+const localPath = /^[a-z]:[\\/][^<>:"|?*\u0000-\u001f]+$/iu;
 const selector =
-  /^(?:restore|msbuild|directorybuild|directorypackages|nuget_fallback|custombefore|customafter|baseintermediateoutputpath|dotnet_cli_home|dotnet_msbuild_sdk_resolver|configuration$|platform$|targetframework|runtimeidentifier)/iu;
+  /^(?:restore|msbuild|(?:import)?directorybuild|directorypackages|nuget_fallback|nuget_restore|custombefore|customafter|baseintermediateoutputpath|dotnet_cli_home|dotnet_msbuild_sdk_resolver|configuration$|platform$|targetframework|runtimeidentifier|dcpclipath$|dcpextensionsdir$|testingglobalpath$)/iu;
 const supportedProperties = new Set([
   "msbuildprojectname",
   "msbuildprojectdirectory",
@@ -81,7 +83,7 @@ function ownedBytes(path: string, limit = MAX_INPUT): Effect.Effect<Uint8Array |
 function supportedInput(path: string, content: string, listed: ReadonlySet<string>): boolean {
   const xml = content.replaceAll(/<!--[\s\S]*?-->/gu, "");
   if (
-    /<!|<(?:UsingTask|ItemDefinitionGroup|CustomBefore[^ >]*|CustomAfter[^ >]*|Restore[^ >]*|MSBuildProjectExtensionsPath|BaseIntermediateOutputPath|MSBuildSDKsPath)\b/iu.test(
+    /[\u0000\ufffd]|<!|<\/?[\w.-]+:|<(?:UsingTask|ItemDefinitionGroup|CustomBefore[^ >]*|CustomAfter[^ >]*|Restore[^ >]*|MSBuildProjectExtensionsPath|BaseIntermediateOutputPath|MSBuildSDKsPath|DcpCliPath|DcpExtensionsDir)\b/iu.test(
       xml,
     )
   )
@@ -113,8 +115,74 @@ function supportedInput(path: string, content: string, listed: ReadonlySet<strin
   });
 }
 
+function configPaths(value: unknown): string[] | undefined {
+  if (!Array.isArray(value) || value.length > MAX_NUGET_CONFIG_FILES) return undefined;
+  const paths: string[] = [];
+  const seen = new Set<string>();
+  for (const path of value) {
+    if (typeof path !== "string" || !localPath.test(path) || win32.extname(path).toLowerCase() !== ".config") return undefined;
+    const normalized = win32.normalize(path);
+    if (normalized !== path.replaceAll("/", "\\") || seen.has(normalized.toLowerCase())) return undefined;
+    paths.push(normalized);
+    seen.add(normalized.toLowerCase());
+  }
+  return paths;
+}
+
+function configRoot(env: EnvironmentSnapshot, key: string): string | undefined {
+  const paths = Object.entries(env.variables).filter(([name]) => name.toLowerCase() === key);
+  const path = paths[0]?.[1];
+  return paths.length === 1 && path && localPath.test(path) ? win32.normalize(path) : undefined;
+}
+
+function configInputs(env: EnvironmentSnapshot, projects: readonly string[]): Effect.Effect<string | undefined, never, ReadOnlyFiles> {
+  return Effect.gen(function* () {
+    const roaming = configRoot(env, "appdata");
+    const programFiles = configRoot(env, "programfiles(x86)");
+    if (!roaming || !programFiles) return undefined; // Do not infer redirected or fallback roots.
+    const files = yield* ReadOnlyFiles;
+    const primary = win32.join(roaming, "NuGet", "NuGet.Config");
+    const candidates = [primary];
+    // Only fence the known Windows layout. NuGet's restore graph is the authority for
+    // which settings were used; do not ask NuGet to load settings (it can create defaults).
+    for (const dir of [win32.join(win32.dirname(primary), "config"), win32.join(programFiles, "NuGet", "Config")]) {
+      const observation = yield* inspectPath(dir);
+      if (observation.kind === "missing") continue;
+      if (observation.kind !== "directory" || !samePath(yield* files.realPath(dir), dir)) return undefined;
+      for (const name of yield* files.readDirectory(dir)) {
+        if (win32.extname(name).toLowerCase() !== ".config") continue;
+        candidates.push(win32.join(dir, name));
+        if (candidates.length > MAX_NUGET_CONFIG_FILES) return undefined;
+      }
+    }
+    const expected = new Set(candidates.map((path) => path.toLowerCase()));
+    if (expected.size !== candidates.length) return undefined;
+    let effective: readonly string[] | undefined;
+    for (const project of projects) {
+      const bytes = yield* ownedBytes(win32.join(win32.dirname(project), "obj", "project.assets.json"));
+      if (!bytes) return undefined;
+      const assets: {project?: {restore?: {configFilePaths?: unknown}}} | null = yield* Effect.try(() =>
+        JSON.parse(new TextDecoder().decode(bytes)),
+      );
+      const recorded = configPaths(assets?.project?.restore?.configFilePaths);
+      if (!recorded || recorded.length !== expected.size || recorded.some((path) => !expected.has(path.toLowerCase()))) return undefined;
+      if (effective?.some((path, index) => path.toLowerCase() !== recorded[index]?.toLowerCase())) return undefined;
+      effective ??= recorded;
+    }
+    if (!effective) return undefined;
+    const entries: [string, string][] = [];
+    for (const path of effective) {
+      const bytes = yield* ownedBytes(path);
+      if (!bytes?.length) return undefined;
+      // Hash opaque bytes in-process. Neither filenames nor config bytes are persisted.
+      entries.push([path.toLowerCase(), digest(bytes)]);
+    }
+    return digest(JSON.stringify(entries));
+  }).pipe(Effect.orElseSucceed(() => undefined));
+}
+
 /**
- * Fingerprints the supported checkout restore inputs without evaluating projects or reading NuGet credentials.
+ * Fingerprints the supported checkout restore inputs without evaluating projects or exposing NuGet settings.
  *
  * @param paths - Canonical repository paths.
  * @returns The supported input digest and managed project paths, or unavailable evidence.
@@ -149,9 +217,6 @@ export function snapshotWorktreeRestoreInputs(
     if (!projects?.some((name) => name.replaceAll("\\", "/") === "tooling/src/AppHost/AppHost.csproj")) return undefined;
     const projectPaths = projects.map((path) => win32.join(root, path)).sort();
     const listed = new Set(projectPaths.map((path) => path.toLowerCase()));
-    const sdk = yield* inspectionProbeRunner.run(probes.dotnet.version(), {cwd: root, env: dotnetEnv});
-    const version = sdk.kind === "succeeded" ? sdk.stdout.trim() : "";
-    if (!/^\d+\.\d+\.\d+$/u.test(version)) return undefined;
     const packageRoots = Object.keys(env.variables).filter((key) => key.toLowerCase() === "nuget_packages");
     const key = packageRoots[0];
     const packageRoot = key === undefined ? "" : env.variables[key];
@@ -173,8 +238,8 @@ export function snapshotWorktreeRestoreInputs(
         const path = win32.join(directory, name);
         const present = yield* inspectPath(path);
         if (present.kind === "missing") continue;
-        // Do not load NuGet.Config: it may contain source credentials. Custom repository config
-        // is outside this receipt profile, as are lock/SDK inputs outside the checkout.
+        // Custom repository config is outside this profile. Supported user and machine
+        // settings are bound separately using NuGet's effective file list.
         if (name === "NuGet.Config") return undefined;
         const bytes = yield* ownedBytes(path);
         if (
@@ -183,7 +248,7 @@ export function snapshotWorktreeRestoreInputs(
         )
           return undefined;
         if (name === "global.json") {
-          const config: unknown = JSON.parse(new TextDecoder().decode(bytes));
+          const config: unknown = yield* Effect.try(() => JSON.parse(new TextDecoder().decode(bytes)));
           if (typeof config !== "object" || config === null || Array.isArray(config) || Object.keys(config).some((key) => key !== "sdk"))
             return undefined;
         }
@@ -196,14 +261,21 @@ export function snapshotWorktreeRestoreInputs(
       }
       if (dir === win32.dirname(dir)) break;
     }
+    const managed = projectPaths.filter((project) => /\.(?:csproj|fsproj|vbproj)$/iu.test(project));
+    const configs = yield* configInputs(env, managed);
+    if (configs === undefined) return undefined;
+    const sdk = yield* inspectionProbeRunner.run(probes.dotnet.version(), {cwd: root, env: dotnetEnv});
+    const version = sdk.kind === "succeeded" ? sdk.stdout.trim() : "";
+    if (!/^\d+\.\d+\.\d+$/u.test(version)) return undefined;
     return {
       root,
-      projects: projectPaths.filter((project) => /\.(?:csproj|fsproj|vbproj)$/iu.test(project)),
+      projects: managed,
       digest: digest(
         JSON.stringify([
           env.architecture,
           version,
           packageRoot,
+          configs,
           [...absentHooks].sort(),
           [...entries].sort(([a], [b]) => a.localeCompare(b)),
         ]),

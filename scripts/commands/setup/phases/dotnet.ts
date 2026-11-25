@@ -35,7 +35,7 @@ import type {DotnetFacts} from "../../../inspection/dotnet.ts";
 import type {InspectionOutcome} from "../../../inspection/types.ts";
 import {recordWorktreeRestoreEvidence} from "../worktreeRestoreEvidence.ts";
 import {Environment} from "../../../platform/Environment.ts";
-import {formatProcessRequest, type ProcessError, type ProcessRequest} from "../../../platform/Process.ts";
+import {formatProcessRequest, Process, type ProcessError, type ProcessRequest} from "../../../platform/Process.ts";
 import {SetupActionFailed} from "../errors.ts";
 import {phaseResult, processFailureOutput, runPhaseCommand, submitSetupAction, type PhaseCommandOptions} from "../phase-support.ts";
 import type {
@@ -536,41 +536,66 @@ function runRestoreActions(
     let facts = initialFacts;
     for (const restore of restores(context)) {
       let verifiedRefresh: InspectionOutcome<DotnetFacts> | undefined;
-      const execute = runMutationCommand(context, restore.id, `Restore action '${restore.id}' failed.`, restore.command, {
-        cwd: context.paths.root,
-        output: "tee",
-        timeoutMs: LONG_RUNNING_MUTATION_TIMEOUT_MS,
-      });
+      const refresh = restore.id === SOLUTION_RESTORE_ACTION && context.options.refreshWorktreeRestoreEvidence;
+      const execute = refresh
+        ? Effect.flatMap(Process, (process) =>
+            process
+              .run(restore.command, {
+                cwd: context.paths.root,
+                output: "capture",
+                echo: false,
+                timeout: LONG_RUNNING_MUTATION_TIMEOUT_MS,
+              })
+              .pipe(
+                Effect.asVoid,
+                Effect.mapError(
+                  () =>
+                    new SetupActionFailed({
+                      actionId: restore.id,
+                      message: "Forced solution NuGet restore failed. Restore diagnostics are withheld.",
+                    }),
+                ),
+              ),
+          )
+        : runMutationCommand(context, restore.id, `Restore action '${restore.id}' failed.`, restore.command, {
+            cwd: context.paths.root,
+            output: "tee",
+            timeoutMs: LONG_RUNNING_MUTATION_TIMEOUT_MS,
+          });
       const mutation = yield* runDotnetMutation(context, {
         id: restore.id,
         scope: restore.scope,
         summary: restore.summary,
-        mutate:
-          restore.id === SOLUTION_RESTORE_ACTION && context.options.refreshWorktreeRestoreEvidence
-            ? Effect.gen(function* () {
-                const verify = Effect.gen(function* () {
-                  yield* context.inspection.invalidate("dotnet");
-                  const outcome = yield* context.inspection.inspect("dotnet");
-                  if (
-                    outcome.kind !== "available"
-                    || outcome.value.solutionIssues.length > 0
-                    || restore.verify({before: facts, after: outcome.value}).failures.length > 0
-                  )
-                    return false;
-                  verifiedRefresh = outcome;
-                  return true;
+        mutate: refresh
+          ? Effect.gen(function* () {
+              const verify = Effect.gen(function* () {
+                yield* context.inspection.invalidate("dotnet");
+                const outcome = yield* context.inspection.inspect("dotnet");
+                if (
+                  outcome.kind !== "available"
+                  || outcome.value.solutionIssues.length > 0
+                  || restore.verify({before: facts, after: outcome.value}).failures.length > 0
+                )
+                  return false;
+                verifiedRefresh = outcome;
+                return true;
+              });
+              const recorded = yield* recordWorktreeRestoreEvidence(context.paths, execute, verify).pipe(
+                Effect.catchTag("PlatformError", () => Effect.succeed(false)),
+              );
+              if (recorded === "finalization-failed")
+                return yield* new SetupActionFailed({
+                  actionId: restore.id,
+                  message: "Checkout-local restore evidence could not finalize. Check the refresh lock before rerunning Setup.",
                 });
-                const recorded = yield* recordWorktreeRestoreEvidence(context.paths, execute, verify).pipe(
-                  Effect.catchTag("PlatformError", () => Effect.succeed(false)),
-                );
-                if (!recorded)
-                  return yield* new SetupActionFailed({
-                    actionId: restore.id,
-                    message:
-                      "Checkout-local restore evidence could not be refreshed. Check for unsupported inputs, a concurrent refresh, or changed inputs.",
-                  });
-              })
-            : execute,
+              if (!recorded)
+                return yield* new SetupActionFailed({
+                  actionId: restore.id,
+                  message:
+                    "Checkout-local restore evidence could not be refreshed. Check for unsupported inputs, a concurrent refresh, or changed inputs.",
+                });
+            })
+          : execute,
         verifiedOutcome: () => verifiedRefresh,
       });
 

@@ -1,5 +1,5 @@
 // @vitest-environment node
-import {Effect, FileSystem, Layer} from "effect";
+import {Effect, FileSystem, Layer, PlatformError} from "effect";
 import {describe, expect, it} from "vitest";
 
 import type {ProcessRequest} from "../platform/Process.ts";
@@ -15,6 +15,7 @@ import {inspectWorktreeAspire} from "./worktreePreflight.ts";
 
 const root = "C:/worktrees/task";
 const commonGitDir = "C:/repo/.git";
+const forcedRestore = `dotnet restore ${createRepositoryPaths(root).solution} --force`;
 const head = "0123456789abcdef0123456789abcdef01234567";
 const gitCheckoutArgs = ["rev-parse", "--show-toplevel", "--absolute-git-dir", "--git-common-dir", "--show-superproject-working-tree"];
 const canary = "must-not-appear-in-preflight";
@@ -44,6 +45,14 @@ const aspireHome = `${profile}/.aspire`;
 const appHostName = "tooling/src/AppHost/AppHost.csproj";
 const receiptPath = "tooling/src/AppHost/obj/worktree-restore-evidence.json";
 const graphPath = "tooling/src/AppHost/obj/project.assets.json";
+const lockPath = "tooling/src/AppHost/obj/.worktree-restore-evidence.lock";
+const userConfig = "C:/appdata/NuGet/NuGet.Config";
+const machineConfig = "C:/Program Files (x86)/NuGet/Config/Offline.config";
+const configFiles = {
+  [userConfig]:
+    '<configuration><packageSourceMapping><packageSource key="test"><package pattern="Example.*" /></packageSource></packageSourceMapping></configuration>',
+  [machineConfig]: '<configuration><config><add key="globalPackagesFolder" value="C:/nuget" /></config></configuration>',
+};
 const secretPath = "C:/appdata/Microsoft/UserSecrets/test-apphost/secrets.json";
 const siteEnv = [
   "SITE_ENV=development",
@@ -76,7 +85,7 @@ const restoreFiles = {
   "arolariu.slnx": `<Solution><Project Path="${appHostName}" /></Solution>`,
   "tooling/src/AppHost/obj/project.assets.json": JSON.stringify({
     version: 4,
-    project: {restore: {projectPath: `${root}/${appHostName}`}},
+    project: {restore: {projectPath: `${root}/${appHostName}`, configFilePaths: [userConfig, machineConfig]}},
     projectFileDependencyGroups: {"net10.0": ["Example.Sdk >= 1.2.3"]},
     packageFolders: {[cache]: {}},
     libraries: {"Example.Sdk/1.2.3": {type: "package", path: assetPackage, sha512: packageHash}},
@@ -87,6 +96,7 @@ const restoreFiles = {
   [`${packageDir}/.nupkg.metadata`]: JSON.stringify({version: 2, contentHash: packageHash}),
   [`${packageDir}/example.sdk.1.2.3.nupkg.sha512`]: `${"b".repeat(86)}==`,
   [`${packageDir}/example.sdk.nuspec`]: "<package/>",
+  ...configFiles,
 };
 
 function portableExecutable(machine = 0x8664): Uint8Array {
@@ -115,9 +125,19 @@ const cliBundleFiles = {
     '{"runtimeOptions":{"tfm":"net10.0","framework":{"name":"Microsoft.NETCore.App","version":"10.0.0"}}}',
   [`${toolDir}/aspire.deps.json`]: JSON.stringify({
     runtimeTarget: {name: ".NETCoreApp,Version=v10.0"},
-    targets: {".NETCoreApp,Version=v10.0": {"Aspire.Cli/13.6.5": {runtime: {"aspire.dll": {}, "Aspire.Common.dll": {}}}}},
+    targets: {
+      ".NETCoreApp,Version=v10.0": {
+        "Aspire.Cli/13.6.5": {
+          runtime: {"aspire.dll": {}, "Aspire.Common.dll": {}},
+          native: {"helper.dll": {}},
+          resources: {"fr/Aspire.resources.dll": {locale: "fr"}},
+        },
+      },
+    },
   }),
-  [`${toolDir}/Aspire.Common.dll`]: "runtime companion stub",
+  [`${toolDir}/Aspire.Common.dll`]: portableExecutable(0x014c),
+  [`${toolDir}/helper.dll`]: portableExecutable(),
+  [`${toolDir}/fr/Aspire.resources.dll`]: portableExecutable(0x014c),
   [`${toolDir}/bundle/dcp/dcp.exe`]: portableExecutable(),
   [`${toolDir}/bundle/dashboard/Aspire.Dashboard.exe`]: portableExecutable(),
 };
@@ -135,7 +155,14 @@ const pinnedCliFiles = {
   ...Object.fromEntries(Object.entries(cliBundleFiles).filter(([path]) => !path.startsWith(`${toolDir}/bundle/`))),
   [`${toolDir}/aspire.dll`]: portableExecutable(0x014c),
 };
-const payloadFixtures = {"pwsh:cli": "verified", "pwsh:dcp": "verified", "pwsh:managed": "verified", "pwsh:dashboard": "verified"};
+const payloadFixtures = {
+  "pwsh:cli": "verified",
+  "pwsh:managed-library": "verified",
+  "pwsh:native-library": "verified",
+  "pwsh:dcp": "verified",
+  "pwsh:managed": "verified",
+  "pwsh:dashboard": "verified",
+};
 
 function commandLine(request: Readonly<ProcessRequest>): string {
   return [request.command, ...request.args].join(" ");
@@ -154,6 +181,7 @@ function fixture(
   overrides: Readonly<Record<string, string>> = {},
   files: Readonly<Record<string, string | Uint8Array>> = {},
   trustedDotnet = false,
+  failRestore = false,
 ) {
   const responses: Readonly<Record<string, string>> = {
     [`git ${gitCheckoutArgs.join(" ")}`]: `${root}\n${commonGitDir}/worktrees/task\n../../repo/.git\n`,
@@ -168,7 +196,6 @@ function fixture(
     "dotnet --list-runtimes": "Microsoft.NETCore.App 10.0.7 [C:/dotnet/shared]\n",
     "dotnet --version": "10.0.404\n",
     [`dotnet workload restore ${createRepositoryPaths(root).solution}`]: "",
-    [`dotnet restore ${createRepositoryPaths(root).solution} --force`]: "",
     "dotnet tool restore": "",
     "pwsh:profile": profile,
     "pwsh:swc": "unverified",
@@ -179,7 +206,7 @@ function fixture(
       cwd: root,
       platform: "win32",
       architecture: "x64",
-      variables: {APPDATA: "C:/appdata", USERPROFILE: profile, ...variables},
+      variables: {APPDATA: "C:/appdata", "ProgramFiles(x86)": "C:/Program Files (x86)", USERPROFILE: profile, ...variables},
     },
     files: {
       "package.json": JSON.stringify({name: "@arolariu/monorepo"}),
@@ -215,8 +242,14 @@ function fixture(
           if (trustedDotnet) return {kind: "succeeded", exitCode: 0, stdout: "", stderr: canary, durationMs: 0};
           return {kind: "exited", exitCode: 7, stdout: "", stderr: canary, durationMs: 0};
         }
+        if (command === forcedRestore) {
+          const diagnostic = `synthetic-auth-diagnostic:${canary}`;
+          const output = {stdout: diagnostic, stderr: diagnostic, durationMs: 0};
+          return failRestore ? {kind: "exited", exitCode: 1, ...output} : {kind: "succeeded", exitCode: 0, ...output};
+        }
         const trackedCommand = processKey(request, options.env);
-        const stdout = responses[trackedCommand];
+        const payloadPath = options.env?.["AROLARIU_PREFLIGHT_PAYLOAD_PATH"]?.replaceAll("\\", "/");
+        const stdout = responses[`${trackedCommand}:${payloadPath}`] ?? responses[trackedCommand];
         if (stdout === undefined) throw new Error("Unapproved process in preflight");
         return {kind: "succeeded", exitCode: 0, stdout, stderr: canary, durationMs: 0};
       }),
@@ -275,33 +308,78 @@ function fixture(
 describe("worktree Aspire preflight", () => {
   it
     .runIf(process.platform === "win32")
-    .each(["project", "central", "graph", "generated targets", "foreign", "malformed", "locked"] as const)(
-    "rejects real producer evidence after %s changes",
+    .each([
+      "project",
+      "central",
+      "graph",
+      "generated targets",
+      "source mapping",
+      "cache config",
+      "new config",
+      "foreign",
+      "malformed",
+      "locked",
+    ] as const)("rejects real producer evidence after %s changes", async (change) => {
+    const paths = createRepositoryPaths(root);
+    const test = fixture({}, {}, restoreFiles);
+    const result = await Effect.runPromise(
+      Effect.gen(function* () {
+        const fs = yield* FileSystem.FileSystem;
+        expect(yield* recordWorktreeRestoreEvidence(paths, Effect.void)).toBe(true);
+        expect(yield* currentWorktreeRestoreEvidence(paths)).toMatch(/^[a-f0-9]{64}$/u);
+        const receipt = JSON.parse(yield* fs.readFileString(receiptPath)) as Record<string, unknown>;
+        expect(Object.keys(receipt).sort()).toEqual(["checkout", "graph", "inputs", "version"]);
+        expect(receipt["inputs"]).toMatch(/^[a-f0-9]{64}$/u);
+        if (change === "source mapping") yield* fs.writeFileString(userConfig, configFiles[userConfig].replace("Example.*", "Other.*"));
+        if (change === "cache config") yield* fs.writeFileString(machineConfig, configFiles[machineConfig].replace("C:/nuget", "C:/other"));
+        if (change === "new config") yield* fs.writeFileString("C:/Program Files (x86)/NuGet/Config/New.config", "<configuration/>");
+        if (change === "project") yield* fs.writeFileString(appHostName, "<Project />");
+        if (change === "central")
+          yield* fs.writeFileString("tooling/Directory.Packages.props", "<Project><PropertyGroup><X>2</X></PropertyGroup></Project>");
+        if (change === "graph") yield* fs.writeFileString(graphPath, `${restoreFiles[graphPath]}\n`);
+        if (change === "generated targets")
+          yield* fs.writeFileString("tooling/src/AppHost/obj/AppHost.csproj.nuget.g.targets", "<Project><!-- changed --></Project>");
+        if (change === "foreign") {
+          const receipt = yield* fs.readFileString(receiptPath);
+          yield* fs.writeFileString(receiptPath, receipt.replace("worktrees", "unrelated"));
+        }
+        if (change === "malformed") yield* fs.writeFileString(receiptPath, "{");
+        if (change === "locked") yield* fs.writeFileString("tooling/src/AppHost/obj/.worktree-restore-evidence.lock", "");
+        return yield* currentWorktreeRestoreEvidence(paths);
+      }).pipe(Effect.provide(test.layer)),
+    );
+    expect(result).toBeUndefined();
+    test.expectNoTransport();
+  });
+
+  it
+    .runIf(process.platform === "win32")
+    .each(["changed bytes", "changed list", "missing listed file", "unlisted current file", "malformed graph"] as const)(
+    "does not publish restore evidence with %s",
     async (change) => {
-      const paths = createRepositoryPaths(root);
       const test = fixture({}, {}, restoreFiles);
+      let ran = false;
       const result = await Effect.runPromise(
         Effect.gen(function* () {
           const fs = yield* FileSystem.FileSystem;
-          expect(yield* recordWorktreeRestoreEvidence(paths, Effect.void)).toBe(true);
-          expect(yield* currentWorktreeRestoreEvidence(paths)).toMatch(/^[a-f0-9]{64}$/u);
-          if (change === "project") yield* fs.writeFileString(appHostName, "<Project />");
-          if (change === "central")
-            yield* fs.writeFileString("tooling/Directory.Packages.props", "<Project><PropertyGroup><X>2</X></PropertyGroup></Project>");
-          if (change === "graph") yield* fs.writeFileString(graphPath, `${restoreFiles[graphPath]}\n`);
-          if (change === "generated targets")
-            yield* fs.writeFileString("tooling/src/AppHost/obj/AppHost.csproj.nuget.g.targets", "<Project><!-- changed --></Project>");
-          if (change === "foreign") {
-            const receipt = yield* fs.readFileString(receiptPath);
-            yield* fs.writeFileString(receiptPath, receipt.replace("worktrees", "unrelated"));
-          }
-          if (change === "malformed") yield* fs.writeFileString(receiptPath, "{");
-          if (change === "locked") yield* fs.writeFileString("tooling/src/AppHost/obj/.worktree-restore-evidence.lock", "");
-          return yield* currentWorktreeRestoreEvidence(paths);
+          if (change === "missing listed file") yield* fs.remove(machineConfig);
+          if (change === "unlisted current file")
+            yield* fs.writeFileString("C:/Program Files (x86)/NuGet/Config/New.config", "<configuration/>");
+          if (change === "malformed graph") yield* fs.writeFileString(graphPath, "{");
+          return yield* recordWorktreeRestoreEvidence(
+            createRepositoryPaths(root),
+            Effect.gen(function* () {
+              ran = true;
+              if (change === "changed bytes") yield* fs.writeFileString(machineConfig, "<configuration/>");
+              if (change === "changed list")
+                yield* fs.writeFileString(graphPath, restoreFiles[graphPath].replace(machineConfig, "C:/other.config"));
+            }),
+          );
         }).pipe(Effect.provide(test.layer)),
       );
-      expect(result).toBeUndefined();
-      test.expectNoTransport();
+      expect(ran).toBe(change === "changed bytes" || change === "changed list");
+      expect(result).not.toBe(true);
+      expect([...test.files().keys()].some((path) => path.endsWith(receiptPath))).toBe(false);
     },
   );
 
@@ -335,6 +413,57 @@ describe("worktree Aspire preflight", () => {
       expect(test.processCalls().some(({options}) => options.env?.["AROLARIU_PREFLIGHT_PAYLOAD_ROLE"] === "dcp")).toBe(false);
     },
   );
+
+  it.runIf(process.platform === "win32").each([
+    ["tooling/Directory.Build.targets", "DcpCliPath", "utf8"],
+    ["tooling/src/AppHost/Directory.Build.targets", "DcpExtensionsDir", "utf8"],
+    ["Directory.Build.targets", "DcpCliPath", "utf8"],
+    ["tooling/src/Directory.Build.targets", "DcpExtensionsDir", "utf16le"],
+  ] as const)("blocks a DCP selector in %s before any payload probe", async (path, key, encoding) => {
+    const xml = `<Project><PropertyGroup><${key}>C:/external/dcp</${key}></PropertyGroup></Project>`;
+    const test = fixture({NUGET_PACKAGES: cache}, payloadFixtures, {
+      ...restoreFiles,
+      ...pinnedCliFiles,
+      ...resolverBundle(`${aspireHome}/bundle`),
+      [path]: encoding === "utf16le" ? Buffer.from(`\ufeff${xml}`, encoding) : xml,
+    });
+    const record = recordWorktreeRestoreEvidence(
+      createRepositoryPaths(root),
+      Effect.die("unsupported build selectors must not reach restore"),
+    );
+    expect(await Effect.runPromise(record.pipe(Effect.provide(test.layer)))).toBe(false);
+    expect(test.processCalls()).toEqual([]);
+    expect((await test.inspect()).capabilities).toContainEqual(expect.objectContaining({id: "aspire-bundle", status: "blocked"}));
+    expect(test.processCalls().some(({options}) => options.env?.["AROLARIU_PREFLIGHT_PAYLOAD_ROLE"] !== undefined)).toBe(false);
+  });
+
+  it.runIf(process.platform === "win32").each([
+    ["non-PE runtime", "Aspire.Common.dll", "invalid payload", {}],
+    [
+      "wrong-role runtime",
+      "Aspire.Common.dll",
+      portableExecutable(),
+      {[`pwsh:managed-library:${toolDir}/Aspire.Common.dll`]: "unverified"},
+    ],
+    ["wrong-role native", "helper.dll", portableExecutable(), {[`pwsh:native-library:${toolDir}/helper.dll`]: "unverified"}],
+    [
+      "wrong-role resource",
+      "fr/Aspire.resources.dll",
+      portableExecutable(),
+      {[`pwsh:managed-library:${toolDir}/fr/Aspire.resources.dll`]: "unverified"},
+    ],
+  ] as const)("blocks a declared %s companion", async (_label, file, contents, overrides) => {
+    const test = fixture(
+      {NUGET_PACKAGES: cache},
+      {...payloadFixtures, ...overrides},
+      {
+        ...pinnedCliFiles,
+        ...resolverBundle(`${aspireHome}/bundle`),
+        [`${toolDir}/${file}`]: contents,
+      },
+    );
+    expect((await test.inspect()).capabilities).toContainEqual(expect.objectContaining({id: "aspire-bundle", status: "blocked"}));
+  });
 
   it.runIf(process.platform === "win32")("blocks an Aspire tool cache lacking a declared runtime companion", async () => {
     const test = fixture({NUGET_PACKAGES: cache}, payloadFixtures, {
@@ -831,9 +960,9 @@ describe("worktree Aspire preflight", () => {
     test.expectReadOnly();
   });
 
-  it.runIf(process.platform === "win32")(
-    "reaches prepared only after the existing approved Setup action produces matching evidence",
-    async () => {
+  it.runIf(process.platform === "win32").each(["prepared", "restore failed", "unlock failed"] as const)(
+    "handles %s at the approved Setup action boundary without emitting raw restore diagnostics",
+    async (scenario) => {
       const test = fixture(
         {
           "Parameters__sql-password": canary,
@@ -858,6 +987,7 @@ describe("worktree Aspire preflight", () => {
           ...restoreFiles,
           ...pinnedCliFiles,
           ...resolverBundle(`${aspireHome}/bundle`),
+          "tooling/Directory.Build.targets": "<Project><PropertyGroup><ExampleProperty>1</ExampleProperty></PropertyGroup></Project>",
           "node_modules/@next/swc-win32-x64-msvc/next-swc.win32-x64-msvc.node": portableExecutable(),
           "sites/arolariu.ro/licenses.json": "{}",
           "scripts/__generated__/gql/README.placeholder.txt": "marker",
@@ -874,6 +1004,7 @@ describe("worktree Aspire preflight", () => {
           [`${toolDir}/aspire.dll`]: portableExecutable(0x014c),
         },
         true,
+        scenario === "restore failed",
       );
 
       const result = await test.inspect(root);
@@ -885,7 +1016,7 @@ describe("worktree Aspire preflight", () => {
       expect(JSON.stringify(result)).not.toContain(canary);
       test.expectReadOnly();
 
-      const options = {dryRun: false, yes: true, verbose: false, refreshWorktreeRestoreEvidence: true};
+      const options = {dryRun: false, yes: true, verbose: true, refreshWorktreeRestoreEvidence: true};
       const paths = createRepositoryPaths(root);
       const inspection = recordingInspection({
         dotnet: () => ({
@@ -930,12 +1061,50 @@ describe("worktree Aspire preflight", () => {
         definition.run({...context, options: plan}).pipe(Effect.provide(Layer.provideMerge(setupActionsLayer(plan), test.layer))),
       );
       expect([...test.files().keys()].some((path) => path.endsWith(receiptPath))).toBe(false);
-      expect(test.processCalls().some(({request}) => request.args.includes("--force"))).toBe(false);
-      const setup = definition.run(context);
+      expect(test.processCalls().some(({request}) => commandLine(request) === forcedRestore)).toBe(false);
+      let publishedBeforeUnlock = false;
+      const setup = Effect.gen(function* () {
+        const fs = yield* FileSystem.FileSystem;
+        return yield* definition.run(context).pipe(
+          Effect.provideService(FileSystem.FileSystem, {
+            ...fs,
+            remove: (path, removeOptions) => {
+              if (scenario !== "unlock failed" || !path.replaceAll("\\", "/").endsWith(lockPath)) return fs.remove(path, removeOptions);
+              return Effect.suspend(() => {
+                publishedBeforeUnlock = [...test.files().keys()].some((file) => file.endsWith(receiptPath));
+                return Effect.fail(
+                  PlatformError.systemError({
+                    _tag: "PermissionDenied",
+                    module: "FileSystem",
+                    method: "remove",
+                    description: `synthetic-auth-diagnostic:${canary}`,
+                  }),
+                );
+              });
+            },
+          }),
+        );
+      });
       const phase = await Effect.runPromise(setup.pipe(Effect.provide(Layer.provideMerge(setupActionsLayer(options), test.layer))));
-      expect(phase.evidence.join("\n")).toContain("Executed and verified action: dotnet.solution-restore");
-      expect(test.processCalls().some(({request}) => request.args.includes("--force"))).toBe(true);
       const prepared = await test.inspect(root);
+      expect(phase.status).toBe(scenario === "prepared" ? "succeeded" : "failed");
+      expect(JSON.stringify([phase, test.output()]).includes("synthetic-auth-diagnostic")).toBe(false);
+      const refreshCalls = test.processCalls().filter(({request}) => commandLine(request) === forcedRestore);
+      expect(refreshCalls).toHaveLength(1);
+      expect(refreshCalls[0]?.options).toMatchObject({
+        output: "capture",
+        echo: false,
+      });
+      if (scenario !== "prepared") {
+        expect(phase.evidence.join("\n")).toContain(scenario === "unlock failed" ? "finalize" : "Forced solution NuGet restore failed");
+        expect(JSON.stringify(test.output()).includes("Executed setup action 'dotnet.solution-restore'")).toBe(false);
+        expect(prepared.capabilities).toContainEqual(expect.objectContaining({id: "nuget-assets", status: "blocked"}));
+        expect([...test.files().keys()].some((path) => path.endsWith(lockPath))).toBe(scenario === "unlock failed");
+        expect(publishedBeforeUnlock).toBe(scenario === "unlock failed");
+        expect([...test.files().keys()].some((path) => path.endsWith(receiptPath))).toBe(false);
+        return;
+      }
+      expect(phase.evidence.join("\n")).toContain("Executed and verified action: dotnet.solution-restore");
       expect(prepared.capabilities.filter(({status}) => status === "blocked")).toEqual([]);
       expect(prepared).toMatchObject({status: "prepared", checkout: {head}});
       expect(JSON.stringify(prepared)).not.toContain(canary);

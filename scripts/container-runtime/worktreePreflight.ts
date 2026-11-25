@@ -145,7 +145,8 @@ function isPortableExecutable(path: string, architecture: string, managed = fals
   }).pipe(Effect.orElseSucceed(() => false));
 }
 
-type PayloadRole = "cli" | "cli-native" | "dcp" | "managed" | "dashboard" | "swc";
+type CompanionRole = "managed-library" | "native-library" | "native-executable";
+type PayloadRole = "cli" | "cli-native" | "dcp" | "managed" | "dashboard" | "swc" | CompanionRole;
 
 function inspectPayload(
   root: string,
@@ -155,7 +156,7 @@ function inspectPayload(
   version = "",
 ): Effect.Effect<boolean, never, ReadOnlyFiles | Process> {
   return Effect.gen(function* () {
-    if (!(yield* isPortableExecutable(path, architecture, role === "cli"))) return false;
+    if (!(yield* isPortableExecutable(path, architecture, role === "cli" || role === "managed-library"))) return false;
     const outcome = yield* run(probes.infrastructure.windowsPayload(), {
       cwd: root,
       env: {
@@ -891,7 +892,7 @@ function inspectToolPayload(
       if (!target || Object.keys(target).length > 512) return false;
       const owner = Object.entries(target).filter(([key]) => [`aspire.cli/${pin}`, `aspire/${pin}`].includes(key.toLowerCase()));
       if (owner.length !== 1 || !Object.hasOwn(record(record(owner[0]?.[1])?.["runtime"]) ?? {}, path)) return false;
-      const companions = new Set<string>();
+      const companions = new Map<string, {path: string; role: CompanionRole}>();
       for (const value of Object.values(target)) {
         const item = record(value);
         if (!item) return false;
@@ -899,26 +900,51 @@ function inspectToolPayload(
           if (!Object.hasOwn(item, section)) continue;
           const files = record(item[section]);
           if (!files) return false;
-          for (const [file, metadata] of Object.entries(files)) {
-            if (!ARTIFACT_PATH.test(file) || !record(metadata)) return false;
-            if (file.split("/").at(-1) === "_._") continue;
+          for (const [file, value] of Object.entries(files)) {
+            const metadata = record(value);
+            if (!ARTIFACT_PATH.test(file) || !metadata) return false;
+            const basename = win32.basename(file);
+            if (basename === "_._") continue;
+            let kind = section;
+            let relative = basename;
             if (section === "runtimeTargets") {
               // A portable target's RID fallback graph is not modeled. For an explicit
               // Windows target, accept only its exact published RID companion paths.
-              if (targetName !== `${expected}/${rid}` || record(metadata)?.["rid"] !== rid) return false;
-              companions.add(file);
-            } else {
-              // Published app-local .deps.json assets use the basename (or culture subdir).
-              const basename = win32.basename(file);
-              const locale = record(metadata)?.["locale"];
-              if (section === "resources" && (typeof locale !== "string" || !/^[a-z0-9-]+$/iu.test(locale))) return false;
-              companions.add(section === "resources" ? `${String(locale)}/${basename}` : basename);
+              if (targetName !== `${expected}/${rid}` || metadata["rid"] !== rid) return false;
+              const assetType = metadata["assetType"];
+              if (assetType !== "runtime" && assetType !== "native") return false;
+              kind = assetType;
+              relative = file;
+            } else if (section === "resources") {
+              const locale = metadata["locale"];
+              if (typeof locale !== "string" || !/^[a-z0-9-]+$/iu.test(locale)) return false;
+              relative = `${locale}/${basename}`;
             }
+            const key = win32.normalize(relative).toLowerCase();
+            if (key === path.toLowerCase()) {
+              if (section !== "runtime" || relative !== path) return false;
+              continue; // The entry point is verified separately as an application.
+            }
+            const extension = win32.extname(basename).toLowerCase();
+            const role =
+              extension === ".dll"
+                ? kind === "native"
+                  ? "native-library"
+                  : "managed-library"
+                : extension === ".exe" && kind === "native"
+                  ? "native-executable"
+                  : undefined;
+            if (role === undefined || (companions.has(key) && companions.get(key)?.role !== role)) return false;
+            companions.set(key, {path: win32.join(toolDir, relative), role});
             if (companions.size > 1024) return false;
           }
         }
       }
-      if (!(yield* Effect.forEach(companions, (file) => ownedFile(win32.join(toolDir, file)), {concurrency: 16})).every(Boolean))
+      if (
+        !(yield* Effect.forEach(companions.values(), ({path, role}) => inspectPayload(root, path, architecture, role), {
+          concurrency: 4,
+        })).every(Boolean)
+      )
         return false;
       return yield* inspectPayload(root, entry, architecture, "cli", pin);
     }
@@ -928,6 +954,38 @@ function inspectToolPayload(
       && (yield* inspectPayload(root, entry, architecture, "cli-native", pin))
     );
   });
+}
+
+const bundleBuildOverride =
+  /[\u0000\ufffd]|<!|<\/?[\w.-]+:|<(?:Import(?:Group|DirectoryBuildProps|DirectoryBuildTargets)?|Choose|Target|UsingTask|AspireCliBundlePath|AspireCliPath|DcpDir|DcpCliPath|DcpExtensionsDir|AspireDashboardDir|AspireDashboardPath|AspireHostingSDKVersion)\b/iu;
+
+function supportsBundleBuildFile(text: string): boolean {
+  const xml = text.replaceAll(/<!--[\s\S]*?-->/gu, "");
+  return (
+    xml.trim() !== ""
+    && !bundleBuildOverride.test(xml)
+    && !/<(?:Sdk|AspireUseCliBundle|AspireCliInvocationMode)\b|<Project\b[^>]*\bSdk\s*=/iu.test(xml)
+  );
+}
+
+function supportsAppHostBuildLayout(root: string): Effect.Effect<boolean, never, ReadOnlyFiles> {
+  return Effect.gen(function* () {
+    const tooling = win32.join(root, "tooling");
+    const checkout = win32.normalize(root).toLowerCase();
+    for (let dir = win32.dirname(win32.join(root, appHost)); ; dir = win32.dirname(dir)) {
+      if (!samePath(dir, tooling) && dir.startsWith(`${tooling}\\`)) {
+        for (const name of ["Directory.Build.props", "Directory.Packages.props"]) {
+          if ((yield* inspectPath(win32.join(dir, name))).kind !== "missing") return false;
+        }
+      }
+      const targets = win32.join(dir, "Directory.Build.targets");
+      if ((yield* inspectPath(targets)).kind !== "missing") {
+        if (!samePath(dir, root) && !dir.toLowerCase().startsWith(`${checkout}\\`)) return false;
+        if (!supportsBundleBuildFile(yield* readManifest(targets))) return false;
+      }
+      if (dir === win32.dirname(dir)) return true;
+    }
+  }).pipe(Effect.orElseSucceed(() => false));
 }
 
 function selectedVariable(env: EnvironmentSnapshot, name: string): string | undefined {
@@ -1003,9 +1061,12 @@ function inspectPinnedBundle(
       "msbuildsdkspath",
       "directorybuildpropspath",
       "directorybuildtargetspath",
+      "importdirectorybuildprops",
+      "importdirectorybuildtargets",
       "msbuildprojectextensionspath",
       "dotnet_cli_home",
       "custombeforemicrosoftcommontargets",
+      "custombeforemicrosoftcommoncrosstargetingtargets",
     ];
     if (pin !== "13.6.5" || unsupported.some((name) => names.has(name)) || machineType(env.architecture) === undefined) return false;
     for (const key of ["customaftermicrosoftcommontargets", "customaftermicrosoftcommoncrosstargetingtargets"]) {
@@ -1023,18 +1084,18 @@ function inspectPinnedBundle(
       )
       || (app.match(/<AspireUseCliBundle\b/giu)?.length ?? 0) !== 1
       || (app.match(/<AspireCliInvocationMode\b/giu)?.length ?? 0) !== 1
-      || /<(?:Import|Choose|AspireCliBundlePath|AspireCliPath|DcpDir|DcpCliPath|DcpExtensionsDir|AspireDashboardDir|AspireDashboardPath|AspireHostingSDKVersion)\b/iu.test(
-        app,
-      )
+      || bundleBuildOverride.test(app)
       || !/<PackageReference Include="Aspire\.Hosting\.AppHost"\s*\/>/u.test(app)
     )
       return false;
     // The resolver assembly is supplied by the Hosting.AppHost package, not just the SDK declaration.
     const pins = yield* readManifest(win32.join(root, "tooling/Directory.Packages.props"));
     const buildProps = yield* readManifest(win32.join(root, "tooling/Directory.Build.props"));
-    if (/<(?:DcpCliPath|DcpExtensionsDir)\b/iu.test(`${pins}\n${buildProps}`)) return false;
     if (
-      !/<PackageVersion Include="Aspire\.Hosting\.AppHost" Version="13\.6\.5"\s*\/>/u.test(pins)
+      !supportsBundleBuildFile(pins)
+      || !supportsBundleBuildFile(buildProps)
+      || !(yield* supportsAppHostBuildLayout(root))
+      || !/<PackageVersion Include="Aspire\.Hosting\.AppHost" Version="13\.6\.5"\s*\/>/u.test(pins)
       || (pins.match(/<PackageVersion\b[^>]*(?:Include|Update)="Aspire\.Hosting\.AppHost"/giu)?.length ?? 0) !== 1
     )
       return false;
