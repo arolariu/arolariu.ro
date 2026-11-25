@@ -3,15 +3,19 @@
 import "@testing-library/jest-dom/vitest";
 import {DialogProvider, useDialogs} from "@/app/domains/invoices/_contexts/DialogContext";
 import {ProductCategory, type Invoice, type Product} from "@/types/invoices";
+import {AllergenAssessmentStatus, AllergenCode, AllergenEvidenceLevel} from "@/types/invoices/Allergen";
 import {render, screen, waitFor} from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import {MotionGlobalConfig} from "motion/react";
 import {NextIntlClientProvider} from "next-intl";
-import {afterEach, describe, expect, it} from "vitest";
+import {revalidatePath} from "next/cache";
+import {afterEach, describe, expect, it, vi} from "vitest";
 import messages from "../../../../../../../messages/en.json";
 import {buildInvoice, buildProduct} from "../../../../../../../tests/helpers/builders/domain";
 import {fetchAtHttp} from "../../../../../../../tests/setup/server-http";
 import AllergenDialog from "./AllergenDialog";
+
+vi.mock("next/cache", () => ({revalidatePath: vi.fn()}));
 
 const product: Product = buildProduct({name: "Milk", category: ProductCategory.Milk});
 const invoice: Invoice = buildInvoice({id: "11111111-1111-4111-8111-111111111111", items: [product]});
@@ -55,5 +59,40 @@ describe("AllergenDialog", () => {
 
     const [, request] = fetchAtHttp.mock.calls[0] ?? [];
     expect(JSON.parse(String(request?.body))).not.toHaveProperty("category");
+  });
+
+  it("submits an edited allergen assessment without changing the category", async () => {
+    MotionGlobalConfig.skipAnimations = true;
+    const assessment = {
+      status: AllergenAssessmentStatus.Detected,
+      signals: [{code: AllergenCode.CerealsContainingGluten, evidenceLevel: AllergenEvidenceLevel.Explicit, confidence: 1, evidence: []}],
+    };
+    fetchAtHttp.mockResolvedValue(Response.json({...product, allergenAssessment: assessment}, {status: 202}));
+    render(
+      <NextIntlClientProvider
+        locale='en'
+        messages={messages}>
+        <DialogProvider>
+          <OpenAllergenDialog />
+        </DialogProvider>
+      </NextIntlClientProvider>,
+    );
+
+    await userEvent.click(screen.getByRole("button", {name: "Open allergen editor"}));
+    await userEvent.click(screen.getByRole("button", {name: "Add signal"}));
+    await userEvent.click(screen.getByRole("button", {name: /save/i}));
+
+    await waitFor(() => expect(revalidatePath).toHaveBeenCalledTimes(2));
+    const [, request] = fetchAtHttp.mock.calls[0] ?? [];
+    expect(JSON.parse(String(request?.body))).toEqual({
+      originalProductName: product.name,
+      name: product.name,
+      quantity: product.quantity,
+      quantityUnit: product.quantityUnit,
+      productCode: product.productCode,
+      price: product.price,
+      allergenAssessment: assessment,
+    });
+    await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
   });
 });

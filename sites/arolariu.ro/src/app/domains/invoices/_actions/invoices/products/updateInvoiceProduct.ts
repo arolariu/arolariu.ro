@@ -34,9 +34,21 @@ type ServerActionInputType = Readonly<{
   invoiceId: string;
   payload: Readonly<{
     originalProductName: string;
-    updatedProduct: Readonly<
-      Partial<Pick<Product, "category" | "name" | "quantity" | "quantityUnit" | "productCode" | "price" | "allergenAssessment">>
-    >;
+    updatedProduct:
+      | Readonly<
+          Pick<Product, "category"> & {
+            name?: never;
+            quantity?: never;
+            quantityUnit?: never;
+            productCode?: never;
+            price?: never;
+            allergenAssessment?: never;
+          }
+        >
+      | Readonly<
+          Pick<Product, "name" | "quantity" | "price">
+            & Partial<Pick<Product, "category" | "quantityUnit" | "productCode" | "allergenAssessment">>
+        >;
   }>;
 }>;
 
