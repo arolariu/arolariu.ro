@@ -5,7 +5,7 @@
 
 import {ProductCategory} from "@/types/invoices";
 import {revalidatePath} from "next/cache";
-import {describe, expect, it, vi} from "vitest";
+import {describe, expect, expectTypeOf, it, vi} from "vitest";
 import {buildProduct} from "../../../../../../../tests/helpers/builders/domain";
 import {apiUrl, auth, fetchAtHttp} from "../../../../../../../tests/setup/server-http";
 import {updateInvoiceProduct} from "./updateInvoiceProduct";
@@ -18,6 +18,17 @@ const product = buildProduct({name: "Milk", category: ProductCategory.Milk});
 const fullEdit = {invoiceId, payload: {originalProductName: product.name, updatedProduct: product}};
 
 describe("updateInvoiceProduct", () => {
+  it("accepts only category-only or complete product update shapes", () => {
+    type Update = Parameters<typeof updateInvoiceProduct>[0]["payload"]["updatedProduct"];
+    expectTypeOf<{category: ProductCategory | null}>().toExtend<Update>();
+    expectTypeOf<{name: string; quantity: number; price: number}>().toExtend<Update>();
+    expectTypeOf<{name: string; quantity: number; price: number; category: ProductCategory | null}>().toExtend<Update>();
+    expectTypeOf<{}>().not.toExtend<Update>();
+    expectTypeOf<{price: number}>().not.toExtend<Update>();
+    expectTypeOf<{category: ProductCategory; price: number}>().not.toExtend<Update>();
+    expectTypeOf<{category: ProductCategory; quantityUnit: string}>().not.toExtend<Update>();
+  });
+
   it("flattens a full edit including the product object's category", async () => {
     const replacement = {...product, name: "Premium Milk", quantity: 2, quantityUnit: "L", productCode: "PROD-123", price: 15.99};
     fetchAtHttp.mockResolvedValue(Response.json(replacement, {status: 202}));
@@ -56,6 +67,24 @@ describe("updateInvoiceProduct", () => {
       endpoint,
       expect.objectContaining({method: "PUT", body: JSON.stringify({originalProductName: "Milk", category: category ?? -1})}),
     );
+  });
+
+  it("omits category when the caller leaves it unchanged", async () => {
+    fetchAtHttp.mockResolvedValue(Response.json(product, {status: 202}));
+    const updatedProduct = {
+      name: product.name,
+      quantity: product.quantity,
+      quantityUnit: product.quantityUnit,
+      productCode: product.productCode,
+      price: product.price,
+      allergenAssessment: product.allergenAssessment,
+    };
+
+    const result = await updateInvoiceProduct({invoiceId, payload: {originalProductName: product.name, updatedProduct}});
+
+    expect(result).toMatchObject({success: true});
+    const [, request] = fetchAtHttp.mock.calls[0] ?? [];
+    expect(JSON.parse(String(request?.body))).not.toHaveProperty("category");
   });
 
   it("preserves a conflict without resubmitting the category edit", async () => {

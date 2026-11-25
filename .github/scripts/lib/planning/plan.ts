@@ -182,6 +182,8 @@ export function buildHygienePlan(
   if (inspection.kind === "available") {
     const owners = inspection.value.projects.toSorted((a, b) => b.root.length - a.root.length);
     for (const path of paths) {
+      if (under(path, "sites/api.arolariu.ro/src/Invoices/Resources/Categories") || under(path, "sites/arolariu.ro/src/data/categories"))
+        selectedSuites.add("tooling");
       if (under(path, ".github/scripts")) {
         selectedSuites.add("scripts");
         selectedSuites.add("tooling");

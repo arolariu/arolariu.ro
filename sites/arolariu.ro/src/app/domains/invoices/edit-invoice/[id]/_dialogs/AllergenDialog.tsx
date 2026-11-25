@@ -85,7 +85,6 @@ export default function AllergenDialog(): React.JSX.Element | null {
             quantityUnit: product.quantityUnit,
             productCode: product.productCode,
             price: product.price,
-            category: product.category,
             allergenAssessment: assessment,
           },
         },

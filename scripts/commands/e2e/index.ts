@@ -756,7 +756,16 @@ function runNewmanForTarget(
 
     // The arguments carry the token: never echo them, and rebuild every failure from redacted output only.
     const result = yield* processes
-      .run({command: "npx", args}, {cwd, output: "capture", echo: false, failureOutput: "full"})
+      .run(
+        {command: "npx", args},
+        {
+          cwd,
+          output: "capture",
+          echo: false,
+          failureOutput: "full",
+          ...(profile === "aspire" ? {env: {NODE_USE_SYSTEM_CA: "1"}} : {}),
+        },
+      )
       .pipe(
         Effect.catch((error) =>
           Effect.andThen(writeNewmanOutput(error, outputToken), Effect.fail(newmanFailure(target, error, outputToken))),

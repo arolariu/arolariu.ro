@@ -21,7 +21,7 @@ const realHttpTests = [
   "src/app/domains/invoices/_actions/scans/{createScan,deleteScan,fetchScans,updateScan}.test.ts",
   "src/app/domains/invoices/create-invoice/_context/CreateInvoiceRetry.test.tsx",
   "src/app/domains/invoices/edit-invoice/*/CategoryEditors.test.tsx",
-  "src/app/domains/invoices/edit-invoice/*/_dialogs/{AnalyzeDialog,RecipeDialogs}.test.tsx",
+  "src/app/domains/invoices/edit-invoice/*/_dialogs/{AllergenDialog,AnalyzeDialog,RecipeDialogs}.test.tsx",
   "src/app/domains/invoices/view-scans/_actions/createInvoiceFromScans.test.ts",
 ];
 const leanTests = [
