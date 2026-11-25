@@ -32,6 +32,18 @@ describe("dependency-aware hygiene planning", () => {
     expect(result.providers.filter((provider) => provider.setup.dotnet || provider.setup.python)).toEqual([]);
   });
 
+  it.each([
+    ["sites/api.arolariu.ro/src/Invoices/Resources/Categories/products.json", ["tooling"]],
+    ["sites/arolariu.ro/src/data/categories/products.json", ["tooling", "website"]],
+  ] as const)("runs catalog parity when %s changes", (path, suites) => {
+    const result = plan([{kind: "modified", path}]);
+
+    expect(result.suites).toEqual(suites);
+    if (path.startsWith("sites/api.arolariu.ro/")) {
+      expect(result.providers.find((provider) => provider.id === "test-dotnet")?.selected).toBe(true);
+    }
+  });
+
   it("uses graph roots and reverse dependencies rather than guessed project names", () => {
     const result = plan([{kind: "modified", path: "packages/components/src/Button.tsx"}]);
     expect(result.suites).toEqual(expect.arrayContaining(["components", "website"]));

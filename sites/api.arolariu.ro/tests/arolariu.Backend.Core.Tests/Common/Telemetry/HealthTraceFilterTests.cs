@@ -28,9 +28,10 @@ using OpenTelemetry.Trace;
 /// suppresses telemetry for health probe paths while preserving traces for real routes.
 /// </summary>
 [TestClass]
+[DoNotParallelize]
 public sealed class HealthTraceFilterTests
 {
-  // ActivityListeners are global; serialize tests so only one OTel pipeline is active at a time.
+  // ASP.NET instrumentation observes requests from every TestServer in the process.
   private static readonly SemaphoreSlim _gate = new(1, 1);
 
   /// <summary>

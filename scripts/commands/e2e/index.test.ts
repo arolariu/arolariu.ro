@@ -354,6 +354,7 @@ describe("runE2e: collection immutability and token transport", () => {
           expect(result).toEqual({targets: ["backend"], completed: ["backend"]});
           expect(fileText(harness, collectionPath)).toBe(original);
           expect(newmanArgs(harness)).toHaveLength(1);
+          expect(harness.processCalls()[0]?.options.env).toBeUndefined();
           const args = newmanArgs(harness)[0] ?? [];
           expect(args.filter((arg) => arg === "--env-var")).toHaveLength(1);
           expect(args[args.indexOf("--env-var") + 1]).toBe(`authToken=${FAKE_TOKEN}`);
@@ -684,6 +685,7 @@ describe("runE2e: env-derived Newman arguments", () => {
 
           expect(newmanArgs(harness)[0]?.[4]).toBe(aspireEnvironment);
           expect(newmanArgs(harness)[0]).toContain("--ignore-redirects");
+          expect(harness.processCalls()[0]?.options.env).toEqual({NODE_USE_SYSTEM_CA: "1"});
         }),
       harness.layer,
     );

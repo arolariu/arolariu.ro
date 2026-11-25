@@ -35,8 +35,7 @@ type ServerActionInputType = Readonly<{
   payload: Readonly<{
     originalProductName: string;
     updatedProduct: Readonly<
-      Pick<Product, "category">
-        & Partial<Pick<Product, "name" | "quantity" | "quantityUnit" | "productCode" | "price" | "allergenAssessment">>
+      Partial<Pick<Product, "category" | "name" | "quantity" | "quantityUnit" | "productCode" | "price" | "allergenAssessment">>
     >;
   }>;
 }>;
@@ -65,7 +64,8 @@ type ServerActionOutputType = ServerActionResult<Readonly<Product>>;
  * and preserves the other product fields. A full edit flattens `updatedProduct`
  * to its editable fields (including `name`, `quantity`, and `price`), not a nested
  * object or a copy of server-owned metadata. The category comes from `updatedProduct`;
- * null sends the API's `-1` clear command.
+ * an omitted category preserves the stored value, while null sends the API's
+ * `-1` clear command.
  *
  * **Result and side effects:** The API responds with `202 Accepted` and the
  * updated product. After parsing the response, this action revalidates both

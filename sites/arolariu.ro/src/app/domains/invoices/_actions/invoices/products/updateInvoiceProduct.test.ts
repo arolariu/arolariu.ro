@@ -58,6 +58,24 @@ describe("updateInvoiceProduct", () => {
     );
   });
 
+  it("omits category when the caller leaves it unchanged", async () => {
+    fetchAtHttp.mockResolvedValue(Response.json(product, {status: 202}));
+    const updatedProduct = {
+      name: product.name,
+      quantity: product.quantity,
+      quantityUnit: product.quantityUnit,
+      productCode: product.productCode,
+      price: product.price,
+      allergenAssessment: product.allergenAssessment,
+    };
+
+    const result = await updateInvoiceProduct({invoiceId, payload: {originalProductName: product.name, updatedProduct}});
+
+    expect(result).toMatchObject({success: true});
+    const [, request] = fetchAtHttp.mock.calls[0] ?? [];
+    expect(JSON.parse(String(request?.body))).not.toHaveProperty("category");
+  });
+
   it("preserves a conflict without resubmitting the category edit", async () => {
     fetchAtHttp.mockResolvedValue(new Response(null, {status: 409}));
 
