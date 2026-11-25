@@ -96,6 +96,40 @@ describe("dev command", () => {
     expect(result.calls).toEqual([]);
   });
 
+  it.each([
+    ["status", ["dev", "worktree"]],
+    ["stop", ["dev", "worktree"]],
+    ["status", ["dev", "aspire", "worktree"]],
+    ["stop", ["dev", "aspire", "worktree"]],
+  ] as const)("blocks scoped %s outside an observed checkout (%j)", async (action, prefix) => {
+    const harness = makeTestLayer({environment: {platform: "linux"}});
+    const exit = await Effect.runPromiseExit(
+      runCli([...prefix, action, "--engine", "podman", "--json"], makeRootCommand([makeDevCommand()])).pipe(Effect.provide(harness.layer)),
+    );
+    expect(exitCodeFor(exit, undefined)).toBe(1);
+    const stdout = harness.output().filter(({stream}) => stream === "stdout");
+    expect(stdout).toHaveLength(1);
+    expect(JSON.parse(stdout[0]?.text ?? "")).toMatchObject({status: "blocked"});
+    expect(harness.processCalls()).toEqual([]);
+  });
+
+  it.each([
+    ["start", "--engine", "podman"],
+    ["stop", "--engine", "podman", "--pid", "1234"],
+    ["stop", "--engine", "podman", "--expected-root", "C:/another-worktree"],
+    ["status", "--engine", "rancher"],
+  ])("rejects unsupported scoped action or authority flags (%s)", async (...args) => {
+    const result = await run(["dev", "worktree", ...args]);
+    expect(result.code).toBe(2);
+    expect(result.calls).toEqual([]);
+  });
+
+  it("does not expose scoped start through the npm dev alias", async () => {
+    const result = await run(["dev", "aspire", "worktree", "start", "--engine", "podman"]);
+    expect(result.code).toBe(2);
+    expect(result.calls).toEqual([]);
+  });
+
   it("maps aspire engine", async () => {
     // Arrange
     const argv = ["dev", "aspire", "--engine", "rancher"];

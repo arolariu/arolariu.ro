@@ -3,6 +3,7 @@
  * @module scripts/container-runtime/worktreePreflight
  */
 
+import {createHash} from "node:crypto";
 import {win32} from "node:path";
 
 import {Effect} from "effect";
@@ -13,7 +14,12 @@ import {inspectSolution, projectAppHostParameterKeys} from "../inspection/dotnet
 import {inspectPath} from "../inspection/files.ts";
 import {inspectionProbeRunner, probes} from "../inspection/probes.ts";
 import {matchesLocalPythonPin, parseConfigurationObject} from "../inspection/python.ts";
-import {currentWorktreeRestoreEvidence, hasUnmodeledBuildFileSelector, worktreeRestoreRemediation} from "../inspection/worktreeRestore.ts";
+import {
+  currentWorktreeRestoreEvidence,
+  hasUnmodeledBuildFileSelector,
+  isUnmodeledBuildFileSelector,
+  worktreeRestoreRemediation,
+} from "../inspection/worktreeRestore.ts";
 import {Environment, type EnvironmentSnapshot} from "../platform/Environment.ts";
 import {ReadOnlyFiles} from "../platform/Files.ts";
 import {Process} from "../platform/Process.ts";
@@ -213,19 +219,30 @@ function observeCheckout(
   });
 }
 
+/** Re-observes the current linked checkout without launching or preparing any provider. */
+export function observeWorktreeCheckout(): Effect.Effect<WorktreeCheckout | undefined, never, Environment | ReadOnlyFiles | Process> {
+  return Effect.gen(function* () {
+    const env = yield* Environment;
+    if (env.platform !== "win32") return undefined;
+    return yield* observeCheckout({engine: "podman"}, env, new Set(Object.keys(env.variables).map((name) => name.toLowerCase())));
+  });
+}
+
+type PodmanRegistration = {readonly uri: string; readonly identity: string; readonly fingerprint?: string};
+
 function registeredPodmanConnection(
   root: string,
   name: string,
   uri: string,
   identity: string,
-): Effect.Effect<boolean, never, Process | ReadOnlyFiles> {
+): Effect.Effect<PodmanRegistration | undefined, never, Process | ReadOnlyFiles> {
   return Effect.gen(function* () {
     const endpoint = URL.parse(uri);
-    if (endpoint === null) return false;
+    if (endpoint === null) return undefined;
     const port = Number(endpoint.port);
     const listing = yield* run(probes.infrastructure.podmanMachineList(), {cwd: root});
     const machines = listing.kind === "succeeded" ? parseJson(listing.stdout) : undefined;
-    if (!Array.isArray(machines)) return false;
+    if (!Array.isArray(machines)) return undefined;
     const registrations = machines.map(record);
     const candidates = registrations.filter((entry) => entry?.["Name"] === name || `${String(entry?.["Name"])}-root` === name);
     const [candidate] = candidates;
@@ -239,7 +256,7 @@ function registeredPodmanConnection(
       || candidate["Starting"] !== false
       || registrations.filter((entry) => entry?.["Running"] === true && entry["Port"] === port).length !== 1
     )
-      return false;
+      return undefined;
     const user = candidate["RemoteUsername"];
     const listedIdentity = candidate["IdentityPath"];
     if (
@@ -249,7 +266,7 @@ function registeredPodmanConnection(
       || typeof listedIdentity !== "string"
       || !samePath(identity, listedIdentity)
     )
-      return false;
+      return undefined;
     const sshMatches = (ssh: Readonly<Record<string, unknown>> | undefined): boolean => {
       const path = ssh?.["IdentityPath"];
       return ssh?.["Port"] === port && ssh["RemoteUsername"] === user && typeof path === "string" && samePath(path, identity);
@@ -268,7 +285,7 @@ function registeredPodmanConnection(
       || typeof configDir !== "string"
       || !localDrivePath(configDir)
     )
-      return false;
+      return undefined;
 
     // Machine inspect describes SSH but not the guest UID needed to identify the rootless socket.
     const document = record(parseJson(yield* readManifest(win32.join(configDir, `${machine}.json`))));
@@ -280,16 +297,34 @@ function registeredPodmanConnection(
       || !sshMatches(record(document["SSH"]))
       || (!rootful && (typeof uid !== "number" || !Number.isSafeInteger(uid) || uid < 1))
     )
-      return false;
+      return undefined;
     const expectedName = rootful ? `${machine}-root` : machine;
     const socket = rootful ? "/run/podman/podman.sock" : `/run/user/${String(uid)}/podman/podman.sock`;
-    return name === expectedName && uri === `ssh://${rootful ? "root" : user}@127.0.0.1:${port}${socket}` && (yield* ownedFile(identity));
+    if (name !== expectedName || uri !== `ssh://${rootful ? "root" : user}@127.0.0.1:${port}${socket}` || !(yield* ownedFile(identity))) {
+      return undefined;
+    }
+    const created = selected["Created"];
+    const canonical = yield* canonicalPath(configDir);
+    const fingerprint =
+      typeof created === "string"
+      && /^\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d(?:\.\d{1,9})?(?:Z|[+-]\d\d:\d\d)$/u.test(created)
+      && Number.isFinite(Date.parse(created))
+      && !created.startsWith("0001-")
+      && canonical !== undefined
+      && samePath(canonical, configDir)
+        ? createHash("sha256")
+            .update(JSON.stringify([name, uri, win32.normalize(identity).toLowerCase(), canonical.toLowerCase(), created]))
+            .digest("hex")
+        : undefined;
+    return {uri, identity, ...(fingerprint === undefined ? {} : {fingerprint})};
   });
 }
 
-function inspectPodman(root: string, names: ReadonlySet<string>): Effect.Effect<WorktreeCapability, never, Process | ReadOnlyFiles> {
+function observePodmanRegistration(
+  root: string,
+  names: ReadonlySet<string>,
+): Effect.Effect<PodmanRegistration | "overrides" | undefined, never, Process | ReadOnlyFiles> {
   return Effect.gen(function* () {
-    const blocked = (detail: string) => capability("podman-backend", false, "", `Machine bootstrap: ${detail}`);
     if (
       [
         "container_host",
@@ -300,7 +335,7 @@ function inspectPodman(root: string, names: ReadonlySet<string>): Effect.Effect<
         "podman_connections_conf",
       ].some((key) => names.has(key))
     ) {
-      return blocked("Podman connection overrides are unsupported. Select the local Podman Desktop machine without overrides.");
+      return "overrides" as const;
     }
     const context = yield* run(probes.infrastructure.runtimeContext("podman"), {cwd: root});
     const connections = context.kind === "succeeded" ? parseJson(context.stdout) : undefined;
@@ -318,14 +353,41 @@ function inspectPodman(root: string, names: ReadonlySet<string>): Effect.Effect<
       || URL.parse(uri) === null
       || typeof identity !== "string"
       || !localDrivePath(identity)
-      || !(yield* registeredPodmanConnection(root, name, uri, identity))
     ) {
+      return undefined;
+    }
+    return yield* registeredPodmanConnection(root, name, uri, identity);
+  });
+}
+
+/** Fingerprints the registered local machine without contacting its backend or returning credentials. */
+export function observeWorktreeEngine(
+  checkout: WorktreeCheckout,
+): Effect.Effect<string | undefined, never, Environment | Process | ReadOnlyFiles> {
+  return Effect.gen(function* () {
+    const env = yield* Environment;
+    if (env.platform !== "win32") return undefined;
+    const registration = yield* observePodmanRegistration(
+      checkout.root,
+      new Set(Object.keys(env.variables).map((key) => key.toLowerCase())),
+    );
+    return typeof registration === "object" ? registration.fingerprint : undefined;
+  });
+}
+
+function inspectPodman(root: string, names: ReadonlySet<string>): Effect.Effect<WorktreeCapability, never, Process | ReadOnlyFiles> {
+  return Effect.gen(function* () {
+    const blocked = (detail: string) => capability("podman-backend", false, "", `Machine bootstrap: ${detail}`);
+    const registration = yield* observePodmanRegistration(root, names);
+    if (registration === "overrides") {
+      return blocked("Podman connection overrides are unsupported. Select the local Podman Desktop machine without overrides.");
+    }
+    if (registration === undefined) {
       return blocked("No supported default Windows Podman machine connection was observed. See Podman Desktop in infra/Local/readme.md.");
     }
-
     const info = yield* run(probes.infrastructure.runtimeInfo("podman"), {
       cwd: root,
-      env: {CONTAINER_HOST: uri, CONTAINER_SSHKEY: identity},
+      env: {CONTAINER_HOST: registration.uri, CONTAINER_SSHKEY: registration.identity},
     });
     const response = info.kind === "succeeded" ? record(parseJson(info.stdout)) : undefined;
     const version = record(response?.["version"])?.["Version"];
@@ -1060,16 +1122,18 @@ function inspectPinnedBundle(
       "aspireterminalhostinvocationargs",
       "_aspireclisetuphome",
       "msbuildsdkspath",
-      "directorybuildpropspath",
-      "directorybuildtargetspath",
-      "importdirectorybuildprops",
-      "importdirectorybuildtargets",
       "msbuildprojectextensionspath",
       "dotnet_cli_home",
       "custombeforemicrosoftcommontargets",
       "custombeforemicrosoftcommoncrosstargetingtargets",
     ];
-    if (pin !== "13.6.5" || unsupported.some((name) => names.has(name)) || machineType(env.architecture) === undefined) return false;
+    if (
+      pin !== "13.6.5"
+      || unsupported.some((name) => names.has(name))
+      || [...names].some(isUnmodeledBuildFileSelector)
+      || machineType(env.architecture) === undefined
+    )
+      return false;
     for (const key of ["customaftermicrosoftcommontargets", "customaftermicrosoftcommoncrosstargetingtargets"]) {
       if (!names.has(key)) continue;
       const hook = selectedVariable(env, key);

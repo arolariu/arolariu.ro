@@ -9,9 +9,10 @@ import {createDotnetSetupPhase} from "../commands/setup/phases/dotnet.ts";
 import {recordingInspection} from "../commands/setup/phase-testing.ts";
 import {recordWorktreeRestoreEvidence} from "../commands/setup/worktreeRestoreEvidence.ts";
 import {currentWorktreeRestoreEvidence} from "../inspection/worktreeRestore.ts";
+import {Environment} from "../platform/Environment.ts";
 import {ReadOnlyFiles} from "../platform/Files.ts";
 import {makeTestLayer, scriptedOutcomes} from "../platform/testing.ts";
-import {inspectWorktreeAspire} from "./worktreePreflight.ts";
+import {inspectWorktreeAspire, observeWorktreeCheckout, observeWorktreeEngine} from "./worktreePreflight.ts";
 
 const root = "C:/worktrees/task";
 const commonGitDir = "C:/repo/.git";
@@ -308,6 +309,55 @@ function fixture(
 }
 
 describe("worktree Aspire preflight", () => {
+  it.runIf(process.platform === "win32")("pins the local machine registration without a backend request", async () => {
+    const observe = async (created: string, variables: Readonly<Record<string, string>> = {}) => {
+      const test = fixture(variables, {
+        "podman machine inspect local-machine": JSON.stringify([{...localMachineInspect, Created: created}]),
+      });
+      const engine = await Effect.runPromise(
+        Effect.gen(function* () {
+          const checkout = yield* observeWorktreeCheckout();
+          expect(checkout).toBeDefined();
+          return checkout && (yield* observeWorktreeEngine(checkout));
+        }).pipe(Effect.provide(test.layer)),
+      );
+      expect(test.processCalls().some(({request}) => commandLine(request).startsWith("podman info"))).toBe(false);
+      return engine;
+    };
+    const first = await observe("2026-11-25T10:20:30.123456789Z");
+    expect(first).toMatch(/^[a-f0-9]{64}$/u);
+    expect(await observe("2026-11-25T10:20:30.123456789Z")).toBe(first);
+    expect(await observe("2026-11-25T10:20:30.123456790Z")).not.toBe(first);
+    expect(await observe("")).toBeUndefined();
+    expect(await observe("2026-11-25T10:20:30.123456789Z", {CONTAINER_HOST: canary})).toBeUndefined();
+  });
+
+  it
+    .runIf(process.platform === "win32")
+    .each(["_DirectoryBuildTargetsFile", "_DirectoryBuildTargetsBasePath", "_DirectoryBuildPropsFile", "_DirectoryBuildPropsBasePath"])(
+    "does not reuse an otherwise matching restore receipt with ambient %s",
+    async (key) => {
+      const test = fixture({}, {}, restoreFiles);
+      const paths = createRepositoryPaths(root);
+      await Effect.runPromise(
+        Effect.gen(function* () {
+          const env = yield* Environment;
+          const fs = yield* FileSystem.FileSystem;
+          expect(yield* recordWorktreeRestoreEvidence(paths, Effect.void)).toBe(true);
+          expect(yield* currentWorktreeRestoreEvidence(paths)).toMatch(/^[a-f0-9]{64}$/u);
+          const before = yield* fs.readFileString(receiptPath);
+          const withSelector = Effect.provideService(Environment, {...env, variables: {...env.variables, [key]: "C:/synthetic/alternate"}});
+          expect(yield* currentWorktreeRestoreEvidence(paths).pipe(withSelector)).toBeUndefined();
+          expect(yield* recordWorktreeRestoreEvidence(paths, Effect.die("unsupported selector reached restore")).pipe(withSelector)).toBe(
+            false,
+          );
+          expect(yield* fs.readFileString(receiptPath)).toBe(before);
+        }).pipe(Effect.provide(test.layer)),
+      );
+      test.expectNoTransport();
+    },
+  );
+
   it
     .runIf(process.platform === "win32")
     .each([
@@ -450,6 +500,14 @@ describe("worktree Aspire preflight", () => {
     ["tooling/src/Directory.Build.targets", "dIrEcToRyBuIlDpRoPsPaTh", "<Project></Project>"],
     ["ambient", "DirectoryBuildTargetsPath", ""],
     ["ambient", "DirectoryBuildPropsPath", ""],
+    [appHostName, "_DirectoryBuildTargetsFile", appHostProject],
+    ["tooling/Directory.Build.props", "_DirectoryBuildTargetsBasePath", "<Project></Project>"],
+    ["tooling/Directory.Packages.props", "_DirectoryBuildPropsFile", "<Project></Project>"],
+    ["tooling/src/Directory.Build.targets", "_dIrEcToRyBuIlDpRoPsBaSePaTh", "<Project></Project>"],
+    ["ambient", "_DirectoryBuildTargetsFile", ""],
+    ["ambient", "_DirectoryBuildTargetsBasePath", ""],
+    ["ambient", "_DirectoryBuildPropsFile", ""],
+    ["ambient", "_DirectoryBuildPropsBasePath", ""],
   ] as const)("blocks unmodeled build-file selectors in %s (%s) before probing or refreshing", async (path, key, xml) => {
     const alternate = "C:/synthetic/alternate.build.xml";
     const property = `<PropertyGroup><${key}>${alternate}</${key}></PropertyGroup>`;

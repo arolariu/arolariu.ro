@@ -51,6 +51,11 @@ const drivePath = /^[a-z]:[\\/][^\u0000-\u001f]*$/iu;
 const localPath = /^[a-z]:[\\/][^<>:"|?*\u0000-\u001f]+$/iu;
 const selector =
   /^(?:restore|msbuild|(?:import)?directorybuild|directorypackages|nuget_fallback|nuget_restore|custombefore|customafter|baseintermediateoutputpath|dotnet_cli_home|dotnet_msbuild_sdk_resolver|configuration$|platform$|targetframework|runtimeidentifier|dcpclipath$|dcpextensionsdir$|testingglobalpath$)/iu;
+// Microsoft.Common.props and Microsoft.Common.targets honor these intermediate selectors, too.
+const buildFileSelectorName =
+  "(?:DirectoryBuild(?:Props|Targets)Path|ImportDirectoryBuild(?:Props|Targets)|_DirectoryBuild(?:Props|Targets)(?:File|BasePath))";
+const buildFileSelector = new RegExp(`^${buildFileSelectorName}$`, "iu");
+const buildFileSelectorElement = new RegExp(`<${buildFileSelectorName}(?=[\\s/>])`, "iu");
 const supportedProperties = new Set([
   "msbuildprojectname",
   "msbuildprojectdirectory",
@@ -94,7 +99,12 @@ function ownedBytes(path: string, limit = MAX_INPUT): Effect.Effect<Uint8Array |
  * @returns Whether the input can redirect or suppress a modeled build-file lookup.
  */
 export function hasUnmodeledBuildFileSelector(xml: string): boolean {
-  return /<(?:DirectoryBuild(?:Props|Targets)Path|ImportDirectoryBuild(?:Props|Targets))(?=[\s/>])/iu.test(xml);
+  return buildFileSelectorElement.test(xml);
+}
+
+/** Detects an ambient MSBuild build-file selector shared by bundle and restore validation. */
+export function isUnmodeledBuildFileSelector(name: string): boolean {
+  return buildFileSelector.test(name);
 }
 
 function supportedInput(path: string, content: string, listed: ReadonlySet<string>): boolean {
@@ -215,7 +225,9 @@ export function snapshotWorktreeRestoreInputs(
       env.platform !== "win32"
       || !drivePath.test(paths.root)
       || Object.keys(env.variables).some(
-        (key) => !optionalLocalHooks.has(key.toLowerCase()) && (selector.test(key) || supportedProperties.has(key.toLowerCase())),
+        (key) =>
+          !optionalLocalHooks.has(key.toLowerCase())
+          && (selector.test(key) || isUnmodeledBuildFileSelector(key) || supportedProperties.has(key.toLowerCase())),
       )
     )
       return undefined;
