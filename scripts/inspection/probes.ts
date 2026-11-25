@@ -537,6 +537,85 @@ function windowsMkcertTrust(): InspectionProbe {
   });
 }
 
+/** Reads the Windows profile used by the installed Aspire resolver, not a guessed home override. */
+function windowsUserProfile(): InspectionProbe {
+  return registerProbe("infrastructure.windows.user-profile", {
+    command: "pwsh",
+    args: [
+      "-NoLogo",
+      "-NoProfile",
+      "-NonInteractive",
+      "-Command",
+      "[Environment]::GetFolderPath([Environment+SpecialFolder]::UserProfile)",
+    ],
+  });
+}
+
+/** Uses Windows version resources and the built-in PEReader; never loads or runs the inspected image. */
+function windowsPayload(): InspectionProbe {
+  return registerProbe("infrastructure.windows.payload", {
+    command: "pwsh",
+    args: [
+      "-NoLogo",
+      "-NoProfile",
+      "-NonInteractive",
+      "-Command",
+      [
+        "$ErrorActionPreference = 'Stop'",
+        "$role = $env:AROLARIU_PREFLIGHT_PAYLOAD_ROLE",
+        "$path = $env:AROLARIU_PREFLIGHT_PAYLOAD_PATH",
+        "$stream = $null; $pe = $null",
+        "try {",
+        "  $stream = [IO.File]::OpenRead($path); if ($stream.Length -gt 268435456) { exit 1 }",
+        "  $pe = [System.Reflection.PortableExecutable.PEReader]::new($stream)",
+        "  $header = $pe.PEHeaders.PEHeader",
+        "  if ($null -eq $header) { exit 1 }",
+        "  if ($role -eq 'swc') {",
+        "    if (-not $pe.PEHeaders.IsDll -or $pe.HasMetadata) { exit 1 }",
+        "    $exports = $header.ExportTableDirectory",
+        "    if ($exports.Size -lt 40 -or $exports.RelativeVirtualAddress -le 0) { exit 1 }",
+        "    $table = $pe.GetSectionData($exports.RelativeVirtualAddress).GetReader(0,40)",
+        "    $table.Offset = 24; $count = $table.ReadUInt32(); $null = $table.ReadUInt32(); $names = $table.ReadInt32()",
+        "    if ($count -eq 0 -or $count -gt 4096 -or $names -le 0) { exit 1 }",
+        "    $entries = $pe.GetSectionData($names).GetReader(0, (4 * $count))",
+        "    $symbol = 'napi_register_module_v1'",
+        "    for ($i = 0; $i -lt $count; $i++) {",
+        "      $rva = $entries.ReadInt32(); if ($rva -le 0) { exit 1 }",
+        "      $block = $pe.GetSectionData($rva)",
+        "      if ($block.Length -lt ($symbol.Length + 1)) { continue }",
+        "      $name = $block.GetReader(0, ($symbol.Length + 1))",
+        "      if ($name.ReadUTF8($symbol.Length) -ceq $symbol -and $name.ReadByte() -eq 0) { 'verified'; exit 0 }",
+        "    }; exit 1",
+        "  }",
+        "  $version = [Diagnostics.FileVersionInfo]::GetVersionInfo($path)",
+        "  if ($role -eq 'dcp') {",
+        "    if ($pe.PEHeaders.IsDll -or $header.AddressOfEntryPoint -eq 0 -or $version.ProductName -cne 'Developer Control Plane' -or $version.ProductVersion -notmatch '^\\d+\\.\\d+\\.\\d+(?: [0-9a-f]{7,64})?$') { exit 1 }",
+        "  } else {",
+        "    $pin = [regex]::Escape($env:AROLARIU_PREFLIGHT_PAYLOAD_VERSION)",
+        "    if ($version.ProductVersion -notmatch ('^' + $pin + '(?:\\+[0-9a-f]{7,64})?$')) { exit 1 }",
+        "    switch ($role) {",
+        "      'cli' {",
+        "        if (-not $pe.HasMetadata -or $null -eq $pe.PEHeaders.CorHeader) { exit 1 }",
+        "        $reader = [System.Reflection.Metadata.PEReaderExtensions]::GetMetadataReader($pe)",
+        "        if (-not $reader.IsAssembly) { exit 1 }",
+        "        $assembly = $reader.GetAssemblyDefinition(); $name = $reader.GetString($assembly.Name)",
+        "        $token = $pe.PEHeaders.CorHeader.EntryPointTokenOrRelativeVirtualAddress",
+        "        if ($name -notin @('aspire', 'Aspire.Cli') -or ($token -shr 24) -ne 6) { exit 1 }",
+        "        $entry = [System.Reflection.Metadata.Ecma335.MetadataTokens]::MethodDefinitionHandle($token -band 0xffffff)",
+        "        if ($reader.GetMethodDefinition($entry).RelativeVirtualAddress -le 0) { exit 1 }",
+        "      }",
+        "      'cli-native' { if ($version.ProductName -ine 'aspire' -or $header.AddressOfEntryPoint -eq 0 -or $pe.PEHeaders.IsDll) { exit 1 } }",
+        "      'managed' { if ($version.ProductName -cne 'aspire-managed' -or $header.AddressOfEntryPoint -eq 0 -or $pe.PEHeaders.IsDll) { exit 1 } }",
+        "      'dashboard' { if ($version.ProductName -cne 'Aspire.Dashboard' -or $header.AddressOfEntryPoint -eq 0 -or $pe.PEHeaders.IsDll) { exit 1 } }",
+        "      default { exit 1 }",
+        "    }",
+        "  }; 'verified'; exit 0",
+        "} catch { exit 1 } finally { if ($null -ne $pe) { $pe.Dispose() }; if ($null -ne $stream) { $stream.Dispose() } }",
+      ].join("\n"),
+    ],
+  });
+}
+
 /**
  * Builds the exact, platform-specific read-only executable-resolution probe command.
  *
@@ -910,6 +989,8 @@ export const probes = {
     mkcertVersion: infrastructureMkcertVersion,
     mkcertCaRoot: infrastructureMkcertCaRoot,
     windowsMkcertTrust,
+    windowsUserProfile,
+    windowsPayload,
     portOwners: infrastructurePortOwners,
   },
 } as const;

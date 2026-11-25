@@ -11,7 +11,6 @@ import {describeGitCheckout} from "../commands/doctor/modules/workspace.ts";
 import {createRepositoryPaths, type RepositoryPaths} from "../common/repository-paths.ts";
 import {inspectSolution, projectAppHostParameterKeys} from "../inspection/dotnet.ts";
 import {inspectPath} from "../inspection/files.ts";
-import {inspectEnvironmentContent} from "../inspection/frontend.ts";
 import {inspectionProbeRunner, probes} from "../inspection/probes.ts";
 import {matchesLocalPythonPin, parseConfigurationObject} from "../inspection/python.ts";
 import {Environment, type EnvironmentSnapshot} from "../platform/Environment.ts";
@@ -143,6 +142,29 @@ function isPortableExecutable(path: string, architecture: string, managed = fals
     }
     return hasPayload;
   }).pipe(Effect.orElseSucceed(() => false));
+}
+
+type PayloadRole = "cli" | "cli-native" | "dcp" | "managed" | "dashboard" | "swc";
+
+function inspectPayload(
+  root: string,
+  path: string,
+  architecture: string,
+  role: PayloadRole,
+  version = "",
+): Effect.Effect<boolean, never, ReadOnlyFiles | Process> {
+  return Effect.gen(function* () {
+    if (!(yield* isPortableExecutable(path, architecture, role === "cli"))) return false;
+    const outcome = yield* run(probes.infrastructure.windowsPayload(), {
+      cwd: root,
+      env: {
+        AROLARIU_PREFLIGHT_PAYLOAD_ROLE: role,
+        AROLARIU_PREFLIGHT_PAYLOAD_PATH: path,
+        AROLARIU_PREFLIGHT_PAYLOAD_VERSION: version,
+      },
+    });
+    return outcome.kind === "succeeded" && outcome.stdout.trim() === "verified";
+  });
 }
 
 function observeCheckout(
@@ -410,17 +432,23 @@ function inspectAppHostConfig(root: string, env: EnvironmentSnapshot): Effect.Ef
 }
 
 function projectWebsiteKeys(source: string): ReadonlyMap<string, boolean> | undefined {
-  if (inspectEnvironmentContent(source).syntaxErrors.length > 0) return undefined;
   const facts = new Map<string, boolean>();
-  for (const input of source.split(/\r\n|\n|\r/u)) {
-    const line = input.trim();
-    if (line === "" || line.startsWith("#")) continue;
-    const match = /^([a-zA-Z_]\w*)\s*=\s*(?:"([^"\\$]*)"|'([^'\\$]*)'|([^'"`\\$#]*))\s*(?:#.*)?$/u.exec(line);
-    const key = match?.[1];
-    if (key === undefined || match === null) return undefined;
-    if (integrationKeys.includes(key)) facts.set(key, ((match[2] ?? match[3] ?? match[4])?.trim().length ?? 0) > 0);
+  const expandable = new Set<string>();
+  // Match dotenv declarations, including unrelated quoted multiline values, without executing
+  // Next's process.env-mutating loader. Backslashes in ordinary Windows paths are literal.
+  const declarations =
+    /^[ \t]*(?:export[ \t]+)?([\w.-]+)(?:[ \t]*=|:[ \t]+)[ \t]*("(?:\\"|[^"])*"|'(?:\\'|[^'])*'|`(?:\\`|[^`])*`|[^#\r\n]*?)[ \t]*(?:#.*)?$/gmu;
+  for (const [, key, raw] of source.replaceAll(/\r\n?/gu, "\n").matchAll(declarations)) {
+    if (key === undefined || !integrationKeys.includes(key)) continue;
+    const text = raw?.trim() ?? "";
+    const quote = text[0];
+    const quoted = text.length >= 2 && (quote === '"' || quote === "'" || quote === "`") && text.endsWith(quote);
+    const value = quoted ? text.slice(1, -1) : text;
+    if (value.includes("$")) expandable.add(key);
+    else expandable.delete(key);
+    facts.set(key, (quote === '"' && quoted ? value.replaceAll(/\\[nr]/gu, "\n") : value).trim().length > 0);
   }
-  return facts;
+  return expandable.size === 0 ? facts : undefined;
 }
 
 function inspectWebsiteConfig(paths: RepositoryPaths, env: EnvironmentSnapshot): Effect.Effect<WorktreeCapability, never, ReadOnlyFiles> {
@@ -445,15 +473,27 @@ function inspectWebsiteConfig(paths: RepositoryPaths, env: EnvironmentSnapshot):
 
 function inspectExpConfig(paths: RepositoryPaths): Effect.Effect<WorktreeCapability, never, ReadOnlyFiles> {
   return Effect.gen(function* () {
-    const required = yield* projectConfigFile(win32.join(paths.expRoot, "config.template.json"), parseConfigurationObject);
-    const local = yield* projectConfigFile(win32.join(paths.expRoot, "config.docker.json"), parseConfigurationObject);
+    const required = yield* projectConfigFile(win32.join(paths.expRoot, "config.template.json"), projectExpTypes);
+    const local = yield* projectConfigFile(win32.join(paths.expRoot, "config.docker.json"), projectExpTypes);
+    // The checked-in template uses scalar strings; null endpoints are skipped by ExpConfigGenerator.
+    const compatible =
+      !!required?.size
+      && !!local
+      && [...required].every(([key, type]) => (type === "string" || type === "boolean" || type === "number") && local.get(key) === type);
     return capability(
       "exp-config",
-      !!required?.length && !!local && required.every((key) => local.includes(key)),
-      "The checkout-owned exp config.docker.json is an object containing the required template keys; provider behavior was not verified.",
-      "Worktree preparation: exp config.docker.json is missing, malformed, not checkout-owned, or lacks required template keys. See the config.template.json instructions in ExpConfigGenerator.",
+      compatible,
+      "The checkout-owned exp config.docker.json contains the required non-null, compatible template entries; provider behavior was not verified.",
+      "Worktree preparation: exp config.docker.json is missing, malformed, not checkout-owned, or lacks compatible required template entries. See the config.template.json instructions in ExpConfigGenerator.",
     );
   });
+}
+
+function projectExpTypes(source: string): ReadonlyMap<string, string> | undefined {
+  const keys = parseConfigurationObject(source);
+  const parsed = record(parseJson(source));
+  if (!keys || !parsed) return undefined;
+  return new Map(keys.map((key) => [key, typeof parsed[key]]));
 }
 
 function inspectWebsiteTrust(
@@ -501,7 +541,7 @@ function inspectSwc(
   architecture: string,
   version: string,
   packages: Readonly<Record<string, unknown>>,
-): Effect.Effect<boolean, never, ReadOnlyFiles> {
+): Effect.Effect<boolean, never, ReadOnlyFiles | Process> {
   return Effect.gen(function* () {
     if (machineType(architecture) === undefined) return false;
     const suffix = `win32-${architecture}-msvc`;
@@ -524,7 +564,7 @@ function inspectSwc(
         && candidate["version"] === version
         && candidate["main"] === filename
         && (!locked || record(packages[location])?.["version"] === version)
-        && (yield* isPortableExecutable(win32.join(directory, filename), architecture))
+        && (yield* inspectPayload(root, win32.join(directory, filename), architecture, "swc"))
       )
         return true;
       if (locked && (yield* inspectPath(directory)).kind !== "missing") return false;
@@ -537,7 +577,7 @@ function inspectNpm(
   root: string,
   architecture: string,
   names: ReadonlySet<string>,
-): Effect.Effect<WorktreeCapability, never, ReadOnlyFiles> {
+): Effect.Effect<WorktreeCapability, never, ReadOnlyFiles | Process> {
   return Effect.gen(function* () {
     const blocked = capability(
       "npm-dependencies",
@@ -789,28 +829,194 @@ function inspectRestoreProject(root: string, project: string, checked: Map<strin
   });
 }
 
-function inspectManagedPayload(path: string, architecture: string): Effect.Effect<boolean, never, ReadOnlyFiles> {
-  return Effect.gen(function* () {
-    if (!(yield* isPortableExecutable(path, architecture, true))) return false;
-    const stem = path.slice(0, -".dll".length);
-    const runtime = record(parseJson(yield* readManifest(`${stem}.runtimeconfig.json`)));
-    const deps = record(parseJson(yield* readManifest(`${stem}.deps.json`)));
-    return record(runtime?.["runtimeOptions"]) !== undefined && Object.keys(record(deps?.["targets"]) ?? {}).length > 0;
-  });
-}
-
-function inspectToolPayload(toolDir: string, architecture: string): Effect.Effect<boolean, never, ReadOnlyFiles> {
+function inspectToolPayload(
+  root: string,
+  toolDir: string,
+  architecture: string,
+  framework: string,
+  pin: string,
+): Effect.Effect<boolean, never, ReadOnlyFiles | Process> {
   return Effect.gen(function* () {
     const settings = yield* readManifest(win32.join(toolDir, "DotnetToolSettings.xml"));
     const commands = [...settings.matchAll(/<Command\s+([^>]+?)\/?>/gu)];
     const attrs = new Map([...(commands[0]?.[1] ?? "").matchAll(/(\w+)\s*=\s*"([^"]+)"/gu)].map(([, key, value]) => [key, value]));
     const path = attrs.get("EntryPoint");
     const runner = attrs.get("Runner");
-    if (commands.length !== 1 || attrs.get("Name") !== "aspire" || !path || !ARTIFACT_PATH.test(path)) return false;
+    if (commands.length !== 1 || attrs.get("Name") !== "aspire" || !path || !/^aspire(?:\.cli)?\.(?:dll|exe)$/iu.test(path)) return false;
     const entry = win32.join(toolDir, path);
-    if (runner === "dotnet" && path.endsWith(".dll")) return yield* inspectManagedPayload(entry, architecture);
-    return runner === "executable" && path.endsWith(".exe") && (yield* isPortableExecutable(entry, architecture));
+    if (runner === "dotnet" && path.toLowerCase().endsWith(".dll")) {
+      const stem = entry.slice(0, -".dll".length);
+      const runtime = record(parseJson(yield* readManifest(`${stem}.runtimeconfig.json`)));
+      const deps = record(parseJson(yield* readManifest(`${stem}.deps.json`)));
+      const targets = record(deps?.["targets"]);
+      if (
+        record(runtime?.["runtimeOptions"])?.["tfm"] !== framework
+        || !targets
+        || !Object.values(targets).some((value) =>
+          Object.keys(record(value) ?? {}).some(
+            (key) => key.toLowerCase() === `aspire.cli/${pin}` || key.toLowerCase() === `aspire/${pin}`,
+          ),
+        )
+      )
+        return false;
+      return yield* inspectPayload(root, entry, architecture, "cli", pin);
+    }
+    return (
+      runner === "executable"
+      && path.toLowerCase().endsWith(".exe")
+      && (yield* inspectPayload(root, entry, architecture, "cli-native", pin))
+    );
   });
+}
+
+function selectedVariable(env: EnvironmentSnapshot, name: string): string | undefined {
+  const keys = Object.keys(env.variables).filter((key) => key.toLowerCase() === name);
+  const [key] = keys;
+  return keys.length === 1 && key !== undefined ? env.variables[key] : undefined;
+}
+
+function pinnedBundleRoot(layout: string, pin: string): Effect.Effect<string | undefined, never, ReadOnlyFiles> {
+  const pinnedDirectory = new RegExp(`^${pin.replaceAll(".", "\\.")}(?:_[0-9a-f]{7,64}(?:-[0-9a-f]{7,64})?)?$`, "iu");
+  return Effect.gen(function* () {
+    const root = yield* canonicalPath(layout);
+    if (root === undefined || !samePath(root, layout)) return undefined;
+    // Installed 13.6.5 resolver tries the layout itself, its bundle child, then its versions.
+    // Recognize only unambiguous local layouts; do not skip a partial/unsupported higher-priority one.
+    for (const candidate of [root, win32.join(root, "bundle")]) {
+      const metadata = yield* inspectPath(candidate);
+      if (metadata.kind === "missing") continue;
+      if (metadata.kind !== "directory") return undefined;
+      if (samePath(candidate, root)) {
+        const parts = yield* Effect.forEach(["dcp", "managed", "dashboard"], (name) => inspectPath(win32.join(root, name)));
+        if (parts.every((part) => part.kind === "missing")) continue;
+      }
+      const canonical = yield* canonicalPath(candidate);
+      if (canonical === undefined) return undefined;
+      if (samePath(candidate, canonical)) return canonical;
+      const destination = win32.relative(win32.join(root, "versions"), canonical);
+      return pinnedDirectory.test(destination) ? canonical : undefined;
+    }
+    const versions = win32.join(root, "versions");
+    const canonicalVersions = yield* canonicalPath(versions);
+    if (canonicalVersions === undefined || !samePath(canonicalVersions, versions)) return undefined;
+    const files = yield* ReadOnlyFiles;
+    const entries = yield* files.readDirectory(versions);
+    const candidates = entries.filter((entry) => !/\.(?:tmp|old|bad)\./iu.test(entry));
+    const [entry] = candidates;
+    if (candidates.length !== 1 || entry === undefined || !pinnedDirectory.test(entry)) return undefined;
+    const candidate = win32.join(versions, entry);
+    const actual = yield* canonicalPath(candidate);
+    return actual !== undefined && samePath(actual, candidate) ? actual : undefined;
+  }).pipe(Effect.orElseSucceed(() => undefined));
+}
+
+function inspectPinnedBundle(
+  root: string,
+  env: EnvironmentSnapshot,
+  names: ReadonlySet<string>,
+  project: string,
+  pin: string,
+  framework: string,
+): Effect.Effect<boolean, never, ReadOnlyFiles | Process> {
+  return Effect.gen(function* () {
+    // This layout was read from the installed 13.6.5 SDK. Other resolver/profile contracts need separate evidence.
+    const unsupported = [
+      "aspireclipath",
+      "aspirecliinvocationmode",
+      "aspireuseclibundle",
+      "aspirehostingsdkversion",
+      "dcpdir",
+      "aspiredashboarddir",
+      "aspiredashboardpath",
+      "aspireterminalhostdir",
+      "aspireterminalhostpath",
+      "aspireterminalhostinvocationargs",
+      "_aspireclisetuphome",
+      "msbuildsdkspath",
+      "directorybuildpropspath",
+      "directorybuildtargetspath",
+      "msbuildprojectextensionspath",
+      "dotnet_cli_home",
+      "custombeforemicrosoftcommontargets",
+      "customaftermicrosoftcommontargets",
+    ];
+    if (pin !== "13.6.5" || unsupported.some((name) => names.has(name)) || machineType(env.architecture) === undefined) return false;
+    const app = project.replaceAll(/<!--[\s\S]*?-->/gu, "");
+    const settings = [...app.matchAll(/<PropertyGroup>\s*([\s\S]*?)<\/PropertyGroup>/gu)].map(([, group]) => group ?? "");
+    if (
+      !settings.some(
+        (group) =>
+          group.includes("<AspireUseCliBundle>true</AspireUseCliBundle>")
+          && group.includes("<AspireCliInvocationMode>DnxPinned</AspireCliInvocationMode>"),
+      )
+      || (app.match(/<AspireUseCliBundle\b/giu)?.length ?? 0) !== 1
+      || (app.match(/<AspireCliInvocationMode\b/giu)?.length ?? 0) !== 1
+      || /<(?:Import|Choose|AspireCliBundlePath|AspireCliPath|DcpDir|AspireDashboardDir|AspireDashboardPath|AspireHostingSDKVersion)\b/iu.test(
+        app,
+      )
+      || !/<PackageReference Include="Aspire\.Hosting\.AppHost"\s*\/>/u.test(app)
+    )
+      return false;
+    // The resolver assembly is supplied by the Hosting.AppHost package, not just the SDK declaration.
+    const pins = yield* readManifest(win32.join(root, "tooling/Directory.Packages.props"));
+    if (
+      !/<PackageVersion Include="Aspire\.Hosting\.AppHost" Version="13\.6\.5"\s*\/>/u.test(pins)
+      || (pins.match(/<PackageVersion\b[^>]*(?:Include|Update)="Aspire\.Hosting\.AppHost"/giu)?.length ?? 0) !== 1
+    )
+      return false;
+    const explicit = selectedVariable(env, "aspireclibundlepath");
+    const aspireHome = selectedVariable(env, "aspire_home");
+    const nuget = selectedVariable(env, "nuget_packages");
+    if (
+      (names.has("aspireclibundlepath") && !localDrivePath(explicit))
+      || (names.has("aspire_home") && !localDrivePath(aspireHome))
+      || (names.has("nuget_packages") && !localDrivePath(nuget))
+    )
+      return false;
+    let profile: string | undefined;
+    if ((explicit === undefined && aspireHome === undefined) || nuget === undefined) {
+      const outcome = yield* run(probes.infrastructure.windowsUserProfile(), {cwd: root});
+      profile = outcome.kind === "succeeded" ? outcome.stdout.trim() : undefined;
+      const claimed = selectedVariable(env, "userprofile");
+      if (!localDrivePath(profile) || (names.has("userprofile") && (!claimed || !samePath(profile, claimed)))) return false;
+    }
+    const layout = explicit ?? aspireHome ?? win32.join(profile ?? "", ".aspire");
+    const cache = nuget ?? win32.join(profile ?? "", ".nuget/packages");
+    const directory = yield* pinnedBundleRoot(layout, pin);
+    if (!directory) return false;
+
+    const cliDir = win32.join(cache, "aspire.cli", pin);
+    const sdkDir = win32.join(cache, "aspire.apphost.sdk", pin, "Sdk");
+    const meta = yield* readManifest(win32.join(cliDir, "aspire.cli.nuspec"));
+    if (
+      !/<id>\s*aspire\.cli\s*<\/id>/iu.test(meta)
+      || /<version>\s*([^<]+?)\s*<\/version>/u.exec(meta)?.[1] !== pin
+      || !(yield* ownedFile(win32.join(cliDir, ".nupkg.metadata")))
+      || !(yield* ownedFile(win32.join(sdkDir, "Sdk.targets")))
+      || !(yield* ownedFile(win32.join(sdkDir, "Sdk.props")))
+    )
+      return false;
+    const toolRoots = [win32.join(cliDir, "tools", framework, `win-${env.architecture}`), win32.join(cliDir, "tools", framework, "any")];
+    const tools = yield* Effect.forEach(toolRoots, (path) => inspectPath(path));
+    const candidates = toolRoots.filter((_, index) => tools[index]?.kind === "directory");
+    const [tool] = candidates;
+    if (
+      candidates.length !== 1
+      || tool === undefined
+      || !(yield* inspectToolPayload(root, tool, env.architecture, framework, pin))
+      || !(yield* ownedFile(win32.join(directory, "dcp/dcptun_c")))
+    )
+      return false;
+    const observations = yield* Effect.all(
+      [
+        inspectPayload(root, win32.join(directory, "dcp/dcp.exe"), env.architecture, "dcp"),
+        inspectPayload(root, win32.join(directory, "managed/aspire-managed.exe"), env.architecture, "managed", pin),
+        inspectPayload(root, win32.join(directory, "dashboard/Aspire.Dashboard.exe"), env.architecture, "dashboard", pin),
+      ],
+      {concurrency: "unbounded"},
+    );
+    return observations.every(Boolean);
+  }).pipe(Effect.orElseSucceed(() => false));
 }
 
 function inspectBundle(
@@ -837,49 +1043,15 @@ function inspectBundle(
       return inspectRestoreProject(paths.root, project, checked);
     });
     const assets = appHostObserved && solution.issues.length === 0 && solution.restoreIssues.length === 0;
-
-    const home = env.variables["USERPROFILE"];
-    const cache = env.variables["NUGET_PACKAGES"] ?? (localDrivePath(home) ? win32.join(home, ".nuget/packages") : undefined);
-    let bundle = false;
-    const overrides = ["aspireclipath", "aspirecliinvocationmode", "dcpdir", "aspiredashboarddir", "aspiredashboardpath"];
-    if (
+    // NuGet's dgSpecHash covers the evaluated graph, not the current project/import contents.
+    // There is no authoritative offline input fingerprint to compare here. Never infer freshness
+    // from old files, paths or timestamps, or run MSBuild/restore to generate new evidence.
+    const bundle = !!(
       pin
       && sdk
-      && localDrivePath(cache)
-      && !overrides.some((name) => names.has(name))
-      && project.includes("<AspireUseCliBundle>true</AspireUseCliBundle>")
-      && project.includes("<AspireCliInvocationMode>DnxPinned</AspireCliInvocationMode>")
-    ) {
-      const sdkFile = win32.join(cache, "aspire.apphost.sdk", pin, "Sdk/Sdk.targets");
-      const tool = win32.join(cache, "aspire.cli", pin);
-      const metadata = yield* readManifest(win32.join(tool, "aspire.cli.nuspec"));
-      const cli = /<id>\s*aspire\.cli\s*<\/id>/iu.test(metadata) && /<version>\s*([^<]+?)\s*<\/version>/u.exec(metadata)?.[1] === pin;
-      if (
-        cli
-        && (yield* ownedFile(win32.join(tool, ".nupkg.metadata")))
-        && (yield* ownedFile(sdkFile))
-        && (yield* ownedFile(win32.join(win32.dirname(sdkFile), "Sdk.props")))
-      ) {
-        const rid = env.architecture === "x64" || env.architecture === "arm64" ? `win-${env.architecture}` : undefined;
-        if (rid && framework) {
-          for (const layout of [rid, "any"]) {
-            const toolDir = win32.join(tool, `tools/net${framework[1]}.${framework[2]}`, layout);
-            const directory = win32.join(toolDir, "bundle");
-            const explicitBundle = env.variables["AspireCliBundlePath"];
-            if (explicitBundle !== undefined && !samePath(explicitBundle, directory)) continue;
-            if (
-              (yield* inspectToolPayload(toolDir, env.architecture))
-              && (yield* isPortableExecutable(win32.join(directory, "dcp/dcp.exe"), env.architecture))
-              && ((yield* isPortableExecutable(win32.join(directory, "dashboard/Aspire.Dashboard.exe"), env.architecture))
-                || (yield* inspectManagedPayload(win32.join(directory, "dashboard/Aspire.Dashboard.dll"), env.architecture)))
-            ) {
-              bundle = true;
-              break;
-            }
-          }
-        }
-      }
-    }
+      && framework
+      && (yield* inspectPinnedBundle(paths.root, env, names, project, pin, `net${framework[1]}.${framework[2]}`))
+    );
     return [
       capability(
         "dotnet-sdk",
@@ -889,15 +1061,17 @@ function inspectBundle(
       ),
       capability(
         "nuget-assets",
-        assets,
-        "Checkout-owned restore graphs and their referenced local NuGet package files were observed; offline restore was not attempted.",
-        "Worktree preparation: solution restore artifacts could not be verified. See Setup action dotnet.solution-restore.",
+        false,
+        "",
+        assets
+          ? "Worktree preparation: local NuGet artifacts were observed, but restore freshness cannot be established against current project and central inputs without authoritative evidence."
+          : "Worktree preparation: solution restore artifacts could not be verified. See Setup action dotnet.solution-restore.",
       ),
       capability(
         "aspire-bundle",
         bundle,
-        "The pinned AppHost SDK and CLI metadata, CLI payload and colocated Windows Dashboard/DCP binaries were observed without execution.",
-        "Machine bootstrap: pinned Aspire CLI or paired Dashboard/DCP bundle files are absent or unsupported in the offline cache. See tooling/README.md (Development and debugging) for separately approved bundle preparation.",
+        "The pinned DNX CLI and selected Aspire-home or explicit Windows Dashboard, managed runtime and DCP payloads were observed without execution.",
+        "Machine bootstrap: the pinned DNX CLI or selected Windows bundle could not be verified. See tooling/README.md (Development and debugging) for separately approved bundle preparation.",
       ),
     ];
   });

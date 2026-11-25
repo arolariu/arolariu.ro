@@ -33,6 +33,8 @@ const venv = `${exp}/.venv`;
 const cache = "C:/nuget";
 const tool = `${cache}/aspire.cli/13.6.5`;
 const toolDir = `${tool}/tools/net10.0/any`;
+const profile = "C:/user";
+const aspireHome = `${profile}/.aspire`;
 const appHostName = "tooling/src/AppHost/AppHost.csproj";
 const secretPath = "C:/appdata/Microsoft/UserSecrets/test-apphost/secrets.json";
 const siteEnv = [
@@ -105,8 +107,31 @@ const cliBundleFiles = {
   [`${toolDir}/bundle/dashboard/Aspire.Dashboard.exe`]: portableExecutable(),
 };
 
+function resolverBundle(directory: string): Readonly<Record<string, string | Uint8Array>> {
+  return {
+    [`${directory}/dcp/dcp.exe`]: portableExecutable(),
+    [`${directory}/dcp/dcptun_c`]: "local tunnel stub",
+    [`${directory}/managed/aspire-managed.exe`]: portableExecutable(),
+    [`${directory}/dashboard/Aspire.Dashboard.exe`]: portableExecutable(),
+  };
+}
+
+const pinnedCliFiles = {
+  ...Object.fromEntries(Object.entries(cliBundleFiles).filter(([path]) => !path.startsWith(`${toolDir}/bundle/`))),
+  [`${toolDir}/aspire.dll`]: portableExecutable(0x014c),
+};
+const payloadFixtures = {"pwsh:cli": "verified", "pwsh:dcp": "verified", "pwsh:managed": "verified", "pwsh:dashboard": "verified"};
+
 function commandLine(request: Readonly<ProcessRequest>): string {
   return [request.command, ...request.args].join(" ");
+}
+
+function processKey(request: Readonly<ProcessRequest>, env: Readonly<Record<string, string | undefined>> | undefined): string {
+  if (request.command !== "pwsh") return commandLine(request);
+  const role = env?.["AROLARIU_PREFLIGHT_PAYLOAD_ROLE"];
+  if (role !== undefined) return `pwsh:${role}`;
+  if (request.args.at(-1)?.includes("GetFolderPath")) return "pwsh:profile";
+  return "pwsh";
 }
 
 function fixture(
@@ -125,14 +150,24 @@ function fixture(
     "podman machine inspect local-machine": JSON.stringify([localMachineInspect]),
     "podman info --format json": `podman-compose version 1.5.0 ${canary}`,
     "dotnet --list-sdks": "10.0.404 [C:/sdk]\n",
+    "pwsh:profile": profile,
+    "pwsh:swc": "unverified",
     ...overrides,
   };
   const harness = makeTestLayer({
-    environment: {cwd: root, platform: "win32", architecture: "x64", variables: {APPDATA: "C:/appdata", ...variables}},
+    environment: {
+      cwd: root,
+      platform: "win32",
+      architecture: "x64",
+      variables: {APPDATA: "C:/appdata", USERPROFILE: profile, ...variables},
+    },
     files: {
       "package.json": JSON.stringify({name: "@arolariu/monorepo"}),
-      "tooling/src/AppHost/AppHost.csproj": `<Sdk Name="Aspire.AppHost.Sdk" Version="13.6.5" />
-        <AspireUseCliBundle>true</AspireUseCliBundle><AspireCliInvocationMode>DnxPinned</AspireCliInvocationMode><UserSecretsId>test-apphost</UserSecretsId>`,
+      "tooling/src/AppHost/AppHost.csproj": `<Project Sdk="Microsoft.NET.Sdk"><Sdk Name="Aspire.AppHost.Sdk" Version="13.6.5" />
+        <PropertyGroup><AspireUseCliBundle>true</AspireUseCliBundle><AspireCliInvocationMode>DnxPinned</AspireCliInvocationMode><UserSecretsId>test-apphost</UserSecretsId></PropertyGroup>
+        <ItemGroup><PackageReference Include="Aspire.Hosting.AppHost" /></ItemGroup></Project>`,
+      "tooling/Directory.Packages.props":
+        '<Project><ItemGroup><PackageVersion Include="Aspire.Hosting.AppHost" Version="13.6.5" /></ItemGroup></Project>',
       "tooling/src/AppHost/Properties/launchSettings.json": JSON.stringify({
         profiles: {
           AppHost: {
@@ -154,13 +189,13 @@ function fixture(
       ...files,
     },
     processes: [
-      scriptedOutcomes((request) => {
+      scriptedOutcomes((request, options) => {
         const command = commandLine(request);
         if (command === "dotnet dev-certs https --check --trust") {
           if (trustedDotnet) return {kind: "succeeded", exitCode: 0, stdout: "", stderr: canary, durationMs: 0};
           return {kind: "exited", exitCode: 7, stdout: "", stderr: canary, durationMs: 0};
         }
-        const trackedCommand = request.command === "pwsh" ? "pwsh" : command;
+        const trackedCommand = processKey(request, options.env);
         const stdout = responses[trackedCommand];
         if (stdout === undefined) throw new Error("Unapproved process in preflight");
         return {kind: "succeeded", exitCode: 0, stdout, stderr: canary, durationMs: 0};
@@ -207,8 +242,8 @@ function fixture(
         harness
           .processCalls()
           .every(
-            ({request}) =>
-              Object.hasOwn(responses, request.command === "pwsh" ? "pwsh" : commandLine(request))
+            ({request, options}) =>
+              Object.hasOwn(responses, processKey(request, options.env))
               || commandLine(request) === "dotnet dev-certs https --check --trust",
           ),
       ).toBe(true);
@@ -217,6 +252,130 @@ function fixture(
 }
 
 describe("worktree Aspire preflight", () => {
+  it.runIf(process.platform === "win32").each([
+    ["default home", {}, `${aspireHome}/bundle`],
+    ["versioned home", {}, `${aspireHome}/versions/13.6.5_0123456789abcdef`],
+    ["explicit Aspire home", {ASPIRE_HOME: "C:/approved-aspire"}, "C:/approved-aspire/bundle"],
+    ["explicit resolver layout", {AspireCliBundlePath: "C:/approved-layout"}, "C:/approved-layout"],
+  ] as const)("checks the pinned DNX bundle from the %s", async (_label, variables, directory) => {
+    const test = fixture(
+      {NUGET_PACKAGES: cache, ...variables},
+      {...payloadFixtures, "pwsh:profile": profile},
+      {...pinnedCliFiles, ...resolverBundle(directory)},
+    );
+    expect((await test.inspect()).capabilities).toContainEqual(expect.objectContaining({id: "aspire-bundle", status: "pass"}));
+    test.expectReadOnly();
+  });
+
+  it.runIf(process.platform === "win32")("rejects a payload found only beside the NuGet tool, outside resolver selection", async () => {
+    const test = fixture({NUGET_PACKAGES: cache}, {...payloadFixtures, "pwsh:profile": profile}, {...cliBundleFiles, ...pinnedCliFiles});
+    expect((await test.inspect()).capabilities).toContainEqual(expect.objectContaining({id: "aspire-bundle", status: "blocked"}));
+    test.expectReadOnly();
+  });
+
+  it.runIf(process.platform === "win32")("does not substitute a complete home bundle for an incomplete explicit selection", async () => {
+    const directory = `${toolDir}/bundle`;
+    const test = fixture(
+      {NUGET_PACKAGES: cache, AspireCliBundlePath: directory},
+      {...payloadFixtures, "pwsh:profile": profile},
+      {
+        ...pinnedCliFiles,
+        ...resolverBundle(`${aspireHome}/bundle`),
+        ...cliBundleFiles,
+      },
+    );
+
+    expect((await test.inspect()).capabilities).toContainEqual(expect.objectContaining({id: "aspire-bundle", status: "blocked"}));
+    test.expectReadOnly();
+  });
+
+  it.runIf(process.platform === "win32")("blocks an unmodeled Aspire override instead of falling back to the default home", async () => {
+    const test = fixture({NUGET_PACKAGES: cache, DcpDir: "C:/other-dcp"}, payloadFixtures, {
+      ...pinnedCliFiles,
+      ...resolverBundle(`${aspireHome}/bundle`),
+    });
+    expect((await test.inspect()).capabilities).toContainEqual(expect.objectContaining({id: "aspire-bundle", status: "blocked"}));
+    expect(test.processCalls().some(({options}) => options.env?.["AROLARIU_PREFLIGHT_PAYLOAD_ROLE"] === "dcp")).toBe(false);
+    test.expectReadOnly();
+  });
+
+  it.runIf(process.platform === "win32").each([
+    ["project", {[appHostName]: '<Project><ItemGroup><PackageReference Include="Example.Sdk" Version="9.0.0" /></ItemGroup></Project>'}],
+    [
+      "central pin",
+      {
+        "tooling/Directory.Packages.props":
+          '<Project><ItemGroup><PackageVersion Include="Example.Sdk" Version="9.0.0" /></ItemGroup></Project>',
+      },
+    ],
+  ] as const)("does not accept an unbound restore graph after a %s change", async (_label, inputs) => {
+    const test = fixture({}, {}, {...restoreFiles, [`${packageDir}/${assetFile}`]: portableExecutable(), ...inputs});
+    expect((await test.inspect()).capabilities).toContainEqual(
+      expect.objectContaining({id: "nuget-assets", status: "blocked", detail: expect.stringContaining("freshness")}),
+    );
+    test.expectReadOnly();
+  });
+
+  it("rejects a generic native PE masquerading as the pinned SWC package payload", async () => {
+    const test = fixture(
+      {},
+      {},
+      {...nextFiles, "node_modules/@next/swc-win32-x64-msvc/next-swc.win32-x64-msvc.node": portableExecutable()},
+    );
+    expect((await test.inspect()).capabilities).toContainEqual(expect.objectContaining({id: "npm-dependencies", status: "blocked"}));
+    test.expectReadOnly();
+  });
+
+  it.runIf(process.platform === "win32").each(["cli", "dcp"] as const)(
+    "rejects an unverified %s role despite well-shaped PE files",
+    async (role) => {
+      const directory = `${toolDir}/bundle`;
+      const test = fixture(
+        {NUGET_PACKAGES: cache, AspireCliBundlePath: directory},
+        {...payloadFixtures, [`pwsh:${role}`]: "unverified"},
+        {
+          ...pinnedCliFiles,
+          ...resolverBundle(directory),
+        },
+      );
+      expect((await test.inspect()).capabilities).toContainEqual(expect.objectContaining({id: "aspire-bundle", status: "blocked"}));
+      test.expectReadOnly();
+    },
+  );
+
+  it.runIf(process.platform === "win32").each([null, false, {}])(
+    "blocks a required exp endpoint of an incompatible type (%#)",
+    async (endpoint) => {
+      const test = fixture(
+        {},
+        {},
+        {
+          [`${exp}/config.template.json`]: '{"Endpoints:Database:SQL":"","Auth:Clerk:SecretKey":""}',
+          [`${exp}/config.docker.json`]: JSON.stringify({"Endpoints:Database:SQL": endpoint, "Auth:Clerk:SecretKey": canary}),
+        },
+      );
+      const result = await test.inspect();
+      expect(result.capabilities).toContainEqual(expect.objectContaining({id: "exp-config", status: "blocked"}));
+      expect(JSON.stringify(result)).not.toContain(canary);
+      test.expectReadOnly();
+    },
+  );
+
+  it.runIf(process.platform === "win32")("does not block required website keys because of an unrelated Windows path", async () => {
+    const test = fixture(
+      {},
+      {},
+      {
+        "sites/arolariu.ro/.env": `${siteEnv}\nTOOL_PATH=C:\\SDK\\tools`,
+        "sites/arolariu.ro/.env.local": 'BANNER="C:\\SDK\\tools\nCLERK_SECRET_KEY=\n"',
+      },
+    );
+    const result = await test.inspect();
+    expect(result.capabilities).toContainEqual(expect.objectContaining({id: "website-config", status: "pass"}));
+    expect(JSON.stringify(result)).not.toContain(canary);
+    test.expectReadOnly();
+  });
+
   it.each([
     ["unregistered", registeredWorktree.replace(root, "C:/worktrees/another")],
     ["wrong branch", registeredWorktree.replace("refs/heads/chore/task", "refs/heads/another")],
@@ -381,10 +540,20 @@ describe("worktree Aspire preflight", () => {
   });
 
   it.runIf(process.platform === "win32")("does not mistake restore metadata and CLI settings for the referenced payloads", async () => {
-    const test = fixture({NUGET_PACKAGES: cache}, {}, {...restoreFiles, ...cliBundleFiles});
+    const test = fixture({NUGET_PACKAGES: cache}, payloadFixtures, {
+      ...restoreFiles,
+      ...cliBundleFiles,
+      ...resolverBundle(`${aspireHome}/bundle`),
+    });
     const result = await test.inspect();
-    for (const id of ["nuget-assets", "aspire-bundle"])
-      expect(result.capabilities).toContainEqual(expect.objectContaining({id, status: "blocked"}));
+    expect(result.capabilities).toContainEqual(
+      expect.objectContaining({
+        id: "nuget-assets",
+        status: "blocked",
+        detail: expect.stringContaining("artifacts could not be verified"),
+      }),
+    );
+    expect(result.capabilities).toContainEqual(expect.objectContaining({id: "aspire-bundle", status: "blocked"}));
     test.expectReadOnly();
   });
 
@@ -397,7 +566,7 @@ describe("worktree Aspire preflight", () => {
   it("rejects a wrong-architecture SWC binary even when the pinned package marker matches", async () => {
     const test = fixture(
       {},
-      {},
+      {"pwsh:swc": "verified"},
       {...nextFiles, "node_modules/@next/swc-win32-x64-msvc/next-swc.win32-x64-msvc.node": portableExecutable(0xaa64)},
     );
     expect((await test.inspect()).capabilities).toContainEqual(expect.objectContaining({id: "npm-dependencies", status: "blocked"}));
@@ -410,7 +579,7 @@ describe("worktree Aspire preflight", () => {
     const location = "node_modules/next/next-swc-fallback/@next/swc-win32-x64-msvc";
     const test = fixture(
       {},
-      {},
+      {"pwsh:swc": "verified"},
       {
         ...files,
         [`${location}/package.json`]: manifest,
@@ -544,7 +713,7 @@ describe("worktree Aspire preflight", () => {
     test.expectReadOnly();
   });
 
-  it.runIf(process.platform === "win32")("reports prepared for positively observed prerequisites only", async () => {
+  it.runIf(process.platform === "win32")("blocks for unavailable restore freshness when other prerequisites are observed", async () => {
     const test = fixture(
       {
         "Parameters__sql-password": canary,
@@ -561,11 +730,14 @@ describe("worktree Aspire preflight", () => {
         "podman info --format json": trustedBackend,
         "mkcert --version": "v1.4.4",
         pwsh: "trusted",
+        "pwsh:swc": "verified",
+        ...payloadFixtures,
       },
       {
         ...nextFiles,
         ...restoreFiles,
-        ...cliBundleFiles,
+        ...pinnedCliFiles,
+        ...resolverBundle(`${aspireHome}/bundle`),
         "node_modules/@next/swc-win32-x64-msvc/next-swc.win32-x64-msvc.node": portableExecutable(),
         "sites/arolariu.ro/licenses.json": "{}",
         "scripts/__generated__/gql/README.placeholder.txt": "marker",
@@ -586,8 +758,10 @@ describe("worktree Aspire preflight", () => {
 
     const result = await test.inspect(root);
 
-    expect(result.capabilities.filter(({status}) => status === "blocked")).toEqual([]);
-    expect(result).toMatchObject({status: "prepared", checkout: {head}});
+    expect(result.capabilities.filter(({status}) => status === "blocked")).toEqual([
+      expect.objectContaining({id: "nuget-assets", detail: expect.stringContaining("freshness")}),
+    ]);
+    expect(result).toMatchObject({status: "blocked", checkout: {head}});
     expect(JSON.stringify(result)).not.toContain(canary);
     test.expectReadOnly();
   });
