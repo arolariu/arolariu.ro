@@ -261,7 +261,7 @@ npm run dev:website        # Next.js only
 **What `npm run setup` prepares** — a single dependency-aware run that never builds, type-checks, tests, or starts/stops a service:
 
 - Validates the root npm dependency tree (already installed by `npm install`/`npm ci` above), restores the `.github/scripts` npm dependency
-  tree, and regenerates taxonomy/GraphQL/i18n checkout artifacts;
+  tree, and prepares license, GraphQL and i18n checkout artifacts;
 - Prepares the .NET SDK/workload/tool restore, AppHost local-development user secrets, and the local HTTPS development certificate;
 - Prepares an isolated Python virtual environment and its pinned dependencies for the `exp` service;
 - Prepares the SvelteKit CV and status generated `.svelte-kit` state;

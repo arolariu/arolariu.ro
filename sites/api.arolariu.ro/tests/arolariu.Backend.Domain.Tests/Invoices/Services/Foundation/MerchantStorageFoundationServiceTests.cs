@@ -9,7 +9,7 @@ using arolariu.Backend.Domain.Invoices.Brokers.DatabaseBroker;
 using arolariu.Backend.Domain.Invoices.DDD.Entities.Merchants;
 using arolariu.Backend.Domain.Invoices.DDD.Entities.Merchants.Exceptions.Inner;
 using arolariu.Backend.Domain.Invoices.DDD.Entities.Merchants.Exceptions.Outer.Foundation;
-using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Classifications;
+using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Categories;
 using arolariu.Backend.Domain.Invoices.Services.Foundation.MerchantStorage;
 using arolariu.Backend.Domain.Tests.Builders;
 
@@ -387,27 +387,20 @@ public sealed class MerchantStorageFoundationServiceTests
   public async Task UpdateMerchantObject_ValidUpdate_ReturnsUpdatedMerchant()
   {
     // Arrange
-    var merchantId = Guid.NewGuid();
-    var parentCompanyId = Guid.NewGuid();
-    var currentMerchant = MerchantTestDataBuilder.CreateRandomMerchant();
     var updatedMerchant = MerchantTestDataBuilder.CreateRandomMerchant();
 
     mockBroker
-        .Setup(b => b.ReadMerchantAsync(merchantId, parentCompanyId, It.IsAny<CancellationToken>()))
-        .ReturnsAsync(currentMerchant);
-
-    mockBroker
-        .Setup(b => b.UpdateMerchantAsync(currentMerchant, currentMerchant, It.IsAny<CancellationToken>()))
-        .ReturnsAsync(currentMerchant);
+        .Setup(b => b.UpdateMerchantAsync(updatedMerchant, It.IsAny<CancellationToken>()))
+        .ReturnsAsync(updatedMerchant);
 
     // Act
-    var result = await service.UpdateMerchantObject(updatedMerchant, merchantId, parentCompanyId, CancellationToken.None);
+    var result = await service.UpdateMerchantObject(updatedMerchant, updatedMerchant.id, updatedMerchant.ParentCompanyId, CancellationToken.None);
 
     // Assert
     Assert.IsNotNull(result);
-    Assert.AreEqual(currentMerchant.id, result.id);
-    mockBroker.Verify(b => b.ReadMerchantAsync(merchantId, parentCompanyId, It.IsAny<CancellationToken>()), Times.Once);
-    mockBroker.Verify(b => b.UpdateMerchantAsync(currentMerchant, currentMerchant, It.IsAny<CancellationToken>()), Times.Once);
+    Assert.AreSame(updatedMerchant, result);
+    mockBroker.Verify(b => b.ReadMerchantAsync(It.IsAny<Guid>(), It.IsAny<Guid?>(), It.IsAny<CancellationToken>()), Times.Never);
+    mockBroker.Verify(b => b.UpdateMerchantAsync(updatedMerchant, It.IsAny<CancellationToken>()), Times.Once);
   }
 
   /// <summary>
@@ -417,44 +410,37 @@ public sealed class MerchantStorageFoundationServiceTests
   public async Task UpdateMerchantObject_NoParentCompanyId_UpdatesSuccessfully()
   {
     // Arrange
-    var merchantId = Guid.NewGuid();
-    var currentMerchant = MerchantTestDataBuilder.CreateRandomMerchant();
     var updatedMerchant = MerchantTestDataBuilder.CreateRandomMerchant();
 
     mockBroker
-        .Setup(b => b.ReadMerchantAsync(merchantId, null, It.IsAny<CancellationToken>()))
-        .ReturnsAsync(currentMerchant);
-
-    mockBroker
-        .Setup(b => b.UpdateMerchantAsync(currentMerchant, currentMerchant, It.IsAny<CancellationToken>()))
-        .ReturnsAsync(currentMerchant);
+        .Setup(b => b.UpdateMerchantAsync(updatedMerchant, It.IsAny<CancellationToken>()))
+        .ReturnsAsync(updatedMerchant);
 
     // Act
-    var result = await service.UpdateMerchantObject(updatedMerchant, merchantId, null, CancellationToken.None);
+    var result = await service.UpdateMerchantObject(updatedMerchant, updatedMerchant.id, null, CancellationToken.None);
 
     // Assert
     Assert.IsNotNull(result);
-    mockBroker.Verify(b => b.UpdateMerchantAsync(currentMerchant, currentMerchant, It.IsAny<CancellationToken>()), Times.Once);
+    mockBroker.Verify(b => b.UpdateMerchantAsync(updatedMerchant, It.IsAny<CancellationToken>()), Times.Once);
   }
 
   /// <summary>
   /// Validates a missing merchant during update produces a typed dependency-validation exception.
   /// </summary>
   [TestMethod]
-  public async Task UpdateMerchantObject_NullCurrentMerchant_ThrowsFoundationDependencyValidationException()
+  public async Task UpdateMerchantObject_DeletedMerchant_ThrowsFoundationDependencyValidationException()
   {
     // Arrange
-    var merchantId = Guid.NewGuid();
     var updatedMerchant = MerchantTestDataBuilder.CreateRandomMerchant();
 
     mockBroker
-        .Setup(b => b.ReadMerchantAsync(merchantId, null, It.IsAny<CancellationToken>()))
-        .ReturnsAsync((Merchant?)null);
+        .Setup(b => b.UpdateMerchantAsync(updatedMerchant, It.IsAny<CancellationToken>()))
+        .ThrowsAsync(new MerchantNotFoundException(updatedMerchant.id));
 
     // Act & Assert
     MerchantFoundationServiceDependencyValidationException exception =
       await Assert.ThrowsExactlyAsync<MerchantFoundationServiceDependencyValidationException>(() =>
-        service.UpdateMerchantObject(updatedMerchant, merchantId, null, CancellationToken.None));
+        service.UpdateMerchantObject(updatedMerchant, updatedMerchant.id, null, CancellationToken.None));
 
     Assert.IsInstanceOfType<MerchantNotFoundException>(exception.InnerException);
   }
@@ -466,157 +452,15 @@ public sealed class MerchantStorageFoundationServiceTests
   public async Task UpdateMerchantObject_GenericException_ThrowsFoundationServiceException()
   {
     // Arrange
-    var merchantId = Guid.NewGuid();
-    var currentMerchant = MerchantTestDataBuilder.CreateRandomMerchant();
     var updatedMerchant = MerchantTestDataBuilder.CreateRandomMerchant();
 
     mockBroker
-        .Setup(b => b.ReadMerchantAsync(merchantId, null, It.IsAny<CancellationToken>()))
-        .ReturnsAsync(currentMerchant);
-
-    mockBroker
-        .Setup(b => b.UpdateMerchantAsync(currentMerchant, currentMerchant, It.IsAny<CancellationToken>()))
+        .Setup(b => b.UpdateMerchantAsync(updatedMerchant, It.IsAny<CancellationToken>()))
         .ThrowsAsync(new InvalidOperationException("Update failed"));
 
     // Act & Assert
     await Assert.ThrowsExactlyAsync<MerchantFoundationServiceException>(() =>
-        service.UpdateMerchantObject(updatedMerchant, merchantId, null, CancellationToken.None));
-  }
-
-  #endregion
-
-  #region DeleteMerchantObject Tests
-
-  /// <summary>
-  /// Validates successful merchant deletion through foundation layer.
-  /// </summary>
-  [TestMethod]
-  public async Task DeleteMerchantObject_ValidIdentifiers_DeletesSuccessfully()
-  {
-    // Arrange
-    var merchantId = Guid.NewGuid();
-    var parentCompanyId = Guid.NewGuid();
-
-    mockBroker
-        .Setup(b => b.DeleteMerchantAsync(merchantId, parentCompanyId, It.IsAny<CancellationToken>()))
-        .Returns(ValueTask.CompletedTask);
-
-    // Act
-    await service.DeleteMerchantObject(merchantId, parentCompanyId, CancellationToken.None);
-
-    // Assert
-    mockBroker.Verify(b => b.DeleteMerchantAsync(merchantId, parentCompanyId, It.IsAny<CancellationToken>()), Times.Once);
-  }
-
-  /// <summary>
-  /// Validates empty merchant identifier for delete throws foundation service exception.
-  /// Note: The validation exception class lacks the required constructor for Validator.ValidateAndThrow,
-  /// causing a MissingMethodException that falls through to the generic exception handler.
-  /// </summary>
-  [TestMethod]
-  public async Task DeleteMerchantObject_EmptyMerchantId_ThrowsFoundationServiceException()
-  {
-    // Arrange
-    var emptyId = Guid.Empty;
-    var parentCompanyId = Guid.NewGuid();
-
-    // Act & Assert
-    await Assert.ThrowsExactlyAsync<MerchantFoundationServiceException>(() =>
-        service.DeleteMerchantObject(emptyId, parentCompanyId, CancellationToken.None));
-  }
-
-  /// <summary>
-  /// Validates empty parent company identifier for delete throws foundation service exception.
-  /// Note: The validation exception class lacks the required constructor for Validator.ValidateAndThrow,
-  /// causing a MissingMethodException that falls through to the generic exception handler.
-  /// </summary>
-  [TestMethod]
-  public async Task DeleteMerchantObject_EmptyParentCompanyId_ThrowsFoundationServiceException()
-  {
-    // Arrange
-    var merchantId = Guid.NewGuid();
-    var emptyParentId = Guid.Empty;
-
-    // Act & Assert
-    await Assert.ThrowsExactlyAsync<MerchantFoundationServiceException>(() =>
-        service.DeleteMerchantObject(merchantId, emptyParentId, CancellationToken.None));
-  }
-
-  /// <summary>
-  /// Validates null parent company identifier for delete throws foundation service exception.
-  /// Note: The validation exception class lacks the required constructor for Validator.ValidateAndThrow,
-  /// causing a MissingMethodException that falls through to the generic exception handler.
-  /// </summary>
-  [TestMethod]
-  public async Task DeleteMerchantObject_NullParentCompanyId_ThrowsFoundationServiceException()
-  {
-    // Arrange
-    var merchantId = Guid.NewGuid();
-
-    // Act & Assert
-    await Assert.ThrowsExactlyAsync<MerchantFoundationServiceException>(() =>
-        service.DeleteMerchantObject(merchantId, null, CancellationToken.None));
-  }
-
-  /// <summary>
-  /// Validates OperationCanceledException during delete is wrapped into foundation dependency exception.
-  /// </summary>
-  [TestMethod]
-  public async Task DeleteMerchantObject_OperationCanceledException_PropagatesOperationCanceledException()
-  {
-    // Arrange
-    var merchantId = Guid.NewGuid();
-    var parentCompanyId = Guid.NewGuid();
-
-    mockBroker
-        .Setup(b => b.DeleteMerchantAsync(merchantId, parentCompanyId, It.IsAny<CancellationToken>()))
-        .ThrowsAsync(new OperationCanceledException("Cancelled"));
-
-    // Act & Assert — cancellation must not be reclassified into a domain exception (bug fix)
-    await Assert.ThrowsExactlyAsync<OperationCanceledException>(() =>
-        service.DeleteMerchantObject(merchantId, parentCompanyId, CancellationToken.None));
-  }
-
-  /// <summary>
-  /// Ensures generic exceptions during delete are wrapped into foundation service exceptions.
-  /// </summary>
-  [TestMethod]
-  public async Task DeleteMerchantObject_GenericException_ThrowsFoundationServiceException()
-  {
-    // Arrange
-    var merchantId = Guid.NewGuid();
-    var parentCompanyId = Guid.NewGuid();
-
-    mockBroker
-        .Setup(b => b.DeleteMerchantAsync(merchantId, parentCompanyId, It.IsAny<CancellationToken>()))
-        .ThrowsAsync(new InvalidOperationException("Deletion failed"));
-
-    // Act & Assert
-    await Assert.ThrowsExactlyAsync<MerchantFoundationServiceException>(() =>
-        service.DeleteMerchantObject(merchantId, parentCompanyId, CancellationToken.None));
-  }
-
-  /// <summary>
-  /// Validates idempotency of delete operation (repeated calls succeed).
-  /// </summary>
-  [TestMethod]
-  public async Task DeleteMerchantObject_IdempotentCalls_SucceedMultipleTimes()
-  {
-    // Arrange
-    var merchantId = Guid.NewGuid();
-    var parentCompanyId = Guid.NewGuid();
-
-    mockBroker
-        .Setup(b => b.DeleteMerchantAsync(merchantId, parentCompanyId, It.IsAny<CancellationToken>()))
-        .Returns(ValueTask.CompletedTask);
-
-    // Act
-    await service.DeleteMerchantObject(merchantId, parentCompanyId, CancellationToken.None);
-    await service.DeleteMerchantObject(merchantId, parentCompanyId, CancellationToken.None);
-    await service.DeleteMerchantObject(merchantId, parentCompanyId, CancellationToken.None);
-
-    // Assert
-    mockBroker.Verify(b => b.DeleteMerchantAsync(merchantId, parentCompanyId, It.IsAny<CancellationToken>()), Times.Exactly(3));
+        service.UpdateMerchantObject(updatedMerchant, updatedMerchant.id, null, CancellationToken.None));
   }
 
   #endregion

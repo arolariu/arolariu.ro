@@ -2,18 +2,18 @@ namespace arolariu.Backend.Domain.Invoices.DTOs.Requests;
 
 using System;
 using System.Collections.Generic;
-using System.ComponentModel.DataAnnotations;
 using System.Diagnostics.CodeAnalysis;
 
 using arolariu.Backend.Common.DDD.ValueObjects;
 using arolariu.Backend.Domain.Invoices.DDD.Entities.Merchants;
+using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Categories;
 
 /// <summary>
 /// Request DTO for updating client-editable merchant fields.
 /// </summary>
 /// <remarks>
 /// <para>
-/// <b>Purpose:</b> Updates contact, description, metadata, and an optional manual NACE
+/// <b>Purpose:</b> Updates contact, description, metadata, and an optional manual
 /// selection without replacing relationships, audit state, or the Cosmos partition identity.
 /// </para>
 /// <para>
@@ -35,7 +35,6 @@ using arolariu.Backend.Domain.Invoices.DDD.Entities.Merchants;
 /// <param name="Description">
 /// The new detailed description. Required. Replaces the existing description.
 /// </param>
-/// <param name="ClassificationCode">Optional taxonomy code for the manual merchant classification.</param>
 /// <param name="Address">
 /// The new structured contact and address information.
 /// Null creates an empty <see cref="ContactInformation"/> instance.
@@ -48,17 +47,18 @@ using arolariu.Backend.Domain.Invoices.DDD.Entities.Merchants;
 /// Optional extensible key-value metadata. A non-empty dictionary replaces existing client-editable metadata;
 /// null or an empty dictionary retains persisted metadata and server enrichment.
 /// </param>
+/// <param name="Category">A valid merchant category ID to assign, or -1 to clear. Omitted or null preserves it.</param>
 /// <example>
 /// <code>
 /// var request = new UpdateMerchantRequestDto(
 ///     Name: "Kaufland Iasi Pacurari",
 ///     Description: "Updated description with new hours",
-///     ClassificationCode: "47.11",
+///     Category: null,
 ///     Address: new ContactInformation { City = "Iasi", Country = "Romania" },
 ///     ParentCompanyId: parentId,
 ///     AdditionalMetadata: new Dictionary&lt;string, string&gt; { ["storeCode"] = "IS001" });
 ///
-/// var merchant = request.ToMerchant(existingMerchantId);
+/// request.ApplyTo(merchant);
 /// await merchantService.UpdateAsync(merchant);
 /// </code>
 /// </example>
@@ -67,58 +67,36 @@ using arolariu.Backend.Domain.Invoices.DDD.Entities.Merchants;
 [Serializable]
 [ExcludeFromCodeCoverage]
 public readonly record struct UpdateMerchantRequestDto(
-  [Required] string Name,
-  [Required] string Description,
-  string? ClassificationCode,
+  string? Name,
+  string? Description,
+  int? Category,
   ContactInformation? Address,
   Guid? ParentCompanyId,
   IDictionary<string, string>? AdditionalMetadata)
 {
-  /// <summary>
-  /// Converts this DTO to a <see cref="Merchant"/> domain entity.
-  /// </summary>
-  /// <remarks>
-  /// <para>
-  /// <b>Identity Preservation:</b> The <paramref name="merchantId"/> is used to
-  /// maintain the merchant's identity across the update operation.
-  /// </para>
-  /// <para>
-  /// <b>Null Handling:</b>
-  /// <list type="bullet">
-  ///   <item><description><see cref="Address"/>: Null becomes empty <see cref="ContactInformation"/>.</description></item>
-  ///   <item><description><see cref="ParentCompanyId"/>: Deliberately ignored; the persisted partition identity is retained.</description></item>
-  ///   <item><description><see cref="AdditionalMetadata"/>: Null results in an empty update candidate and preserves persisted metadata.</description></item>
-  /// </list>
-  /// </para>
-  /// <para>
-  /// <b>Metadata Handling:</b> The metadata dictionary is copied entry-by-entry
-  /// to the domain entity's metadata collection.
-  /// </para>
-  /// </remarks>
-  /// <param name="merchantId">
-  /// The existing merchant identifier to preserve. Must match an existing merchant.
-  /// </param>
-  /// <returns>
-  /// A transient <see cref="Merchant"/> carrying only client-editable values for application to a persisted merchant.
-  /// </returns>
-  public Merchant ToMerchant(Guid merchantId)
-  {
-    var merchant = new Merchant
-    {
-      id = merchantId,
-      Name = Name,
-      Description = Description,
-      Address = Address ?? new ContactInformation(),
-    };
+  // A partial detail edit must not fall through to a category-only save.
+  private bool IsCategoryOnly => Category.HasValue && Name is null && Description is null
+    && Address is null && ParentCompanyId is null && AdditionalMetadata is null;
 
-    if (AdditionalMetadata is not null)
+  internal bool IsValid => (IsCategoryOnly || (!string.IsNullOrWhiteSpace(Name) && !string.IsNullOrWhiteSpace(Description)))
+    && (Category is null or -1 || Enum.IsDefined((MerchantCategory)Category.Value));
+
+  /// <summary>Applies only client-editable fields to the stored merchant.</summary>
+  internal void ApplyTo(Merchant merchant)
+  {
+    if (!IsCategoryOnly)
     {
-      foreach (var (key, value) in AdditionalMetadata)
+      merchant.Name = Name ?? string.Empty;
+      merchant.Description = Description ?? string.Empty;
+      merchant.Address = Address ?? new ContactInformation();
+
+      if (AdditionalMetadata is { Count: > 0 })
       {
-        merchant.AdditionalMetadata[key] = value;
+        merchant.AdditionalMetadata.Clear();
+        foreach (var (key, value) in AdditionalMetadata) merchant.AdditionalMetadata[key] = value;
       }
     }
 
-    return merchant;
+    if (Category is int id) merchant.Category = id == -1 ? null : (MerchantCategory)id;
   }
 }

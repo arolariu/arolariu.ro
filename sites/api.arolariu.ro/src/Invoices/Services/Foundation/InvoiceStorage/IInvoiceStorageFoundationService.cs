@@ -72,7 +72,9 @@ public interface IInvoiceStorageFoundationService
   /// <param name="cancellationToken">Cancellation token to abort the operation (required).</param>
   /// <returns>Enumerable collection (empty if none).</returns>
   /// <exception cref="OperationCanceledException">Thrown if the operation is cancelled.</exception>
-  Task<IEnumerable<Invoice>> ReadAllInvoiceObjects(Guid userIdentifier, CancellationToken cancellationToken);
+  /// <param name="merchantIdentifier">The optional merchant reference to match.</param>
+  Task<IEnumerable<Invoice>> ReadAllInvoiceObjects(Guid userIdentifier, CancellationToken cancellationToken, Guid? merchantIdentifier = null);
+
   #endregion
 
   #region Update Invoice Object API
@@ -90,6 +92,7 @@ public interface IInvoiceStorageFoundationService
   /// <returns>Updated invoice instance.</returns>
   /// <exception cref="OperationCanceledException">Thrown if the operation is cancelled.</exception>
   Task<Invoice> UpdateInvoiceObject(Invoice updatedInvoice, Guid invoiceIdentifier, Guid? userIdentifier, CancellationToken cancellationToken);
+
   #endregion
 
   #region Delete Invoice Object API

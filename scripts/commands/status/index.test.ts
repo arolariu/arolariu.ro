@@ -492,7 +492,7 @@ describe("status — shared inspection session", () => {
     ).toEqual([]);
     expect(probeKeys(harness)).toEqual(expect.arrayContaining([...JSON_PROBE_INVENTORY, "git --version", "npm config get cache"]));
     expect(document.workspaces).toBeNull();
-    expect(document.health).toEqual({score: 6, grade: "F", summary: {passed: 1, warnings: 2, failed: 38, skipped: 18}});
+    expect(document.health).toEqual({score: 6, grade: "F", summary: {passed: 1, warnings: 2, failed: 37, skipped: 18}});
     expect(document.git).toEqual({
       branch: "main",
       sha: "abc1234",

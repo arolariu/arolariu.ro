@@ -54,7 +54,7 @@ using arolariu.Backend.Domain.Invoices.DDD.Entities.Merchants;
 ///     Address: "Str. Pacurari 123, Iasi 700000, Romania",
 ///     ParentCompanyIdentifier: Guid.Empty);  // No parent
 ///
-/// var merchant = request.ToMerchant();
+/// var merchant = request.ToMerchant(authenticatedUserId);
 /// await merchantService.CreateAsync(merchant);
 /// </code>
 /// </example>
@@ -86,16 +86,18 @@ public readonly record struct CreateMerchantRequestDto(
   /// entity receives an empty <see cref="ContactInformation"/> instance.
   /// </para>
   /// </remarks>
+  /// <param name="creatorIdentifier">The authenticated creator, supplied by the server.</param>
   /// <returns>
   /// A new <see cref="Merchant"/> instance with generated ID and current timestamp.
   /// </returns>
-  public Merchant ToMerchant()
+  public Merchant ToMerchant(Guid creatorIdentifier)
   {
     var merchant = new Merchant
     {
       id = Guid.NewGuid(),
       Address = new ContactInformation(),
       CreatedAt = DateTime.UtcNow,
+      CreatedBy = creatorIdentifier,
       Description = Description,
       Name = Name,
       ParentCompanyId = ParentCompanyIdentifier,

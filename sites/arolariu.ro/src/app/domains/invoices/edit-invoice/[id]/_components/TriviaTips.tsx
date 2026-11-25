@@ -144,7 +144,7 @@ export default function TriviaTipsCard({merchant, invoice}: Readonly<Props>) {
     }
 
     // Classification (10 points)
-    if (invoice.classification !== null) score += 10;
+    if (invoice.category !== null) score += 10;
 
     // Description (10 points)
     if (invoice.description.length > 0) score += 10;
@@ -200,14 +200,14 @@ export default function TriviaTipsCard({merchant, invoice}: Readonly<Props>) {
       });
     }
 
-    // No classification → suggest taxonomy search
-    if (invoice.classification === null && !dismissedTips.includes("noCategory")) {
+    // No category: suggest the receipt picker
+    if (invoice.category === null && !dismissedTips.includes("noCategory")) {
       tips.push({
         id: "noCategory",
         messageSelector: (m) => m.pages.invoices.editInvoice.triviaTips.contextTips.noCategory,
         actionSelector: (m) => m.pages.invoices.editInvoice.triviaTips.contextActions.setCategory,
         handleAction: () => {
-          const categorySelect = document.querySelector<HTMLButtonElement>('button[role="combobox"]');
+          const categorySelect = document.querySelector<HTMLButtonElement>('[data-category-picker] [role="combobox"]');
           categorySelect?.focus();
           categorySelect?.scrollIntoView({behavior: "smooth", block: "center"});
         },

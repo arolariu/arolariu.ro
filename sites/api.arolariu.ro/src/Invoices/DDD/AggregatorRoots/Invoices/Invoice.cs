@@ -7,9 +7,10 @@ using System.Text.Json.Serialization;
 
 using arolariu.Backend.Common.DDD.Contracts;
 using arolariu.Backend.Domain.Invoices.DDD.ValueObjects;
-using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Classifications;
+using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Categories;
 using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Products;
 using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Recipes;
+using arolariu.Backend.Domain.Invoices.Serialization;
 
 /// <summary>
 /// Represents the invoice aggregate root controlling line items, merchant linkage, payment details, scan data, AI enrichment artifacts (recipes, classification)
@@ -18,11 +19,11 @@ using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Recipes;
 /// <remarks>
 /// <para>This aggregate encapsulates the canonical mutable state of an invoice. Identity (<c>id</c>) is immutable (Version 7 GUID) and is never reassigned.</para>
 /// <para>Collections (<c>Items</c>, <c>PossibleRecipes</c>, <c>SharedWith</c>) preserve insertion order and allow duplicates. There is currently
-/// no de-duplication or concurrency token; last writer wins on updates. Future optimization may introduce distinct filtering.</para>
+/// no de-duplication of collections. Updates use the storage revision from the original read.</para>
 /// <para><b>Soft Delete Lifecycle:</b> When soft-deleted at the storage layer, the invoice and each contained product are marked; queries exclude
 /// soft-deleted entities unless explicitly overridden. See service layer deletion logic for cascade behavior.</para>
 /// <para><b>Sentinel Defaults:</b> <c>Guid.Empty</c> for <c>UserIdentifier</c> and <c>MerchantReference</c>, and <see langword="null"/> for
-/// <c>Classification</c> indicate an unenriched or unlinked state. These SHOULD be replaced by upstream analysis / user input flows prior to final
+/// <c>Category</c> indicate an unenriched or unlinked state. These SHOULD be replaced by upstream analysis / user input flows prior to final
 /// analytical usage.</para>
 /// <para><b>Merge Semantics:</b> See <see cref="Merge(Invoice, Invoice)"/> for partial update precedence rules.</para>
 /// <para><b>Thread-safety:</b> Not thread-safe. Do not share instances across threads without external synchronization.</para>
@@ -46,26 +47,10 @@ public sealed class Invoice : NamedEntity<Guid>
   [JsonPropertyOrder(4)]
   public ICollection<Guid> SharedWith { get; init; } = [];
 
-  /// <summary>
-  /// The standardised classification assigned to this invoice.
-  /// </summary>
-  /// <remarks>
-  /// <para><b>Expected system:</b> <see cref="ClassificationSystem.EcoicopV2"/>. Processing resolves every manual selection canonically before persistence.</para>
-  /// <para><see langword="null"/> means the invoice has not been classified yet, either manually or by an analysis run.</para>
-  /// </remarks>
+  /// <summary>The selected invoice category, or null if uncategorized.</summary>
   [JsonPropertyOrder(5)]
-  public StandardClassification? Classification { get; set; }
-
-  /// <summary>
-  /// Gets or sets the transient ECOICOP v2 code selected by an endpoint update mapping.
-  /// </summary>
-  /// <remarks>
-  /// Processing resolves this transport-only value into <see cref="Classification"/> and clears it before persistence.
-  /// It is intentionally excluded from JSON serialization and must never become durable invoice state.
-  /// </remarks>
-  [JsonIgnore]
-  [Newtonsoft.Json.JsonIgnore]
-  public string? ClassificationCode { get; set; }
+  [Newtonsoft.Json.JsonConverter(typeof(StrictStoredCategoryConverter<InvoiceCategory>))]
+  public InvoiceCategory? Category { get; set; }
 
   /// <summary>
   /// The invoice scan value object.
@@ -187,7 +172,7 @@ public sealed class Invoice : NamedEntity<Guid>
   /// <term>Field</term><term>Partial Considered Non-Default When</term><term>Merge Behavior</term><term>Notes</term>
   /// </listheader>
   /// <item><term>UserIdentifier</term><term>!= Guid.Empty</term><term>Replace</term><term>Owner transfer possible; no authorization guard here.</term></item>
-  /// <item><term>Classification</term><term>Not null</term><term>Replace</term><term>Classification enrichment applied late.</term></item>
+  /// <item><term>Category</term><term>Not null</term><term>Replace</term><term>Classification enrichment applied late.</term></item>
   /// <item><term>Name</term><term>!IsNullOrWhiteSpace</term><term>Replace</term><term>Whitespace-only ignored.</term></item>
   /// <item><term>Description</term><term>!IsNullOrWhiteSpace</term><term>Replace</term><term>Trimming not currently applied.</term></item>
   /// <item><term>IsImportant</term><term>Value differs</term><term>Replace</term><term>Boolean toggle recognized.</term></item>
@@ -212,7 +197,7 @@ public sealed class Invoice : NamedEntity<Guid>
     {
       id = original.id, // The identifier remains the same.
       UserIdentifier = partialUpdates.UserIdentifier != Guid.Empty ? partialUpdates.UserIdentifier : original.UserIdentifier,
-      Classification = partialUpdates.Classification ?? original.Classification,
+      Category = partialUpdates.Category ?? original.Category,
       Name = !string.IsNullOrWhiteSpace(partialUpdates.Name) ? partialUpdates.Name : original.Name,
       Description = !string.IsNullOrWhiteSpace(partialUpdates.Description) ? partialUpdates.Description : original.Description,
       IsImportant = partialUpdates.IsImportant != original.IsImportant ? partialUpdates.IsImportant : original.IsImportant,

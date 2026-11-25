@@ -20,8 +20,8 @@ import {addSpanEvent, logWithTrace, withSpan} from "@/instrumentation.server";
 import {fetchBFFUserFromAuthService} from "@/lib/actions/user/fetchUser";
 import {validateStringIsGuidType} from "@/lib/utils.generic";
 import {createErrorResult, createHttpErrorResult, fetchWithTimeout, type ServerActionResult} from "@/lib/utils.server";
-import type {Invoice, PaymentInformation, Product, RecipeSuggestion} from "@/types/invoices";
-import {parseInvoiceResponse, tryParse} from "@/types/invoices/transport";
+import type {Invoice, InvoiceCategory, PaymentInformation, Product, RecipeSuggestion} from "@/types/invoices";
+import {parseInvoiceResponse, serializeCategoryUpdate, tryParse} from "@/types/invoices/transport";
 import {revalidatePath} from "next/cache";
 
 type ServerActionInputType = Readonly<{
@@ -31,7 +31,7 @@ type ServerActionInputType = Readonly<{
   payload: {
     name?: string;
     description?: string;
-    classificationCode?: string;
+    category?: InvoiceCategory | null;
     paymentInformation?: PaymentInformation;
     merchantReference?: string;
     isImportant?: boolean;
@@ -53,7 +53,7 @@ type ServerActionOutputType = ServerActionResult<Readonly<Invoice>>;
  *
  * **Patch Semantics**:
  * - Only provided fields are updated
- * - Null/undefined values preserve existing data
+ * - Omission preserves category; a null input sends the API's `-1` clear command
  * - `sharedWith` replaces the entire list when provided
  * - `additionalMetadata` merges with existing metadata
  *
@@ -88,7 +88,7 @@ type ServerActionOutputType = ServerActionResult<Readonly<Invoice>>;
  * ```
  */
 export async function patchInvoice({invoiceId, payload}: ServerActionInputType): ServerActionOutputType {
-  console.info(">>> Executing server action {{patchInvoice}}, with:", {invoiceId, payload});
+  console.info(">>> Executing server action {{patchInvoice}}, with:", {invoiceId});
 
   // Keep status-specific failure copy at the request site, as requested during review.
   // eslint-disable-next-line sonarjs/cognitive-complexity
@@ -113,10 +113,10 @@ export async function patchInvoice({invoiceId, payload}: ServerActionInputType):
           Authorization: `Bearer ${authToken}`,
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({
+        body: serializeCategoryUpdate({
           ...(payload.name !== undefined ? {name: payload.name} : {}),
           ...(payload.description !== undefined ? {description: payload.description} : {}),
-          ...(payload.classificationCode !== undefined ? {classificationCode: payload.classificationCode} : {}),
+          ...(payload.category !== undefined ? {category: payload.category} : {}),
           ...(payload.paymentInformation !== undefined ? {paymentInformation: payload.paymentInformation} : {}),
           ...(payload.merchantReference !== undefined ? {merchantReference: payload.merchantReference} : {}),
           ...(payload.isImportant !== undefined ? {isImportant: payload.isImportant} : {}),

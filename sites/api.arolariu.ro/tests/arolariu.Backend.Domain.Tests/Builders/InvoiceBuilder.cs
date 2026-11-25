@@ -6,6 +6,7 @@ using System.Diagnostics.CodeAnalysis;
 
 using arolariu.Backend.Common.DDD.ValueObjects;
 using arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices;
+using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Categories;
 using arolariu.Backend.Domain.Invoices.DDD.ValueObjects;
 using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Allergens;
 using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Products;
@@ -26,7 +27,7 @@ internal static class InvoiceBuilder
     UserIdentifier = Guid.NewGuid(),
     Name = GetRandomString(),
     Description = GetRandomString(),
-    Classification = ClassificationTestData.Ecoicop("01.1", "Food"),
+    Category = InvoiceCategory.Groceries,
     Scans = [],
     IsImportant = Random.Next(0, 2) == 1,
     CreatedBy = Guid.NewGuid(),
@@ -54,7 +55,7 @@ internal static class InvoiceBuilder
       UserIdentifier = userIdentifier ?? invoice.UserIdentifier,
       Name = name ?? invoice.Name,
       Description = description ?? invoice.Description,
-      Classification = invoice.Classification,
+      Category = invoice.Category,
       Scans = invoice.Scans,
       IsImportant = invoice.IsImportant,
       CreatedBy = invoice.CreatedBy,
@@ -94,7 +95,7 @@ internal static class InvoiceBuilder
       products.Add(new Product
       {
         Name = GetRandomString(),
-        Classification = ClassificationTestData.Gpc("10000025", "Fish - Prepared/Processed"),
+        Category = ProductCategory.Fish,
         Quantity = (decimal)(Random.NextDouble() * 100),
         QuantityUnit = GetRandomString(),
         ProductCode = GetRandomString(),

@@ -3,14 +3,14 @@
  * @module sites/arolariu.ro/src/app/domains/invoices/view-invoice/[id]/_utils/analytics
  */
 
+import type {ProductCategory} from "@/types/invoices/Category";
 import {getTransactionYear, toRON} from "@/lib/currency";
 import {EMPTY_GUID} from "@/lib/utils.generic";
 import {type Invoice, type PaymentInformation, type Product} from "@/types/invoices";
-import {getClassificationGroup} from "../../../_utils/labelUtilities";
 
 // Spending by category data
 export type CategorySpending = {
-  category: string;
+  category: ProductCategory | null;
   amount: number;
   count: number;
   fill: string;
@@ -20,10 +20,10 @@ export type CategorySpending = {
 const CHART_COLORS = ["var(--ac-chart-1)", "var(--ac-chart-2)", "var(--ac-chart-3)", "var(--ac-chart-4)", "var(--ac-chart-5)"] as const;
 
 export function getClassificationGroupSpending(items: Product[]): CategorySpending[] {
-  const groupMap = new Map<string, {amount: number; count: number}>();
+  const groupMap = new Map<ProductCategory | null, {amount: number; count: number}>();
 
   items.forEach((item) => {
-    const group = getClassificationGroup(item.classification ?? null) ?? "unclassified";
+    const group = item.category;
     const existing = groupMap.get(group) ?? {amount: 0, count: 0};
     groupMap.set(group, {
       amount: existing.amount + item.totalPrice,
@@ -101,7 +101,7 @@ export type InvoiceSummary = {
 export function getInvoiceSummary(invoice: Invoice): InvoiceSummary {
   const {items, paymentInformation} = invoice;
   const {totalCostAmount, totalTaxAmount} = paymentInformation;
-  const categories = new Set(items.map((item) => item.classification?.code ?? "unclassified"));
+  const categories = new Set(items.map((item) => item.category));
   const sortedByPrice = items.toSorted((a, b) => b.totalPrice - a.totalPrice);
 
   return {
@@ -378,7 +378,7 @@ export function getMerchantBreakdown(allInvoices: ReadonlyArray<Invoice>): Merch
 }
 
 export type CategoryTrendData = {
-  category: string;
+  category: ProductCategory | null;
   current: number;
   average: number;
 };
@@ -391,7 +391,7 @@ export type CategoryTrendData = {
  * @returns Array of category comparison data sorted by current spending (descending)
  *
  * @remarks
- * - Groups products by classification taxonomy group
+ * - Groups products by category ID
  * - Compares current invoice's classification spending against historical averages
  * - Normalizes all amounts to RON using yearly average exchange rates
  * - Returns empty array if current invoice has no items
@@ -404,21 +404,21 @@ export function getClassificationGroupComparison(currentInvoice: Invoice, allInv
   }
 
   // Calculate current invoice's spending by classification group
-  const currentGroupMap = new Map<string, number>();
+  const currentGroupMap = new Map<ProductCategory | null, number>();
   currentItems.forEach((item) => {
-    const group = getClassificationGroup(item.classification ?? null) ?? "unclassified";
+    const group = item.category;
     const existing = currentGroupMap.get(group) ?? 0;
     currentGroupMap.set(group, existing + item.totalPrice);
   });
 
   // Calculate historical average spending per group (excluding current invoice)
   const otherInvoices = allInvoices.filter((inv) => inv.id !== currentInvoice.id);
-  const historicalGroupMap = new Map<string, {total: number; count: number}>();
+  const historicalGroupMap = new Map<ProductCategory | null, {total: number; count: number}>();
 
   otherInvoices.forEach((inv) => {
     const items = inv.items ?? [];
     items.forEach((item) => {
-      const group = getClassificationGroup(item.classification ?? null) ?? "unclassified";
+      const group = item.category;
       const existing = historicalGroupMap.get(group) ?? {total: 0, count: 0};
       historicalGroupMap.set(group, {
         total: existing.total + item.totalPrice,

@@ -59,9 +59,6 @@ jobs:
           node-deps-install: "true"
           node-scripts-install: "true"
 
-      - name: Check pinned taxonomy snapshots
-        run: node scripts/cli.ts generate --check-taxonomies
-
       # Produce the single plan that drives both setup choices and expected evidence.
       - name: 🔎 Prepare validated hygiene plan
         id: plan

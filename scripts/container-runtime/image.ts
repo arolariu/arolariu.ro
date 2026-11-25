@@ -5,8 +5,7 @@
  * @remarks
  * {@link runImage} resolves the container engine, runs the shared preflight, and builds or runs
  * the image through the Effect `Process` service with tee output, so tests script every process
- * instead of spawning Docker or Podman. The frontend/backend taxonomy artifact prerequisite runs
- * snapshot verification directly and silently (as the legacy nested `presentation: "silent"`
+ * instead of spawning Docker or Podman. Frontend builds prepare website attribution.
  * invocation did), after preflight and before the build. Cancellation is fiber interruption.
  */
 
@@ -15,7 +14,7 @@ import {parseEnv} from "node:util";
 
 import {Effect, FileSystem, type PlatformError} from "effect";
 
-import {generateArtifacts, verifyPinnedTaxonomies} from "../commands/generate/artifacts.ts";
+import {generateArtifacts} from "../commands/generate/artifacts.ts";
 import type {ArtifactGenerationFailed} from "../commands/generate/errors.ts";
 import {silently} from "../commands/generate/index.ts";
 import {resolveRepositoryPaths, type RepositoryRootNotFound} from "../common/repository-paths.ts";
@@ -66,16 +65,6 @@ const feedConfigsByTarget: Readonly<Record<ImageTarget, readonly [string, string
 };
 
 /**
- * Determines whether an image build consumes pinned taxonomy snapshots.
- *
- * @param target - Image target.
- * @returns `true` for frontend and backend images.
- */
-export function shouldGenerateTaxonomyArtifacts(target: ImageTarget): boolean {
-  return target === "frontend" || target === "backend";
-}
-
-/**
  * Builds an engine-owned image build command.
  *
  * @param adapter - Selected runtime adapter.
@@ -108,8 +97,7 @@ export function buildImageRunCommand(adapter: ContainerRuntimeAdapter, options: 
  * Builds or runs a local image with the resolved local container engine.
  *
  * @remarks
- * Preflight runs first. A frontend or backend build then validates pinned taxonomy snapshots;
- * frontend also prepares licenses. A failed prerequisite stops before the engine CLI runs.
+ * Preflight runs first. Frontend builds then prepare licenses. A failed prerequisite stops before the engine CLI runs.
  * Frontend builds forward only allowlisted public values from
  * the invocation environment or generated `.env`; private values never become build arguments.
  * Frontend runs parse `.env` and deliver values through the child environment by variable name;
@@ -138,8 +126,6 @@ export const runImage: (
   if (input.action === "build") {
     if (input.target === "frontend") {
       yield* silently(generateArtifacts({verbose: false, root: paths.root}));
-    } else if (input.target === "backend") {
-      yield* verifyPinnedTaxonomies(paths.root);
     }
 
     const buildArgs: Record<string, string> = {VERSION: "local"};

@@ -1,0 +1,31 @@
+{
+  "id": "api-arolariu-ro-aspire",
+  "name": "api.arolariu.ro (Aspire)",
+  "values": [
+    {
+      "key": "baseUrl",
+      "value": "https://localhost:5000",
+      "type": "default",
+      "enabled": true
+    },
+    {
+      "key": "warningLatencyMs",
+      "value": "3000",
+      "type": "default",
+      "enabled": true
+    },
+    {
+      "key": "failureLatencyMs",
+      "value": "6000",
+      "type": "default",
+      "enabled": true
+    },
+    {
+      "key": "allowProductionCrud",
+      "value": "false",
+      "type": "default",
+      "enabled": true
+    }
+  ],
+  "_postman_variable_scope": "environment"
+}

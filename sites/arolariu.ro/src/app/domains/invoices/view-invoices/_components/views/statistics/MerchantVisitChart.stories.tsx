@@ -1,3 +1,4 @@
+import {InvoiceCategory} from "@/types/invoices/Category";
 import type {Meta, StoryObj} from "@storybook/react";
 import {computeMerchantVisitFrequency} from "../../../_utils/statistics";
 import {emptyInvoices, mockInvoices, singleInvoice} from "./__mocks__/mockInvoices";
@@ -137,9 +138,7 @@ export const SingleMerchant: Story = {
 
 export const GroceryMerchantsOnly: Story = {
   args: {
-    data: computeMerchantVisitFrequency(
-      mockInvoices.filter((inv) => inv.classification?.system === "ECOICOP_V2" && inv.classification.code.startsWith("01")),
-    ),
+    data: computeMerchantVisitFrequency(mockInvoices.filter((inv) => inv.category === InvoiceCategory.Groceries)),
     currency: "lei",
     topN: 6,
   },
@@ -147,9 +146,7 @@ export const GroceryMerchantsOnly: Story = {
 
 export const FastFoodMerchants: Story = {
   args: {
-    data: computeMerchantVisitFrequency(
-      mockInvoices.filter((inv) => inv.classification?.system === "ECOICOP_V2" && inv.classification.code.startsWith("11")),
-    ),
+    data: computeMerchantVisitFrequency(mockInvoices.filter((inv) => inv.category === InvoiceCategory.RestaurantDining)),
     currency: "lei",
     topN: 6,
   },

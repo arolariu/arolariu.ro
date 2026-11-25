@@ -1,3 +1,4 @@
+import {InvoiceCategory} from "@/types/invoices/Category";
 import type {Meta, StoryObj} from "@storybook/react";
 import {computeTopProducts} from "../../../_utils/statistics";
 import {emptyInvoices, mockInvoices, singleInvoice} from "./__mocks__/mockInvoices";
@@ -114,9 +115,7 @@ export const TopTwenty: Story = {
 
 export const GroceryOnly: Story = {
   args: {
-    data: computeTopProducts(
-      mockInvoices.filter((inv) => inv.classification?.system === "ECOICOP_V2" && inv.classification.code.startsWith("01")),
-    ),
+    data: computeTopProducts(mockInvoices.filter((inv) => inv.category === InvoiceCategory.Groceries)),
     currency: "lei",
   },
 };

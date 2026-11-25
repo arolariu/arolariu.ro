@@ -26,7 +26,7 @@ public enum AnalysisCapability
   [JsonStringEnumMemberName("allergenAssessment")]
   AllergenAssessment,
 
-  /// <summary>Assign invoice-wide taxonomy classifications.</summary>
+  /// <summary>Assign invoice-wide classifications.</summary>
   [JsonStringEnumMemberName("invoiceClassification")]
   InvoiceClassification,
 
@@ -34,7 +34,7 @@ public enum AnalysisCapability
   [JsonStringEnumMemberName("recipeGeneration")]
   RecipeGeneration,
 
-  /// <summary>Assign merchant-level taxonomy classifications.</summary>
+  /// <summary>Assign merchant-level classifications.</summary>
   [JsonStringEnumMemberName("merchantClassification")]
   MerchantClassification,
 

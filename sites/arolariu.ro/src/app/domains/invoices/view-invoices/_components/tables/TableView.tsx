@@ -1,5 +1,6 @@
 "use client";
 
+import {invoiceCategoryLabel} from "@/app/domains/invoices/_utils/labelUtilities";
 import {formatCurrency, formatDate} from "@/lib/utils.generic";
 import {useInvoicesStore} from "@/stores";
 import {type Invoice} from "@/types/invoices";
@@ -153,7 +154,7 @@ function InvoiceTableRow({invoice, isSelected, onSelectInvoice}: Readonly<Invoic
         <span className={styles["printOnly"]}>{invoice.id}</span>
       </TableCell>
       <TableCell>
-        <Badge variant='outline'>{invoice.classification?.officialLabel ?? "Unclassified"}</Badge>
+        <Badge variant='outline'>{invoiceCategoryLabel(t, invoice.category)}</Badge>
       </TableCell>
       <TableCell>
         {invoice.paymentInformation?.transactionDate ? (

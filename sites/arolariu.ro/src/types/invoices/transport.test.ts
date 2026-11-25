@@ -48,23 +48,12 @@ const validPaymentInfoJson = {
   tipAmount: 0,
 };
 
-const validClassificationJson = {
-  system: "ECOICOP_V2",
-  version: "2.0",
-  code: "01.1.1",
-  officialLabel: "Bread and cereals",
-  hierarchy: [{level: "division", code: "01", officialLabel: "Food"}],
-  origin: "Analysis",
-  confidence: 0.87,
-  evidence: [{source: "model", value: "bread detected"}],
-};
-
 const validInvoiceJson = {
   id: TEST_GUID,
   userIdentifier: TEST_GUID,
   name: "Groceries",
   description: "Weekly shop",
-  classification: validClassificationJson,
+  category: 3004,
   scans: [{type: 0, location: "https://example.com/scan.jpg"}],
   paymentInformation: validPaymentInfoJson,
   merchantReference: TEST_GUID,
@@ -87,7 +76,7 @@ const validProductJson = {
   price: 8.99,
   totalPrice: 17.98,
   metadata: {isEdited: false, isComplete: true, isSoftDeleted: false, confidence: 0.95},
-  classification: null,
+  category: null,
   allergenAssessment: {
     status: "detected",
     signals: [
@@ -105,7 +94,6 @@ const validMerchantJson = {
   id: TEST_GUID,
   name: "Lidl",
   description: "Supermarket chain",
-  category: 200,
   address: {
     fullName: "Lidl SRL",
     address: "Str. Test 1",
@@ -114,7 +102,7 @@ const validMerchantJson = {
     website: "https://lidl.ro",
   },
   parentCompanyId: "",
-  classification: null,
+  category: null,
   createdAt: "2026-08-01T10:00:00Z",
   lastUpdatedAt: "2026-08-01T10:00:00Z",
   isImportant: false,
@@ -126,10 +114,20 @@ const validMerchantJson = {
 // ---------------------------------------------------------------------------
 
 describe("parseInvoiceResponse", () => {
-  it("parses a valid payload — name and classification.code are correct", () => {
+  it("rejects missing categories and IDs from another domain", () => {
+    expect(() => parseInvoiceResponse({...validInvoiceJson, category: undefined})).toThrow("invoice.category");
+    expect(() => parseInvoiceResponse({...validInvoiceJson, category: 1001})).toThrow("invoice.category");
+  });
+
+  it("distinguishes explicit null from Other and rejects numeric strings", () => {
+    expect(parseInvoiceResponse({...validInvoiceJson, category: null})).toHaveProperty("category", null);
+    expect(parseInvoiceResponse({...validInvoiceJson, category: 3100})).toHaveProperty("category", 3100);
+    expect(() => parseInvoiceResponse({...validInvoiceJson, category: "3100"})).toThrow("invoice.category");
+  });
+  it("parses a valid payload — name and numeric category are correct", () => {
     const invoice = parseInvoiceResponse(validInvoiceJson);
     expect(invoice.name).toBe("Groceries");
-    expect(invoice.classification?.code).toBe("01.1.1");
+    expect(invoice.category).toBe(3004);
   });
 
   describe("parseInvoiceCreationResponse", () => {
@@ -164,7 +162,7 @@ describe("parseInvoiceResponse", () => {
       ...validInvoiceJson,
       name: "",
       description: "",
-      classification: null,
+      category: null,
       merchantReference: EMPTY_GUID_VALUE,
     };
 
@@ -217,18 +215,9 @@ describe("parseInvoiceResponse", () => {
     expect(() => parseInvoiceResponse(withoutName)).toThrow(TransportValidationError);
   });
 
-  it("throws TransportValidationError for an unrecognised classification system ('UNSPSC')", () => {
-    expect(() =>
-      parseInvoiceResponse({
-        ...validInvoiceJson,
-        classification: {...validClassificationJson, system: "UNSPSC"},
-      }),
-    ).toThrow(TransportValidationError);
-  });
-
-  it("accepts classification: null and yields invoice.classification === null", () => {
-    const invoice = parseInvoiceResponse({...validInvoiceJson, classification: null});
-    expect(invoice.classification).toBeNull();
+  it("accepts category: null and yields invoice.category === null", () => {
+    const invoice = parseInvoiceResponse({...validInvoiceJson, category: null});
+    expect(invoice.category).toBeNull();
   });
 
   it("accepts the empty sentinel GUID for an unlinked merchant", () => {

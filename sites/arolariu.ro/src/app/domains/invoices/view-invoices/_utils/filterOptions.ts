@@ -13,13 +13,19 @@
  * numeric for the enum values used by payment type).
  */
 
+import {isInvoiceCategory} from "@/lib/categories/categoryCatalog";
 import type {Invoice, PaymentType} from "@/types/invoices";
-import {getClassificationGroup} from "../../_utils/labelUtilities";
+import type {CategoryFilterValue} from "../_hooks/useInvoiceFilters";
 
 const DEFAULT_CURRENCY_CODE = "RON";
 
-/** Stable filter bucket for invoices without a resolved classification. */
-export const UNCLASSIFIED_GROUP = "unclassified";
+/** Stable filter bucket for invoices without a current category. */
+export const UNCATEGORIZED_FILTER = "uncategorized";
+
+/** Returns the invoice category filter value, including for older cached records. */
+export function invoiceCategoryFilterValue(category: unknown): CategoryFilterValue {
+  return isInvoiceCategory(category) ? category : UNCATEGORIZED_FILTER;
+}
 
 function buildFrequencyMap<K>(values: Iterable<K>): Map<K, number> {
   const map = new Map<K, number>();
@@ -47,25 +53,15 @@ export function computeAvailableCurrencies(invoices: ReadonlyArray<Invoice>): Re
     .map(([code]) => code);
 }
 
-/**
- * Returns the unique taxonomy root-group labels present in the user's invoices,
- * ordered by frequency descending with ties broken alphabetically.
- *
- * @remarks
- * Uses {@link getClassificationGroup} to extract the broadest taxonomy node of
- * `invoice.classification`. Invoices whose classification is null contribute to
- * the stable `"unclassified"` bucket so no invoice is silently lost.
- */
-export function computeAvailableClassificationGroups(invoices: ReadonlyArray<Invoice>): ReadonlyArray<string> {
-  const groups = invoices.map((i) => getClassificationGroup(i.classification ?? null) ?? UNCLASSIFIED_GROUP);
-  const freq = buildFrequencyMap(groups);
-  return [...freq.entries()]
-    .toSorted((a, b) => {
-      const freqDelta = b[1] - a[1];
-      if (freqDelta !== 0) return freqDelta;
-      return a[0].localeCompare(b[0]);
-    })
-    .map(([group]) => group);
+/** Returns categories present in the current collection, by frequency and then ID. */
+export function computeAvailableCategories(invoices: ReadonlyArray<Invoice>): readonly CategoryFilterValue[] {
+  const frequencies = buildFrequencyMap(invoices.map((invoice) => invoiceCategoryFilterValue(invoice.category)));
+  return [...frequencies.entries()]
+    .toSorted(
+      ([left, leftCount], [right, rightCount]) =>
+        rightCount - leftCount || (typeof left === "number" ? left : Infinity) - (typeof right === "number" ? right : Infinity),
+    )
+    .map(([category]) => category);
 }
 
 /**

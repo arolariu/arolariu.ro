@@ -55,7 +55,7 @@ export type InvoiceAnalysisCapabilities = {
   readonly documentExtraction: boolean;
   /** Generate a human-readable summary of the invoice. */
   readonly invoiceSummary: boolean;
-  /** Classify each product line item into a canonical taxonomy. */
+  /** Fill missing line-item categories. */
   readonly productClassification: boolean;
   /** Identify allergens present in classified products. Requires `productClassification`. */
   readonly allergenAssessment: boolean;

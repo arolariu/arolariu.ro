@@ -8,7 +8,7 @@
  */
 
 import {useInvoicesStore} from "@/stores";
-import {ClassificationOrigin, ClassificationSystem, type Invoice, type StandardClassification} from "@/types/invoices";
+import {InvoiceCategory, type Invoice} from "@/types/invoices";
 import {act, render, screen, within} from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import {MotionGlobalConfig} from "motion/react";
@@ -30,30 +30,21 @@ const AMOUNT_HEADER = new RegExp(`${T}\\.columns\\.amount`, "u");
 const ARROW_UP = "\u25B2";
 const ARROW_DOWN = "\u25BC";
 
-const breadClassification: StandardClassification = {
-  system: ClassificationSystem.EcoicopV2,
-  code: "01.1.1",
-  version: "2",
-  officialLabel: "Bread and cereals",
-  hierarchy: [{level: "division", code: "01", officialLabel: "Food"}],
-  origin: ClassificationOrigin.Analysis,
-  confidence: 0.9,
-  evidence: [],
-};
+const bakeryCategory = InvoiceCategory.BakeryPurchases;
 
 const alphaDate = new Date("2026-03-15T12:00:00.000Z");
 
 const alphaInvoice: Invoice = buildInvoice({
   id: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
   name: "Alpha market",
-  classification: breadClassification,
+  category: bakeryCategory,
   paymentInformation: buildPaymentInformation({transactionDate: alphaDate, totalCostAmount: 42.5}),
 });
 
 const unnamedInvoice: Invoice = buildInvoice({
   id: "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb",
   name: "",
-  classification: null,
+  category: null,
   paymentInformation: buildPaymentInformation({
     transactionDate: null as unknown as Date,
     totalCostAmount: 7,
@@ -173,7 +164,7 @@ describe("TableView", () => {
       const expectedDate = new Intl.DateTimeFormat("en", {dateStyle: "short"}).format(alphaDate);
 
       expect(within(row).getByText("Alpha market")).toBeInTheDocument();
-      expect(within(row).getByText("Bread and cereals")).toBeInTheDocument();
+      expect(within(row).getByText("categories.invoices.bakeryPurchases")).toBeInTheDocument();
       expect(within(row).getByText(expectedDate)).toBeInTheDocument();
       expect(within(row).getByText(expectedCurrency(42.5, "RON"))).toBeInTheDocument();
       expect(within(row).queryByText("Unclassified")).not.toBeInTheDocument();
@@ -191,7 +182,7 @@ describe("TableView", () => {
 
       // The id appears both as the visible fallback name and as the print-only identifier.
       expect(within(row).getAllByText(unnamedInvoice.id)).toHaveLength(2);
-      expect(within(row).getByText("Unclassified")).toBeInTheDocument();
+      expect(within(row).getByText("categories.ui.unclassified")).toBeInTheDocument();
       expect(within(row).getByText("N/A")).toBeInTheDocument();
       expect(within(row).getByText(expectedCurrency(7, "EUR"))).toBeInTheDocument();
     });

@@ -12,7 +12,8 @@ using arolariu.Backend.Domain.Invoices.DDD.Analysis.Contracts;
 using arolariu.Backend.Domain.Invoices.DDD.Analysis.Enums;
 using arolariu.Backend.Domain.Invoices.DDD.Analysis.Exceptions.Outer.Foundation;
 using arolariu.Backend.Domain.Invoices.DDD.Entities.Merchants;
-using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Classifications;
+using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Allergens;
+using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Categories;
 using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Products;
 using arolariu.Backend.Domain.Invoices.Services.Foundation.Analysis;
 using arolariu.Backend.Domain.Invoices.Services.Foundation.AnalysisQueue;
@@ -73,7 +74,7 @@ public sealed class AnalysisOrchestrationCurrentArchitectureTests
 
     Assert.IsNull(failed);
     Assert.AreEqual("Groceries", analyzed.Name);
-    Assert.AreEqual("10000001", analyzed.Items.Single().Classification?.Code);
+    Assert.AreEqual(ProductCategory.Milk, analyzed.Items.Single().Category);
   }
 
   /// <summary>Verifies successful independent work is retained while failed and blocked capabilities are returned.</summary>
@@ -102,8 +103,8 @@ public sealed class AnalysisOrchestrationCurrentArchitectureTests
         correlationId,
         It.IsAny<CancellationToken>()))
       .ReturnsAsync(("Generated name", "Generated description"));
-    foundation.Setup(service => service.GetTaxonomyVersionAsync(
-        ClassificationSystem.Gs1Gpc,
+    foundation.Setup(service => service.SelectProductCategoriesAsync(
+        It.IsAny<IReadOnlyDictionary<string, string>>(),
         It.IsAny<CancellationToken>()))
       .ThrowsAsync(new AnalysisFoundationDependencyException(new TimeoutException()));
     AnalysisOrchestrationService service = CreateService(foundation);
@@ -123,6 +124,46 @@ public sealed class AnalysisOrchestrationCurrentArchitectureTests
     Assert.AreEqual(2, failed.MaximumRecipes);
   }
 
+  /// <summary>Abstaining on one product does not prevent receipt categorization or allergen assessment.</summary>
+  [TestMethod]
+  public async Task AnalyzeInvoiceAsync_CategoryAbstention_UsesKnownEvidenceAndKeepsUnknownCategory()
+  {
+    var assigned = new Product { Name = "Milk", Category = ProductCategory.Milk };
+    var unknown = new Product { Name = "Unclear item" };
+    var invoice = new Invoice { id = Guid.NewGuid(), UserIdentifier = Guid.NewGuid(), Items = [assigned, unknown] };
+    Guid correlationId = Guid.NewGuid();
+    var options = new InvoiceAnalysisOptions(
+      AnalysisProfile.Custom, documentExtraction: false, invoiceSummary: false,
+      productClassification: true, allergenAssessment: true, invoiceClassification: true,
+      recipeGeneration: false, maximumRecipes: 0);
+    var foundation = new Mock<IAnalysisFoundationService>(MockBehavior.Strict);
+    foundation.Setup(service => service.SelectProductCategoriesAsync(
+        It.Is<IReadOnlyDictionary<string, string>>(subjects => subjects.Count == 1 && subjects.ContainsKey("product:1")),
+        It.IsAny<CancellationToken>()))
+      .ReturnsAsync(new Dictionary<string, ProductCategory?> { ["product:1"] = null });
+    foundation.Setup(service => service.AssessAllergensAsync(
+        It.Is<IReadOnlyList<ProductAnalysisInput>>(items => items.Count == 2),
+        It.Is<IReadOnlyDictionary<string, ProductCategory?>>(categories =>
+          categories["product:0"] == ProductCategory.Milk && categories["product:1"] == null),
+        correlationId,
+        It.IsAny<CancellationToken>()))
+      .ReturnsAsync((IReadOnlyList<ProductAnalysisInput> items, IReadOnlyDictionary<string, ProductCategory?> _, Guid _, CancellationToken _) =>
+        items.ToDictionary(item => item.CorrelationToken, _ => AllergenAssessment.Insufficient(), StringComparer.Ordinal));
+    foundation.Setup(service => service.SelectInvoiceCategoriesAsync(It.IsAny<IReadOnlyDictionary<string, string>>(), It.IsAny<CancellationToken>()))
+      .ReturnsAsync((IReadOnlyDictionary<string, string> subjects, CancellationToken _) =>
+        subjects.Keys.ToDictionary(token => token, _ => (InvoiceCategory?)InvoiceCategory.Groceries, StringComparer.Ordinal));
+
+    (Invoice analyzed, InvoiceAnalysisOptions? failed) =
+      await CreateService(foundation).AnalyzeInvoiceAsync(invoice, options, correlationId, CancellationToken.None);
+
+    Assert.IsNull(failed);
+    Assert.AreEqual(InvoiceCategory.Groceries, analyzed.Category);
+    Assert.AreEqual(ProductCategory.Milk, assigned.Category);
+    Assert.IsNull(unknown.Category);
+    Assert.IsNotNull(unknown.AllergenAssessment);
+    foundation.VerifyAll();
+  }
+
   /// <summary>Verifies merchant description success is retained when classification fails.</summary>
   [TestMethod]
   public async Task AnalyzeMerchantAsync_ClassificationFailsDescriptionSucceeds_ReturnsAggregateAndFailedOptions()
@@ -136,8 +177,8 @@ public sealed class AnalysisOrchestrationCurrentArchitectureTests
       Description = "Existing description",
     };
     var foundation = new Mock<IAnalysisFoundationService>(MockBehavior.Strict);
-    foundation.Setup(service => service.GetTaxonomyVersionAsync(
-        ClassificationSystem.Nace21,
+    foundation.Setup(service => service.SelectMerchantCategoriesAsync(
+        It.IsAny<IReadOnlyDictionary<string, string>>(),
         It.IsAny<CancellationToken>()))
       .ThrowsAsync(new AnalysisFoundationDependencyException(new TimeoutException()));
     foundation.Setup(service => service.GenerateMerchantDescriptionAsync(
@@ -239,70 +280,13 @@ public sealed class AnalysisOrchestrationCurrentArchitectureTests
     TaskCompletionSource bothCapabilitiesStarted,
     Action onStarted)
   {
-    foundation.Setup(service => service.GetTaxonomyVersionAsync(
-        ClassificationSystem.Gs1Gpc,
-        It.IsAny<CancellationToken>()))
-      .Returns(async () =>
+    foundation.Setup(service => service.SelectProductCategoriesAsync(
+        It.IsAny<IReadOnlyDictionary<string, string>>(), It.IsAny<CancellationToken>()))
+      .Returns(async (IReadOnlyDictionary<string, string> subjects, CancellationToken _) =>
       {
         onStarted();
         await bothCapabilitiesStarted.Task.ConfigureAwait(false);
-        return "test-version";
+        return subjects.ToDictionary(pair => pair.Key, _ => (ProductCategory?)ProductCategory.Milk, StringComparer.Ordinal);
       });
-    foundation.Setup(service => service.GenerateClassificationSearchTermsAsync(
-        AnalysisCapability.ProductClassification,
-        ClassificationSystem.Gs1Gpc,
-        "test-version",
-        It.IsAny<IReadOnlyDictionary<string, string>>(),
-        It.IsAny<CancellationToken>()))
-      .Returns((
-        AnalysisCapability _,
-        ClassificationSystem _,
-        string _,
-        IReadOnlyDictionary<string, string> subjects,
-        CancellationToken _) =>
-        Task.FromResult<IReadOnlyDictionary<string, IReadOnlyList<string>>>(
-          subjects.ToDictionary(
-            pair => pair.Key,
-            _ => (IReadOnlyList<string>)["milk"],
-            StringComparer.Ordinal)));
-    foundation.Setup(service => service.SearchTaxonomyAsync(
-        ClassificationSystem.Gs1Gpc,
-        "milk",
-        5,
-        It.IsAny<CancellationToken>()))
-      .ReturnsAsync([new ClassificationCandidateOption("10000001", "Milk")]);
-    foundation.Setup(service => service.SelectClassificationCandidatesAsync(
-        AnalysisCapability.ProductClassification,
-        ClassificationSystem.Gs1Gpc,
-        "test-version",
-        It.IsAny<IReadOnlyDictionary<string, IReadOnlyList<ClassificationCandidateOption>>>(),
-        It.IsAny<CancellationToken>()))
-      .Returns((
-        AnalysisCapability _,
-        ClassificationSystem _,
-        string _,
-        IReadOnlyDictionary<string, IReadOnlyList<ClassificationCandidateOption>> candidates,
-        CancellationToken _) =>
-        Task.FromResult<IReadOnlyDictionary<string, SelectedClassificationCandidate>>(
-          candidates.ToDictionary(
-            pair => pair.Key,
-            _ => new SelectedClassificationCandidate("10000001", 0.9),
-            StringComparer.Ordinal)));
-    foundation.Setup(service => service.ResolveClassificationAsync(
-        ClassificationSystem.Gs1Gpc,
-        "10000001",
-        ClassificationOrigin.Analysis,
-        0.9,
-        It.IsAny<IReadOnlyList<ClassificationEvidence>>(),
-        It.IsAny<CancellationToken>()))
-      .ReturnsAsync(new StandardClassification(
-        ClassificationSystem.Gs1Gpc,
-        "test-version",
-        "10000001",
-        "Milk",
-        [new ClassificationNode("leaf", "10000001", "Milk")],
-        ClassificationOrigin.Analysis,
-        0.9,
-        evidence: []));
   }
 }

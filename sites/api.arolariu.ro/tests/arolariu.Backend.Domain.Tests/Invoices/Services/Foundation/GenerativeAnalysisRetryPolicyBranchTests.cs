@@ -7,8 +7,7 @@ using System.Threading;
 using System.Threading.Tasks;
 
 using arolariu.Backend.Domain.Invoices.DDD.Analysis.Exceptions.Inner;
-using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Classifications.Exceptions.Inner;
-using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Classifications;
+using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Categories;
 using arolariu.Backend.Domain.Invoices.Services.Foundation.Analysis;
 
 using Azure;
@@ -78,8 +77,6 @@ public sealed class GenerativeAnalysisRetryPolicyBranchTests
   public void IsTransientDependencyFailure_NonTransientExceptionTypes_ReturnsFalse()
   {
     Assert.IsFalse(GenerativeAnalysisRetryPolicy.IsTransientDependencyFailure(new ArgumentException("Invalid.")));
-    Assert.IsFalse(GenerativeAnalysisRetryPolicy.IsTransientDependencyFailure(
-      new TaxonomyCodeNotFoundException(ClassificationSystem.Gs1Gpc, "00000000")));
     Assert.IsFalse(GenerativeAnalysisRetryPolicy.IsTransientDependencyFailure(new RequestFailedException(418, "Teapot.")));
   }
 

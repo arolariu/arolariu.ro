@@ -8,7 +8,6 @@ using arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices;
 using arolariu.Backend.Domain.Invoices.DDD.Entities.Merchants;
 using arolariu.Backend.Domain.Invoices.DDD.ValueObjects;
 using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Allergens;
-using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Classifications;
 using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Products;
 using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Recipes;
 using arolariu.Backend.Domain.Invoices.Modules.ValueConverters;
@@ -23,7 +22,7 @@ using Microsoft.EntityFrameworkCore;
 /// <para><b>⚠ The EF model below is INACTIVE at runtime.</b> Every operation implemented by this broker
 /// (<c>CosmosDatabaseBroker.Invoices.cs</c> and <c>CosmosDatabaseBroker.Merchants.cs</c>) goes through the raw
 /// <see cref="CosmosClient"/> - <c>GetDatabase("primary").GetContainer(...)</c> followed by <c>CreateItemAsync</c>,
-/// <c>ReadItemAsync&lt;T&gt;</c>, <c>GetItemQueryIterator&lt;T&gt;</c>, <c>UpsertItemAsync</c>, or
+/// <c>ReadItemAsync&lt;T&gt;</c>, <c>GetItemQueryIterator&lt;T&gt;</c>, or
 /// <c>ReplaceItemAsync</c>. There is no <c>DbSet</c>, no <c>Set&lt;T&gt;()</c>, and no <c>SaveChangesAsync</c> call
 /// anywhere in this broker, so <see cref="OnModelCreating"/>, the container/partition-key mappings, the owned-type
 /// configuration, and every value converter referenced here never participate in a production read or write.</para>
@@ -117,10 +116,6 @@ public sealed partial class CosmosDatabaseBroker : DbContext, IDatabaseBroker
       #endregion
 
       #region Analysis value objects
-      entity.Property(i => i.Classification)
-      .ToJsonProperty("Classification")
-      .HasConversion(new ValueConverterForValueObjectOf<StandardClassification>());
-
       entity.Property(i => i.PossibleRecipes)
       .ToJsonProperty("PossibleRecipes")
       .HasConversion(new ValueConverterForIEnumerableOf<RecipeSuggestion>());
@@ -139,10 +134,6 @@ public sealed partial class CosmosDatabaseBroker : DbContext, IDatabaseBroker
         items.Property(item => item.Name)
         .ToJsonProperty("Name")
         .HasConversion<string>();
-
-        items.Property(item => item.Classification)
-        .ToJsonProperty("Classification")
-        .HasConversion(new ValueConverterForValueObjectOf<StandardClassification>());
 
         items.Property(item => item.Quantity)
         .ToJsonProperty("Quantity")
@@ -209,9 +200,6 @@ public sealed partial class CosmosDatabaseBroker : DbContext, IDatabaseBroker
 
       #region Base types
       entity.Property(i => i.Name).HasConversion<string>();
-      entity.Property(m => m.Classification)
-      .ToJsonProperty("Classification")
-      .HasConversion(new ValueConverterForValueObjectOf<StandardClassification>());
       entity.Property(i => i.CreatedBy).HasConversion<string>();
       entity.Property(i => i.IsImportant).HasConversion<bool>();
       entity.Property(i => i.IsSoftDeleted).HasConversion<bool>();

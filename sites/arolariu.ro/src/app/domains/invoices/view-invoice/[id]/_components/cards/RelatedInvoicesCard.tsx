@@ -26,6 +26,7 @@
  * - Hidden completely if user has only one invoice
  */
 
+import {invoiceCategoryLabel} from "@/app/domains/invoices/_utils/labelUtilities";
 import {formatAmount, formatDate} from "@/lib/utils.generic";
 import {useInvoicesStore} from "@/stores";
 import {type Invoice} from "@/types/invoices";
@@ -130,7 +131,7 @@ export function RelatedInvoicesCard(): React.JSX.Element | null {
 
   // Extract values for memoization dependencies
   const currentAmount = currentInvoice.paymentInformation.totalCostAmount;
-  const currentClassification = currentInvoice.classification?.code ?? null;
+  const currentClassification = currentInvoice.category;
   const currentMerchantId = currentInvoice.merchantReference;
 
   /**
@@ -161,7 +162,7 @@ export function RelatedInvoicesCard(): React.JSX.Element | null {
         }
 
         // Same classification
-        if (inv.classification?.code && inv.classification.code === currentClassification) {
+        if (inv.category !== null && inv.category === currentClassification) {
           return {invoice: inv, relationType: "sameCategory"};
         }
 
@@ -300,10 +301,10 @@ function RelatedInvoiceMiniCard({invoice, relationType}: Readonly<RelatedInvoice
         <div className={styles["amount"]}>{amount}</div>
 
         {/* Classification Badge */}
-        {invoice.classification !== null && (
+        {invoice.category !== null && (
           <div className={styles["categoryRow"]}>
             <TbTag className={styles["icon"]} />
-            <Badge variant='outline'>{invoice.classification.officialLabel}</Badge>
+            <Badge variant='outline'>{invoiceCategoryLabel(t, invoice.category)}</Badge>
           </div>
         )}
 

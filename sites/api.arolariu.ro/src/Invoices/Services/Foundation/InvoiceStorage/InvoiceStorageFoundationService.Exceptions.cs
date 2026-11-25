@@ -1,10 +1,8 @@
 namespace arolariu.Backend.Domain.Invoices.Services.Foundation.InvoiceStorage;
 
 using System;
-using System.Collections.Generic;
 using System.Threading.Tasks;
 
-using arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices;
 using arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices.Exceptions.Inner;
 using arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices.Exceptions.Outer.Foundation;
 using arolariu.Backend.Domain.Invoices.Modules;
@@ -12,8 +10,6 @@ using arolariu.Backend.Domain.Invoices.Modules;
 public partial class InvoiceStorageFoundationService
 {
   private delegate Task ReturningTaskFunction();
-  private delegate Task<Invoice> ReturningInvoiceFunction();
-  private delegate Task<IEnumerable<Invoice>> ReturningInvoicesFunction();
 
   private async Task TryCatchAsync(ReturningTaskFunction returningTaskFunction)
   {
@@ -32,28 +28,11 @@ public partial class InvoiceStorageFoundationService
     }
   }
 
-  private async Task<Invoice> TryCatchAsync(ReturningInvoiceFunction returningInvoiceFunction)
+  private async Task<TResult> TryCatchAsync<TResult>(Func<Task<TResult>> operation)
   {
     try
     {
-      return await returningInvoiceFunction().ConfigureAwait(false);
-    }
-    catch (OperationCanceledException)
-    {
-      // Cancellation is not a fault. Bare rethrow preserves the original stack trace.
-      throw;
-    }
-    catch (Exception exception)
-    {
-      throw Classify(exception);
-    }
-  }
-
-  private async Task<IEnumerable<Invoice>> TryCatchAsync(ReturningInvoicesFunction returningInvoicesFunction)
-  {
-    try
-    {
-      return await returningInvoicesFunction().ConfigureAwait(false);
+      return await operation().ConfigureAwait(false);
     }
     catch (OperationCanceledException)
     {
@@ -69,6 +48,7 @@ public partial class InvoiceStorageFoundationService
   private Exception Classify(Exception exception) => exception switch
   {
     ArgumentNullException { ParamName: "invoice" or "product" }
+      or ArgumentOutOfRangeException { ParamName: "category" }
       or InvoiceIdNotSetException
       or InvoiceDescriptionNotSetException
       or InvoicePaymentInformationNotCorrectException

@@ -7,8 +7,7 @@ using System.Threading;
 using System.Threading.Tasks;
 
 using arolariu.Backend.Domain.Invoices.DDD.Analysis.Exceptions.Inner;
-using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Classifications.Exceptions.Inner;
-using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Classifications;
+using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Categories;
 using arolariu.Backend.Domain.Invoices.Services.Foundation.Analysis;
 
 using Azure;
@@ -127,30 +126,6 @@ public sealed class GenerativeAnalysisRetryPolicyTests
         {
           attempt++;
           throw new InvalidStructuredOutputException("Refused or unparseable output.");
-        },
-        CancellationToken.None));
-
-    Assert.AreEqual(1, attempt);
-    Assert.AreEqual(0, recordedDelays.Count);
-  }
-
-  /// <summary>
-  /// Verifies invalid taxonomy code failures (<see cref="TaxonomyCodeNotFoundException"/>) are never retried.
-  /// </summary>
-  [TestMethod]
-  public async Task ExecuteAsync_TaxonomyCodeNotFoundException_DoesNotRetry()
-  {
-    var recordedDelays = new List<TimeSpan>();
-    var policy = CreatePolicy(recordedDelays, jitterFraction: 0);
-
-    int attempt = 0;
-
-    await Assert.ThrowsExactlyAsync<TaxonomyCodeNotFoundException>(
-      () => policy.ExecuteAsync<string>(
-        _ =>
-        {
-          attempt++;
-          throw new TaxonomyCodeNotFoundException(ClassificationSystem.Gs1Gpc, "00000000");
         },
         CancellationToken.None));
 

@@ -95,30 +95,6 @@ public sealed class StorageValidationCoverageTests
   }
 
   /// <summary>
-  /// Verifies parent-company identifier validation rejects null values on delete.
-  /// </summary>
-  [TestMethod]
-  public async Task DeleteMerchantObject_NullParentCompanyIdentifier_ThrowsMerchantFoundationValidationException()
-  {
-    MerchantStorageFoundationService service = CreateMerchantService(new Mock<IDatabaseBroker>());
-
-    await Assert.ThrowsExactlyAsync<MerchantFoundationServiceException>(() =>
-      service.DeleteMerchantObject(Guid.NewGuid(), null, CancellationToken.None)).ConfigureAwait(false);
-  }
-
-  /// <summary>
-  /// Verifies parent-company identifier validation rejects empty values on delete.
-  /// </summary>
-  [TestMethod]
-  public async Task DeleteMerchantObject_EmptyParentCompanyIdentifier_ThrowsMerchantFoundationValidationException()
-  {
-    MerchantStorageFoundationService service = CreateMerchantService(new Mock<IDatabaseBroker>());
-
-    await Assert.ThrowsExactlyAsync<MerchantFoundationServiceException>(() =>
-      service.DeleteMerchantObject(Guid.NewGuid(), Guid.Empty, CancellationToken.None)).ConfigureAwait(false);
-  }
-
-  /// <summary>
   /// Verifies an update without merchant data is rejected before any broker operation.
   /// </summary>
   [TestMethod]
@@ -133,7 +109,7 @@ public sealed class StorageValidationCoverageTests
       service.UpdateMerchantObject(null!, merchantId, parentCompanyId, CancellationToken.None)).ConfigureAwait(false);
 
     broker.Verify(item => item.ReadMerchantAsync(It.IsAny<Guid>(), It.IsAny<Guid?>(), It.IsAny<CancellationToken>()), Times.Never);
-    broker.Verify(item => item.UpdateMerchantAsync(It.IsAny<Merchant>(), It.IsAny<Merchant>(), It.IsAny<CancellationToken>()), Times.Never);
+    broker.Verify(item => item.UpdateMerchantAsync(It.IsAny<Merchant>(), It.IsAny<CancellationToken>()), Times.Never);
   }
 
   private static InvoiceStorageFoundationService CreateInvoiceService(Mock<IDatabaseBroker> broker) =>

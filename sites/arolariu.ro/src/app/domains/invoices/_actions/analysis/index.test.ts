@@ -6,7 +6,7 @@
 import {describe, expect, it} from "vitest";
 import * as analysisActions from "./index";
 
-const expectedExports = ["analyzeMerchant", "searchClassifications"] as const;
+const expectedExports = ["analyzeMerchant"] as const;
 
 describe("analysis actions index barrel", () => {
   it("exports the expected analysis action surface", () => {

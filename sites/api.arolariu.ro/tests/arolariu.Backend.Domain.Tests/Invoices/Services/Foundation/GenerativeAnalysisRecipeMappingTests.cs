@@ -10,7 +10,7 @@ using arolariu.Backend.Domain.Invoices.DDD.Analysis.Exceptions.Inner;
 using arolariu.Backend.Domain.Invoices.DDD.Analysis.Exceptions.Outer.Foundation;
 using arolariu.Backend.Domain.Invoices.DDD.Analysis.Results;
 using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Allergens;
-using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Classifications;
+using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Categories;
 using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Products;
 using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Recipes;
 using arolariu.Backend.Domain.Tests.Invoices.Helpers;
@@ -172,28 +172,17 @@ public sealed class GenerativeAnalysisRecipeMappingTests
 
 
   /// <summary>
-  /// Verifies food classifications can be recognized by the hierarchy label when the segment code differs.
+  /// Verifies uncategorized products are not recipe-eligible.
   /// </summary>
   [TestMethod]
-  public async Task GenerateRecipesAsync_FoodClassificationLabel_ReturnsRecipe()
-  {
-    IReadOnlyList<RecipeSuggestion> result = await ExecuteRecipeAsync(CreateRecipe(), CreateFoodLabelClassifications());
-
-    Assert.AreEqual(1, result.Count);
-  }
-
-  /// <summary>
-  /// Verifies non-GPC classifications short-circuit recipe generation even when their labels mention food.
-  /// </summary>
-  [TestMethod]
-  public async Task GenerateRecipesAsync_NonGpcClassification_ReturnsEmptyResultWithoutBrokerInvocation()
+  public async Task GenerateRecipesAsync_UncategorizedProduct_ReturnsEmptyResultWithoutBrokerInvocation()
   {
     var broker = new ScriptedGenerativeAnalysisBroker();
     GenerativeClassificationHarness harness = GenerativeClassificationHarness.Create(broker);
 
     IReadOnlyList<RecipeSuggestion> result = await harness.Service.GenerateRecipesAsync(
       CreateProducts(),
-      CreateNonGpcClassifications(),
+      CreateUncategorizedProducts(),
       CreateAllergenAssessments(),
       maximumRecipes: 1,
       Guid.NewGuid(),
@@ -209,7 +198,7 @@ public sealed class GenerativeAnalysisRecipeMappingTests
 
   private static async Task<IReadOnlyList<RecipeSuggestion>> ExecuteRecipeAsync(
     GenerativeService.RecipeStructuredSuggestion recipe,
-    IReadOnlyDictionary<string, StandardClassification> classifications)
+    IReadOnlyDictionary<string, ProductCategory?> classifications)
   {
     var response = new GenerativeService.RecipeGenerationStructuredResult([recipe]);
     var broker = new ScriptedGenerativeAnalysisBroker(ScriptedGenerativeAnalysisBroker.Success(response));
@@ -246,71 +235,27 @@ public sealed class GenerativeAnalysisRecipeMappingTests
       allergenWarnings ?? []);
 
   private static GenerativeService.RecipeStructuredIngredient CreateIngredient(string name) =>
-    new(name, "1 cup", null);
+    new(name, "1 cup", null, CorrelationToken: "item-0001");
 
   private static List<ProductAnalysisInput> CreateProducts() =>
-    [new ProductAnalysisInput("item-0001", new Product { Name = "lapte", Quantity = 1, QuantityUnit = "l" })];
+    [new ProductAnalysisInput("item-0001", new Product { Name = "Milk", Quantity = 1, QuantityUnit = "l" })];
 
-  private static Dictionary<string, StandardClassification> CreateFoodClassifications() =>
-    new Dictionary<string, StandardClassification>(StringComparer.Ordinal)
+  private static Dictionary<string, ProductCategory?> CreateFoodClassifications() =>
+    new Dictionary<string, ProductCategory?>(StringComparer.Ordinal)
     {
-      ["item-0001"] = new StandardClassification(
-        ClassificationSystem.Gs1Gpc,
-        "2026-05",
-        "10000025",
-        "Milk (Perishable)",
-        [
-          new ClassificationNode("segment", "50000000", "Dairy"),
-          new ClassificationNode("brick", "10000025", "Milk (Perishable)"),
-        ],
-        ClassificationOrigin.Analysis,
-        0.9,
-        [new ClassificationEvidence("subject.description", "lapte")]),
+      ["item-0001"] = ProductCategory.Milk,
     };
 
 
-  private static Dictionary<string, StandardClassification> CreateFoodLabelClassifications() =>
-    new Dictionary<string, StandardClassification>(StringComparer.Ordinal)
+  private static Dictionary<string, ProductCategory?> CreateUncategorizedProducts() =>
+    new Dictionary<string, ProductCategory?>(StringComparer.Ordinal)
     {
-      ["item-0001"] = new StandardClassification(
-        ClassificationSystem.Gs1Gpc,
-        "2026-05",
-        "10000025",
-        "Milk (Perishable)",
-        [
-          new ClassificationNode("segment", "50100000", "Food/Beverage"),
-          new ClassificationNode("brick", "10000025", "Milk (Perishable)"),
-        ],
-        ClassificationOrigin.Analysis,
-        0.9,
-        [new ClassificationEvidence("subject.description", "lapte")]),
+      ["item-0001"] = null,
     };
-
-  private static Dictionary<string, StandardClassification> CreateNonGpcClassifications() =>
-    new Dictionary<string, StandardClassification>(StringComparer.Ordinal)
+  private static Dictionary<string, ProductCategory?> CreateNonFoodClassifications() =>
+    new Dictionary<string, ProductCategory?>(StringComparer.Ordinal)
     {
-      ["item-0001"] = new StandardClassification(
-        ClassificationSystem.Nace21,
-        "2.1",
-        "47.11",
-        "Retail sale in non-specialised stores",
-        [new ClassificationNode("class", "47.11", "Food/Beverage")],
-        ClassificationOrigin.Analysis,
-        0.9,
-        [new ClassificationEvidence("subject.description", "merchant")]),
-    };
-  private static Dictionary<string, StandardClassification> CreateNonFoodClassifications() =>
-    new Dictionary<string, StandardClassification>(StringComparer.Ordinal)
-    {
-      ["item-0001"] = new StandardClassification(
-        ClassificationSystem.Gs1Gpc,
-        "2026-05",
-        "67000000",
-        "Household appliances",
-        [new ClassificationNode("segment", "67000000", "Household appliances")],
-        ClassificationOrigin.Analysis,
-        0.9,
-        [new ClassificationEvidence("subject.description", "appliance")]),
+      ["item-0001"] = ProductCategory.OfficeSchoolSupplies,
     };
 
   private static Dictionary<string, AllergenAssessment> CreateAllergenAssessments() =>

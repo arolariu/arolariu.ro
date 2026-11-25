@@ -34,7 +34,7 @@ export type E2ETarget = "all" | "backend" | "frontend" | "cv";
 type RunnableE2ETarget = Exclude<E2ETarget, "all">;
 
 type AuthPolicy = "required" | "optional" | "ignored";
-type EnvironmentProfile = "local" | "production";
+type EnvironmentProfile = "aspire" | "local" | "production";
 
 interface TargetConfiguration {
   readonly authPolicy: AuthPolicy;
@@ -125,7 +125,7 @@ function describeError(error: unknown): string {
  */
 function resolveEnvironmentProfile(env: Readonly<Record<string, string | undefined>>): EnvironmentProfile {
   const rawEnvironment = (env["E2E_TEST_ENVIRONMENT"] ?? env["NEWMAN_ENVIRONMENT"] ?? "production").toLowerCase();
-  return rawEnvironment === "local" ? "local" : "production";
+  return rawEnvironment === "aspire" || rawEnvironment === "local" ? rawEnvironment : "production";
 }
 
 /**
@@ -737,6 +737,7 @@ function runNewmanForTarget(
       collectionPath,
       "--environment",
       environmentPath,
+      ...(profile === "aspire" ? ["--ignore-redirects"] : []),
       ...(shouldPassAuthToken ? ["--env-var", `authToken=${Redacted.value(authToken)}`] : []),
       "--reporters",
       "cli,json,junit",
@@ -755,7 +756,16 @@ function runNewmanForTarget(
 
     // The arguments carry the token: never echo them, and rebuild every failure from redacted output only.
     const result = yield* processes
-      .run({command: "npx", args}, {cwd, output: "capture", echo: false, failureOutput: "full"})
+      .run(
+        {command: "npx", args},
+        {
+          cwd,
+          output: "capture",
+          echo: false,
+          failureOutput: "full",
+          ...(profile === "aspire" ? {env: {NODE_USE_SYSTEM_CA: "1"}} : {}),
+        },
+      )
       .pipe(
         Effect.catch((error) =>
           Effect.andThen(writeNewmanOutput(error, outputToken), Effect.fail(newmanFailure(target, error, outputToken))),

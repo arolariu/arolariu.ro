@@ -16,7 +16,7 @@ using arolariu.Backend.Domain.Invoices.DDD.Analysis.Enums;
 /// <param name="Profile">
 /// The named analysis profile to resolve. Defaults to <see cref="AnalysisProfile.Comprehensive"/>; custom is output-only.
 /// </param>
-/// <param name="MerchantClassification">Optional NACE classification selection.</param>
+/// <param name="MerchantClassification">Optional classification selection.</param>
 /// <param name="DescriptionGeneration">Optional merchant description generation selection.</param>
 [Serializable]
 public readonly record struct MerchantAnalysisRequestDto(

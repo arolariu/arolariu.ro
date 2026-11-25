@@ -98,12 +98,13 @@ public partial class InvoiceOrchestrationService : IInvoiceOrchestrationService
     }).ConfigureAwait(false);
 
   /// <inheritdoc/>
-  public async Task<IEnumerable<Invoice>> ReadAllInvoiceObjects(Guid userIdentifier, CancellationToken cancellationToken) =>
+  public async Task<IEnumerable<Invoice>> ReadAllInvoiceObjects(
+    Guid userIdentifier, CancellationToken cancellationToken, Guid? merchantIdentifier = null) =>
     await TryCatchAsync(async () =>
     {
       using var activity = InvoicePackageTracing.StartActivity(nameof(ReadAllInvoiceObjects));
       return await invoiceStorageFoundationService
-        .ReadAllInvoiceObjects(userIdentifier, cancellationToken)
+        .ReadAllInvoiceObjects(userIdentifier, cancellationToken, merchantIdentifier)
         .ConfigureAwait(false);
     }).ConfigureAwait(false);
 
@@ -126,4 +127,5 @@ public partial class InvoiceOrchestrationService : IInvoiceOrchestrationService
         .UpdateInvoiceObject(updatedInvoice, invoiceIdentifier, userIdentifier, cancellationToken)
         .ConfigureAwait(false);
     }).ConfigureAwait(false);
+
 }

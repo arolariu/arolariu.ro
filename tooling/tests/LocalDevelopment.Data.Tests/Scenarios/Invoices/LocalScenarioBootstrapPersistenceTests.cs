@@ -115,7 +115,7 @@ public sealed class LocalScenarioBootstrapPersistenceTests
     await state.CreateItemAsync(new
     {
       id = "invoice-scenario",
-      manifestVersion = "v3",
+      manifestVersion = "v4",
       anchorDateUtc = "2026-11-03",
       completed = false,
     }, new PartitionKey("invoice-scenario"));
@@ -178,6 +178,7 @@ public sealed class LocalScenarioBootstrapPersistenceTests
   [TestMethod]
   [DataRow("v1")]
   [DataRow("v2")]
+  [DataRow("v3")]
   public async Task RunAsync_ManifestVersionChanged_RefusesMutation(string legacyVersion)
   {
     CosmosClient client = cosmos ?? throw new InvalidOperationException();
@@ -238,7 +239,7 @@ public sealed class LocalScenarioBootstrapPersistenceTests
       CollectionAssert.AreEqual(original.Items.Select(product => (product.Quantity, product.Price)).ToArray(),
         actual.Items.Select(product => (product.Quantity, product.Price)).ToArray());
       AssertEquivalent(original.Items, actual.Items, original.Name);
-      AssertEquivalent(original.Classification, actual.Classification, original.Name);
+      AssertEquivalent(original.Category, actual.Category, original.Name);
       AssertEquivalent(original.PossibleRecipes, actual.PossibleRecipes, original.Name);
       AssertEquivalent(original.PaymentInformation, actual.PaymentInformation, original.Name);
       AssertEquivalent(original.TaxDetails, actual.TaxDetails, original.Name);
@@ -250,8 +251,7 @@ public sealed class LocalScenarioBootstrapPersistenceTests
       Merchant actual = merchantIds[original.id];
       Assert.AreEqual(original.CreatedBy, actual.CreatedBy);
       Assert.AreEqual(original.Address, actual.Address);
-      Assert.AreEqual(original.Classification, actual.Classification);
-      CollectionAssert.AreEquivalent(original.ReferencedInvoices.ToArray(), actual.ReferencedInvoices.ToArray());
+      Assert.AreEqual(original.Category, actual.Category);
     }
   }
 

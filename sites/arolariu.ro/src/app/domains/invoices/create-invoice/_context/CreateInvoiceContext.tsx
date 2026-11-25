@@ -13,7 +13,7 @@
  *
  * **Orchestration sequence (RFC contract):**
  * 1. Create minimal invoice (initialScan + required metadata only)
- * 2. PATCH name, description, paymentInformation, classificationCode
+ * 2. PATCH name, description, paymentInformation, category
  * 3. Attach remaining scans
  * 4. Fire-and-forget analysis (invoiceClassification disabled when manual classification applied)
  * 5. Navigate to invoice view
@@ -26,7 +26,7 @@
 
 import {notify} from "@/lib/notify";
 import {useScansStore} from "@/stores";
-import {PaymentType, type ClassificationSelection} from "@/types/invoices";
+import {PaymentType, type InvoiceCategory} from "@/types/invoices";
 import {type CachedScan, ScanMetadataKey, ScanMetadataStatus, ScanStatus} from "@/types/scans";
 
 import {useTranslations} from "next-intl-selector";
@@ -145,8 +145,8 @@ interface CreateInvoiceContextValue {
   setDescription: (desc: string) => void;
 
   // Classification (replaces legacy category)
-  classificationSelection: ClassificationSelection | null;
-  setClassification: (selection: ClassificationSelection | null) => void;
+  categorySelection: InvoiceCategory | null;
+  setCategory: (selection: InvoiceCategory | null) => void;
 
   // Invoice creation
   isCreating: boolean;
@@ -185,8 +185,8 @@ export function CreateInvoiceProvider({children}: Readonly<CreateInvoiceProvider
   const [selectedScans, setSelectedScans] = useState<CachedScan[]>([]);
   const [isCreating, setIsCreating] = useState(false);
 
-  // Classification selection
-  const [classificationSelection, setClassificationSelection] = useState<ClassificationSelection | null>(null);
+  // An explicit clear must survive retrying a partially created invoice.
+  const [categorySelection, setCategorySelection] = useState<InvoiceCategory | null>();
 
   // Partial-failure recovery state
   const [pendingInvoiceId, setPendingInvoiceId] = useState<string | null>(null);
@@ -272,8 +272,8 @@ export function CreateInvoiceProvider({children}: Readonly<CreateInvoiceProvider
     setInvoiceDetails((prev) => ({...prev, description}));
   }, []);
 
-  const setClassification = useCallback((selection: ClassificationSelection | null) => {
-    setClassificationSelection(selection);
+  const setCategory = useCallback((selection: InvoiceCategory | null) => {
+    setCategorySelection(selection);
   }, []);
 
   // Invoice creation orchestration
@@ -332,7 +332,7 @@ export function CreateInvoiceProvider({children}: Readonly<CreateInvoiceProvider
             subtotalAmount: 0,
             tipAmount: 0,
           },
-          ...(classificationSelection !== null ? {classificationCode: classificationSelection.code} : {}),
+          ...(categorySelection !== undefined ? {category: categorySelection} : {}),
         },
       });
 
@@ -395,12 +395,11 @@ export function CreateInvoiceProvider({children}: Readonly<CreateInvoiceProvider
       }
 
       // ── Step 4: Fire-and-forget analysis ─────────────────────────────────
-      // D4: When a manual classification was applied, disable invoiceClassification
-      // to prevent the analysis pipeline from overwriting the user's explicit choice.
+      // Skip receipt categorization only when this wizard assigned a category.
       analyzeInvoice({
         invoiceIdentifier: invoiceId,
         profile: "comprehensive",
-        ...(classificationSelection !== null ? {overrides: {invoiceClassification: false}} : {}),
+        ...(typeof categorySelection === "number" ? {overrides: {invoiceClassification: false}} : {}),
       }).catch((analysisError: unknown) => {
         console.error("Background invoice analysis failed (non-critical):", analysisError);
       });
@@ -415,16 +414,7 @@ export function CreateInvoiceProvider({children}: Readonly<CreateInvoiceProvider
     } finally {
       setIsCreating(false);
     }
-  }, [
-    selectedScans,
-    invoiceDetails,
-    classificationSelection,
-    pendingInvoiceId,
-    pendingAdditionalScans,
-    markScansAsUsedByInvoice,
-    router,
-    t,
-  ]);
+  }, [selectedScans, invoiceDetails, categorySelection, pendingInvoiceId, pendingAdditionalScans, markScansAsUsedByInvoice, router, t]);
 
   const contextValue: CreateInvoiceContextValue = useMemo(
     () => ({
@@ -442,8 +432,8 @@ export function CreateInvoiceProvider({children}: Readonly<CreateInvoiceProvider
       setPaymentType,
       setTransactionDate,
       setDescription,
-      classificationSelection,
-      setClassification,
+      categorySelection: categorySelection ?? null,
+      setCategory,
       isCreating,
       partialOutcome,
       createInvoiceWithScans,
@@ -463,8 +453,8 @@ export function CreateInvoiceProvider({children}: Readonly<CreateInvoiceProvider
       setPaymentType,
       setTransactionDate,
       setDescription,
-      classificationSelection,
-      setClassification,
+      categorySelection,
+      setCategory,
       isCreating,
       partialOutcome,
       createInvoiceWithScans,
@@ -487,6 +477,3 @@ export function useCreateInvoiceContext(): CreateInvoiceContextValue {
   }
   return context;
 }
-
-// Re-export ClassificationSystem for use in child components without deep imports
-export {ClassificationSystem} from "@/types/invoices";

@@ -38,7 +38,8 @@ public interface IInvoiceManagementService
   /// <param name="userIdentifier">The owning user partition.</param>
   /// <param name="cancellationToken">The token that cancels the asynchronous operation.</param>
   /// <returns>The invoices visible in the requested partition.</returns>
-  Task<IEnumerable<Invoice>> ReadInvoices(Guid userIdentifier, CancellationToken cancellationToken);
+  /// <param name="merchantIdentifier">The optional merchant reference to match.</param>
+  Task<IEnumerable<Invoice>> ReadInvoices(Guid userIdentifier, CancellationToken cancellationToken, Guid? merchantIdentifier = null);
 
   /// <summary>Replaces client-editable state on an existing invoice.</summary>
   /// <param name="invoiceIdentifier">The identifier of the persisted invoice.</param>
@@ -71,15 +72,16 @@ public interface IInvoiceManagementService
   /// <param name="invoiceIdentifier">The target invoice identifier.</param>
   /// <param name="userIdentifier">The owning user partition, or <see langword="null"/> when resolved downstream.</param>
   /// <param name="product">The product value to add.</param>
-  /// <param name="classificationCode">The optional GS1 GPC code to resolve canonically.</param>
   /// <param name="cancellationToken">The token that cancels the asynchronous operation.</param>
   /// <returns>A task that represents the add operation.</returns>
   Task AddProduct(
     Guid invoiceIdentifier,
     Guid? userIdentifier,
     Product product,
-    string? classificationCode,
     CancellationToken cancellationToken);
+
+  /// <summary>Conditionally updates one unambiguously named product in its invoice.</summary>
+  Task<Product> UpdateProduct(Guid invoiceIdentifier, Guid userIdentifier, UpdateProductRequestDto request, CancellationToken cancellationToken);
 
   /// <summary>Retrieves every product line from an invoice.</summary>
   /// <param name="invoiceIdentifier">The target invoice identifier.</param>
@@ -87,14 +89,6 @@ public interface IInvoiceManagementService
   /// <param name="cancellationToken">The token that cancels the asynchronous operation.</param>
   /// <returns>The invoice product lines.</returns>
   Task<IEnumerable<Product>> GetProducts(Guid invoiceIdentifier, Guid? userIdentifier, CancellationToken cancellationToken);
-
-  /// <summary>Retrieves the first invoice product matching a name.</summary>
-  /// <param name="invoiceIdentifier">The target invoice identifier.</param>
-  /// <param name="userIdentifier">The owning user partition, or <see langword="null"/> when resolved downstream.</param>
-  /// <param name="productName">The product name to locate.</param>
-  /// <param name="cancellationToken">The token that cancels the asynchronous operation.</param>
-  /// <returns>The matching product line.</returns>
-  Task<Product> GetProduct(Guid invoiceIdentifier, Guid? userIdentifier, string productName, CancellationToken cancellationToken);
 
   /// <summary>Removes the first invoice product matching a name.</summary>
   /// <param name="invoiceIdentifier">The target invoice identifier.</param>
@@ -167,10 +161,9 @@ public interface IInvoiceManagementService
   /// <summary>Creates a merchant in its parent-company partition.</summary>
   /// <param name="merchant">The merchant entity to persist.</param>
   /// <param name="parentCompanyId">The parent-company partition, or <see langword="null"/> when derived from the entity.</param>
-  /// <param name="classificationCode">The optional NACE 2.1 code to resolve canonically.</param>
   /// <param name="cancellationToken">The token that cancels the asynchronous operation.</param>
   /// <returns>A task that represents the create operation.</returns>
-  Task CreateMerchant(Merchant merchant, Guid? parentCompanyId, string? classificationCode, CancellationToken cancellationToken);
+  Task CreateMerchant(Merchant merchant, Guid? parentCompanyId, CancellationToken cancellationToken);
 
   /// <summary>Retrieves one merchant by identifier and optional parent-company partition.</summary>
   /// <param name="identifier">The merchant identifier.</param>
@@ -192,8 +185,8 @@ public interface IInvoiceManagementService
   /// </remarks>
   /// <param name="userIdentifier">The authenticated user whose invoices are inspected.</param>
   /// <param name="cancellationToken">The token that cancels the asynchronous operation.</param>
-  /// <returns>The distinct visible merchants and the caller-owned invoice snapshot used to derive them.</returns>
-  Task<(IReadOnlyCollection<Merchant> Merchants, IReadOnlyCollection<Invoice> Invoices)> ReadMerchantsVisibleToUser(
+  /// <returns>The distinct visible merchants.</returns>
+  Task<IEnumerable<Merchant>> ReadMerchantsVisibleToUser(
     Guid userIdentifier,
     CancellationToken cancellationToken);
 
@@ -201,22 +194,14 @@ public interface IInvoiceManagementService
   /// <param name="identifier">The persisted merchant identifier.</param>
   /// <param name="parentCompanyId">The parent-company partition, or <see langword="null"/> when resolved downstream.</param>
   /// <param name="updatedMerchant">The transient merchant carrying replacement values.</param>
-  /// <param name="classificationCode">The optional NACE 2.1 code to resolve canonically.</param>
   /// <param name="cancellationToken">The token that cancels the asynchronous operation.</param>
   /// <returns>The updated merchant entity.</returns>
   Task<Merchant> UpdateMerchant(
     Guid identifier,
     Guid? parentCompanyId,
     Merchant updatedMerchant,
-    string? classificationCode,
     CancellationToken cancellationToken);
 
-  /// <summary>Removes one merchant from active use.</summary>
-  /// <param name="identifier">The merchant identifier.</param>
-  /// <param name="parentCompanyId">The parent-company partition, or <see langword="null"/> when resolved downstream.</param>
-  /// <param name="cancellationToken">The token that cancels the asynchronous operation.</param>
-  /// <returns>A task that represents the remove operation.</returns>
-  Task DeleteMerchant(Guid identifier, Guid? parentCompanyId, CancellationToken cancellationToken);
   #endregion
 
   #region Analysis Queue
@@ -232,7 +217,7 @@ public interface IInvoiceManagementService
     InvoiceAnalysisRequestDto request,
     CancellationToken cancellationToken);
 
-  /// <summary>Queues merchant analysis after validating invoice-reference visibility.</summary>
+  /// <summary>Queues merchant analysis after validating visibility and creator ownership.</summary>
   /// <param name="merchantId">The merchant identifier to analyze.</param>
   /// <param name="userIdentifier">The authenticated user requesting analysis.</param>
   /// <param name="request">The requested profile and capability overrides.</param>

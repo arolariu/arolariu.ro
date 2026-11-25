@@ -7,14 +7,14 @@
  * @remarks
  * Form with fields for:
  * - Invoice name (required)
- * - Classification (ClassificationPicker — replaces legacy numeric category)
+ * - Receipt category
  * - Payment type dropdown
  * - Transaction date picker
  * - Description textarea (optional)
  */
 
-import ClassificationPicker from "@/app/domains/invoices/_components/classification/ClassificationPicker";
-import {ClassificationSystem, PaymentType, type ClassificationSelection} from "@/types/invoices";
+import CategoryPicker from "@/app/domains/invoices/_components/category/CategoryPicker";
+import {PaymentType, type InvoiceCategory} from "@/types/invoices";
 import {
   Button,
   Calendar,
@@ -84,16 +84,8 @@ function ScanThumbnail({scan}: Readonly<{scan: {name: string; blobUrl: string; s
 export default function InvoiceDetailsForm(): React.JSX.Element {
   const t = useTranslations();
   const calendarLocale = getCalendarLocale(useLocale());
-  const {
-    invoiceDetails,
-    setName,
-    setPaymentType,
-    setTransactionDate,
-    setDescription,
-    classificationSelection,
-    setClassification,
-    selectedScans,
-  } = useCreateInvoiceContext();
+  const {invoiceDetails, setName, setPaymentType, setTransactionDate, setDescription, categorySelection, setCategory, selectedScans} =
+    useCreateInvoiceContext();
 
   /** Updates the invoice name as the user types. */
   const handleNameChange = useCallback(
@@ -104,11 +96,11 @@ export default function InvoiceDetailsForm(): React.JSX.Element {
   );
 
   /** Updates the classification selection from the picker. */
-  const handleClassificationChange = useCallback(
-    (selection: ClassificationSelection | null) => {
-      setClassification(selection);
+  const handleCategoryChange = useCallback(
+    (selection: InvoiceCategory | null) => {
+      setCategory(selection);
     },
-    [setClassification],
+    [setCategory],
   );
 
   /** Updates the payment type selection. */
@@ -199,13 +191,13 @@ export default function InvoiceDetailsForm(): React.JSX.Element {
 
             {/* Classification */}
             <div className={styles["formField"]}>
-              <ClassificationPicker
-                system={ClassificationSystem.EcoicopV2}
-                value={classificationSelection}
-                onChange={handleClassificationChange}
-                label={t((m) => m.forms.invoices.createInvoice.detailsForm.fields.classification.label)}
+              <CategoryPicker
+                domain='invoices'
+                value={categorySelection}
+                onValueChange={handleCategoryChange}
+                label={t((m) => m.forms.invoices.createInvoice.detailsForm.fields.category.label)}
               />
-              <p className={styles["fieldHint"]}>{t((m) => m.forms.invoices.createInvoice.detailsForm.fields.classification.hint)}</p>
+              <p className={styles["fieldHint"]}>{t((m) => m.forms.invoices.createInvoice.detailsForm.fields.category.hint)}</p>
             </div>
 
             {/* Payment Type */}

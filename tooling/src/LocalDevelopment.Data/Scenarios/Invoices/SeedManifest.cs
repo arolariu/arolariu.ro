@@ -3,7 +3,7 @@ namespace LocalDevelopment.Data.Scenarios.Invoices;
 using arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices;
 using arolariu.Backend.Domain.Invoices.DDD.Entities.Merchants;
 using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Allergens;
-using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Classifications;
+using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Categories;
 using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Recipes;
 
 /// <summary>
@@ -27,7 +27,7 @@ internal sealed record SeedScenarioManifest(
   IReadOnlyList<SeedInvoiceDefinition> Invoices,
   IReadOnlyList<SeedBlobDefinition> Blobs)
 {
-  internal const string CurrentVersion = "v3";
+  internal const string CurrentVersion = "v4";
 }
 
 internal sealed record SeedPersonaDefinition(
@@ -42,13 +42,11 @@ internal sealed record SeedMerchantDefinition(
   string Name,
   string Description,
   Guid ParentCompanyId,
-  string ClassificationCode,
-  string ClassificationLabel,
+  MerchantCategory Category,
   string CountryCode,
   string Region,
   string City,
-  string StreetAddress,
-  IReadOnlyList<ClassificationNode> ClassificationPath);
+  string StreetAddress);
 
 internal sealed record SeedInvoiceDefinition(
   string Key,
@@ -65,13 +63,11 @@ internal sealed record SeedInvoiceDefinition(
   decimal TaxAmount,
   bool IsImportant,
   bool IsSoftDeleted,
-  string? ClassificationCode,
-  string? ClassificationLabel,
+  InvoiceCategory? Category,
   IReadOnlyList<SeedProductDefinition> Products,
   SeedRecipeDefinition? Recipe,
   string? BlobKey,
-  TimeOnly TransactionTimeUtc,
-  IReadOnlyList<ClassificationNode>? ClassificationPath);
+  TimeOnly TransactionTimeUtc);
 
 internal sealed record SeedProductDefinition(
   string Name,
@@ -79,13 +75,11 @@ internal sealed record SeedProductDefinition(
   string QuantityUnit,
   string ProductCode,
   decimal Price,
-  string? ClassificationCode,
-  string? ClassificationLabel,
+  ProductCategory? Category,
   string AllergenState,
   bool IsEdited,
   decimal TaxRate,
-  IReadOnlyList<AllergenCode> AllergenCodes,
-  IReadOnlyList<ClassificationNode>? ClassificationPath);
+  IReadOnlyList<AllergenCode> AllergenCodes);
 
 internal sealed record SeedRecipeIngredientDefinition(string ProductCode, string Quantity);
 

@@ -3,7 +3,6 @@ namespace arolariu.Backend.Domain.Invoices;
 using System;
 
 using arolariu.Backend.Domain.Invoices.DDD.Analysis.Enums;
-using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Classifications;
 using arolariu.Backend.Domain.Invoices.Services.Foundation.Analysis;
 
 using Microsoft.Extensions.Logging;
@@ -482,7 +481,7 @@ public static partial class Log
 
   #region Analysis Pipeline Observability Logging Methods
   // NOTE: every log method below accepts only bounded, non-sensitive dimensions: run identifiers (GUIDs), the
-  // AnalysisTargetType / AnalysisCapability / AnalysisOutcome / AnalysisFailureReason / ClassificationSystem enums,
+  // AnalysisTargetType / AnalysisCapability / AnalysisOutcome / AnalysisFailureReason enums,
   // model identifiers, and numeric counts or durations. None accept product names, merchant names, OCR text, scan
   // URLs, prompts, or model responses. See AnalysisTelemetryTests.AnalysisLogMethods_NeverAcceptSensitiveParameters.
 
@@ -542,14 +541,6 @@ public static partial class Log
   public static partial void LogAnalysisInvalidStructuredOutputDetected(this ILogger logger, AnalysisCapability capability);
 
   /// <summary>
-  /// Logs a taxonomy code validation failure encountered during analysis or manual classification.
-  /// </summary>
-  /// <param name="logger">The logger instance.</param>
-  /// <param name="classificationSystem">The classification system whose code failed validation.</param>
-  [LoggerMessage(300_229, LogLevel.Warning, "A taxonomy code failed validation against classification system '{classificationSystem}'.")]
-  public static partial void LogAnalysisTaxonomyValidationFailed(this ILogger logger, ClassificationSystem classificationSystem);
-
-  /// <summary>
   /// Logs the recovery of an analysis run whose previous worker lease expired.
   /// </summary>
   /// <param name="logger">The logger instance.</param>
@@ -599,7 +590,7 @@ public static partial class Log
   /// Logs bounded non-sensitive token usage metadata observed for a successful generative analysis capability call.
   /// </summary>
   /// <param name="logger">The logger instance.</param>
-  /// <param name="telemetryMetadata">The trusted bounded capability, schema, prompt, and taxonomy metadata.</param>
+  /// <param name="telemetryMetadata">The trusted bounded capability, schema and prompt metadata.</param>
   /// <param name="modelId">The normalized bounded model identifier.</param>
   /// <param name="inputTokens">The input token count, when available.</param>
   /// <param name="outputTokens">The output token count, when available.</param>
@@ -618,7 +609,6 @@ public static partial class Log
       modelId,
       telemetryMetadata.SchemaVersion,
       telemetryMetadata.PromptVersion,
-      telemetryMetadata.TaxonomyVersion,
       inputTokens,
       outputTokens);
   }
@@ -626,37 +616,15 @@ public static partial class Log
   [LoggerMessage(
     300_232,
     LogLevel.Information,
-    "Analysis capability '{capability}' used model '{modelId}' with schema '{schemaVersion}', prompt '{promptVersion}', taxonomy '{taxonomyVersion}' ({inputTokens} input / {outputTokens} output tokens; outcome success).")]
+    "Analysis capability '{capability}' used model '{modelId}' with schema '{schemaVersion}', prompt '{promptVersion}' ({inputTokens} input / {outputTokens} output tokens; outcome success).")]
   private static partial void LogAnalysisTokenUsageObservedCore(
     ILogger logger,
     AnalysisCapability capability,
     string modelId,
     string schemaVersion,
     string promptVersion,
-    string taxonomyVersion,
     long? inputTokens,
     long? outputTokens);
-
-  /// <summary>
-  /// Logs a validation failure inside the classification analysis foundation.
-  /// </summary>
-  /// <param name="logger">The logger instance.</param>
-  [LoggerMessage(300_233, LogLevel.Warning, "Classification analysis foundation validation failed.")]
-  public static partial void LogClassificationAnalysisValidationException(this ILogger logger);
-
-  /// <summary>
-  /// Logs a dependency-validation failure inside the classification analysis foundation.
-  /// </summary>
-  /// <param name="logger">The logger instance.</param>
-  [LoggerMessage(300_234, LogLevel.Warning, "Classification analysis foundation dependency validation failed.")]
-  public static partial void LogClassificationAnalysisDependencyValidationException(this ILogger logger);
-
-  /// <summary>
-  /// Logs an unexpected service failure inside the classification analysis foundation.
-  /// </summary>
-  /// <param name="logger">The logger instance.</param>
-  [LoggerMessage(300_235, LogLevel.Error, "Classification analysis foundation service failed.")]
-  public static partial void LogClassificationAnalysisServiceException(this ILogger logger);
 
   #endregion
 }

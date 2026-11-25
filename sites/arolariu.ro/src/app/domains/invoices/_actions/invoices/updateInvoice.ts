@@ -30,8 +30,7 @@ import {fetchBFFUserFromAuthService} from "@/lib/actions/user/fetchUser";
 import {validateStringIsGuidType} from "@/lib/utils.generic";
 import {createErrorResult, createHttpErrorResult, fetchWithTimeout, type ServerActionResult} from "@/lib/utils.server";
 import type {Invoice} from "@/types/invoices";
-import {resolveClassificationCodeForWrite} from "@/types/invoices/Classification";
-import {parseInvoiceResponse, tryParse} from "@/types/invoices/transport";
+import {parseInvoiceResponse, serializeCategoryUpdate, tryParse} from "@/types/invoices/transport";
 
 type ServerActionInputType = Readonly<{
   /** The identifier of the invoice to update. */
@@ -43,7 +42,7 @@ type ServerActionInputType = Readonly<{
 type ServerActionOutputType = ServerActionResult<Readonly<Invoice>>;
 
 /**
- * Server action that performs a full update (POST) on an invoice.
+ * Server action that performs a full update (PUT) on an invoice.
  *
  * @remarks
  * **HTTP Method**: PUT
@@ -51,13 +50,11 @@ type ServerActionOutputType = ServerActionResult<Readonly<Invoice>>;
  *
  * **Update Semantics**:
  * - Replaces the entire invoice resource with the provided data
- * - All fields from the provided invoice object are written
- * - The invoice ID in the URL must match `invoice.id`
+ * - Sends the editable fields from the invoice, including its category
+ * - A null category sends the API's `-1` clear command
  *
  * **Validation**:
  * - `invoiceId` must be a valid GUID
- * - `invoice` object must be provided and non-null
- * - `invoice.id` must match the `invoiceId` parameter
  *
  * **Error Handling**:
  * Returns a result object with `success` flag instead of throwing,
@@ -81,7 +78,6 @@ type ServerActionOutputType = ServerActionResult<Readonly<Invoice>>;
  *   ...invoice,
  *   name: "Updated Invoice Name",
  *   description: "New description",
- *   items: [...invoice.items, newItem],
  * };
  *
  * const result = await updateInvoice({
@@ -120,7 +116,7 @@ export async function updateInvoice({invoiceId, invoice}: ServerActionInputType)
       const requestDto = {
         name: invoice.name,
         description: invoice.description,
-        classificationCode: resolveClassificationCodeForWrite(invoice.classification),
+        category: invoice.category,
         paymentInformation: invoice.paymentInformation,
         merchantReference: invoice.merchantReference,
         isImportant: invoice.isImportant,
@@ -132,7 +128,7 @@ export async function updateInvoice({invoiceId, invoice}: ServerActionInputType)
           Authorization: `Bearer ${authToken}`,
           "Content-Type": "application/json",
         },
-        body: JSON.stringify(requestDto),
+        body: serializeCategoryUpdate(requestDto),
       });
       addSpanEvent("bff.request.update-invoice.complete");
 

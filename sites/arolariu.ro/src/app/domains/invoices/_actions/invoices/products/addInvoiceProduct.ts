@@ -17,8 +17,8 @@
  * - Structured error handling with user-friendly messages
  *
  * **Supported Fields:**
- * - Required: name, category, quantity, price
- * - Optional: quantityUnit, productCode
+ * - Required: name, quantity, price
+ * - Optional: category, quantityUnit, productCode
  * - Server-generated: totalPrice, metadata
  *
  * @see {@link Product} - Product type definition
@@ -29,9 +29,8 @@ import {addSpanEvent, logWithTrace, withSpan} from "@/instrumentation.server";
 import {fetchBFFUserFromAuthService} from "@/lib/actions/user/fetchUser";
 import {validateStringIsGuidType} from "@/lib/utils.generic";
 import {createErrorResult, createHttpErrorResult, fetchWithTimeout, type ServerActionResult} from "@/lib/utils.server";
-import type {Product} from "@/types/invoices";
-import {resolveClassificationCodeForWrite} from "@/types/invoices/Classification";
-import {parseProductResponse, tryParse} from "@/types/invoices/transport";
+import type {Product, ProductCategory} from "@/types/invoices";
+import {parseProductResponse, serializeCategoryRequest, tryParse} from "@/types/invoices/transport";
 import {revalidatePath} from "next/cache";
 
 /**
@@ -45,7 +44,7 @@ type ServerActionInputType = Readonly<{
   /** The unique identifier of the invoice. Must be a valid UUIDv4 GUID. */
   readonly invoiceId: string;
   /** The product to add. Must include required fields: name, quantity, price. */
-  readonly product: Product;
+  readonly product: Omit<Product, "category"> & Readonly<{category?: ProductCategory | null}>;
 }>;
 
 /**
@@ -102,7 +101,7 @@ type ServerActionOutputType = ServerActionResult<Readonly<Product>>;
  *
  * @param params - The input parameters object.
  * @param params.invoiceId - The UUID of the invoice to add the product to. Must be a valid UUIDv4 string.
- * @param params.product - The product payload with required fields (name, category, quantity, price).
+ * @param params.product - The product payload with required fields (name, quantity, price).
  * @returns A result object containing the created product on success, or an error result when validation, authorization, or the backend request fails.
  *
  * @example
@@ -152,7 +151,7 @@ export async function addInvoiceProduct({invoiceId, product}: ServerActionInputT
       logWithTrace("info", "Making API request to add product to invoice...", {invoiceId}, "server");
       const requestDto = {
         name: product.name,
-        classificationCode: resolveClassificationCodeForWrite(product.classification),
+        category: product.category,
         quantity: product.quantity,
         quantityUnit: product.quantityUnit,
         productCode: product.productCode,
@@ -165,7 +164,7 @@ export async function addInvoiceProduct({invoiceId, product}: ServerActionInputT
           Authorization: `Bearer ${authToken}`,
           "Content-Type": "application/json",
         },
-        body: JSON.stringify(requestDto),
+        body: serializeCategoryRequest(requestDto),
       });
       addSpanEvent("bff.request.add-invoice-product.complete");
 

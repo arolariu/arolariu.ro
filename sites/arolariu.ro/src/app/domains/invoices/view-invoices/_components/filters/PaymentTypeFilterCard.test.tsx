@@ -36,7 +36,7 @@ function makeFilters(overrides: Partial<FilterState> = {}): FilterState {
     dateTo: null,
     amountMin: null,
     amountMax: null,
-    classificationGroups: [],
+    categoryFilters: [],
     paymentTypes: [],
     currencies: [],
     sortBy: "date",

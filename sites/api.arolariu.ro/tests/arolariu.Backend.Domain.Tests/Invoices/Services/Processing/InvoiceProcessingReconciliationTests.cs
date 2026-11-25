@@ -11,7 +11,7 @@ using arolariu.Backend.Domain.Invoices.DDD.Analysis.Enums;
 using arolariu.Backend.Domain.Invoices.DDD.Analysis.Results;
 using arolariu.Backend.Domain.Invoices.DDD.ValueObjects;
 using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Allergens;
-using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Classifications;
+using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Categories;
 using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Products;
 using arolariu.Backend.Domain.Invoices.Services.Foundation.Analysis;
 using arolariu.Backend.Domain.Invoices.Services.Foundation.AnalysisQueue;
@@ -32,7 +32,7 @@ public sealed class InvoiceProcessingReconciliationTests
   [TestMethod]
   public async Task AnalyzeInvoiceAsync_ProductCodeMatch_PreservesEnrichment()
   {
-    StandardClassification classification = CreateClassification("10000001", "Milk");
+    ProductCategory classification = ProductCategory.Milk;
     AllergenAssessment allergenAssessment = AllergenAssessment.NoSignals();
     var previous = new Product
     {
@@ -40,7 +40,7 @@ public sealed class InvoiceProcessingReconciliationTests
       ProductCode = "SKU-1",
       Quantity = 1m,
       Price = 5m,
-      Classification = classification,
+      Category = classification,
       AllergenAssessment = allergenAssessment,
       Metadata = new ProductMetadata
       {
@@ -64,7 +64,7 @@ public sealed class InvoiceProcessingReconciliationTests
 
     Assert.IsNull(failed);
     Assert.AreEqual("Fresh milk", product.Name);
-    Assert.AreSame(classification, product.Classification);
+    Assert.AreEqual(classification, product.Category);
     Assert.AreSame(allergenAssessment, product.AllergenAssessment);
     Assert.IsTrue(product.Metadata.IsEdited);
     Assert.IsTrue(product.Metadata.IsComplete);
@@ -76,14 +76,14 @@ public sealed class InvoiceProcessingReconciliationTests
   [TestMethod]
   public async Task AnalyzeInvoiceAsync_DuplicateAttributeMatches_UsesFifoAndLeavesUnmatchedClean()
   {
-    StandardClassification firstClassification = CreateClassification("10000001", "First");
-    StandardClassification secondClassification = CreateClassification("10000002", "Second");
+    ProductCategory firstClassification = ProductCategory.Milk;
+    ProductCategory secondClassification = ProductCategory.Cheese;
     var first = new Product
     {
       Name = "  Milk ",
       Quantity = 1m,
       Price = 5m,
-      Classification = firstClassification,
+      Category = firstClassification,
       Metadata = new ProductMetadata { IsEdited = true },
     };
     var second = new Product
@@ -91,7 +91,7 @@ public sealed class InvoiceProcessingReconciliationTests
       Name = "milk",
       Quantity = 1m,
       Price = 5m,
-      Classification = secondClassification,
+      Category = secondClassification,
       Metadata = new ProductMetadata { IsComplete = true },
     };
     Invoice invoice = CreateInvoice([first, second]);
@@ -111,11 +111,11 @@ public sealed class InvoiceProcessingReconciliationTests
     Product[] products = [.. analyzed.Items];
 
     Assert.IsNull(failed);
-    Assert.AreSame(firstClassification, products[0].Classification);
+    Assert.AreEqual(firstClassification, products[0].Category);
     Assert.IsTrue(products[0].Metadata.IsEdited);
-    Assert.AreSame(secondClassification, products[1].Classification);
+    Assert.AreEqual(secondClassification, products[1].Category);
     Assert.IsTrue(products[1].Metadata.IsComplete);
-    Assert.IsNull(products[2].Classification);
+    Assert.IsNull(products[2].Category);
     Assert.IsFalse(products[2].Metadata.IsEdited);
     Assert.AreEqual(0.9, products[2].Metadata.Confidence);
   }
@@ -180,14 +180,4 @@ public sealed class InvoiceProcessingReconciliationTests
       Scans = [new InvoiceScan(ScanType.JPG, new Uri("https://example.test/receipt.jpg"), null)],
     };
 
-  private static StandardClassification CreateClassification(string code, string label) =>
-    new(
-      ClassificationSystem.Gs1Gpc,
-      "test-version",
-      code,
-      label,
-      [new ClassificationNode("leaf", code, label)],
-      ClassificationOrigin.Manual,
-      confidence: null,
-      evidence: []);
 }

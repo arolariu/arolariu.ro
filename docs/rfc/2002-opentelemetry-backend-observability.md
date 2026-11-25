@@ -208,8 +208,7 @@ public static partial class Log
   - `invoices.operations` and `invoices.operations.duration`
   - `invoices.analysis` and `invoices.analysis.*`: analysis outcomes and duration, content-filter triggers, queue depth, enqueues and wait
     time, message outcomes and duration, lease recovery and loss, replacements and discards, persistence failures, capability outcomes,
-    duration, retries, content-filter and invalid-structured-output counts, taxonomy validation failures, input and output tokens, and
-    estimated cost
+    duration, retries, content-filter and invalid-structured-output counts, input and output tokens, and estimated cost
   - `invoices.cosmosdb.request_charge`: Cosmos DB request units
 
 **Automatic Metrics Collection**:
@@ -352,16 +351,6 @@ public sealed partial class InvoiceProcessingService : IInvoiceProcessingService
       // - Start/end timestamps
       // - Parent-child relationships
       // - Trace/span IDs for correlation
-
-      if (invoice.Classification is not null)
-      {
-        invoice.Classification = await analysisOrchestrationService
-          .ResolveManualClassificationAsync(
-            invoice.Classification.Code,
-            ClassificationSystem.EcoicopV2,
-            cancellationToken)
-          .ConfigureAwait(false);
-      }
 
       await invoiceOrchestrationService
         .CreateInvoiceObject(invoice, userIdentifier, cancellationToken)

@@ -2,7 +2,7 @@ namespace LocalDevelopment.Data.Tests.Scenarios.Invoices;
 
 using System.Text.Json;
 using System.Buffers.Binary;
-using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Classifications;
+using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Categories;
 
 using global::LocalDevelopment.Data.Scenarios.Invoices;
 
@@ -98,17 +98,16 @@ public sealed class SeedDataTests
     Assert.IsTrue(scenario.Invoices.Any(invoice => invoice.TaxDetails.Count > 1));
   }
 
-  /// <summary>Verifies classifications retain navigable canonical ancestor groups.</summary>
+  /// <summary>Materialized entries carry valid category IDs and preserve the uncategorized state.</summary>
   [TestMethod]
-  public void Materialize_ClassifiedProducts_PreserveCanonicalAncestors()
+  public void Materialize_Categories_AreDefinedForTheirDomain()
   {
-    MaterializedSeedScenario scenario = SeedData.Materialize(
-      SeedData.LoadScenario(ScenarioPath), new DateOnly(2026, 11, 4));
-
-    Assert.IsTrue(scenario.Invoices.SelectMany(invoice => invoice.Items)
-      .Any(product => product.Classification?.Hierarchy.Count > 1));
-    Assert.IsTrue(scenario.Merchants.All(merchant =>
-      merchant.Classification is { Hierarchy.Count: > 1 }));
+    var scenario = SeedData.Materialize(SeedData.LoadScenario(ScenarioPath), new DateOnly(2026, 11, 4));
+    Assert.IsTrue(scenario.Merchants.All(merchant => merchant.Category is { } id && Enum.IsDefined(id)));
+    Assert.IsTrue(scenario.Invoices.All(invoice => invoice.Category is not { } id || Enum.IsDefined(id)));
+    var products = scenario.Invoices.SelectMany(invoice => invoice.Items).ToArray();
+    Assert.IsTrue(products.Any(product => product.Category is null));
+    Assert.IsTrue(products.All(product => product.Category is not { } id || Enum.IsDefined(id)));
   }
 
   /// <summary>Verifies explicit recipes can describe a complete multi-ingredient purchase.</summary>
@@ -120,41 +119,6 @@ public sealed class SeedDataTests
 
     Assert.IsTrue(scenario.Invoices.SelectMany(invoice => invoice.PossibleRecipes)
       .Any(recipe => recipe.PurchasedIngredients.Count >= 2));
-  }
-
-  /// <summary>Classifications preserve the actual publisher labels and navigable hierarchy.</summary>
-  [TestMethod]
-  public void Materialize_Classifications_UseCanonicalHierarchy()
-  {
-    MaterializedSeedScenario scenario = SeedData.Materialize(SeedData.LoadScenario(ScenarioPath), new DateOnly(2026, 11, 4));
-    StandardClassification[] classifications = scenario.Merchants.Select(merchant => merchant.Classification)
-      .Concat(scenario.Invoices.Select(invoice => invoice.Classification))
-      .Concat(scenario.Invoices.SelectMany(invoice => invoice.Items).Select(product => product.Classification))
-      .OfType<StandardClassification>().ToArray();
-    foreach (var (system, file) in new[]
-    {
-      (ClassificationSystem.Gs1Gpc, "gpc-2026-05.min.json"),
-      (ClassificationSystem.EcoicopV2, "ecoicop-v2.min.json"),
-      (ClassificationSystem.Nace21, "nace-2.1.min.json"),
-    })
-    {
-      using JsonDocument catalog = JsonDocument.Parse(File.ReadAllText(Path.Combine(AppContext.BaseDirectory, "Taxonomies", file)));
-      Dictionary<string, JsonElement> nodes = catalog.RootElement.GetProperty("nodes").EnumerateArray()
-        .ToDictionary(node => node.GetProperty("code").GetString() ?? throw new InvalidDataException(), StringComparer.Ordinal);
-      foreach (StandardClassification actual in classifications.Where(value => value.System == system))
-      {
-        JsonElement node = nodes[actual.Code];
-        Assert.AreEqual(catalog.RootElement.GetProperty("version").GetString(), actual.Version);
-        Assert.AreEqual(node.GetProperty("officialLabel").GetString(), actual.OfficialLabel);
-        CollectionAssert.AreEqual(node.GetProperty("hierarchyCodes").EnumerateArray().Select(code => code.GetString()).ToArray(),
-          actual.Hierarchy.Select(ancestor => ancestor.Code).ToArray());
-        foreach (ClassificationNode ancestor in actual.Hierarchy)
-        {
-          Assert.AreEqual(nodes[ancestor.Code].GetProperty("officialLabel").GetString(), ancestor.OfficialLabel);
-          Assert.AreEqual(nodes[ancestor.Code].GetProperty("level").GetString(), ancestor.Level);
-        }
-      }
-    }
   }
 
   /// <summary>Tax extraction uses one cent-exact rule, including the half-cent boundary.</summary>
@@ -176,16 +140,16 @@ public sealed class SeedDataTests
     Assert.AreEqual(12.53m, details.Sum(detail => detail.NetAmount + detail.Amount));
   }
 
-  /// <summary>Every physical invoice has exactly one owner-local reciprocal merchant link.</summary>
+  /// <summary>Every invoice points to an existing merchant in its owner's scenario.</summary>
   [TestMethod]
-  public void Materialize_ApprovedScenario_HasExactReciprocalReferences()
+  public void Materialize_ApprovedScenario_HasOwnerLocalMerchantReferences()
   {
     MaterializedSeedScenario scenario = SeedData.Materialize(SeedData.LoadScenario(ScenarioPath), new DateOnly(2026, 11, 4));
+    var merchantIds = scenario.Merchants.Select(merchant => merchant.id).ToHashSet();
+    Assert.IsTrue(scenario.Invoices.All(invoice => merchantIds.Contains(invoice.MerchantReference)));
     foreach (var merchant in scenario.Merchants)
     {
       var invoices = scenario.Invoices.Where(invoice => invoice.MerchantReference == merchant.id).ToArray();
-      CollectionAssert.AreEquivalent(invoices.Select(invoice => invoice.id).ToArray(), merchant.ReferencedInvoices.ToArray());
-      Assert.AreEqual(merchant.ReferencedInvoices.Count(), merchant.ReferencedInvoices.Distinct().Count());
       Assert.IsTrue(invoices.All(invoice => invoice.UserIdentifier == merchant.CreatedBy));
       Assert.IsTrue(invoices.Any(invoice => !invoice.IsSoftDeleted));
       Assert.IsTrue(invoices.All(invoice => merchant.CreatedAt < invoice.PaymentInformation.TransactionDate));
@@ -369,7 +333,6 @@ public sealed class SeedDataTests
         merchant.CreatedAt,
         merchant.Address,
         merchant.AdditionalMetadata,
-        merchant.ReferencedInvoices,
       }),
       Invoices = scenario.Invoices.Select(invoice => new
       {
@@ -380,7 +343,7 @@ public sealed class SeedDataTests
         invoice.CreatedAt,
         invoice.MerchantReference,
         invoice.SharedWith,
-        invoice.Classification,
+        invoice.Category,
         invoice.Items,
         invoice.PossibleRecipes,
         invoice.PaymentInformation,

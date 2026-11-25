@@ -3,62 +3,23 @@
  * @module app/domains/invoices/_utils/labelUtilities/tests
  */
 
-import {ClassificationOrigin, ClassificationSystem, PaymentType} from "@/types/invoices";
-import type {ClassificationNode, StandardClassification} from "@/types/invoices";
+import {
+  getProductCategory,
+  invoiceCategories,
+  isInvoiceCategory,
+  isMerchantCategory,
+  isProductCategory,
+  merchantCategories,
+  productCategories,
+} from "@/lib/categories/categoryCatalog";
+import {InvoiceCategory, MerchantCategory, ProductCategory} from "@/types/invoices/Category";
+import {PaymentType} from "@/types/invoices/Payment";
+import {createTranslator} from "next-intl-selector";
 import {describe, expect, it} from "vitest";
-import {getClassificationGroup, getClassificationHierarchyPath, getClassificationLabel, getPaymentTypeLabel} from "./labelUtilities";
-
-// ---------------------------------------------------------------------------
-// Classification fixtures
-// ---------------------------------------------------------------------------
-
-/** ECOICOP V2 — 3-level hierarchy ending with code matching classification code. */
-const ecoicopDivision: ClassificationNode = {level: "division", code: "01", officialLabel: "Food and non-alcoholic beverages"};
-const ecoicopGroup: ClassificationNode = {level: "group", code: "01.1", officialLabel: "Food"};
-const ecoicopClass: ClassificationNode = {level: "class", code: "01.1.1", officialLabel: "Cereals and cereal products"};
-
-const invoiceClassification: StandardClassification = {
-  system: ClassificationSystem.EcoicopV2,
-  version: "2",
-  code: "01.1.1",
-  officialLabel: "Cereals and cereal products",
-  hierarchy: [ecoicopDivision, ecoicopGroup, ecoicopClass],
-  origin: ClassificationOrigin.Analysis,
-  confidence: 0.92,
-  evidence: [],
-};
-
-/** GS1 GPC — 3-level hierarchy ending with code matching classification code. */
-const gpcSegment: ClassificationNode = {level: "segment", code: "50000000", officialLabel: "Food/Beverage"};
-const gpcFamily: ClassificationNode = {level: "family", code: "50200000", officialLabel: "Beverages"};
-const gpcClass: ClassificationNode = {level: "class", code: "50202200", officialLabel: "Alcoholic Beverages"};
-
-const productClassification: StandardClassification = {
-  system: ClassificationSystem.Gs1Gpc,
-  version: "2026-05",
-  code: "50202200",
-  officialLabel: "Alcoholic Beverages",
-  hierarchy: [gpcSegment, gpcFamily, gpcClass],
-  origin: ClassificationOrigin.Analysis,
-  confidence: 0.85,
-  evidence: [],
-};
-
-/** NACE Rev 2.1 — 3-level hierarchy ending with code matching classification code. */
-const naceSection: ClassificationNode = {level: "section", code: "I", officialLabel: "ACCOMMODATION AND FOOD SERVICE ACTIVITIES"};
-const naceDivision: ClassificationNode = {level: "division", code: "55", officialLabel: "Accommodation"};
-const naceGroup: ClassificationNode = {level: "group", code: "55.1", officialLabel: "Hotels and similar accommodation"};
-
-const merchantClassification: StandardClassification = {
-  system: ClassificationSystem.Nace21,
-  version: "2.1",
-  code: "55.1",
-  officialLabel: "Hotels and similar accommodation",
-  hierarchy: [naceSection, naceDivision, naceGroup],
-  origin: ClassificationOrigin.Manual,
-  confidence: null,
-  evidence: [],
-};
+import english from "../../../../../messages/en.json";
+import french from "../../../../../messages/fr.json";
+import romanian from "../../../../../messages/ro.json";
+import {getPaymentTypeLabel, invoiceCategoryLabel, merchantCategoryLabel, productCategoryLabel} from "./labelUtilities";
 
 describe("invoice label utilities", () => {
   describe("getPaymentTypeLabel", () => {
@@ -76,58 +37,61 @@ describe("invoice label utilities", () => {
       expect(getPaymentTypeLabel(42)).toBe("Unknown");
     });
   });
-});
 
-describe("getClassificationGroup", () => {
-  it("returns the ECOICOP division for an invoice classification", () => {
-    expect(getClassificationGroup(invoiceClassification)).toBe("Food and non-alcoholic beverages");
+  describe("local invoice domain catalogs", () => {
+    it("offers every product, merchant, and invoice enum entry", () => {
+      expect(productCategories.map(({id}) => id).toSorted()).toEqual(Object.values(ProductCategory).toSorted());
+      expect(merchantCategories.map(({id}) => id).toSorted()).toEqual(Object.values(MerchantCategory).toSorted());
+      expect(invoiceCategories.map(({id}) => id).toSorted()).toEqual(Object.values(InvoiceCategory).toSorted());
+      expect(getProductCategory(ProductCategory.FreshFruit).key).toBe("freshFruit");
+    });
+
+    it("does not accept other domains or coerce an invalid category", () => {
+      expect(isProductCategory(1001)).toBe(true);
+      expect(isProductCategory(2001)).toBe(false);
+      expect(isMerchantCategory(3001)).toBe(false);
+      expect(isInvoiceCategory(1001)).toBe(false);
+      expect(isProductCategory("1001")).toBe(false);
+      expect(isProductCategory(1001.5)).toBe(false);
+      expect(isProductCategory(0)).toBe(false);
+    });
+
+    it("retains each product's declared recipe eligibility", () => {
+      expect(getProductCategory(ProductCategory.FreshFruit).isFood).toBe(true);
+      expect(getProductCategory(ProductCategory.PetFood).isFood).toBe(false);
+      expect(getProductCategory(ProductCategory.Other).isFood).toBe(false);
+    });
   });
 
-  it("returns the GPC segment for a product classification", () => {
-    expect(getClassificationGroup(productClassification)).toBe("Food/Beverage");
-  });
+  describe("category labels", () => {
+    it.each([undefined, 9999, "3001"])("renders cached category value %s as uncategorized", (category) => {
+      const t = createTranslator({locale: "en", messages: {categories: english.categories}});
+      const uncategorized = english.categories.ui.unclassified;
+      expect(invoiceCategoryLabel(t, category)).toBe(uncategorized);
+      expect(merchantCategoryLabel(t, category)).toBe(uncategorized);
+      expect(productCategoryLabel(t, category)).toBe(uncategorized);
+      expect(invoiceCategoryLabel(t, MerchantCategory.Supermarket)).toBe(uncategorized);
+    });
 
-  it("returns the NACE section for a merchant classification", () => {
-    expect(getClassificationGroup(merchantClassification)).toBe("ACCOMMODATION AND FOOD SERVICE ACTIVITIES");
-  });
+    it.each([
+      ["en", english],
+      ["ro", romanian],
+      ["fr", french],
+    ] as const)("contains a translated label for every selectable category in %s", (locale, dictionary) => {
+      const {categories} = dictionary;
+      for (const [labels, entries] of [
+        [categories.products, productCategories],
+        [categories.merchants, merchantCategories],
+        [categories.invoices, invoiceCategories],
+      ] as const) {
+        expect(Object.keys(labels).toSorted()).toEqual(entries.map(({key}) => key).toSorted());
+        expect(Object.values(labels).every((label) => label.trim() !== "")).toBe(true);
+      }
 
-  it("returns null when the hierarchy is empty rather than guessing from the label", () => {
-    const emptyHierarchy: StandardClassification = {
-      system: ClassificationSystem.EcoicopV2,
-      version: "2",
-      code: "01.1.1",
-      officialLabel: "Cereals and cereal products",
-      hierarchy: [],
-      origin: ClassificationOrigin.Analysis,
-      confidence: 0.9,
-      evidence: [],
-    };
-    expect(getClassificationGroup(emptyHierarchy)).toBeNull();
-  });
-
-  it("returns null for a null classification", () => {
-    expect(getClassificationGroup(null)).toBeNull();
-  });
-});
-
-describe("getClassificationLabel", () => {
-  it("returns the official label when classified", () => {
-    expect(getClassificationLabel(invoiceClassification, "Unclassified")).toBe("Cereals and cereal products");
-  });
-
-  it("returns the supplied fallback when unclassified", () => {
-    expect(getClassificationLabel(null, "Unclassified")).toBe("Unclassified");
-  });
-});
-
-describe("getClassificationHierarchyPath", () => {
-  it("joins the hierarchy labels from root to leaf", () => {
-    expect(getClassificationHierarchyPath(invoiceClassification)).toBe(
-      "Food and non-alcoholic beverages > Food > Cereals and cereal products",
-    );
-  });
-
-  it("returns an empty string for a null classification", () => {
-    expect(getClassificationHierarchyPath(null)).toBe("");
+      const t = createTranslator({locale, messages: {categories}});
+      expect(invoiceCategoryLabel(t, InvoiceCategory.RailTravel)).toBe(categories.invoices.railTravel);
+      expect(merchantCategoryLabel(t, MerchantCategory.Supermarket)).toBe(categories.merchants.supermarket);
+      expect(productCategoryLabel(t, ProductCategory.Milk)).toBe(categories.products.milk);
+    });
   });
 });

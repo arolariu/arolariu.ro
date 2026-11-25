@@ -83,7 +83,7 @@ BoundedContext/
 ├── Brokers/               # Thin external-system adapters
 ├── Endpoints/             # Protocol adapters
 ├── Modules/               # DI registration, endpoint mapping, metrics, logging
-├── Resources/Taxonomies/  # Embedded classification taxonomies
+├── Resources/Categories/  # Embedded flat category catalogs
 ├── Serialization/         # JSON converters
 └── Workers/               # Background host adapters
 ```
@@ -127,9 +127,9 @@ boundary.
 
 ### 2.5 External capabilities
 
-External storage, document extraction, generative analysis, taxonomy data, and other integrations are represented by focused Broker
-contracts. Implementations remain replaceable without changing the domain service graph. Foundations own provider-independent validation and
-resilience policy; Orchestrations and Processing services own capability composition.
+External storage, document extraction, generative analysis, and other integrations are represented by focused Broker contracts.
+Implementations remain replaceable without changing the domain service graph. Foundations own provider-independent validation and resilience
+policy; Orchestrations and Processing services own capability composition.
 
 ---
 

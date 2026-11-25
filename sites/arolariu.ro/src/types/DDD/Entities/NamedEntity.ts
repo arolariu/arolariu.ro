@@ -32,7 +32,7 @@ import type {BaseEntity} from "./";
  * @example
  * ```typescript
  * interface Merchant extends NamedEntity<string> {
- *   classification: StandardClassification | null;
+ *   category: MerchantCategory | null;
  * }
  *
  * const merchant: Merchant = {

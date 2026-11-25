@@ -25,10 +25,9 @@ describe("createInvoice", () => {
       initialScan: buildInvoiceScan({location: "https://storage.example.test/scan.jpg"}),
       additionalMetadata: {isImportant: "false", requiresAnalysis: "true"},
       metadata: {legacy: "unused"},
-      classification: null,
+      category: null,
       items: [],
       possibleRecipes: [],
-      category: 1,
     };
 
     const result = await createInvoice(payload);

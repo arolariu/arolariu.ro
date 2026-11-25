@@ -8,7 +8,6 @@ using arolariu.Backend.Domain.Invoices.Brokers.DatabaseBroker;
 using arolariu.Backend.Domain.Invoices.Brokers.DocumentIntelligenceBroker;
 using arolariu.Backend.Domain.Invoices.Brokers.GenerativeAnalysisBroker;
 using arolariu.Backend.Domain.Invoices.Brokers.QueueBroker;
-using arolariu.Backend.Domain.Invoices.Brokers.TaxonomyBroker;
 using arolariu.Backend.Domain.Invoices.Services.Foundation.AnalysisQueue;
 using arolariu.Backend.Domain.Invoices.Services.Foundation.Analysis;
 using arolariu.Backend.Domain.Invoices.Services.Foundation.InvoiceStorage;
@@ -76,7 +75,6 @@ public sealed class InvoiceStandardLayeringArchitectureTests
       typeof(AnalysisFoundationService),
       typeof(IDocumentIntelligenceBroker),
       typeof(IGenerativeAnalysisBroker),
-      typeof(ITaxonomyBroker),
       typeof(ILoggerFactory));
 
     AssertConstructorDependencies(

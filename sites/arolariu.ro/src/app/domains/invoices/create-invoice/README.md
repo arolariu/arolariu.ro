@@ -72,7 +72,7 @@ limited to skeleton primitives instead of importing an application component.
 
 - **Scan preview** - Thumbnail of the first selected scan (PDF scans show a placeholder)
 - **Invoice Name** (required) - Auto-suggested from first scan's filename
-- **Classification** - `ClassificationPicker` searching the ECOICOP v2 taxonomy
+- **Category** - `CategoryPicker` using bundled receipt options
 - **Payment Type** - Dropdown with PaymentType enum options
 - **Transaction Date** - Calendar picker (defaults to today)
 - **Description** (optional) - Textarea for notes
@@ -124,8 +124,8 @@ interface CreateInvoiceContextValue {
   setDescription: (desc: string) => void;
 
   // Classification (replaces legacy category)
-  classificationSelection: ClassificationSelection | null;
-  setClassification: (selection: ClassificationSelection | null) => void;
+  categorySelection: InvoiceCategory | null;
+  setCategory: (selection: InvoiceCategory | null) => void;
 
   // Invoice creation
   isCreating: boolean;
@@ -139,7 +139,7 @@ interface CreateInvoiceContextValue {
 - `fetchAaaSUserFromAuthService` - Auth check (page.tsx)
 - `fetchScans` - Loads the user's scans for the scan availability check (island)
 - `createInvoice` - Creates the minimal invoice entity (context)
-- `patchInvoice` - Applies name, description, payment information and `classificationCode` (context)
+- `patchInvoice` - Applies name, description, payment information and `category` (context)
 - `attachScanToInvoice` - Reconciles the remaining scans (context)
 - `updateScan` - Persists scan attachment metadata (context, fire-and-forget)
 - `analyzeInvoice` - Enqueues AI analysis; returns a queue message id, not a result (context, automatic fire-and-forget)
@@ -152,7 +152,7 @@ interface CreateInvoiceContextValue {
 All types are properly defined with strict TypeScript:
 
 ```typescript
-import type {ClassificationSelection, Invoice, InvoiceScanType} from "@/types/invoices";
+import type {InvoiceCategory, Invoice, InvoiceScanType} from "@/types/invoices";
 import type {PaymentType} from "@/types/invoices";
 import type {CachedScan} from "@/types/scans";
 ```
@@ -263,8 +263,8 @@ next-intl-selector, for example `t((m) => m.forms.invoices.createInvoice.toasts.
 2. **Templates**: Save invoice templates for quick creation
 3. **Drag & Drop**: Reorder selected scans
 4. **Preview**: Show scan preview in modal
-5. **Classification suggestions**: Suggest a taxonomy classification from the scans inside the wizard (today, analysis classifies the
-   invoice after creation)
+5. **Classification suggestions**: Suggest a category from the scans inside the wizard (today, analysis classifies the invoice after
+   creation)
 6. **Validation**: Client-side schema validation with Zod
 7. **Undo**: Allow undo before final creation
 

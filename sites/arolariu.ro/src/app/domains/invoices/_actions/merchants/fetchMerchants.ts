@@ -24,12 +24,12 @@
  * **Data Characteristics:**
  * - Returns merchants referenced by the caller's own invoices
  * - Excludes merchants with no current invoice associations
- * - Includes AI-enriched fields (normalized name, NACE Rev. 2.1 classification)
- * - Classification is provided via `classification` (StandardClassification | null)
+ * - Includes AI-enriched fields (normalized name, merchant category)
+ * - Classification is provided via `category` (MerchantCategory | null)
  *
  * **Common Use Cases:**
  * - Spending analysis by merchant
- * - Merchant classification breakdown (NACE Rev. 2.1)
+ * - Merchant classification breakdown
  * - Merchant dropdown filters in invoice lists
  * - Spending trends by store/business
  *
@@ -78,7 +78,7 @@ type ServerActionOutputType = ServerActionResult<ReadonlyArray<Merchant>>;
  * **Data Returned:**
  * Array of complete Merchant entities, each including:
  * - **Identity**: `id`, `name` (business name)
- * - **Classification**: `classification` (NACE Rev. 2.1 StandardClassification, or `null` when not yet classified)
+ * - **Classification**: `category` (numeric merchant category or `null`)
  * - **Location**: `address` (ContactInformation with fullName, address, phoneNumber, emailAddress, website)
  * - **Enrichment**: AI-detected and normalized fields
  * - **Metadata**: `createdAt`, `lastUpdatedAt` timestamps
@@ -138,7 +138,7 @@ type ServerActionOutputType = ServerActionResult<ReadonlyArray<Merchant>>;
  *
  *   // Display in dropdown
  *   merchants.forEach((m) => {
- *     console.log(`${m.name} - ${m.classification?.code ?? "unclassified"}`);
+ *     console.log(`${m.name} - ${m.category ?? "unclassified"}`);
  *   });
  * } else {
  *   console.error("Failed to fetch merchants:", result.error);
@@ -147,12 +147,12 @@ type ServerActionOutputType = ServerActionResult<ReadonlyArray<Merchant>>;
  *
  * @example
  * ```typescript
- * // Group merchants by NACE classification for analytics
+ * // Group merchants by category for analytics
  * const result = await fetchMerchants();
  *
  * if (result.success) {
  *   const byClassification = result.data.reduce((acc, merchant) => {
- *     const code = merchant.classification?.code ?? "unclassified";
+ *     const code = merchant.category ?? "unclassified";
  *     if (!acc[code]) acc[code] = [];
  *     acc[code].push(merchant);
  *     return acc;
@@ -175,7 +175,7 @@ type ServerActionOutputType = ServerActionResult<ReadonlyArray<Merchant>>;
  *
  *   console.log("Merchants from your invoices:");
  *   sorted.forEach((m, i) => {
- *     console.log(`${i + 1}. ${m.name} (${m.classification?.officialLabel ?? "unclassified"})`);
+ *     console.log(`${i + 1}. ${m.name} (${m.category ?? "unclassified"})`);
  *   });
  * }
  * ```

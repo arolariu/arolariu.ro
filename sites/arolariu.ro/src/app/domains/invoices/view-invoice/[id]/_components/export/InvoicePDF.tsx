@@ -30,8 +30,20 @@
 
 import {formatAmount, formatDate} from "@/lib/utils.generic";
 import type {Invoice, Merchant} from "@/types/invoices";
-import {Document, Page, StyleSheet, Text, View} from "@react-pdf/renderer";
+import {Document, Font, Page, StyleSheet, Text, View} from "@react-pdf/renderer";
 import {getPaymentTypeLabel} from "../../../../_utils/labelUtilities";
+
+// PDF's built-in Helvetica encoding cannot render extended Latin characters such as Romanian ă and ț.
+Font.register({
+  family: "Category Latin",
+  // eslint-disable-next-line unicorn/no-missing-local-resource -- Next resolves and bundles this package export.
+  src: new URL("@fontsource/ibm-plex-sans/files/ibm-plex-sans-latin-400-normal.woff", import.meta.url).href,
+});
+Font.register({
+  family: "Category Latin Extended",
+  // eslint-disable-next-line unicorn/no-missing-local-resource -- Next resolves and bundles this package export.
+  src: new URL("@fontsource/ibm-plex-sans/files/ibm-plex-sans-latin-ext-400-normal.woff", import.meta.url).href,
+});
 
 /**
  * PDF stylesheet with professional design.
@@ -101,6 +113,9 @@ const styles = StyleSheet.create({
     fontSize: 10,
     color: "#6b7280",
     fontWeight: "normal",
+  },
+  categoryText: {
+    fontFamily: ["Category Latin", "Category Latin Extended"],
   },
   labelBold: {
     width: "40%",
@@ -223,7 +238,10 @@ interface InvoicePDFProps {
   readonly merchant: Merchant | null;
   /** Locale-aware messages supplied by the interactive export surface. */
   readonly messages: Readonly<{
-    readonly classification: string;
+    readonly invoiceCategory: string;
+    readonly invoiceCategoryValue: string;
+    readonly productCategory: string;
+    readonly productCategoryLabels: Readonly<Record<string, string>>;
     readonly unclassified: string;
   }>;
 }
@@ -286,7 +304,7 @@ function getPrintableText(value: string | null | undefined, fallback: string): s
  *   <InvoicePDF
  *     invoice={invoice}
  *     merchant={merchant}
- *     messages={{classification: "Classification", unclassified: "Unclassified"}}
+ *     messages={localizedCategoryMessages}
  *   />,
  * ).toBlob();
  * ```
@@ -349,8 +367,8 @@ export function InvoicePDF({invoice, merchant, messages}: Readonly<InvoicePDFPro
           ) : null}
 
           <View style={styles.infoRow}>
-            <Text style={styles.label}>{messages.classification}:</Text>
-            <Text style={styles.value}>{invoice.classification?.officialLabel ?? messages.unclassified}</Text>
+            <Text style={styles.label}>{messages.invoiceCategory}:</Text>
+            <Text style={[styles.value, styles.categoryText]}>{messages.invoiceCategoryValue}</Text>
           </View>
 
           <View style={styles.infoRow}>
@@ -471,7 +489,7 @@ export function InvoicePDF({invoice, merchant, messages}: Readonly<InvoicePDFPro
             <View style={styles.tableHeader}>
               <Text style={[styles.tableCell, styles.tableCellNumber]}>#</Text>
               <Text style={[styles.tableCell, styles.tableCellProduct]}>Product Name</Text>
-              <Text style={[styles.tableCell, styles.tableCellCategory]}>Category</Text>
+              <Text style={[styles.tableCell, styles.tableCellCategory]}>{messages.productCategory}</Text>
               <Text style={[styles.tableCell, styles.tableCellQty]}>Qty</Text>
               <Text style={[styles.tableCell, styles.tableCellUnit]}>Unit</Text>
               <Text style={[styles.tableCell, styles.tableCellPrice]}>Unit Price</Text>
@@ -491,8 +509,8 @@ export function InvoicePDF({invoice, merchant, messages}: Readonly<InvoicePDFPro
                     <Text style={styles.allergens}>Allergens: {product.allergenAssessment.signals.map((s) => s.code).join(", ")}</Text>
                   ) : null}
                 </View>
-                <Text style={[styles.tableCell, styles.tableCellCategory]}>
-                  {product.classification?.officialLabel ?? "Not Classified"}
+                <Text style={[styles.tableCell, styles.tableCellCategory, styles.categoryText]}>
+                  {messages.productCategoryLabels[String(product.category)] ?? messages.unclassified}
                 </Text>
                 <Text style={[styles.tableCell, styles.tableCellQty]}>{product.quantity}</Text>
                 <Text style={[styles.tableCell, styles.tableCellUnit]}>{getPrintableText(product.quantityUnit, "pcs")}</Text>

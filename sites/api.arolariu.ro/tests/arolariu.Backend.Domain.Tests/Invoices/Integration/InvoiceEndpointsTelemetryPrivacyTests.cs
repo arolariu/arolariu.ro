@@ -52,7 +52,6 @@ public sealed class InvoiceEndpointsTelemetryPrivacyTests
         invoice.id,
         ownerIdentifier,
         It.IsAny<arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Products.Product>(),
-        It.IsAny<string?>(),
         It.IsAny<CancellationToken>()))
       .Returns(Task.CompletedTask);
     service
@@ -66,7 +65,6 @@ public sealed class InvoiceEndpointsTelemetryPrivacyTests
       .Setup(processing => processing.CreateMerchant(
         It.IsAny<arolariu.Backend.Domain.Invoices.DDD.Entities.Merchants.Merchant>(),
         null,
-        It.IsAny<string?>(),
         It.IsAny<CancellationToken>()))
       .Returns(Task.CompletedTask);
 

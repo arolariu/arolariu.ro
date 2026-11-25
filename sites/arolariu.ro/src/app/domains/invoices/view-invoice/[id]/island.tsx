@@ -109,7 +109,7 @@ export default function RenderViewInvoiceScreen(props: Readonly<Props>): React.J
               </div>
 
               <div className={styles["centerItem"]}>
-                <CategoryInsightsCardContainer />
+                <CategoryInsightsCardContainer canEdit={Boolean(isOwner && !isLoadingUserInformation)} />
               </div>
 
               <div className={styles["centerItem"]}>

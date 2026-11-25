@@ -576,7 +576,7 @@ function makeRunGenerators(
     const submitted = yield* submitSetupAction({
       id: generatorActionId,
       scope: "repository",
-      summary: "Verify pinned taxonomies and prepare Website licenses, GraphQL, and internationalization artifacts.",
+      summary: "Prepare Website licenses, GraphQL, and internationalization artifacts.",
       execute: Effect.gen(function* () {
         const nxOutcome = yield* runPhaseCommand(context, NX_PROJECTS_COMMAND, {cwd: context.paths.root});
         const projects = parseNxProjects(nxOutcome);
@@ -671,7 +671,7 @@ function makeRunGenerators(
     return yield* phaseResult(startedAt, {
       id,
       status: "succeeded",
-      summary: "Nx metadata, pinned taxonomies, and generated checkout artifacts are ready.",
+      summary: "Nx metadata and generated checkout artifacts are ready.",
       evidence: [
         `Nx reported ${projectCount} project(s).`,
         `Executed action: ${generatorActionId}`,

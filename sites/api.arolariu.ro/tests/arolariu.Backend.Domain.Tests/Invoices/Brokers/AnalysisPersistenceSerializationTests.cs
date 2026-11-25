@@ -1,10 +1,10 @@
 namespace arolariu.Backend.Domain.Tests.Invoices.Brokers;
 
 using System;
-using System.Collections.Generic;
 using System.Linq;
 
 using arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices;
+using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Categories;
 using arolariu.Backend.Domain.Invoices.DDD.Entities.Merchants;
 using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Allergens;
 using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Products;
@@ -14,6 +14,7 @@ using arolariu.Backend.Domain.Tests.Builders;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 
 /// <summary>
 /// Guards the persistence round-trip of the analysis value objects introduced by the analysis cutover.
@@ -23,39 +24,54 @@ using Newtonsoft.Json;
 /// <c>CosmosClient</c> container APIs, so the entities are serialized by the Cosmos SDK's own serializer rather than
 /// by Entity Framework. The <c>OnModelCreating</c> value-converter configuration therefore never participates in a
 /// production round-trip, and asserting on it would prove nothing about real behaviour.</para>
-/// <para><b>What is actually at risk:</b> the cutover replaced flat enums with immutable records that expose get-only
-/// <see cref="IReadOnlyList{T}"/> members and enforce their invariants inside validating constructors. A serializer
-/// that cannot bind those constructors would either drop data silently or throw on every read. These tests exercise
-/// the serializer the SDK actually uses so that failure mode is caught here rather than in production.</para>
+/// <para>Categories use numeric IDs on disk, while recipe and allergen records expose get-only members
+/// and validate their invariants at construction. Both must survive the SDK's JSON round trip.</para>
 /// </remarks>
 [TestClass]
 public sealed class AnalysisPersistenceSerializationTests
 {
+  /// <summary>Cosmos system metadata in a query row does not become application data.</summary>
+  [TestMethod]
+  public void Invoice_CosmosSystemMetadata_IsNotWrittenByTheModel()
+  {
+    Invoice invoice = JsonConvert.DeserializeObject<Invoice>("""{"_etag":"invoice-revision"}""")!;
+
+    Assert.DoesNotContain("_etag", JsonConvert.SerializeObject(invoice), StringComparison.Ordinal);
+  }
+
+  /// <summary>Materializing a merchant from a query does not retain provider metadata or the retired reverse list.</summary>
+  [TestMethod]
+  public void MerchantQuery_LegacyReverseListAndRevision_AreNotWrittenByTheModel()
+  {
+    const string json = """{"_etag":"merchant-revision","ReferencedInvoices":["11111111-1111-4111-8111-111111111111"]}""";
+    Merchant merchant = JsonConvert.DeserializeObject<Merchant>(json)!;
+
+    var stored = JObject.FromObject(merchant);
+    Assert.IsNull(stored["_etag"]);
+    Assert.IsNull(stored["ReferencedInvoices"]);
+  }
+
   #region Invoice
 
   /// <summary>
-  /// Verifies an invoice classification survives a serializer round-trip with its hierarchy intact.
+  /// Verifies a receipt category survives a serializer round-trip as a numeric ID.
   /// </summary>
   [TestMethod]
-  public void Invoice_Classification_SurvivesSerializerRoundTrip()
+  public void Invoice_Category_SurvivesSerializerRoundTrip()
   {
     // Arrange
     var invoice = new Invoice
     {
       id = Guid.CreateVersion7(),
       UserIdentifier = Guid.CreateVersion7(),
-      Classification = ClassificationTestData.Ecoicop("01.1.1", "Bread and cereals"),
+      Category = InvoiceCategory.Groceries,
     };
 
     // Act
     Invoice roundTripped = RoundTrip(invoice);
 
     // Assert
-    Assert.IsNotNull(roundTripped.Classification);
-    Assert.AreEqual("01.1.1", roundTripped.Classification.Code);
-    Assert.AreEqual("Bread and cereals", roundTripped.Classification.OfficialLabel);
-    Assert.HasCount(1, roundTripped.Classification.Hierarchy, "The hierarchy must not be flattened away.");
-    Assert.AreEqual("01.1.1", roundTripped.Classification.Hierarchy[^1].Code);
+    Assert.AreEqual(InvoiceCategory.Groceries, roundTripped.Category);
   }
 
   /// <summary>
@@ -91,16 +107,16 @@ public sealed class AnalysisPersistenceSerializationTests
   #region Product
 
   /// <summary>
-  /// Verifies a product's classification and allergen assessment survive a serializer round-trip.
+  /// Verifies a product's category and allergen assessment survive a serializer round-trip.
   /// </summary>
   [TestMethod]
-  public void Product_ClassificationAndAllergenAssessment_SurviveSerializerRoundTrip()
+  public void Product_CategoryAndAllergenAssessment_SurviveSerializerRoundTrip()
   {
     // Arrange
     var product = new Product
     {
       Name = "Wholemeal loaf",
-      Classification = ClassificationTestData.Gpc("10000045", "Bread"),
+      Category = ProductCategory.Bread,
       AllergenAssessment = AllergenAssessment.Detected(
         [
           new AllergenSignal(
@@ -122,8 +138,7 @@ public sealed class AnalysisPersistenceSerializationTests
     Product roundTripped = RoundTrip(invoice).Items.Single();
 
     // Assert
-    Assert.IsNotNull(roundTripped.Classification);
-    Assert.AreEqual("10000045", roundTripped.Classification.Code);
+    Assert.AreEqual(ProductCategory.Bread, roundTripped.Category);
 
     Assert.IsNotNull(roundTripped.AllergenAssessment);
     Assert.HasCount(1, roundTripped.AllergenAssessment.Signals);
@@ -139,38 +154,34 @@ public sealed class AnalysisPersistenceSerializationTests
   #region Merchant
 
   /// <summary>
-  /// Verifies a merchant classification survives a serializer round-trip.
+  /// Verifies a merchant category survives a serializer round-trip.
   /// </summary>
   [TestMethod]
-  public void Merchant_Classification_SurvivesSerializerRoundTrip()
+  public void Merchant_Category_SurvivesSerializerRoundTrip()
   {
     // Arrange
     var merchant = new Merchant
     {
       id = Guid.CreateVersion7(),
       Name = "Corner Bakery",
-      Classification = ClassificationTestData.Nace("47.24", "Retail sale of bread"),
+      Category = MerchantCategory.Bakery,
     };
 
     // Act
     Merchant roundTripped = RoundTrip(merchant);
 
     // Assert
-    Assert.IsNotNull(roundTripped.Classification);
-    Assert.AreEqual("47.24", roundTripped.Classification.Code);
-    Assert.AreEqual("Retail sale of bread", roundTripped.Classification.OfficialLabel);
-    Assert.HasCount(1, roundTripped.Classification.Hierarchy);
+    Assert.AreEqual(MerchantCategory.Bakery, roundTripped.Category);
   }
 
-  /// <summary>Verifies the transient classification code never enters Cosmos JSON.</summary>
+  /// <summary>Verifies an uncategorized invoice is written with a null category.</summary>
   [TestMethod]
-  public void Invoice_ClassificationCode_IsExcludedFromPersistenceSerialization()
+  public void Invoice_Uncategorized_RoundTripsNull()
   {
     var invoice = new Invoice
     {
       id = Guid.CreateVersion7(),
       UserIdentifier = Guid.NewGuid(),
-      ClassificationCode = "01.1",
     };
 
     string json = JsonConvert.SerializeObject(invoice);
@@ -178,10 +189,51 @@ public sealed class AnalysisPersistenceSerializationTests
       ?? throw new AssertFailedException("Deserializing Invoice produced null.");
 
     Assert.IsFalse(json.Contains("ClassificationCode", StringComparison.OrdinalIgnoreCase));
-    Assert.IsNull(roundTripped.ClassificationCode);
+    Assert.AreEqual(JTokenType.Null, JObject.Parse(json)["Category"]?.Type);
+    Assert.IsNull(roundTripped.Category);
   }
 
   #endregion
+
+  /// <summary>Rejects category tokens that the default enum deserializer would otherwise coerce.</summary>
+  [TestMethod]
+  [DataRow("\"1001\"", "\"2001\"", "\"3001\"")]
+  [DataRow("\"FreshFruit\"", "\"Supermarket\"", "\"Groceries\"")]
+  [DataRow("2001", "3001", "1001")]
+  [DataRow("1001.0", "2001.0", "3001.0")]
+  [DataRow("0", "0", "0")]
+  [DataRow("99999999999999999999999999", "99999999999999999999999999", "99999999999999999999999999")]
+  public void Category_InvalidStoredToken_IsRejected(string product, string merchant, string invoice)
+  {
+    Assert.ThrowsExactly<JsonSerializationException>(() =>
+      JsonConvert.DeserializeObject<Invoice>($$"""{"Items":[{"Name":"Milk","Category":{{product}}}]}"""));
+    Assert.ThrowsExactly<JsonSerializationException>(() =>
+      JsonConvert.DeserializeObject<Merchant>($$"""{"Category":{{merchant}}}"""));
+    Assert.ThrowsExactly<JsonSerializationException>(() =>
+      JsonConvert.DeserializeObject<Invoice>($$"""{"Category":{{invoice}}}"""));
+  }
+
+  /// <summary>Stored values retain the existing property casing and numeric/null token kinds.</summary>
+  [TestMethod]
+  public void Category_PersistedValues_AreNumericOrNull()
+  {
+    var invoice = new Invoice
+    {
+      id = Guid.NewGuid(),
+      UserIdentifier = Guid.NewGuid(),
+      Category = InvoiceCategory.Other,
+      Items = [new Product { Category = ProductCategory.Milk }, new Product()],
+    };
+    var merchant = new Merchant { Category = MerchantCategory.Supermarket };
+    var invoiceJson = JObject.Parse(JsonConvert.SerializeObject(invoice));
+    var merchantJson = JObject.Parse(JsonConvert.SerializeObject(merchant));
+    var products = (JArray?)invoiceJson["Items"];
+    Assert.IsNotNull(products);
+    Assert.AreEqual(JTokenType.Integer, invoiceJson["Category"]?.Type);
+    Assert.AreEqual(JTokenType.Integer, products[0]["Category"]?.Type);
+    Assert.AreEqual(JTokenType.Null, products[1]["Category"]?.Type);
+    Assert.AreEqual(JTokenType.Integer, merchantJson["Category"]?.Type);
+  }
 
   #region Helpers
 

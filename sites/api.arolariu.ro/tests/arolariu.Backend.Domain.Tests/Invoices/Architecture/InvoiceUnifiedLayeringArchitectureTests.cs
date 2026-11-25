@@ -11,7 +11,7 @@ using arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices;
 using arolariu.Backend.Domain.Invoices.DDD.Analysis.Contracts;
 using arolariu.Backend.Domain.Invoices.DDD.Entities.Merchants;
 using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Allergens;
-using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Classifications;
+using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Categories;
 using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Products;
 using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Recipes;
 using arolariu.Backend.Domain.Invoices.Endpoints;
@@ -51,7 +51,6 @@ public sealed class InvoiceUnifiedLayeringArchitectureTests
     Type analysisFoundation = RequireType($"{ServicesNamespace}.Foundation.Analysis.AnalysisFoundationService");
     Type documentBroker = RequireType($"{BrokersNamespace}.DocumentIntelligenceBroker.IDocumentIntelligenceBroker");
     Type generativeBroker = RequireType($"{BrokersNamespace}.GenerativeAnalysisBroker.IGenerativeAnalysisBroker");
-    Type taxonomyBroker = RequireType($"{BrokersNamespace}.TaxonomyBroker.ITaxonomyBroker");
 
     AssertConstructor(management, processingContract, typeof(ILoggerFactory));
     AssertConstructor(
@@ -69,7 +68,6 @@ public sealed class InvoiceUnifiedLayeringArchitectureTests
       analysisFoundation,
       documentBroker,
       generativeBroker,
-      taxonomyBroker,
       typeof(ILoggerFactory));
   }
 
@@ -131,7 +129,7 @@ public sealed class InvoiceUnifiedLayeringArchitectureTests
   }
 
   /// <summary>
-  /// Verifies internal persistence workflows and product replacement are absent from public service contracts.
+  /// Verifies internal persistence workflows remain private and a product edit uses one service command.
   /// </summary>
   [TestMethod]
   public void ServiceContracts_InternalWorkflows_ExposeOnlyApprovedOperations()
@@ -142,8 +140,10 @@ public sealed class InvoiceUnifiedLayeringArchitectureTests
     Assert.IsNull(typeof(IInvoiceManagementService).GetMethod("PersistMerchantAnalysisAsync"));
     Assert.IsNull(processingContract.GetMethod("PersistInvoiceAnalysisAsync"));
     Assert.IsNull(processingContract.GetMethod("PersistMerchantAnalysisAsync"));
-    Assert.IsNull(typeof(IInvoiceManagementService).GetMethod("UpdateProduct"));
-    Assert.IsNull(processingContract.GetMethod("UpdateProduct"));
+    Assert.IsNotNull(typeof(IInvoiceManagementService).GetMethod("UpdateProduct"));
+    Assert.IsNotNull(processingContract.GetMethod("UpdateProduct"));
+    Assert.IsNull(typeof(IInvoiceManagementService).GetMethod("GetProduct"));
+    Assert.IsNull(processingContract.GetMethod("GetProduct"));
     Assert.IsNotNull(typeof(IInvoiceManagementService).GetMethod("ProcessAnalysisAsync"));
     Assert.IsNotNull(processingContract.GetMethod("ProcessAnalysisAsync"));
     Assert.IsNull(typeof(IInvoiceManagementService).GetMethod("CreateInvoiceScan"));

@@ -3,20 +3,12 @@
  * @module data/mocks/invoice.test
  */
 
-import {ClassificationOrigin, ClassificationSystem, InvoiceScanType, RecipeDifficulty, type StandardClassification} from "@/types/invoices";
+import {InvoiceCategory} from "@/types/invoices/Category";
+import {InvoiceScanType, RecipeDifficulty} from "@/types/invoices";
 import {describe, expect, it} from "vitest";
 import {InvoiceBuilder, createInvoiceBuilder, generateRandomInvoice, generateRandomInvoices, mockInvoice, mockInvoiceList} from "./invoice";
 
-const TEST_CLASSIFICATION: StandardClassification = {
-  system: ClassificationSystem.EcoicopV2,
-  version: "2.0",
-  code: "01.1.1",
-  officialLabel: "Food",
-  hierarchy: [{level: "division", code: "01", officialLabel: "Food and non-alcoholic beverages"}],
-  origin: ClassificationOrigin.Manual,
-  confidence: null,
-  evidence: [],
-};
+const TEST_CATEGORY = InvoiceCategory.Groceries;
 
 describe("InvoiceBuilder", () => {
   describe("Constructor", () => {
@@ -105,8 +97,8 @@ describe("InvoiceBuilder", () => {
     it("should set classification and clear it", () => {
       const builder = new InvoiceBuilder();
 
-      expect(builder.withClassification(TEST_CLASSIFICATION).build().classification).toEqual(TEST_CLASSIFICATION);
-      expect(builder.withClassification(null).build().classification).toBeNull();
+      expect(builder.withCategory(TEST_CATEGORY).build().category).toEqual(TEST_CATEGORY);
+      expect(builder.withCategory(null).build().category).toBeNull();
     });
 
     it("should set items", () => {
@@ -120,7 +112,7 @@ describe("InvoiceBuilder", () => {
           quantityUnit: "pcs",
           totalPrice: 20,
           metadata: {isComplete: true, isEdited: false, isSoftDeleted: false, confidence: 0},
-          classification: null,
+          category: null,
           allergenAssessment: null,
         },
       ];

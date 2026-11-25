@@ -5,7 +5,6 @@
 
 import {fetchBFFUserFromAuthService} from "@/lib/actions/user/fetchUser";
 import {fetchWithTimeout} from "@/lib/utils.server";
-import {ClassificationOrigin, ClassificationSystem, type StandardClassification} from "@/types/invoices";
 import {beforeEach, describe, expect, it, vi} from "vitest";
 import {TestDataBuilder} from "../../../../../../../tests/helpers";
 
@@ -128,7 +127,7 @@ describe("addInvoiceProduct", () => {
     expect(mockRevalidatePath).not.toHaveBeenCalled();
   });
 
-  it("sends classificationCode and allergenAssessment; omits legacy totalPrice and metadata", async () => {
+  it("sends category and allergenAssessment; omits legacy totalPrice and metadata", async () => {
     const invoiceId = "11111111-1111-4111-8111-111111111111";
     const product = TestDataBuilder.build("product", {name: "Milk", price: 5.99});
 
@@ -136,30 +135,21 @@ describe("addInvoiceProduct", () => {
 
     const callArgs = mockFetchWithTimeout.mock.calls[0];
     const body = JSON.parse(callArgs?.[1]?.body as string);
-    expect(body).toHaveProperty("classificationCode");
+    expect(body).toHaveProperty("category");
     expect(body).toHaveProperty("allergenAssessment");
     expect(body).not.toHaveProperty("totalPrice");
     expect(body).not.toHaveProperty("metadata");
   });
 
-  it("sends null classificationCode when classification origin is Analysis", async () => {
+  it("sends the numeric category when creating a product", async () => {
     const invoiceId = "11111111-1111-4111-8111-111111111111";
-    const analysisClassification: StandardClassification = {
-      system: ClassificationSystem.Gs1Gpc,
-      version: "2024",
-      code: "10000025",
-      officialLabel: "Dairy",
-      hierarchy: [],
-      origin: ClassificationOrigin.Analysis,
-      confidence: 0.95,
-      evidence: [],
-    };
-    const product = TestDataBuilder.build("product", {classification: analysisClassification});
+    const savedCategory = 1014;
+    const product = TestDataBuilder.build("product", {category: savedCategory});
 
     await addInvoiceProduct({invoiceId, product});
 
     const callArgs = mockFetchWithTimeout.mock.calls[0];
     const body = JSON.parse(callArgs?.[1]?.body as string);
-    expect(body.classificationCode).toBeNull();
+    expect(body.category).toBe(1014);
   });
 });

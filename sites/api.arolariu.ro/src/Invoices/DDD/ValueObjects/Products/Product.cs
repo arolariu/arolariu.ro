@@ -3,7 +3,8 @@ namespace arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Products;
 using System.Text.Json.Serialization;
 
 using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Allergens;
-using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Classifications;
+using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Categories;
+using arolariu.Backend.Domain.Invoices.Serialization;
 
 using Microsoft.EntityFrameworkCore;
 
@@ -11,14 +12,14 @@ using Microsoft.EntityFrameworkCore;
 /// Represents a single invoice line item (product) enriched via OCR and AI classification pipelines.
 /// </summary>
 /// <remarks>
-/// <para>Encapsulates product name (<c>Name</c>), standardised classification
-/// (<c>Classification</c>), quantitative details (<c>Quantity</c>, <c>QuantityUnit</c>), commercial identifiers (<c>ProductCode</c>), pricing
+/// <para>Encapsulates product name (<c>Name</c>), category
+/// (<c>Category</c>), quantitative details (<c>Quantity</c>, <c>QuantityUnit</c>), commercial identifiers (<c>ProductCode</c>), pricing
 /// (<c>Price</c>, computed <c>TotalPrice</c>) and analysis artifacts (<c>AllergenAssessment</c>, <c>Metadata</c>).</para>
 /// <para><b>Identity:</b> This value object is deliberately identity-free. Line items are correlated to analysis results
 /// positionally, by their ordinal within the owning invoice.</para>
 /// <para><b>Lifecycle:</b> Instances are owned by the containing invoice aggregate and are persisted as embedded documents
 /// (Cosmos owned collection). They SHOULD NOT be shared across invoice aggregates.</para>
-/// <para><b>Analysis:</b> <c>Classification</c> and <c>AllergenAssessment</c> are progressively enriched; both are
+/// <para><b>Analysis:</b> <c>Category</c> and <c>AllergenAssessment</c> are progressively enriched; both are
 /// <see langword="null"/> until an analysis run or a manual selection populates them.</para>
 /// <para><b>Thread-safety:</b> Not thread-safe; mutate only within the aggregate's modification workflow.</para>
 /// </remarks>
@@ -30,13 +31,10 @@ public class Product
   [JsonPropertyOrder(0)]
   public string Name { get; set; } = string.Empty;
 
-  /// <summary>Standardised classification assigned to this product.</summary>
-  /// <remarks>
-  /// <para><b>Expected system:</b> <see cref="ClassificationSystem.Gs1Gpc"/>. Processing resolves every manual selection canonically before persistence.</para>
-  /// <para><see langword="null"/> means the line item has not been classified yet.</para>
-  /// </remarks>
+  /// <summary>The selected product category, or null if uncategorized.</summary>
   [JsonPropertyOrder(1)]
-  public StandardClassification? Classification { get; set; }
+  [Newtonsoft.Json.JsonConverter(typeof(StrictStoredCategoryConverter<ProductCategory>))]
+  public ProductCategory? Category { get; set; }
 
   /// <summary>Quantity of the product associated with the unit indicated by <see cref="QuantityUnit"/>.</summary>
   /// <remarks><para>Must be non-negative. Zero often indicates an OCR failure and SHOULD be corrected upstream.</para></remarks>

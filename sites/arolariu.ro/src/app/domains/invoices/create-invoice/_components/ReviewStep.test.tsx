@@ -127,14 +127,14 @@ describe("ReviewStep", () => {
       renderReviewStep();
       selectScans(buildScan("one"));
 
-      expect(screen.getByText(/details\.noClassification/)).toBeInTheDocument();
+      expect(screen.getByText(/details\.noCategory/)).toBeInTheDocument();
 
       act(() => {
-        context.setClassification({system: "ECOICOP_V2", code: "01.1.1"});
+        context.setCategory(3004);
       });
 
-      expect(screen.getByText("01.1.1")).toBeInTheDocument();
-      expect(screen.queryByText(/details\.noClassification/)).not.toBeInTheDocument();
+      expect(screen.getByText("categories.invoices.bakeryPurchases")).toBeInTheDocument();
+      expect(screen.queryByText(/details\.noCategory/)).not.toBeInTheDocument();
     });
 
     it("renders the description row only when a description is provided", () => {

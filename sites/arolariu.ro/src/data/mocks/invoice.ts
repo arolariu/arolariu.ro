@@ -33,7 +33,7 @@ import {
   type PaymentType,
   type Product,
   type RecipeSuggestion,
-  type StandardClassification,
+  type InvoiceCategory,
 } from "@/types/invoices";
 import {faker} from "@faker-js/faker";
 import {generateRandomProduct} from "./product";
@@ -67,7 +67,7 @@ import {generateRandomProduct} from "./product";
  * const invoice = new InvoiceBuilder()
  *   .withId("invoice-123")
  *   .withName("Grocery Shopping")
- *   .withClassification(groceryClassification)
+ *   .withCategory(groceryClassification)
  *   .build();
  * ```
  *
@@ -86,7 +86,7 @@ import {generateRandomProduct} from "./product";
  * ```typescript
  * // Batch creation
  * const invoices = new InvoiceBuilder()
- *   .withClassification(restaurantClassification)
+ *   .withCategory(restaurantClassification)
  *   .withRandomItems()
  *   .buildMany(10);
  * ```
@@ -132,7 +132,7 @@ export class InvoiceBuilder {
    * // Override specific fields
    * const customInvoice = new InvoiceBuilder()
    *   .withId("my-id")
-   *   .withClassification(fastFoodClassification)
+   *   .withCategory(fastFoodClassification)
    *   .build();
    * ```
    *
@@ -183,7 +183,7 @@ export class InvoiceBuilder {
         tipAmount: tip,
       },
       possibleRecipes: [],
-      classification: null,
+      category: null,
       additionalMetadata: {},
       receiptType: "",
       countryRegion: "",
@@ -437,13 +437,13 @@ export class InvoiceBuilder {
   }
 
   /**
-   * Sets the invoice's standard taxonomy classification.
+   * Sets the invoice's category.
    *
-   * @param classification - Canonical classification, or `null` for an unclassified invoice.
+   * @param category - Category, or `null` for an unclassified invoice.
    * @returns This InvoiceBuilder instance for method chaining.
    */
-  withClassification(classification: StandardClassification | null): this {
-    this.invoice.classification = classification;
+  withCategory(category: InvoiceCategory | null): this {
+    this.invoice.category = category;
     return this;
   }
 
@@ -794,12 +794,12 @@ export class InvoiceBuilder {
    * ```typescript
    * // Create 5 invoices with same configuration
    * const invoices = new InvoiceBuilder()
-   *   .withClassification(groceryClassification)
+   *   .withCategory(groceryClassification)
    *   .withUserIdentifier("test-user")
    *   .buildMany(5);
    *
    * // All have the configured classification and user
-   * invoices.every(inv => inv.classification === groceryClassification); // true
+   * invoices.every(inv => inv.category === groceryClassification); // true
    * ```
    *
    * @see {@link build} for single invoice creation

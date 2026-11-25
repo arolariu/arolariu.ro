@@ -7,6 +7,7 @@ using System.Diagnostics.CodeAnalysis;
 using System.Text.Json.Serialization;
 
 using arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices;
+using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Categories;
 using arolariu.Backend.Domain.Invoices.DDD.ValueObjects;
 
 /// <summary>
@@ -39,7 +40,6 @@ using arolariu.Backend.Domain.Invoices.DDD.ValueObjects;
 /// A detailed description of the invoice. Required, but may be empty.
 /// Useful for notes, context, or search purposes.
 /// </param>
-/// <param name="ClassificationCode">Optional taxonomy code for the manual invoice classification.</param>
 /// <param name="PaymentInformation">
 /// Payment details including currency, total amount, tax, and payment method.
 /// Required for proper financial tracking and reporting.
@@ -62,12 +62,13 @@ using arolariu.Backend.Domain.Invoices.DDD.ValueObjects;
 /// Extensible key-value metadata for client-specific data.
 /// Null or empty dictionary replaces any existing metadata.
 /// </param>
+/// <param name="Category">A valid invoice category ID to assign, or -1 to clear. Omitted or null preserves it.</param>
 /// <example>
 /// <code>
 /// var request = new UpdateInvoiceRequestDto(
 ///     Name: "Updated Invoice Name",
+///     Category: null,           // Preserve the saved category
 ///     Description: "Monthly groceries",
-///     ClassificationCode: "01.1.1",
 ///     PaymentInformation: new PaymentInformation(Currency.RON, 150.50m, 28.60m, PaymentMethod.Card),
 ///     MerchantReference: merchantId,
 ///     IsImportant: true,
@@ -86,7 +87,7 @@ using arolariu.Backend.Domain.Invoices.DDD.ValueObjects;
 public readonly record struct UpdateInvoiceRequestDto(
   [Required] string Name,
   [Required] string Description,
-  string? ClassificationCode,
+  int? Category,
   PaymentInformation PaymentInformation,
   Guid? MerchantReference,
   bool IsImportant,
@@ -128,7 +129,7 @@ public readonly record struct UpdateInvoiceRequestDto(
       UserIdentifier = userIdentifier,
       Name = Name,
       Description = Description,
-      ClassificationCode = ClassificationCode,
+      Category = Category is int id && id != -1 ? (InvoiceCategory)id : null,
       PaymentInformation = PaymentInformation,
       MerchantReference = MerchantReference ?? Guid.Empty,
       IsImportant = IsImportant,

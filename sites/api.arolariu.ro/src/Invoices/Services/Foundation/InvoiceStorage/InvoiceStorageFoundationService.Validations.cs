@@ -27,6 +27,19 @@ public partial class InvoiceStorageFoundationService
     ValidateIdentifierIsSet(invoice.id);
     ValidateIdentifierIsSet(invoice.UserIdentifier);
     ValidateScansAreSet(invoice.Scans);
+    ValidateCategory(invoice.Category);
+    foreach (Product product in invoice.Items ?? [])
+    {
+      ValidateCategory(product.Category);
+    }
+  }
+
+  private static void ValidateCategory<TCategory>(TCategory? category) where TCategory : struct, Enum
+  {
+    if (category is { } id && !Enum.IsDefined(id))
+    {
+      throw new ArgumentOutOfRangeException(nameof(category), "The category is not defined for this domain.");
+    }
   }
 
   private static void ValidateScansAreSet(IEnumerable<InvoiceScan>? scans)

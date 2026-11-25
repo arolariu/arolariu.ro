@@ -25,7 +25,7 @@ public sealed partial class AnalysisOrchestrationService : IAnalysisOrchestratio
   /// <summary>
   /// Initializes a new instance of the <see cref="AnalysisOrchestrationService"/> class.
   /// </summary>
-  /// <param name="analysisFoundationService">The OCR, generative, and taxonomy capability boundary.</param>
+  /// <param name="analysisFoundationService">The OCR and generative capability boundary.</param>
   /// <param name="analysisQueueFoundationService">The durable analysis queue boundary.</param>
   /// <param name="loggerFactory">The factory used to create the orchestration logger.</param>
   /// <exception cref="ArgumentNullException">Thrown when a required dependency is <see langword="null"/>.</exception>

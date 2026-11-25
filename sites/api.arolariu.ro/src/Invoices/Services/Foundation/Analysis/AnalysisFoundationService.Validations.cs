@@ -11,7 +11,7 @@ using arolariu.Backend.Domain.Invoices.DDD.Analysis.Exceptions.Inner;
 using arolariu.Backend.Domain.Invoices.DDD.Analysis.Results;
 using arolariu.Backend.Domain.Invoices.DDD.Entities.Merchants;
 using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Allergens;
-using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Classifications;
+using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Categories;
 
 public sealed partial class AnalysisFoundationService
 {
@@ -99,44 +99,20 @@ public sealed partial class AnalysisFoundationService
     }
   }
 
-  private static void ValidateClassificationCandidatesAreSet(
-    IReadOnlyDictionary<string, IReadOnlyList<ClassificationCandidateOption>> candidatesByToken)
-  {
-    ArgumentNullException.ThrowIfNull(candidatesByToken);
-
-    if (candidatesByToken.Count == 0)
-    {
-      throw new ArgumentException(
-        "At least one classification candidate set is required.",
-        nameof(candidatesByToken));
-    }
-
-    ValidateCorrelationTokensAreUnique(candidatesByToken.Keys);
-
-    foreach ((string token, IReadOnlyList<ClassificationCandidateOption> candidates) in candidatesByToken)
-    {
-      if (string.IsNullOrWhiteSpace(token))
-      {
-        throw new ArgumentException(
-          "Classification candidate correlation tokens must not be blank.",
-          nameof(candidatesByToken));
-      }
-
-      if (candidates is null || candidates.Count == 0)
-      {
-        throw new ArgumentException(
-          "Each classification subject must provide at least one canonical candidate.",
-          nameof(candidatesByToken));
-      }
-    }
-  }
-
   private static void ValidateExtractionIsSet(ReceiptExtraction extraction) =>
     ArgumentNullException.ThrowIfNull(extraction);
 
-  private static void ValidateProductClassificationsAreSet(
-    IReadOnlyDictionary<string, StandardClassification> classifications) =>
-    ArgumentNullException.ThrowIfNull(classifications);
+  private static void ValidateProductCategoriesCoverProducts(
+    IReadOnlyList<ProductAnalysisInput> products,
+    IReadOnlyDictionary<string, ProductCategory?> categories)
+  {
+    ArgumentNullException.ThrowIfNull(categories);
+    if (products.Count != categories.Count || products.Any(product => !categories.ContainsKey(product.CorrelationToken))
+      || categories.Values.Any(category => category is { } id && !Enum.IsDefined(id)))
+    {
+      throw new ArgumentException("Categories must cover each product token, using null when uncategorized.", nameof(categories));
+    }
+  }
 
   private static void ValidateProductAllergenAssessmentsAreSet(
     IReadOnlyDictionary<string, AllergenAssessment> allergens) =>

@@ -7,7 +7,7 @@ using System.Linq;
 using arolariu.Backend.Common.DDD.ValueObjects;
 using arolariu.Backend.Domain.Invoices.DDD.ValueObjects;
 using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Allergens;
-using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Classifications;
+using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Categories;
 using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Products;
 using arolariu.Backend.Domain.Tests.Builders;
 
@@ -305,7 +305,7 @@ public sealed class ValueObjectTests
 
     // Assert
     Assert.AreEqual(string.Empty, product.Name);
-    Assert.IsNull(product.Classification);
+    Assert.IsNull(product.Category);
     Assert.AreEqual(0, product.Quantity);
     Assert.AreEqual(string.Empty, product.QuantityUnit);
     Assert.AreEqual(string.Empty, product.ProductCode);
@@ -329,7 +329,7 @@ public sealed class ValueObjectTests
     var product = new Product
     {
       Name = "MONSTER ENERGY DRINK 500ML",
-      Classification = ClassificationTestData.Gpc("10000123", "Energy Drinks"),
+      Category = ProductCategory.SoftDrinks,
       Quantity = 2,
       QuantityUnit = "pcs",
       ProductCode = "SKU12345",
@@ -339,7 +339,7 @@ public sealed class ValueObjectTests
 
     // Assert
     Assert.AreEqual("MONSTER ENERGY DRINK 500ML", product.Name);
-    Assert.AreEqual("10000123", product.Classification!.Code);
+    Assert.AreEqual(ProductCategory.SoftDrinks, product.Category);
     Assert.AreEqual(2, product.Quantity);
     Assert.AreEqual("pcs", product.QuantityUnit);
     Assert.AreEqual("SKU12345", product.ProductCode);
@@ -523,7 +523,7 @@ public sealed class ValueObjectTests
     var product = new Product();
 
     // Assert
-    Assert.IsNull(product.Classification);
+    Assert.IsNull(product.Category);
     Assert.IsNull(product.AllergenAssessment);
   }
 
@@ -534,13 +534,12 @@ public sealed class ValueObjectTests
   public void Product_SetClassification_ClassificationIsSet()
   {
     // Arrange
-    var classification = ClassificationTestData.Gpc("10000045", "Milk (Perishable)");
+    var classification = ProductCategory.Milk;
 
-    var product = new Product { Classification = classification };
+    var product = new Product { Category = classification };
 
     // Assert
-    Assert.AreEqual(classification, product.Classification);
-    Assert.AreEqual(ClassificationSystem.Gs1Gpc, product.Classification!.System);
+    Assert.AreEqual(classification, product.Category);
   }
 
   /// <summary>

@@ -5,10 +5,7 @@
  * @module app/domains/invoices/_actions/merchants/updateMerchant
  *
  * @remarks
- * Performs a full PUT on a merchant resource, replacing name, description,
- * address, and optional manual classification. Analysis-derived classifications
- * are never echoed back — `resolveClassificationCodeForWrite` returns null for
- * them so the backend preserves the persisted classification untouched.
+ * Category-only edits do not echo unrelated merchant fields.
  */
 
 import {addSpanEvent, logWithTrace, withSpan} from "@/instrumentation.server";
@@ -16,30 +13,24 @@ import {fetchBFFUserFromAuthService} from "@/lib/actions/user/fetchUser";
 import {validateStringIsGuidType} from "@/lib/utils.generic";
 import {createErrorResult, createHttpErrorResult, fetchWithTimeout, type ServerActionResult} from "@/lib/utils.server";
 import type {Merchant} from "@/types/invoices";
-import {resolveClassificationCodeForWrite} from "@/types/invoices/Classification";
-import {parseMerchantResponse, tryParse} from "@/types/invoices/transport";
+import {parseMerchantResponse, serializeCategoryUpdate, tryParse} from "@/types/invoices/transport";
 
 type ServerActionInputType = Readonly<{
-  /** The identifier of the merchant to update. */
-  readonly merchantId: string;
-  /** The merchant data to apply. */
-  readonly merchant: Merchant;
+  merchantId: string;
+  merchant: Readonly<Pick<Merchant, "category"> & Partial<Pick<Merchant, "name" | "description" | "address">>>;
 }>;
 
 type ServerActionOutputType = ServerActionResult<Readonly<Merchant>>;
 
 /**
- * Performs a full update (PUT) on a merchant resource.
+ * Updates a merchant, either with a category-only change or a full edit.
  *
  * @remarks
  * **HTTP Method**: PUT
  * **Endpoint**: `/rest/v1/merchants/{merchantId}`
  * **Response**: `202 Accepted` with the updated merchant body.
  *
- * Classification provenance is preserved: analysis-derived codes are sent as
- * null so the backend keeps its persisted value; only manual codes travel.
- *
- * @param input - The merchant id and updated merchant data.
+ * @param input - The merchant ID and edited merchant fields. A null category sends the API's `-1` clear command.
  * @returns A result object containing the updated merchant, or an error result.
  */
 export async function updateMerchant({merchantId, merchant}: ServerActionInputType): ServerActionOutputType {
@@ -58,14 +49,10 @@ export async function updateMerchant({merchantId, merchant}: ServerActionInputTy
       addSpanEvent("bff.request.update-merchant.start");
       logWithTrace("info", "Making API request to update merchant...", {merchantId}, "server");
       const requestDto = {
-        name: merchant.name,
-        description: merchant.description,
-        classificationCode: resolveClassificationCodeForWrite(merchant.classification),
-        address: merchant.address,
-        parentCompanyId: merchant.parentCompanyId ?? null,
-        // Null preserves the persisted metadata; the frontend Merchant model does not
-        // carry additionalMetadata, so it must never be sent as an empty overwrite.
-        additionalMetadata: null,
+        name: merchant?.name,
+        description: merchant?.description,
+        category: merchant?.category,
+        address: merchant?.address,
       };
       const response = await fetchWithTimeout(`/rest/v1/merchants/${merchantId}`, {
         method: "PUT",
@@ -73,7 +60,7 @@ export async function updateMerchant({merchantId, merchant}: ServerActionInputTy
           Authorization: `Bearer ${authToken}`,
           "Content-Type": "application/json",
         },
-        body: JSON.stringify(requestDto),
+        body: serializeCategoryUpdate(requestDto),
       });
       addSpanEvent("bff.request.update-merchant.complete");
 

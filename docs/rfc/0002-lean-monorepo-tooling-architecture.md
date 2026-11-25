@@ -141,8 +141,8 @@ them to memory.
 2. **Platform services** (`scripts/platform/**`, `scripts/inspection/Inspection.ts`): environment, output, child processes, files, bounded
    HTTP reads, prompts, inspection sessions, worker entry, layers, and the test harness.
 3. **Business policy** (`scripts/commands/**`, `scripts/container-runtime/**`, `scripts/inspection/**`,
-   `scripts/common/{repository-paths,requirements,tooling-config,taxonomy-artifacts}.ts`): what a command validates, performs, renders, and
-   returns, and whether a partial failure degrades, blocks, or aborts.
+   `scripts/common/{repository-paths,requirements,tooling-config}.ts`): what a command validates, performs, renders, and returns, and
+   whether a partial failure degrades, blocks, or aborts.
 
 ### 2.3 Decisions
 
@@ -194,7 +194,6 @@ The architecture applies to every production module under `scripts/**` outside t
 - `scripts/container-runtime/**` and `scripts/inspection/**`, including the `aggregate-worker.ts`, `workspace.worker.ts`, and
   `workspace-facts.worker.ts` child-process entrypoints;
 - the shared repository helpers `common/repository-paths.ts`, `common/requirements.ts`, `common/tooling-config.ts`, and
-  `common/taxonomy-artifacts.ts`.
 
 ### 3.2 Frozen Format and Lint Closure
 
@@ -572,7 +571,7 @@ output filtering.
 | Generate environment   | Azure/local source, required keys, secret classification, env content, copy destinations         | `HttpClient`, `Prompts`, `FileSystem`, `Environment`, `Redacted`                                        |
 | Generate i18n          | English source of truth, locale traversal, missing-key insertion, deterministic serialization    | `FileSystem`, repository paths, output                                                                  |
 | Generate GraphQL       | Output location and placeholder behavior                                                         | `FileSystem`                                                                                            |
-| Generate artifacts     | Taxonomy/license algorithms, source validation, archive entry rules, output consistency          | `HttpClient` with bounded reads, `FileSystem`, `Process`, concurrency, `Effect.sleep` retries           |
+| Generate artifacts     | Website license attribution from installed package metadata                                      | `FileSystem`, `Environment`, and atomic output                                                          |
 | Setup                  | Phase graph, readiness, mutation scopes, consent, prerequisites, remediation, postconditions     | Parsing, `Process` defaults, `Prompts`, files, HTTP, clock, interruption                                |
 | E2E                    | Target/auth policy, collection/environment selection, Newman arguments, report sanitization      | Parsing, `Process` capture, files, `Environment`, `Redacted`, scoped cleanup                            |
 | Exchange rates         | Year validation, Frankfurter request and schema, RON calculation, merge/write policy             | Parsing, `HttpClient`, `FileSystem`, `Effect.sleep`                                                     |

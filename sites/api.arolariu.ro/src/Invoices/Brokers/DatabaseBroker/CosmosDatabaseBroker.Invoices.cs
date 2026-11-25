@@ -115,21 +115,30 @@ public partial class CosmosDatabaseBroker
   }
 
   /// <inheritdoc/>
-  public async ValueTask<IEnumerable<Invoice>> ReadInvoicesAsync(Guid userIdentifier, CancellationToken cancellationToken)
+  public async ValueTask<IEnumerable<Invoice>> ReadInvoicesAsync(
+    Guid userIdentifier, CancellationToken cancellationToken, Guid? merchantIdentifier = null)
   {
+    const string allInvoices = "SELECT * FROM c WHERE c.UserIdentifier = @userIdentifier";
+    const string merchantInvoices = allInvoices
+      + " AND c.MerchantReference = @merchantIdentifier AND (NOT IS_DEFINED(c.IsSoftDeleted) OR c.IsSoftDeleted = false)";
+    string statement = merchantIdentifier.HasValue ? merchantInvoices : allInvoices;
     using var activity = InvoicePackageTracing.StartActivity(nameof(ReadInvoicesAsync));
     activity?
       .SetLayerContext("Broker", nameof(CosmosDatabaseBroker))
       .SetCosmosDbContext("primary", "invoices", "query", userIdentifier.ToString())
       .SetUserContext(userIdentifier)
-      .SetDbStatement("SELECT * FROM c WHERE c.UserIdentifier = @userIdentifier");
+      .SetDbStatement(statement);
 
     var database = CosmosClient.GetDatabase("primary");
     var container = database.GetContainer("invoices");
     var partitionKey = new PartitionKey(userIdentifier.ToString());
 
-    var query = new QueryDefinition("SELECT * FROM c WHERE c.UserIdentifier = @userIdentifier")
+    var query = new QueryDefinition(statement)
       .WithParameter("@userIdentifier", userIdentifier);
+    if (merchantIdentifier is { } merchant)
+    {
+      query.WithParameter("@merchantIdentifier", merchant.ToString());
+    }
 
     var invoices = new List<Invoice>();
     var totalRequestCharge = 0.0;
@@ -158,54 +167,27 @@ public partial class CosmosDatabaseBroker
   /// <inheritdoc/>
   public async ValueTask<Invoice> UpdateInvoiceAsync(Guid invoiceIdentifier, Invoice updatedInvoice, CancellationToken cancellationToken)
   {
+    ArgumentNullException.ThrowIfNull(updatedInvoice);
     using var activity = InvoicePackageTracing.StartActivity(nameof(UpdateInvoiceAsync));
     activity?
       .SetLayerContext("Broker", nameof(CosmosDatabaseBroker))
-      .SetCosmosDbContext("primary", "invoices", "upsert", updatedInvoice?.UserIdentifier.ToString())
-      .SetInvoiceContext(invoiceIdentifier, updatedInvoice?.UserIdentifier);
+      .SetCosmosDbContext("primary", "invoices", "replace", updatedInvoice.UserIdentifier.ToString())
+      .SetInvoiceContext(invoiceIdentifier, updatedInvoice.UserIdentifier);
 
     var database = CosmosClient.GetDatabase("primary");
     var container = database.GetContainer("invoices");
 
-    var partitionKey = new PartitionKey(updatedInvoice?.UserIdentifier.ToString());
+    var partitionKey = new PartitionKey(updatedInvoice.UserIdentifier.ToString());
     var response = await TranslateInvoiceCosmosAsync(
-      () => container.UpsertItemAsync(updatedInvoice, partitionKey, cancellationToken: cancellationToken),
+      () => container.ReplaceItemAsync(updatedInvoice, invoiceIdentifier.ToString(), partitionKey, cancellationToken: cancellationToken),
       invoiceIdentifier).ConfigureAwait(false);
 
     activity?.SetCosmosDbRequestCharge(response.RequestCharge);
-    InvoiceMetrics.RecordCosmosDbCharge(response.RequestCharge, "upsert", "invoices");
+    InvoiceMetrics.RecordCosmosDbCharge(response.RequestCharge, "replace", "invoices");
     activity?.RecordSuccess();
 
-    var invoice = response.Resource;
-    return invoice!;
+    return response.Resource;
   }
-
-  /// <inheritdoc/>
-  public async ValueTask<Invoice> UpdateInvoiceAsync(Invoice currentInvoice, Invoice updatedInvoice, CancellationToken cancellationToken)
-  {
-    using var activity = InvoicePackageTracing.StartActivity(nameof(UpdateInvoiceAsync));
-    activity?
-      .SetLayerContext("Broker", nameof(CosmosDatabaseBroker))
-      .SetCosmosDbContext("primary", "invoices", "upsert", updatedInvoice?.UserIdentifier.ToString())
-      .SetInvoiceContext(updatedInvoice?.id ?? Guid.Empty, updatedInvoice?.UserIdentifier);
-
-    var database = CosmosClient.GetDatabase("primary");
-    var invoicesContainer = database.GetContainer("invoices");
-
-    var partitionKeyForInvoice = new PartitionKey(updatedInvoice?.UserIdentifier.ToString());
-
-    var response = await TranslateInvoiceCosmosAsync(
-      () => invoicesContainer.UpsertItemAsync(updatedInvoice, partitionKeyForInvoice, cancellationToken: cancellationToken),
-      updatedInvoice?.id ?? Guid.Empty).ConfigureAwait(false);
-
-    activity?.SetCosmosDbRequestCharge(response.RequestCharge);
-    InvoiceMetrics.RecordCosmosDbCharge(response.RequestCharge, "upsert", "invoices");
-    activity?.RecordSuccess();
-
-    var invoice = response.Resource;
-    return invoice!;
-  }
-
 
   /// <inheritdoc/>
   public async ValueTask DeleteInvoiceAsync(Guid invoiceIdentifier, Guid? userIdentifier, CancellationToken cancellationToken)
@@ -371,7 +353,7 @@ public partial class CosmosDatabaseBroker
       HttpStatusCode.NotFound => invoiceIdentifier.HasValue
         ? new InvoiceNotFoundException(invoiceIdentifier.Value, cosmosException)
         : new InvoiceNotFoundException("Invoice not found in Cosmos DB.", cosmosException),
-      HttpStatusCode.Conflict or HttpStatusCode.PreconditionFailed => invoiceIdentifier.HasValue
+      HttpStatusCode.Conflict => invoiceIdentifier.HasValue
         ? new InvoiceAlreadyExistsException(invoiceIdentifier.Value, cosmosException)
         : new InvoiceAlreadyExistsException("Invoice already exists in Cosmos DB.", cosmosException),
       HttpStatusCode.Unauthorized => new InvoiceUnauthorizedAccessException(

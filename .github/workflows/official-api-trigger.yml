@@ -1,5 +1,5 @@
 # Test the API and build its image. Azure runs push to ACR and deploy; LOCAL runs upload a Docker archive.
-# Runs on main pushes touching the API directory or on manual dispatch. Tests and taxonomy checks gate the image build.
+# Runs on main pushes touching the API directory or on manual dispatch. API tests gate the image build.
 # Publishes TRX and coverage artifacts; does not build the website or provision Azure resources.
 # Azure login uses environment-scoped OIDC (id-token: write); deploy targets the API app.
 # Manual runs from main can pin all source checkouts to an optional full commit SHA.
@@ -83,7 +83,7 @@ jobs:
           if [[ "$EVENT_NAME" == push ]]; then
             source_sha=$DISPATCH_SHA
           elif [[ "$DISPATCH_REF" == refs/heads/main ]]; then
-            source_sha=$(bash .github/scripts/resolve-deploy-revision.sh node-install node-deps-install dotnet-install install-dotnet-deps)
+            source_sha=$(bash .github/scripts/resolve-deploy-revision.sh dotnet-install install-dotnet-deps)
           else
             echo "::error::Manual deployments must be dispatched from main."
             exit 1
@@ -139,15 +139,8 @@ jobs:
       - name: 📦 Setup workspace
         uses: ./.github/actions/setup-workspace
         with:
-          node-install: "true"
-          node-deps-install: "true"
           dotnet-install: "true"
           install-dotnet-deps: "true"
-
-      # Fail before tests if the API and website taxonomy mirrors no longer match their manifest.
-      - name: Check pinned taxonomy integrity
-        working-directory: .
-        run: node scripts/cli.ts generate --check-taxonomies --json
 
       - name: 🧪 Running unit tests...
         working-directory: .
@@ -220,14 +213,8 @@ jobs:
       - name: Set up API test dependencies
         uses: ./.github/actions/setup-workspace
         with:
-          node-install: "true"
-          node-deps-install: "true"
           dotnet-install: "true"
           install-dotnet-deps: "true"
-
-      - name: Check pinned taxonomy integrity
-        working-directory: .
-        run: node scripts/cli.ts generate --check-taxonomies --json
 
       - name: Test the selected source
         working-directory: .
@@ -323,17 +310,6 @@ jobs:
           echo "│ 📅 Timestamp:     $(date -u '+%Y-%m-%d %H:%M:%S UTC')"
           echo "└────────────────────────────────────────────────────────────┘"
           echo "::endgroup::"
-
-      - name: 📦 Setup workspace
-        uses: ./.github/actions/setup-workspace
-        with:
-          node-install: "true"
-          node-deps-install: "true"
-
-      # Keep the container phase independently protected against building with invalid taxonomy inputs.
-      - name: Check pinned taxonomy integrity
-        working-directory: .
-        run: node scripts/cli.ts generate --check-taxonomies --json
 
       - name: 🔒 Performing auth against Azure Public Cloud...
         uses: Azure/login@a641126d1b8aa4d1fa005f4f92df94a3a4c4c906 # v3.1.0

@@ -39,10 +39,6 @@ public enum AnalysisFailureReason
   [JsonStringEnumMemberName("invalidStructuredOutput")]
   InvalidStructuredOutput,
 
-  /// <summary>A taxonomy code could not be validated against its classification system.</summary>
-  [JsonStringEnumMemberName("taxonomy")]
-  Taxonomy,
-
   /// <summary>The worker lost the run's lease before the analyzed target could be persisted.</summary>
   [JsonStringEnumMemberName("leaseLost")]
   LeaseLost,

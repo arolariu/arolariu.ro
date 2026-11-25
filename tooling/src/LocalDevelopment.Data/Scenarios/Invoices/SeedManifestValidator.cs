@@ -1,15 +1,13 @@
 namespace LocalDevelopment.Data.Scenarios.Invoices;
 
 using arolariu.Backend.Domain.Invoices.DDD.ValueObjects;
-using arolariu.Backend.Domain.Invoices.Brokers.TaxonomyBroker;
-using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Classifications;
+using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Categories;
 
 /// <summary>
 /// Validates fixture-only relationships before domain materialization.
 /// </summary>
 internal static class SeedManifestValidator
 {
-  private static readonly Lazy<JsonTaxonomyBroker> Taxonomies = new(() => new JsonTaxonomyBroker());
   private sealed record Profile(int Active, int Merchants, int Minimum, int Maximum, int Days, int Regions, int Countries);
 
   private static readonly Dictionary<string, Profile> Profiles = new(StringComparer.Ordinal)
@@ -70,8 +68,7 @@ internal static class SeedManifestValidator
       {
         throw new InvalidDataException($"Merchant '{merchant.Key}' has invalid geographic or display values.");
       }
-      ValidateClassification(ClassificationSystem.Nace21, merchant.ClassificationCode, merchant.ClassificationLabel,
-        merchant.ClassificationPath, merchant.Key);
+      ValidateCategory<MerchantCategory>(merchant.Category, merchant.Key);
     }
 
     foreach (SeedInvoiceDefinition invoice in manifest.Invoices)
@@ -113,8 +110,7 @@ internal static class SeedManifestValidator
       {
         throw new InvalidDataException($"Invoice '{invoice.Key}' has an invalid payment method.");
       }
-      ValidateClassification(ClassificationSystem.EcoicopV2, invoice.ClassificationCode, invoice.ClassificationLabel,
-        invoice.ClassificationPath, invoice.Key);
+      ValidateCategory(invoice.Category, invoice.Key);
 
       if (invoice.BlobKey is not null
           && !blobs.ContainsKey(invoice.BlobKey))
@@ -176,7 +172,7 @@ internal static class SeedManifestValidator
         {
           throw new InvalidDataException($"Invoice '{invoice.Key}' product '{product.ProductCode}' has inconsistent allergen evidence.");
         }
-        ValidateClassification(ClassificationSystem.Gs1Gpc, product.ClassificationCode, product.ClassificationLabel, product.ClassificationPath,
+        ValidateCategory(product.Category,
           $"{invoice.Key}/{product.ProductCode}");
       }
       if (invoice.Products.Sum(product => product.Quantity * product.Price) != invoice.TotalAmount
@@ -295,24 +291,11 @@ internal static class SeedManifestValidator
     _ => false,
   };
 
-  private static void ValidateClassification(ClassificationSystem system, string? code, string? label,
-    IReadOnlyList<ClassificationNode>? path, string key)
+  private static void ValidateCategory<TCategory>(TCategory? category, string key) where TCategory : struct, Enum
   {
-    if (code is null && label is null && path is null) { return; }
-    if (string.IsNullOrWhiteSpace(code) || string.IsNullOrWhiteSpace(label) || path is null || path.Count == 0
-        || path.Any(node => node is null) || path[^1].Code != code || path[^1].OfficialLabel != label)
+    if (category is { } id && !Enum.IsDefined(id))
     {
-      throw new InvalidDataException($"Seed '{key}' has an incomplete classification hierarchy.");
-    }
-    JsonTaxonomyBroker catalog = Taxonomies.Value;
-    if (!catalog.Contains(system, code))
-    {
-      throw new InvalidDataException($"Seed '{key}' references an unknown canonical classification code.");
-    }
-    StandardClassification canonical = catalog.Resolve(system, code, ClassificationOrigin.Manual, null, []);
-    if (canonical.Code != code || canonical.OfficialLabel != label || !canonical.Hierarchy.SequenceEqual(path))
-    {
-      throw new InvalidDataException($"Seed '{key}' has a noncanonical classification hierarchy or official label.");
+      throw new InvalidDataException($"Seed '{key}' references an undefined category.");
     }
   }
 

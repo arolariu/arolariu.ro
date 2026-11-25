@@ -79,16 +79,18 @@ public sealed partial class InvoiceManagementService : IInvoiceManagementService
   /// <summary>Reads every invoice in one user partition through Processing.</summary>
   /// <param name="userIdentifier">The user partition to query.</param>
   /// <param name="cancellationToken">The token used to cancel the query.</param>
+  /// <param name="merchantIdentifier">The optional merchant reference to match.</param>
   /// <returns>The invoices visible in the partition.</returns>
   /// <exception cref="arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices.Exceptions.Outer.Management.InvoiceManagementDependencyException">
   /// Thrown when the persistence dependency cannot complete the query.
   /// </exception>
   /// <inheritdoc/>
-  public async Task<IEnumerable<Invoice>> ReadInvoices(Guid userIdentifier, CancellationToken cancellationToken) =>
+  public async Task<IEnumerable<Invoice>> ReadInvoices(
+    Guid userIdentifier, CancellationToken cancellationToken, Guid? merchantIdentifier = null) =>
     await TryCatchAsync(async () =>
     {
       using var activity = InvoicePackageTracing.StartActivity(nameof(ReadInvoices));
-      return await invoiceProcessingService.ReadInvoices(userIdentifier, cancellationToken).ConfigureAwait(false);
+      return await invoiceProcessingService.ReadInvoices(userIdentifier, cancellationToken, merchantIdentifier).ConfigureAwait(false);
     }).ConfigureAwait(false);
 
   /// <summary>Replaces client-editable invoice state through Processing.</summary>
@@ -98,7 +100,7 @@ public sealed partial class InvoiceManagementService : IInvoiceManagementService
   /// <param name="cancellationToken">The token used to cancel the operation.</param>
   /// <returns>The persisted invoice aggregate.</returns>
   /// <exception cref="arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices.Exceptions.Outer.Management.InvoiceManagementValidationException">
-  /// Thrown when replacement input or a manual classification code is invalid.
+  /// Thrown when replacement input or a category is invalid.
   /// </exception>
   /// <exception cref="arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices.Exceptions.Outer.Management.InvoiceManagementDependencyException">
   /// Thrown when a downstream classification or persistence dependency fails.
@@ -152,7 +154,6 @@ public sealed partial class InvoiceManagementService : IInvoiceManagementService
   /// <param name="product">The product line to add.</param>
   /// <param name="invoiceIdentifier">The target invoice identifier.</param>
   /// <param name="userIdentifier">The optional owning user partition.</param>
-  /// <param name="classificationCode">The optional GS1 GPC code to resolve canonically.</param>
   /// <param name="cancellationToken">The token used to cancel the operation.</param>
   /// <returns>A task that completes after persistence.</returns>
   /// <exception cref="arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices.Exceptions.Outer.Management.InvoiceManagementValidationException">
@@ -163,13 +164,12 @@ public sealed partial class InvoiceManagementService : IInvoiceManagementService
     Guid invoiceIdentifier,
     Guid? userIdentifier,
     Product product,
-    string? classificationCode,
     CancellationToken cancellationToken) =>
     await TryCatchAsync(async () =>
     {
       using var activity = InvoicePackageTracing.StartActivity(nameof(AddProduct));
       await invoiceProcessingService
-        .AddProduct(invoiceIdentifier, userIdentifier, product, classificationCode, cancellationToken)
+        .AddProduct(invoiceIdentifier, userIdentifier, product, cancellationToken)
         .ConfigureAwait(false);
     }).ConfigureAwait(false);
 
@@ -189,21 +189,14 @@ public sealed partial class InvoiceManagementService : IInvoiceManagementService
       return await invoiceProcessingService.GetProducts(invoiceIdentifier, userIdentifier, cancellationToken).ConfigureAwait(false);
     }).ConfigureAwait(false);
 
-  /// <summary>Returns the first product whose name contains the supplied text.</summary>
-  /// <param name="productName">The case-insensitive text to find within a product name.</param>
-  /// <param name="invoiceIdentifier">The target invoice identifier.</param>
-  /// <param name="userIdentifier">The optional owning user partition.</param>
-  /// <param name="cancellationToken">The token used to cancel the read.</param>
-  /// <returns>The first matching product, or a default product when no line matches.</returns>
-  /// <exception cref="arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices.Exceptions.Outer.Management.InvoiceManagementDependencyValidationException">
-  /// Thrown when the invoice is unavailable to the request.
-  /// </exception>
   /// <inheritdoc/>
-  public async Task<Product> GetProduct(Guid invoiceIdentifier, Guid? userIdentifier, string productName, CancellationToken cancellationToken) =>
+  public async Task<Product> UpdateProduct(
+    Guid invoiceIdentifier, Guid userIdentifier, UpdateProductRequestDto request, CancellationToken cancellationToken) =>
     await TryCatchAsync(async () =>
     {
-      using var activity = InvoicePackageTracing.StartActivity(nameof(GetProduct));
-      return await invoiceProcessingService.GetProduct(invoiceIdentifier, userIdentifier, productName, cancellationToken).ConfigureAwait(false);
+      using var activity = InvoicePackageTracing.StartActivity(nameof(UpdateProduct));
+      return await invoiceProcessingService.UpdateProduct(invoiceIdentifier, userIdentifier, request, cancellationToken)
+        .ConfigureAwait(false);
     }).ConfigureAwait(false);
 
   /// <summary>Deletes the first product matching an exact persisted name.</summary>
@@ -370,7 +363,6 @@ public sealed partial class InvoiceManagementService : IInvoiceManagementService
   /// <summary>Creates a merchant through the unified Processing boundary.</summary>
   /// <param name="merchant">The merchant entity to persist.</param>
   /// <param name="parentCompanyId">The optional parent-company partition.</param>
-  /// <param name="classificationCode">The optional NACE 2.1 code to resolve canonically.</param>
   /// <param name="cancellationToken">The token used to cancel the operation.</param>
   /// <returns>A task that completes after persistence.</returns>
   /// <exception cref="arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices.Exceptions.Outer.Management.InvoiceManagementValidationException">
@@ -380,13 +372,12 @@ public sealed partial class InvoiceManagementService : IInvoiceManagementService
   public async Task CreateMerchant(
     Merchant merchant,
     Guid? parentCompanyId,
-    string? classificationCode,
     CancellationToken cancellationToken) =>
     await TryCatchAsync(async () =>
     {
       using var activity = InvoicePackageTracing.StartActivity(nameof(CreateMerchant));
       await invoiceProcessingService
-        .CreateMerchant(merchant, parentCompanyId, classificationCode, cancellationToken)
+        .CreateMerchant(merchant, parentCompanyId, cancellationToken)
         .ConfigureAwait(false);
     }).ConfigureAwait(false);
 
@@ -424,12 +415,12 @@ public sealed partial class InvoiceManagementService : IInvoiceManagementService
   /// <summary>Reads the merchants referenced by the caller's own invoices through the unified Processing boundary.</summary>
   /// <param name="userIdentifier">The authenticated user whose invoices are inspected.</param>
   /// <param name="cancellationToken">The token used to cancel the query.</param>
-  /// <returns>The distinct visible merchants and the caller-owned invoice snapshot used to derive them.</returns>
+  /// <returns>The distinct visible merchants.</returns>
   /// <exception cref="arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices.Exceptions.Outer.Management.InvoiceManagementDependencyException">
   /// Thrown when invoice or merchant persistence cannot complete the query.
   /// </exception>
   /// <inheritdoc/>
-  public async Task<(IReadOnlyCollection<Merchant> Merchants, IReadOnlyCollection<Invoice> Invoices)> ReadMerchantsVisibleToUser(
+  public async Task<IEnumerable<Merchant>> ReadMerchantsVisibleToUser(
     Guid userIdentifier,
     CancellationToken cancellationToken) =>
     await TryCatchAsync(async () =>
@@ -438,48 +429,30 @@ public sealed partial class InvoiceManagementService : IInvoiceManagementService
       return await invoiceProcessingService.ReadMerchantsVisibleToUser(userIdentifier, cancellationToken).ConfigureAwait(false);
     }).ConfigureAwait(false);
 
-  /// <summary>Replaces client-editable merchant state through Processing.</summary>
-  /// <param name="updatedMerchant">The replacement merchant fields.</param>
+  /// <summary>Replaces a previously read merchant through Processing.</summary>
+  /// <param name="updatedMerchant">The edited merchant snapshot.</param>
   /// <param name="identifier">The persisted merchant identifier.</param>
   /// <param name="parentCompanyId">The optional parent-company partition.</param>
-  /// <param name="classificationCode">The optional NACE 2.1 code to resolve canonically.</param>
   /// <param name="cancellationToken">The token used to cancel the operation.</param>
   /// <returns>The persisted merchant entity.</returns>
   /// <exception cref="arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices.Exceptions.Outer.Management.InvoiceManagementValidationException">
-  /// Thrown when replacement input or a manual classification code is invalid.
+  /// Thrown when replacement input or a category is invalid.
   /// </exception>
   /// <exception cref="arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices.Exceptions.Outer.Management.InvoiceManagementDependencyException">
-  /// Thrown when classification or merchant persistence fails.
+  /// Thrown when merchant persistence fails.
   /// </exception>
   /// <inheritdoc/>
   public async Task<Merchant> UpdateMerchant(
     Guid identifier,
     Guid? parentCompanyId,
     Merchant updatedMerchant,
-    string? classificationCode,
     CancellationToken cancellationToken) =>
     await TryCatchAsync(async () =>
     {
       using var activity = InvoicePackageTracing.StartActivity(nameof(UpdateMerchant));
       return await invoiceProcessingService
-        .UpdateMerchant(identifier, parentCompanyId, updatedMerchant, classificationCode, cancellationToken)
+        .UpdateMerchant(identifier, parentCompanyId, updatedMerchant, cancellationToken)
         .ConfigureAwait(false);
-    }).ConfigureAwait(false);
-
-  /// <summary>Deletes one merchant through Processing.</summary>
-  /// <param name="identifier">The merchant identifier.</param>
-  /// <param name="parentCompanyId">The optional parent-company partition.</param>
-  /// <param name="cancellationToken">The token used to cancel deletion.</param>
-  /// <returns>A task that completes after deletion.</returns>
-  /// <exception cref="arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices.Exceptions.Outer.Management.InvoiceManagementDependencyException">
-  /// Thrown when merchant persistence cannot complete deletion.
-  /// </exception>
-  /// <inheritdoc/>
-  public async Task DeleteMerchant(Guid identifier, Guid? parentCompanyId, CancellationToken cancellationToken) =>
-    await TryCatchAsync(async () =>
-    {
-      using var activity = InvoicePackageTracing.StartActivity(nameof(DeleteMerchant));
-      await invoiceProcessingService.DeleteMerchant(identifier, parentCompanyId, cancellationToken).ConfigureAwait(false);
     }).ConfigureAwait(false);
 
   /// <summary>Validates invoice ownership and queues a request with resolved analysis options.</summary>
@@ -521,7 +494,7 @@ public sealed partial class InvoiceManagementService : IInvoiceManagementService
   /// Thrown when the analysis request is invalid.
   /// </exception>
   /// <exception cref="arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices.Exceptions.Outer.Management.InvoiceManagementDependencyValidationException">
-  /// Thrown when the target merchant is unavailable or is not referenced by one of the requester's invoices.
+  /// Thrown when the merchant is unavailable, is not visible, or was not created by the requester.
   /// </exception>
   /// <exception cref="arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices.Exceptions.Outer.Management.InvoiceManagementDependencyException">
   /// Thrown when target lookup or queue publication fails.

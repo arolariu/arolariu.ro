@@ -1,171 +1,179 @@
 /**
- * @fileoverview Unit tests for updateInvoiceProduct server action.
+ * @fileoverview HTTP boundary tests for the updateInvoiceProduct server action.
  * @module app/domains/invoices/_actions/invoices/products/updateInvoiceProduct.test
  */
 
-import {fetchBFFUserFromAuthService} from "@/lib/actions/user/fetchUser";
-import {fetchWithTimeout} from "@/lib/utils.server";
-import {ClassificationOrigin, ClassificationSystem, type StandardClassification} from "@/types/invoices";
-import {beforeEach, describe, expect, it, vi} from "vitest";
-import {TestDataBuilder} from "../../../../../../../tests/helpers";
+import {ProductCategory} from "@/types/invoices";
+import {revalidatePath} from "next/cache";
+import {describe, expect, expectTypeOf, it, vi} from "vitest";
+import {buildProduct} from "../../../../../../../tests/helpers/builders/domain";
+import {apiUrl, auth, fetchAtHttp} from "../../../../../../../tests/setup/server-http";
+import {updateInvoiceProduct} from "./updateInvoiceProduct";
 
-vi.mock("@/lib/actions/user/fetchUser");
-vi.mock("next/cache", () => ({revalidatePath: vi.fn()}));
-const {updateInvoiceProduct} = await import("./updateInvoiceProduct");
-const mockFetchUser = vi.mocked(fetchBFFUserFromAuthService);
-const mockFetchWithTimeout = vi.mocked(fetchWithTimeout);
-const mockRevalidatePath = vi.mocked((await import("next/cache")).revalidatePath);
+vi.mock("next/cache", () => ({revalidatePath: vi.fn<typeof revalidatePath>()}));
+
+const invoiceId = "11111111-1111-4111-8111-111111111111";
+const endpoint = `${apiUrl}/rest/v1/invoices/${invoiceId}/products`;
+const product = buildProduct({name: "Milk", category: ProductCategory.Milk});
+const fullEdit = {invoiceId, payload: {originalProductName: product.name, updatedProduct: product}};
 
 describe("updateInvoiceProduct", () => {
-  beforeEach(() => {
-    vi.clearAllMocks();
-    mockFetchUser.mockResolvedValue(TestDataBuilder.build("userInformation", {userIdentifier: "user-1", userJwt: "jwt-1"}));
-    mockFetchWithTimeout.mockResolvedValue(
-      TestDataBuilder.jsonResponse(TestDataBuilder.build("product", {name: "Updated Coffee"})) as Awaited<
-        ReturnType<typeof fetchWithTimeout>
-      >,
+  it("accepts only category-only or complete product update shapes", () => {
+    type Update = Parameters<typeof updateInvoiceProduct>[0]["payload"]["updatedProduct"];
+    expectTypeOf<{category: ProductCategory | null}>().toExtend<Update>();
+    expectTypeOf<{name: string; quantity: number; price: number}>().toExtend<Update>();
+    expectTypeOf<{name: string; quantity: number; price: number; category: ProductCategory | null}>().toExtend<Update>();
+    expectTypeOf<{}>().not.toExtend<Update>();
+    expectTypeOf<{price: number}>().not.toExtend<Update>();
+    expectTypeOf<{category: ProductCategory; price: number}>().not.toExtend<Update>();
+    expectTypeOf<{category: ProductCategory; quantityUnit: string}>().not.toExtend<Update>();
+  });
+
+  it("flattens a full edit including the product object's category", async () => {
+    const replacement = {...product, name: "Premium Milk", quantity: 2, quantityUnit: "L", productCode: "PROD-123", price: 15.99};
+    fetchAtHttp.mockResolvedValue(Response.json(replacement, {status: 202}));
+
+    const result = await updateInvoiceProduct({invoiceId, payload: {originalProductName: "Milk", updatedProduct: replacement}});
+
+    expect(result).toMatchObject({success: true, data: {name: replacement.name, category: ProductCategory.Milk}});
+    expect(fetchAtHttp).toHaveBeenCalledExactlyOnceWith(endpoint, expect.objectContaining({method: "PUT", cache: "no-store"}));
+    const [, request] = fetchAtHttp.mock.calls[0] ?? [];
+    const headers = new Headers(request?.headers);
+    expect(headers.get("authorization")).toMatch(/^Bearer \S+$/u);
+    expect(headers.get("content-type")).toBe("application/json");
+    expect(JSON.parse(String(request?.body))).toEqual({
+      originalProductName: "Milk",
+      name: "Premium Milk",
+      category: ProductCategory.Milk,
+      quantity: 2,
+      quantityUnit: "L",
+      productCode: "PROD-123",
+      price: 15.99,
+      allergenAssessment: null,
+    });
+    expect(vi.mocked(revalidatePath).mock.calls).toEqual([
+      [`/domains/invoices/edit-invoice/${invoiceId}`, "page"],
+      [`/domains/invoices/view-invoice/${invoiceId}`, "page"],
+    ]);
+  });
+
+  it.each([ProductCategory.Milk, null] as const)("sends only the product selector and explicit category %s", async (category) => {
+    fetchAtHttp.mockResolvedValue(Response.json({...product, category}, {status: 202}));
+
+    const result = await updateInvoiceProduct({invoiceId, payload: {originalProductName: "Milk", updatedProduct: {category}}});
+
+    expect(result).toMatchObject({success: true, data: {category}});
+    expect(fetchAtHttp).toHaveBeenCalledExactlyOnceWith(
+      endpoint,
+      expect.objectContaining({method: "PUT", body: JSON.stringify({originalProductName: "Milk", category: category ?? -1})}),
     );
   });
 
-  it("flattens nested product update payload fields into the backend DTO", async () => {
-    const invoiceId = "11111111-1111-4111-8111-111111111111";
-    const payload = {
-      originalProductName: "Coffee",
-      updatedProduct: TestDataBuilder.build("product", {
-        name: "Premium Coffee",
-        quantity: 2,
-        quantityUnit: "kg",
-        productCode: "PROD-123",
-        price: 15.99,
-      }),
+  it("omits category when the caller leaves it unchanged", async () => {
+    fetchAtHttp.mockResolvedValue(Response.json(product, {status: 202}));
+    const updatedProduct = {
+      name: product.name,
+      quantity: product.quantity,
+      quantityUnit: product.quantityUnit,
+      productCode: product.productCode,
+      price: product.price,
+      allergenAssessment: product.allergenAssessment,
     };
 
-    const result = await updateInvoiceProduct({invoiceId, payload});
+    const result = await updateInvoiceProduct({invoiceId, payload: {originalProductName: product.name, updatedProduct}});
 
-    expect(result.success).toBe(true);
-    expect(mockFetchWithTimeout).toHaveBeenCalledWith(
-      `/rest/v1/invoices/${invoiceId}/products`,
-      expect.objectContaining({
-        method: "PUT",
-        headers: expect.objectContaining({
-          Authorization: "Bearer jwt-1",
-          "Content-Type": "application/json",
-        }),
-      }),
-    );
-
-    const callArgs = mockFetchWithTimeout.mock.calls[0];
-    const body = JSON.parse(callArgs?.[1]?.body as string);
-    expect(body.originalProductName).toBe("Coffee");
-    expect(body.name).toBe("Premium Coffee");
-    expect(body.classificationCode).toBeNull();
-    expect(body.quantity).toBe(2);
-    expect(body.quantityUnit).toBe("kg");
-    expect(body.productCode).toBe("PROD-123");
-    expect(body.price).toBe(15.99);
-    expect(body.allergenAssessment).toBeNull();
-    // Ensure legacy fields are absent from the wire body
-    expect(body.updatedProduct).toBeUndefined();
-
-    expect(mockRevalidatePath).toHaveBeenCalledWith(`/domains/invoices/edit-invoice/${invoiceId}`, "page");
-    expect(mockRevalidatePath).toHaveBeenCalledWith(`/domains/invoices/view-invoice/${invoiceId}`, "page");
+    expect(result).toMatchObject({success: true});
+    const [, request] = fetchAtHttp.mock.calls[0] ?? [];
+    expect(JSON.parse(String(request?.body))).not.toHaveProperty("category");
   });
 
-  it("returns an error result for an invalid invoice id", async () => {
-    const invalidId = "not-a-guid";
-    const payload = {
-      originalProductName: "Coffee",
-      updatedProduct: TestDataBuilder.build("product"),
-    };
+  it("preserves a conflict without resubmitting the category edit", async () => {
+    fetchAtHttp.mockResolvedValue(new Response(null, {status: 409}));
 
-    const result = await updateInvoiceProduct({invoiceId: invalidId, payload});
+    const result = await updateInvoiceProduct({invoiceId, payload: {originalProductName: "Milk", updatedProduct: {category: null}}});
 
-    expect(result.success).toBe(false);
-    expect(mockFetchWithTimeout).not.toHaveBeenCalled();
+    expect(result).toMatchObject({success: false, error: {status: 409}});
+    expect(fetchAtHttp).toHaveBeenCalledOnce();
+    expect(revalidatePath).not.toHaveBeenCalled();
+  });
+
+  it("returns the API's validation failure for a wrong-domain category", async () => {
+    const category = 2001 as ProductCategory;
+    fetchAtHttp.mockResolvedValue(new Response(null, {status: 400}));
+
+    const result = await updateInvoiceProduct({invoiceId, payload: {originalProductName: "Milk", updatedProduct: {category}}});
+
+    expect(fetchAtHttp).toHaveBeenCalledExactlyOnceWith(
+      endpoint,
+      expect.objectContaining({body: JSON.stringify({originalProductName: "Milk", category})}),
+    );
+    expect(result).toMatchObject({success: false, error: {code: "VALIDATION_ERROR", status: 400}});
+  });
+
+  it.each([Number.NaN, Number.POSITIVE_INFINITY, Number.NEGATIVE_INFINITY])(
+    "lets the API reject a non-finite category %s instead of serializing it as a clear",
+    async (category) => {
+      fetchAtHttp.mockResolvedValue(new Response(null, {status: 400}));
+
+      const result = await updateInvoiceProduct({
+        invoiceId,
+        payload: {originalProductName: "Milk", updatedProduct: {category: category as ProductCategory}},
+      });
+
+      expect(fetchAtHttp).toHaveBeenCalledExactlyOnceWith(
+        endpoint,
+        expect.objectContaining({body: JSON.stringify({originalProductName: "Milk", category: String(category)})}),
+      );
+      expect(result).toMatchObject({success: false, error: {code: "VALIDATION_ERROR", status: 400}});
+      expect(revalidatePath).not.toHaveBeenCalled();
+    },
+  );
+
+  it("rejects an invalid invoice identifier before authentication or HTTP", async () => {
+    const result = await updateInvoiceProduct({...fullEdit, invoiceId: "not-a-guid"});
+
+    expect(result).toMatchObject({success: false, error: {message: expect.stringContaining("invoiceId")}});
+    expect(auth).not.toHaveBeenCalled();
+    expect(fetchAtHttp).not.toHaveBeenCalled();
   });
 
   it.each([
     [422, "VALIDATION_ERROR", "Failed to update the product. Please check your input and try again."],
     [500, "SERVER_ERROR", "A server error occurred. Please try again later."],
-  ])("returns a public HTTP %i failure without revalidating", async (status, code, message) => {
-    const invoiceId = "11111111-1111-4111-8111-111111111111";
-    const payload = {
-      originalProductName: "Coffee",
-      updatedProduct: TestDataBuilder.build("product"),
-    };
-    mockFetchWithTimeout.mockResolvedValue(new Response("Internal response details", {status, statusText: "Internal status text"}));
+  ] as const)("returns a public HTTP %i failure without revalidating", async (status, code, message) => {
+    fetchAtHttp.mockResolvedValue(new Response("Internal response details", {status, statusText: "Internal status text"}));
 
-    const result = await updateInvoiceProduct({invoiceId, payload});
+    const result = await updateInvoiceProduct(fullEdit);
 
     expect(result).toEqual({success: false, error: {code, message, status}});
-    expect(mockRevalidatePath).not.toHaveBeenCalled();
+    expect(revalidatePath).not.toHaveBeenCalled();
   });
 
-  it("returns an error result when auth or fetch throws", async () => {
-    mockFetchUser.mockRejectedValue(new Error("Auth service unavailable"));
+  it("does not write if authentication fails", async () => {
+    auth.mockRejectedValue(new Error("Auth service unavailable"));
 
-    const invoiceId = "11111111-1111-4111-8111-111111111111";
-    const payload = {
-      originalProductName: "Coffee",
-      updatedProduct: TestDataBuilder.build("product"),
-    };
+    const result = await updateInvoiceProduct(fullEdit);
 
-    const result = await updateInvoiceProduct({invoiceId, payload});
-
-    expect(result.success).toBe(false);
-    expect(mockFetchWithTimeout).not.toHaveBeenCalled();
+    expect(result).toEqual({success: false, error: {code: "NETWORK_ERROR", message: "Auth service unavailable"}});
+    expect(fetchAtHttp).not.toHaveBeenCalled();
   });
 
   it("returns a server error and skips revalidation when the 2xx body is a malformed product", async () => {
-    mockFetchWithTimeout.mockResolvedValue(TestDataBuilder.jsonResponse({}) as Awaited<ReturnType<typeof fetchWithTimeout>>);
+    const {category: _category, ...malformed} = product;
+    fetchAtHttp.mockResolvedValue(Response.json(malformed, {status: 202}));
 
-    const result = await updateInvoiceProduct({
-      invoiceId: "11111111-1111-4111-8111-111111111111",
-      payload: {originalProductName: "Coffee", updatedProduct: TestDataBuilder.build("product")},
-    });
+    const result = await updateInvoiceProduct(fullEdit);
 
-    expect(result.success).toBe(false);
-    if (!result.success) {
-      expect(result.error.code).toBe("SERVER_ERROR");
-    }
-    expect(mockRevalidatePath).not.toHaveBeenCalled();
+    expect(result).toMatchObject({success: false, error: {code: "SERVER_ERROR"}});
+    expect(revalidatePath).not.toHaveBeenCalled();
   });
 
   it("handles fetch throwing a non-Error object", async () => {
-    mockFetchWithTimeout.mockRejectedValue("String error");
+    fetchAtHttp.mockRejectedValue("String error");
 
-    const invoiceId = "11111111-1111-4111-8111-111111111111";
-    const payload = {
-      originalProductName: "Coffee",
-      updatedProduct: TestDataBuilder.build("product"),
-    };
+    const result = await updateInvoiceProduct(fullEdit);
 
-    const result = await updateInvoiceProduct({invoiceId, payload});
-
-    expect(result.success).toBe(false);
-  });
-
-  it("sends null classificationCode when classification origin is Analysis", async () => {
-    const invoiceId = "11111111-1111-4111-8111-111111111111";
-    const analysisClassification: StandardClassification = {
-      system: ClassificationSystem.Gs1Gpc,
-      version: "2024",
-      code: "10000025",
-      officialLabel: "Dairy",
-      hierarchy: [],
-      origin: ClassificationOrigin.Analysis,
-      confidence: 0.95,
-      evidence: [],
-    };
-    const payload = {
-      originalProductName: "Coffee",
-      updatedProduct: TestDataBuilder.build("product", {classification: analysisClassification}),
-    };
-
-    await updateInvoiceProduct({invoiceId, payload});
-
-    const callArgs = mockFetchWithTimeout.mock.calls[0];
-    const body = JSON.parse(callArgs?.[1]?.body as string);
-    expect(body.classificationCode).toBeNull();
+    expect(result).toMatchObject({success: false, error: {code: "NETWORK_ERROR"}});
+    expect(revalidatePath).not.toHaveBeenCalled();
   });
 });
