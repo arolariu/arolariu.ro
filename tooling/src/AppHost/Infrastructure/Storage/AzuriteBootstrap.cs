@@ -7,6 +7,7 @@ using global::Aspire.Hosting;
 using global::Aspire.Hosting.ApplicationModel;
 using Azure.Storage.Blobs;
 using Azure.Storage.Queues;
+using AppHost.LocalDevelopment;
 using global::LocalDevelopment.Common.Http.Resilience;
 using global::LocalDevelopment.Data;
 using global::LocalDevelopment.Data.Storage;
@@ -61,6 +62,8 @@ internal static class AzuriteBootstrap
       "Azurite {Operation} attempt {Attempt} failed; retrying in {Delay}s.");
   private static readonly Action<ILogger, Exception?> CorsApplied = LoggerMessage.Define(
     LogLevel.Information, new EventId(0), "Azurite CORS rules applied (allow-all).");
+  private static readonly Action<ILogger, Exception?> ScopedCorsApplied = LoggerMessage.Define(
+    LogLevel.Information, new EventId(0), "Azurite CORS rule applied (scoped website).");
   private static readonly Action<ILogger, string, Exception?> ContainerAlreadyExists = LoggerMessage.Define<string>(
     LogLevel.Information, new EventId(0), "Azurite container '{Name}' already exists; upgraded public access to Blob.");
   private static readonly Action<ILogger, string, Exception?> ContainerCreated = LoggerMessage.Define<string>(
@@ -70,7 +73,7 @@ internal static class AzuriteBootstrap
 
   /// <summary>
   /// Subscribes a bootstrap handler to <paramref name="storage"/>'s
-  /// <see cref="ResourceReadyEvent"/>. The handler applies allow-all CORS rules and
+  /// <see cref="ResourceReadyEvent"/>. The handler applies legacy allow-all or scoped exact-origin CORS and
   /// idempotently creates each blob container in <paramref name="blobContainerNames"/> and
   /// queue in <paramref name="queueNames"/>. CORS and resource creation are retried
   /// independently up to 6 times each with linear backoff.
@@ -89,13 +92,15 @@ internal static class AzuriteBootstrap
   /// (<c>CreateIfNotExistsAsync</c>). Pass an empty array if no containers are needed.</param>
   /// <param name="queueNames">Queue names to ensure exist
   /// (<c>CreateIfNotExistsAsync</c>). Pass an empty array if no queues are needed.</param>
+  /// <param name="scope">The validated graph scope, if one owns these ports and CORS origin.</param>
   public static IDistributedApplicationBuilder AddAzuriteBootstrap<TResource>(
       this IDistributedApplicationBuilder builder,
       IResourceBuilder<TResource> storage,
       int blobPort,
       int queuePort,
       IReadOnlyList<string> blobContainerNames,
-      IReadOnlyList<string> queueNames)
+      IReadOnlyList<string> queueNames,
+      WorktreeLaunchScope? scope = null)
       where TResource : IResource
   {
     ArgumentNullException.ThrowIfNull(builder);
@@ -103,7 +108,7 @@ internal static class AzuriteBootstrap
     ArgumentNullException.ThrowIfNull(blobContainerNames);
     ArgumentNullException.ThrowIfNull(queueNames);
 
-    string connectionString = CreateConnectionString(blobPort, queuePort);
+    string connectionString = scope is null ? CreateConnectionString(blobPort, queuePort) : CreateScopedConnectionString(scope);
     var state = new BootstrapState();
 
     async Task ProvisionAsync(IServiceProvider services, CancellationToken ct)
@@ -111,7 +116,7 @@ internal static class AzuriteBootstrap
       ILogger logger = services.GetRequiredService<ILoggerFactory>().CreateLogger("AzuriteBootstrap");
       var blobServiceClient = new BlobServiceClient(connectionString);
       var queueServiceClient = new QueueServiceClient(connectionString);
-      await ApplyCorsWithRetryAsync(blobServiceClient, logger, ct).ConfigureAwait(false);
+      await ApplyCorsWithRetryAsync(blobServiceClient, logger, scope, ct).ConfigureAwait(false);
       await EnsureContainersWithRetryAsync(
         blobServiceClient,
         blobContainerNames,
@@ -254,6 +259,14 @@ internal static class AzuriteBootstrap
       + $"QueueEndpoint=http://localhost:{queuePort}/{AzuriteAccountName};";
   }
 
+  internal static string CreateScopedConnectionString(WorktreeLaunchScope scope) =>
+    $"DefaultEndpointsProtocol=http;AccountName={AzuriteAccountName};AccountKey={AzuriteAccountKey};"
+    + $"BlobEndpoint={scope.BlobUrl};QueueEndpoint={scope.QueueUrl};"
+    + $"TableEndpoint={scope.Url("azuriteTable", "http")}/{AzuriteAccountName};";
+
+  internal static Task ApplyScopedCorsAsync(BlobServiceClient blobs, WorktreeLaunchScope scope, CancellationToken ct) =>
+    StorageDataProvider.ApplyStartupCorsAsync(blobs, scope.WebsiteOrigin, ct);
+
   // Match the storage resource itself or any descendant (e.g. the Azurite container
   // child resource that RunAsEmulator spawns).
   private static bool IsResourceOrAncestor(IResource candidate, IResource target)
@@ -268,11 +281,19 @@ internal static class AzuriteBootstrap
   }
 
   private static Task ApplyCorsWithRetryAsync(
-      BlobServiceClient blobs, ILogger? logger, CancellationToken ct)
+      BlobServiceClient blobs, ILogger? logger, WorktreeLaunchScope? scope, CancellationToken ct)
     => RetryAsync("CORS", async token =>
     {
-      await StorageDataProvider.ApplyStartupCorsAsync(blobs, token).ConfigureAwait(false);
-      if (logger is not null) { CorsApplied(logger, null); }
+      if (scope is null)
+      {
+        await StorageDataProvider.ApplyStartupCorsAsync(blobs, token).ConfigureAwait(false);
+        if (logger is not null) { CorsApplied(logger, null); }
+      }
+      else
+      {
+        await ApplyScopedCorsAsync(blobs, scope, token).ConfigureAwait(false);
+        if (logger is not null) { ScopedCorsApplied(logger, null); }
+      }
     }, logger, Task.Delay, ct);
 
   private static async Task EnsureContainersWithRetryAsync(

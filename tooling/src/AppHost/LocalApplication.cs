@@ -11,12 +11,11 @@ using AppHost.LocalDevelopment.Reset;
 using AppHost.Repository;
 using Aspire.Hosting;
 using Aspire.Hosting.ApplicationModel;
-using Aspire.Hosting.Python;
 
 /// <summary>Contains the native handles registered by production composition.</summary>
 internal sealed record LocalEnvironmentResources(
   LocalInfrastructure Infrastructure,
-  IResourceBuilder<PythonAppResource> Exp,
+  IResourceBuilder<ExecutableResource> Exp,
   LocalResources Local,
   LocalApplicationResources Applications);
 
@@ -24,8 +23,10 @@ internal sealed record LocalEnvironmentResources(
 internal static class LocalApplication
 {
   internal static LocalEnvironmentResources Compose(
-    IDistributedApplicationBuilder builder, RepositoryLayout layout, string sqlPassword)
+    IDistributedApplicationBuilder builder, RepositoryLayout layout, string sqlPassword, WorktreeLaunchScope? scope = null)
   {
+    if (scope is not null) return ComposeScoped(builder, layout, scope);
+
     LocalInfrastructure infrastructure = builder.AddInfrastructure(sqlPassword);
     var exp = builder.AddExp(layout);
     var bootstrap = builder.AddBootstrap(builder.Configuration["SEED_DATA_DIRECTORY"] ?? "SeedData");
@@ -57,6 +58,35 @@ internal static class LocalApplication
     builder.AddLocalDataReset(new(infrastructure, local, applications,
       new(Constants.CosmosDataVolumeEn20261008, Constants.AzuriteDataVolumeV3_35_0, Constants.SqlDataVolumeV16_0_4305_5)));
     return new(infrastructure, exp, local, applications);
+  }
+
+  private static LocalEnvironmentResources ComposeScoped(
+    IDistributedApplicationBuilder builder, RepositoryLayout layout, WorktreeLaunchScope scope)
+  {
+    scope.ConfigureHost(builder, layout.RootDirectory);
+    string sqlPassword = scope.Runtime.ReadSqlPassword();
+    string redisPassword = scope.Runtime.ReadRedisPassword();
+    if (string.IsNullOrWhiteSpace(sqlPassword) || string.IsNullOrWhiteSpace(redisPassword)
+      || !scope.Runtime.VerifyExpConfig(ExpResources.CreateScopedEndpointOverrides(sqlPassword, scope)))
+    {
+      throw new InvalidOperationException("Verified scoped runtime configuration and emulator parameters are required.");
+    }
+
+    LocalInfrastructure infrastructure = builder.AddInfrastructure(sqlPassword, scope, redisPassword);
+    var exp = builder.AddScopedExp(layout, scope);
+    var bootstrap = builder.AddBootstrap("SeedData");
+    var identity = builder.AddIdentity(layout, scope);
+    var api = builder.AddScopedApi(scope);
+    var website = builder.AddScopedWebsite(layout, scope);
+    builder.AddScopedAuxiliarySites(layout, scope);
+
+    bootstrap.WithReference(infrastructure.CosmosDatabase)
+      .WithReference(infrastructure.Blobs)
+      .WithReference(infrastructure.Queues);
+    WireStartupDependencies(infrastructure, bootstrap, exp, identity, api, website);
+
+    // Do not register the legacy npm/pip, certificate-renewal or destructive reset callbacks.
+    return new(infrastructure, exp, new(bootstrap, identity), new(api.Resource, website.Resource, exp.Resource));
   }
 
   internal static void WireStartupDependencies(

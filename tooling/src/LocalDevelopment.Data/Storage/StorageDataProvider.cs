@@ -90,13 +90,23 @@ public static class StorageDataProvider
   /// <param name="blobs">The caller-owned local blob service client.</param>
   /// <param name="cancellationToken">Cancels the provider operations.</param>
   /// <returns>A task that completes after service properties are updated.</returns>
-  public static async Task ApplyStartupCorsAsync(BlobServiceClient blobs, CancellationToken cancellationToken)
+  public static Task ApplyStartupCorsAsync(BlobServiceClient blobs, CancellationToken cancellationToken) =>
+    ApplyStartupCorsAsync(blobs, "*", cancellationToken);
+
+  /// <summary>Replaces local blob CORS rules with the policy for an explicit origin.</summary>
+  /// <param name="blobs">The caller-owned local blob service client.</param>
+  /// <param name="allowedOrigin">The validated browser origin supplied by local composition.</param>
+  /// <param name="cancellationToken">Cancels the provider operations.</param>
+  /// <returns>A task that completes after service properties are updated.</returns>
+  public static async Task ApplyStartupCorsAsync(BlobServiceClient blobs, string allowedOrigin,
+    CancellationToken cancellationToken)
   {
+    ArgumentException.ThrowIfNullOrWhiteSpace(allowedOrigin);
     var properties = (await blobs.GetPropertiesAsync(cancellationToken).ConfigureAwait(false)).Value;
     properties.Cors.Clear();
     properties.Cors.Add(new BlobCorsRule
     {
-      AllowedOrigins = "*",
+      AllowedOrigins = allowedOrigin,
       AllowedMethods = "GET,PUT,POST,DELETE,HEAD,OPTIONS,MERGE",
       AllowedHeaders = "*",
       ExposedHeaders = "*",

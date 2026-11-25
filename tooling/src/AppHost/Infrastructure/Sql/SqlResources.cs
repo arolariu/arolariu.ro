@@ -1,5 +1,6 @@
 namespace AppHost.Infrastructure.Sql;
 
+using AppHost.LocalDevelopment;
 using Microsoft.Data.SqlClient;
 using Aspire.Hosting;
 using Aspire.Hosting.ApplicationModel;
@@ -12,13 +13,16 @@ internal static class SqlResources
   internal static string DatabaseCreationScript => LocalDataContract.SqlDatabaseCreationScript;
 
   internal static IResourceBuilder<SqlServerDatabaseResource> AddLocalSql(
-    this IDistributedApplicationBuilder builder, string sqlPassword)
+    this IDistributedApplicationBuilder builder, string sqlPassword, WorktreeLaunchScope? scope = null)
   {
-    string readinessConnection = CreateConnectionString(sqlPassword, "master", 5);
-    var password = builder.AddParameter("sql-password", secret: true);
-    var sql = builder.AddSqlServer("mssql", password: password, port: Constants.SqlPort)
+    int port = scope?.Port("sql") ?? Constants.SqlPort;
+    string readinessConnection = CreateConnectionString(sqlPassword, "master", 5, port);
+    var password = scope is null
+      ? builder.AddParameter("sql-password", secret: true)
+      : builder.AddParameter("sql-password", sqlPassword, secret: true);
+    var sql = builder.AddSqlServer("mssql", password: password, port: port)
       .WithImageSHA256(Constants.SqlServerImageSha256)
-      .WithDataVolume(Constants.SqlDataVolumeV16_0_4305_5)
+      .WithDataVolume(scope?.Volumes["sql"] ?? Constants.SqlDataVolumeV16_0_4305_5)
       // DCP forwards TDS to the allocated container port while keeping the public port fixed.
       .WithEndpoint("tcp", endpoint => endpoint.IsProxied = true)
       .WithIconName("Database");
@@ -31,13 +35,13 @@ internal static class SqlResources
   }
 
   internal static string CreateConnectionString(
-    string password, string databaseName, int? connectionTimeout = null)
+    string password, string databaseName, int? connectionTimeout = null, int port = Constants.SqlPort)
   {
     ArgumentException.ThrowIfNullOrWhiteSpace(password);
     ArgumentException.ThrowIfNullOrWhiteSpace(databaseName);
     var connection = new SqlConnectionStringBuilder
     {
-      DataSource = $"127.0.0.1,{Constants.SqlPort}",
+      DataSource = FormattableString.Invariant($"127.0.0.1,{port}"),
       InitialCatalog = databaseName,
       UserID = "sa",
       Password = password,

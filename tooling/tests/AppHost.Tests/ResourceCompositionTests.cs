@@ -1,10 +1,16 @@
 namespace AppHost.Tests;
 
 using System.Reflection;
+using System.Text.Json;
+using System.Xml.Linq;
 using Aspire.Hosting;
 using Aspire.Hosting.ApplicationModel;
 using Aspire.Hosting.JavaScript;
-using Aspire.Hosting.Python;
+using Azure.Core.Pipeline;
+using Azure.Storage.Blobs;
+using Azure.Storage.Blobs.Specialized;
+using Azure.Storage.Queues;
+using global::AppHost.Applications.Exp;
 using global::AppHost.Infrastructure;
 using global::AppHost.Infrastructure.Storage;
 using global::AppHost.LocalDevelopment;
@@ -21,6 +27,292 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 [TestClass]
 public sealed class ResourceCompositionTests
 {
+  [TestMethod]
+  public void Compose_TwoScopes_DoesNotSharePublicAuthorityPortsOrVolumes()
+  {
+    var first = ScopeFixture.Create('a', 24000);
+    var second = ScopeFixture.Create('b', 24100);
+    var one = CreateScopedGraph(first);
+    var two = CreateScopedGraph(second);
+    Assert.AreNotEqual(first.WebsiteOrigin, second.WebsiteOrigin);
+    Assert.IsFalse(LeaseHostPorts(one).Intersect(LeaseHostPorts(two)).Any());
+    Assert.IsFalse(Volumes(one).Intersect(Volumes(two)).Any());
+    CollectionAssert.AreEquivalent(first.Ports.Values.ToArray(), LeaseHostPorts(one).ToArray());
+    CollectionAssert.AreEquivalent(second.Ports.Values.ToArray(), LeaseHostPorts(two).ToArray());
+    CollectionAssert.AreEquivalent(first.Volumes.Values.ToArray(), Volumes(one).ToArray());
+    CollectionAssert.AreEquivalent(second.Volumes.Values.ToArray(), Volumes(two).ToArray());
+  }
+
+  [TestMethod]
+  public void Compose_Scoped_CosmosReadinessRequiresAContractDecisionBeforeDispatch()
+  {
+    var graph = CreateScopedGraph(ScopeFixture.Create('a', 24000));
+    var unallocated = graph.Resources
+      .SelectMany(resource => resource.Annotations.OfType<EndpointAnnotation>()
+        .Where(endpoint => !endpoint.Port.HasValue)
+        .Select(endpoint => $"{resource.Name}/{endpoint.Name}"))
+      .ToArray();
+    // The pinned integration registers a separate readiness endpoint. Do not silently
+    // assign a twentieth host port or replace the existing readiness mechanism.
+    CollectionAssert.AreEqual(new[] { "cosmos/emulatorhealth" }, unallocated);
+  }
+
+  [TestMethod]
+  public void Compose_NoScope_PreservesExistingGraph()
+  {
+    var graph = CreateGraph();
+    CollectionAssert.AreEquivalent(new[] { 8082, 8081, 10000, 10001, 6379, 5002, 5011, 5000, 3000, 4173, 3100, 3002 },
+      graph.Builder.Resources.SelectMany(resource => resource.Annotations.OfType<EndpointAnnotation>())
+        .Where(endpoint => endpoint.Port.HasValue).Select(endpoint => endpoint.Port!.Value).ToArray());
+    CollectionAssert.AreEquivalent(new[] { "arolariu-mssql-data-16.0.4305.5", "arolariu-cosmos-data-en20261008",
+      "arolariu-azurite-data-3.35.0", "arolariu-redis-data-8.6.3" }, Volumes(graph.Builder).ToArray());
+    Assert.IsTrue(graph.Builder.Resources.Any(resource => resource.Name == "npm-install"));
+    Assert.IsTrue(graph.Local.Bootstrap.Resource.Annotations.OfType<ResourceCommandAnnotation>()
+      .Any(command => command.Name == "reset-local-data"));
+  }
+
+  [TestMethod]
+  public async Task Compose_Scoped_UsesDerivedEndpointsAndDisablesReset()
+  {
+    var fixture = ScopeFixture.Create('a', 24000);
+    var graph = CreateScopedGraph(fixture);
+    IResource Find(string name) => graph.Resources.Single(resource => resource.Name == name);
+    var website = await ResolveEnvironmentAsync(graph, Find("website"));
+    var api = await ResolveEnvironmentAsync(graph, Find("api"));
+    var exp = await ResolveEnvironmentAsync(graph, Find("exp"));
+    var identity = await ResolveEnvironmentAsync(graph, Find("local-identities"));
+    Assert.AreEqual(fixture.WebsiteOrigin, website["SITE_URL"]);
+    Assert.AreEqual("https://127.0.0.1:24006", website["API_URL"]);
+    Assert.AreEqual("http://127.0.0.1:24015/devstoreaccount1", website["STORAGE_BLOB_ENDPOINT"]);
+    Assert.AreEqual("http://127.0.0.1:24007", api["EXP_PROXY_URL"]);
+    Assert.AreEqual("http://127.0.0.1:24011", api["LOCAL_DEVELOPMENT_IDENTITY_URL"]);
+    Assert.AreEqual(website["API_URL"], identity["LOCAL_SWAGGER_ORIGIN"]);
+    Assert.AreEqual(fixture.Runtime.ExpConfigPath, exp["EXP_LOCAL_CONFIG_PATH"]);
+    Assert.AreEqual("https://127.0.0.1:24003", exp["OTEL_EXPORTER_OTLP_ENDPOINT"]);
+    Assert.AreEqual("https://127.0.0.1:24002", api["OTEL_EXPORTER_OTLP_ENDPOINT"]);
+    Assert.AreEqual(exp["OTEL_EXPORTER_OTLP_ENDPOINT"], website["OTEL_EXPORTER_OTLP_ENDPOINT"]);
+    Assert.AreEqual(string.Empty, website["APPLICATIONINSIGHTS_CONNECTION_STRING"]);
+    Assert.AreEqual("https://127.0.0.1:24003/v1/traces", exp["OTEL_EXPORTER_OTLP_TRACES_ENDPOINT"]);
+    Assert.AreEqual("https://127.0.0.1:24000;http://127.0.0.1:24001", graph.Configuration["urls"]);
+    Assert.AreEqual("https://127.0.0.1:24004", graph.Configuration["ASPIRE_RESOURCE_SERVICE_ENDPOINT_URL"]);
+    Assert.IsFalse(graph.Resources.Any(resource => resource.Name.Contains("install", StringComparison.Ordinal)));
+    Assert.IsFalse(graph.Resources.Any(resource => resource.Annotations.OfType<ResourceCommandAnnotation>()
+      .Any(command => command.Name == "reset-local-data")));
+    Assert.IsTrue(graph.Resources.SelectMany(resource => resource.Annotations.OfType<EndpointAnnotation>())
+      .All(endpoint => !endpoint.IsExternal));
+    var arguments = await ResolveArgumentsAsync(Find("website"));
+    CollectionAssert.Contains(arguments, "--experimental-https-cert");
+    CollectionAssert.Contains(arguments, fixture.Runtime.WebsiteCertificatePath);
+    CollectionAssert.Contains(arguments, "127.0.0.1");
+    Assert.IsFalse(arguments.OfType<string>().Any(arg => arg.Contains("inspect", StringComparison.Ordinal)));
+    Assert.IsTrue(new Uri((string)website["API_URL"]).IsLoopback);
+    Assert.IsFalse(new Uri((string)website["SITE_URL"]).IsLoopback);
+  }
+
+  [TestMethod]
+  public void Compose_ScopedMissingOwnedConfiguration_DoesNotComposeLegacy()
+  {
+    var fixture = ScopeFixture.Create('a', 24000);
+    var missing = fixture with { Runtime = fixture.Runtime with { VerifyExpConfig = _ => false } };
+    Assert.ThrowsExactly<InvalidOperationException>(() => CreateScopedGraph(missing));
+  }
+
+  [TestMethod]
+  public async Task ScopedStorage_UploadAndCorsUseTheSameScope()
+  {
+    WorktreeLaunchScope scope = ScopeFixture.Create('a', 24000).Load();
+    using var fixture = new StorageTransport();
+    using var http = new HttpClient(fixture);
+    string connection = AzuriteBootstrap.CreateScopedConnectionString(scope);
+    var service = new BlobServiceClient(connection, new BlobClientOptions { Transport = new HttpClientTransport(http) });
+    var queue = new QueueServiceClient(connection, new QueueClientOptions { Transport = new HttpClientTransport(http) });
+    var config = ExpResources.CreateScopedEndpointOverrides("synthetic-only", scope);
+    Assert.AreEqual("http://127.0.0.1:24015/devstoreaccount1", config["Endpoints:Storage:Blob"]);
+    Assert.AreEqual(config["Endpoints:Storage:Blob"], service.Uri.AbsoluteUri);
+    Assert.AreEqual("http://127.0.0.1:24016/devstoreaccount1", config["Endpoints:Storage:Queue"]);
+    Assert.AreEqual(config["Endpoints:Storage:Queue"], queue.Uri.AbsoluteUri);
+    Assert.AreEqual("https://127.0.0.1:24006", config["Endpoints:Service:Api"]);
+    Assert.AreEqual("", config["Endpoints:Observability:Telemetry"]);
+    StringAssert.Contains(config["Endpoints:Database:SQL"], "127.0.0.1,24012");
+    StringAssert.Contains(config["Endpoints:Database:NoSQL"], "http://127.0.0.1:24013/");
+
+    CancellationToken token = TestContext.CancellationToken;
+    await AzuriteBootstrap.ApplyScopedCorsAsync(service, scope, token);
+    var blob = service.GetBlobContainerClient("invoices").GetBlockBlobClient("scan.png");
+    using Stream payload = BinaryData.FromString("synthetic").ToStream();
+    await blob.UploadAsync(payload, cancellationToken: token);
+    Assert.AreEqual("http://127.0.0.1:24015/devstoreaccount1/invoices/scan.png", blob.Uri.AbsoluteUri);
+    Assert.AreEqual(blob.Uri, fixture.UploadTarget);
+    Assert.AreEqual(scope.WebsiteOrigin, fixture.AllowedOrigin);
+  }
+
+  public TestContext TestContext { get; set; } = null!;
+
+  private sealed class StorageTransport : HttpMessageHandler
+  {
+    internal Uri? UploadTarget { get; private set; }
+    internal string? AllowedOrigin { get; private set; }
+
+    protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
+    {
+      var target = request.RequestUri!;
+      Assert.AreEqual("127.0.0.1", target.Host);
+      Assert.AreEqual(24015, target.Port);
+      if (target.Query.Contains("comp=properties", StringComparison.Ordinal))
+      {
+        if (request.Method == HttpMethod.Get)
+        {
+          return new(System.Net.HttpStatusCode.OK)
+          {
+            Content = new StringContent("<StorageServiceProperties><Cors /></StorageServiceProperties>",
+              System.Text.Encoding.UTF8, "application/xml"),
+          };
+        }
+        Assert.AreEqual(HttpMethod.Put, request.Method);
+        var cors = XDocument.Parse(await request.Content!.ReadAsStringAsync(cancellationToken));
+        AllowedOrigin = cors.Descendants("AllowedOrigins").Single().Value;
+        return new(System.Net.HttpStatusCode.Accepted);
+      }
+      Assert.AreEqual(HttpMethod.Put, request.Method);
+      UploadTarget = target;
+      return new(System.Net.HttpStatusCode.Created)
+      {
+        Headers = { ETag = new System.Net.Http.Headers.EntityTagHeaderValue("\"synthetic\"") },
+      };
+    }
+  }
+
+  [TestMethod]
+  public void Load_ForeignRootOrAuthority_RejectsScope()
+  {
+    var fixture = ScopeFixture.Create('a', 24000);
+    Assert.ThrowsExactly<InvalidOperationException>(() => WorktreeLaunchScope.Load(fixture.Path, fixture.Root));
+    Assert.ThrowsExactly<InvalidOperationException>(() => fixture.Load(Path.Combine(fixture.Root, "other")));
+    Assert.ThrowsExactly<InvalidOperationException>(() => (fixture with
+    {
+      WebsiteOrigin = "https://localhost:24005",
+    }).Load());
+    Assert.ThrowsExactly<InvalidOperationException>(() => (fixture with
+    {
+      WebsiteOrigin = "https://wt-bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb.localhost:24005",
+    }).Load());
+  }
+
+  [TestMethod]
+  public void Load_UnverifiedEngineStorageOrRuntime_RejectsScope()
+  {
+    var fixture = ScopeFixture.Create('a', 24000);
+    Assert.ThrowsExactly<InvalidOperationException>(() => fixture.Load(change: evidence => evidence with { Engine = "rancher" }));
+    Assert.ThrowsExactly<InvalidOperationException>(() => fixture.Load(change: evidence => evidence with { OwnedVolumes = null }));
+    Assert.ThrowsExactly<InvalidOperationException>(() => fixture.Load(change: evidence => evidence with { Runtime = null }));
+    Assert.ThrowsExactly<InvalidOperationException>(() => fixture.Load(change: evidence => evidence with
+    {
+      Runtime = fixture.Runtime with { ExpConfigPath = Path.Combine(fixture.Root, "config.aspire.json") },
+    }));
+    Assert.ThrowsExactly<InvalidOperationException>(() => fixture.Load(change: evidence => evidence with
+    {
+      Runtime = fixture.Runtime with { WebsiteCertificatePath = null },
+    }));
+    Assert.ThrowsExactly<InvalidOperationException>(() => fixture.Load(change: evidence => evidence with
+    {
+      RegistryDirectory = Path.Combine(fixture.Root, "other-registry"),
+    }));
+    Assert.ThrowsExactly<InvalidOperationException>(() => (fixture with { Version = 2 }).Load());
+    Assert.ThrowsExactly<InvalidOperationException>(() => fixture.Load(change: evidence => evidence with
+    {
+      LeasePorts = ScopeFixture.Create('a', 25000).Ports,
+    }));
+  }
+
+  [TestMethod]
+  public void Load_IncompleteOrOverlappingV1Ports_RejectsScope()
+  {
+    var incomplete = ScopeFixture.Create('a', 24000);
+    incomplete.Ports.Remove("cosmosDataExplorer");
+    incomplete.Ports.Remove("azuriteTable");
+    Assert.ThrowsExactly<InvalidOperationException>(() => incomplete.Load());
+    var overlapping = ScopeFixture.Create('a', 24000);
+    overlapping.Ports["azuriteQueue"] = overlapping.Ports["azuriteBlob"];
+    Assert.ThrowsExactly<InvalidOperationException>(() => overlapping.Load());
+  }
+
+  private static IDistributedApplicationBuilder CreateScopedGraph(ScopeFixture fixture)
+  {
+    var builder = DistributedApplication.CreateBuilder(new DistributedApplicationOptions
+    {
+      ProjectDirectory = HostDirectory(),
+      DisableDashboard = true,
+      Args = [],
+    });
+    builder.Configuration["ASPIRE_DASHBOARD_OTLP_HTTP_ENDPOINT_URL"] = "https://external.invalid:12345";
+    builder.Configuration["Parameters:sql-password"] = "ambient-sql-fixture";
+    builder.Configuration["Parameters:redis-password"] = "ambient-redis-fixture";
+    LocalApplication.Compose(builder, RepositoryLayout.Resolve(HostDirectory()), "ambient-sql-fixture", fixture.Load());
+    return builder;
+  }
+
+  private static IEnumerable<int> LeaseHostPorts(IDistributedApplicationBuilder graph) => graph.Resources
+    .SelectMany(resource => resource.Annotations.OfType<EndpointAnnotation>())
+    .Where(endpoint => endpoint.Port.HasValue).Select(endpoint => endpoint.Port!.Value)
+    .Concat(graph.Configuration["urls"]!.Split(';').Select(value => new Uri(value).Port))
+    .Concat(new[] { "ASPIRE_DASHBOARD_OTLP_ENDPOINT_URL", "ASPIRE_DASHBOARD_OTLP_HTTP_ENDPOINT_URL",
+      "ASPIRE_RESOURCE_SERVICE_ENDPOINT_URL" }.Select(key => new Uri(graph.Configuration[key]!).Port));
+
+  private static IEnumerable<string?> Volumes(IDistributedApplicationBuilder graph) => graph.Resources
+    .SelectMany(resource => resource.Annotations.OfType<ContainerMountAnnotation>()).Select(mount => mount.Source);
+
+  private sealed record ScopeFixture(string Root, string ScopeId, string RunId, string Registry,
+    Dictionary<string, int> Ports, Dictionary<string, string> Volumes, string WebsiteOrigin,
+    WorktreeRuntimeInputs Runtime, int Version = 1)
+  {
+    internal string Path => System.IO.Path.Combine(Registry, ScopeId, RunId, "descriptor.json");
+
+    internal static ScopeFixture Create(char id, int firstPort)
+    {
+      string root = RepositoryLayout.Resolve(HostDirectory()).RootDirectory;
+      string registry = System.IO.Path.Combine(root, "synthetic-registry-not-created");
+      string scope = new(id, 32);
+      string run = new('c', 32);
+      string runtime = System.IO.Path.Combine(registry, scope, run, "runtime");
+      string[] keys = ["dashboardHttps", "dashboardHttp", "dashboardOtlpGrpc", "dashboardOtlpHttp", "resourceService",
+        "website", "api", "exp", "cv", "docs", "status", "localIdentity", "sql", "cosmos", "cosmosDataExplorer",
+        "azuriteBlob", "azuriteQueue", "azuriteTable", "redis"];
+      return new(root, scope, run, registry,
+        keys.Select((name, index) => (name, port: firstPort + index)).ToDictionary(item => item.name, item => item.port),
+        new()
+        {
+          ["sql"] = $"arolariu-wt-{scope}-sql-16.0.4305.5",
+          ["cosmos"] = $"arolariu-wt-{scope}-cosmos-en20261008",
+          ["azurite"] = $"arolariu-wt-{scope}-azurite-3.35.0",
+          ["redis"] = $"arolariu-wt-{scope}-redis-8.6.3",
+        },
+        $"https://wt-{scope}.localhost:{firstPort + 5}",
+        new(System.IO.Path.Combine(runtime, "exp.json"), System.IO.Path.Combine(runtime, "website.pem"),
+          System.IO.Path.Combine(runtime, "website-key.pem"), System.IO.Path.Combine(runtime, "service.pem"),
+          System.IO.Path.Combine(runtime, "service-key.pem"), System.IO.Path.Combine(runtime, "python", "Scripts", "python.exe"),
+          System.IO.Path.Combine(runtime, "node.exe"), _ => true, () => "fixture-Sql-password", () => "fixture-Redis-password"));
+    }
+
+    internal WorktreeLaunchScope Load(string? expectedRoot = null, Func<VerifiedWorktreeStage, VerifiedWorktreeStage>? change = null)
+    {
+      byte[] descriptor = JsonSerializer.SerializeToUtf8Bytes(new
+      {
+        version = Version,
+        root = Root,
+        scopeId = ScopeId,
+        runId = RunId,
+        mode = "aspire",
+        loopbackHost = "127.0.0.1",
+        ports = Ports,
+        volumes = Volumes,
+        websiteOrigin = WebsiteOrigin,
+      });
+      var stage = new VerifiedWorktreeStage(descriptor, Registry, Root, ScopeId, RunId, "podman", new('e', 64),
+        Ports, Volumes, Runtime);
+      return WorktreeLaunchScope.Load(Path, expectedRoot ?? Root, (_, _) => change?.Invoke(stage) ?? stage);
+    }
+  }
+
   /// <summary>Registering the graph does not generate overlays or issue website certificates.</summary>
   [TestMethod]
   public void Compose_WithoutStart_DoesNotWriteConfigurationOrCertificates()
@@ -483,7 +775,7 @@ public sealed class ResourceCompositionTests
   }
 
   internal static (IDistributedApplicationBuilder Builder, LocalInfrastructure Infrastructure,
-    IResourceBuilder<PythonAppResource> Exp, LocalResources Local) CreateGraph(string environmentName = "Development",
+    IResourceBuilder<ExecutableResource> Exp, LocalResources Local) CreateGraph(string environmentName = "Development",
       string? seedDataDirectory = null)
   {
     string hostDirectory = HostDirectory();

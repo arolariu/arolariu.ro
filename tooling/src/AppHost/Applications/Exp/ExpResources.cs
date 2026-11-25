@@ -1,6 +1,7 @@
 namespace AppHost.Applications.Exp;
 
 using AppHost.Infrastructure.Sql;
+using AppHost.LocalDevelopment;
 using AppHost.Repository;
 using Aspire.Hosting;
 using Aspire.Hosting.ApplicationModel;
@@ -24,6 +25,32 @@ internal static class ExpResources
         builder.Configuration["DOTNET_DASHBOARD_OTLP_HTTP_ENDPOINT_URL"] ?? "https://localhost:21031")
       .WithIconName("KeyMultiple")
       .WithHttpHealthCheck("/api/ready");
+
+  internal static IResourceBuilder<ExecutableResource> AddScopedExp(this IDistributedApplicationBuilder builder,
+    RepositoryLayout layout, WorktreeLaunchScope scope)
+  {
+    var exp = builder.AddExecutable("exp", scope.Runtime.PythonExecutable, layout.ExpDirectory,
+        "-m", "uvicorn", "main:app", "--host", WorktreeLaunchScope.LoopbackHost, "--port",
+        scope.Port("exp").ToString(System.Globalization.CultureInfo.InvariantCulture), "--reload")
+      .WithEnvironment("INFRA", "local")
+      .WithEnvironment("EXP_LOCAL_CONFIG_PATH", scope.Runtime.ExpConfigPath)
+      .WithIconName("KeyMultiple");
+    return scope.WithTelemetry(scope.WithNativeEndpoint(exp, "exp", "http").WithHttpHealthCheck("/api/ready"));
+  }
+
+  /// <summary>Endpoint-only projection for the protected runtime preparation adapter; never copies developer config.</summary>
+  internal static IReadOnlyDictionary<string, string> CreateScopedEndpointOverrides(string sqlPassword, WorktreeLaunchScope scope) =>
+    new Dictionary<string, string>(StringComparer.Ordinal)
+    {
+      ["Endpoints:Database:NoSQL"] =
+        $"AccountEndpoint={scope.Url("cosmos", "http")}/;AccountKey={Constants.CosmosEmulatorWellKnownKey};",
+      ["Endpoints:Database:SQL"] =
+        SqlResources.CreateConnectionString(sqlPassword, LocalDataContract.SqlDatabaseName, port: scope.Port("sql")),
+      ["Endpoints:Storage:Blob"] = scope.BlobUrl,
+      ["Endpoints:Storage:Queue"] = scope.QueueUrl,
+      ["Endpoints:Service:Api"] = scope.Url("api", "https"),
+      ["Endpoints:Observability:Telemetry"] = "",
+    };
 
   internal static IReadOnlyDictionary<string, string> CreateEndpointOverrides(string sqlPassword) =>
     new Dictionary<string, string>(StringComparer.Ordinal)

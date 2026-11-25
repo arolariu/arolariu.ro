@@ -1,5 +1,7 @@
 namespace AppHost.Applications;
 
+using System.Globalization;
+using AppHost.LocalDevelopment;
 using AppHost.Repository;
 using Aspire.Hosting;
 using Aspire.Hosting.ApplicationModel;
@@ -30,5 +32,24 @@ internal static class AuxiliarySiteResources
       .WithIconName("PulseSquare")
       .WithHttpHealthCheck("/");
     return new(cv, docs, status);
+  }
+
+  internal static void AddScopedAuxiliarySites(this IDistributedApplicationBuilder builder,
+    RepositoryLayout layout, WorktreeLaunchScope scope)
+  {
+    AddSite("cv", layout.CvDirectory, "vite/bin/vite.js", "PersonAccounts", "dev", "--strictPort");
+    AddSite("docs", layout.DocsDirectory, "@docusaurus/core/bin/docusaurus.mjs", "BookOpenGlobe", "start", "--no-open");
+    AddSite("status", layout.StatusDirectory, "vite/bin/vite.js", "PulseSquare", "dev", "--strictPort");
+
+    void AddSite(string name, string directory, string cli, string icon, params string[] command)
+    {
+      string[] args = [Path.Combine(layout.RootDirectory, "node_modules", cli),
+        .. command, "--host", WorktreeLaunchScope.LoopbackHost,
+        "--port", scope.Port(name).ToString(CultureInfo.InvariantCulture)];
+      var app = builder.AddExecutable(name, scope.Runtime.NodeExecutable, directory, args)
+        .WithEnvironment("NODE_OPTIONS", "")
+        .WithIconName(icon);
+      scope.WithNativeEndpoint(app, name, "http").WithHttpHealthCheck("/");
+    }
   }
 }

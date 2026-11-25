@@ -2,6 +2,7 @@ namespace AppHost.Infrastructure;
 
 using AppHost.Infrastructure.Sql;
 using AppHost.Infrastructure.Storage;
+using AppHost.LocalDevelopment;
 using Aspire.Hosting;
 using Aspire.Hosting.ApplicationModel;
 using Aspire.Hosting.Azure;
@@ -26,15 +27,16 @@ internal sealed record LocalInfrastructure(
 internal static class InfrastructureResources
 {
   internal static LocalInfrastructure AddInfrastructure(
-    this IDistributedApplicationBuilder builder, string sqlPassword)
+    this IDistributedApplicationBuilder builder, string sqlPassword, WorktreeLaunchScope? scope = null,
+    string? redisSecret = null)
   {
-    var sql = builder.AddLocalSql(sqlPassword);
+    var sql = builder.AddLocalSql(sqlPassword, scope);
     var cosmos = builder.AddAzureCosmosDB("cosmos")
       .RunAsEmulator(emulator => emulator
-        .WithGatewayPort(Constants.CosmosGatewayPort)
-        .WithDataExplorer()
+        .WithGatewayPort(scope?.Port("cosmos") ?? Constants.CosmosGatewayPort)
+        .WithDataExplorer(scope?.Port("cosmosDataExplorer"))
         .WithImageSHA256(Constants.CosmosEmulatorImageSha256)
-        .WithDataVolume(Constants.CosmosDataVolumeEn20261008)
+        .WithDataVolume(scope?.Volumes["cosmos"] ?? Constants.CosmosDataVolumeEn20261008)
         .WithEnvironment("AZURE_COSMOS_EMULATOR_ENABLE_DATA_PLANE_HTTP", "true"))
       .WithEndpoint("emulator", endpoint => endpoint.IsProxied = true)
       .WithIconName("DatabaseMultiple");
@@ -43,11 +45,14 @@ internal static class InfrastructureResources
       LocalDataContract.CosmosInvoicesContainer, partitionKeyPath: LocalDataContract.CosmosInvoicesPartitionKey);
     var merchants = database.AddContainer(
       LocalDataContract.CosmosMerchantsContainer, partitionKeyPath: LocalDataContract.CosmosMerchantsPartitionKey);
-    LocalStorageResources storage = builder.AddLocalStorage();
-    var redisPassword = builder.AddParameter("redis-password", secret: true);
-    builder.AddRedis("redis", port: Constants.RedisPort, password: redisPassword)
+    LocalStorageResources storage = builder.AddLocalStorage(scope);
+    var redisPassword = scope is null
+      ? builder.AddParameter("redis-password", secret: true)
+      : builder.AddParameter("redis-password", redisSecret ?? throw new InvalidOperationException("Scoped Redis parameter is required."),
+        secret: true);
+    builder.AddRedis("redis", port: scope?.Port("redis") ?? Constants.RedisPort, password: redisPassword)
       .WithImageSHA256(Constants.RedisImageSha256)
-      .WithDataVolume(Constants.RedisDataVolumeV8_6_3)
+      .WithDataVolume(scope?.Volumes["redis"] ?? Constants.RedisDataVolumeV8_6_3)
       // Local Redis does not terminate TLS.
       .WithoutHttpsCertificate()
       .WithIconName("Memory");
