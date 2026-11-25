@@ -109,6 +109,11 @@ const maxRegistryScopes = 512;
 const maxFileSize = 64 * 1024;
 const maxAttempts = 128;
 
+/** A generated run ID, usable as a refusal guard but never as launch or stop authority. */
+export function isWorktreeRunId(value: string): boolean {
+  return scopePattern.test(value);
+}
+
 /** Checks unredirected canonical path equality (Windows file names are case-insensitive here). */
 export function sameWorktreePath(left: string, right: string): boolean {
   const normalized = (path: string) => (process.platform === "win32" ? normalize(path).toLowerCase() : normalize(path));
@@ -196,7 +201,7 @@ function decodeLease(value: unknown, scope: string): WorktreeLease {
     || typeof commonGitDir !== "string"
     || scopeFor({root, commonGitDir}) !== scope
     || typeof runId !== "string"
-    || !scopePattern.test(runId)
+    || !isWorktreeRunId(runId)
     || typeof engineId !== "string"
     || !idPattern.test(engineId)
     || (phase !== "reserved" && phase !== "pending" && phase !== "partial" && phase !== "owned")

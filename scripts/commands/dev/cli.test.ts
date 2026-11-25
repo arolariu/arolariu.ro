@@ -130,6 +130,23 @@ describe("dev command", () => {
     expect(result.calls).toEqual([]);
   });
 
+  it.each(["b".repeat(32), "not-an-id?token=fake-token"])(
+    "keeps guarded worktree stop blocked without verified authority",
+    async (runId) => {
+      const harness = makeTestLayer({environment: {platform: "linux"}});
+      const argv = ["dev", "aspire", "worktree", "stop", "--engine", "podman", "--expected-run", runId, "--json"];
+
+      const exit = await Effect.runPromiseExit(runCli(argv, makeRootCommand([makeDevCommand()])).pipe(Effect.provide(harness.layer)));
+
+      expect(exitCodeFor(exit, undefined)).toBe(1);
+      const stdout = harness.output().filter(({stream}) => stream === "stdout");
+      expect(stdout).toHaveLength(1);
+      expect(JSON.parse(stdout[0]?.text ?? "")).toEqual({status: "blocked", reason: expect.any(String)});
+      expect(stdout[0]?.text).not.toMatch(/fake-token|stopCommand|https?:/);
+      expect(harness.processCalls()).toEqual([]);
+    },
+  );
+
   it("maps aspire engine", async () => {
     // Arrange
     const argv = ["dev", "aspire", "--engine", "rancher"];

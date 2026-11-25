@@ -7,6 +7,59 @@ Two coexisting modes for local development.
 These full stacks have host-wide ports or named resources. Run only one at a time on a host, even from different Git worktrees. Use the
 [parallel worktree integration handoff](../../DEVELOPMENT.md#reserve-one-full-stack-integration-slot) before starting or stopping a stack.
 
+### Scoped Aspire gates (Windows Podman)
+
+Scoped Aspire is **not launchable**. It is separate from the one-human-slot legacy modes below. From the root of the intended, canonical
+Windows linked checkout, these CLI checks are implemented for an operator who has authorized the respective local observations or stop:
+
+| Command                                                                            | What it proves (or does)                                                                                                                                       |
+| ---------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `node scripts/cli.ts dev worktree preflight --engine podman --json`                | Read-only prerequisite inspection, including local engine, trust and prepared inputs. `prepared` does not install, launch, or contact a provider.              |
+| `node scripts/cli.ts dev worktree status --engine podman --json`                   | Inspects current protected lease and ownership. `idle` does not exclude unmanaged listeners; `owned` does not attest to health, TLS, smoke or launch lifetime. |
+| `node scripts/cli.ts dev worktree stop --engine podman --expected-run <id> --json` | Stop is a lifecycle operation, not a health probe. The optional guard refuses absent or different runs; it never grants authority.                             |
+
+The scoped CLI has no `start` action. The AppHost startup fence is unconditional and the production stage verifier and native dispatch and
+cleanup adapter do not exist. Do not try a descriptor flag, guessed URL or PID, an engine-wide stop, or a reset to bypass a block. An
+ambiguous run stays fenced. Legacy Aspire and Selfhost keep their existing commands and data; the scoped model provides no reset.
+
+The [internal handoff test](../../scripts/container-runtime/worktreeReadiness.test.ts) uses a disposable registry and injected evidence. No
+current command calls this gate with native evidence. The offline result is `blocked` with a fixed stage and reason for missing evidence,
+unverified ownership, incomplete resource/endpoint or launcher-exit evidence, failed smoke, failed revalidation, or timeout. It never
+includes a URL, stop command, raw error, or log path on failure.
+
+#### Evidence required before a scoped handoff
+
+This is the acceptance checklist for a **separately authorized runtime wave**, not a procedure to start a stack from this revision:
+
+1. **Preparation and lifetime.** Establish canonical checkout and exact v2 stage/lease on the pinned engine. Supply a production verifier
+   for the protected runtime inputs, dependency artifacts, certificates and owned volumes; verify PID, creation time, image, process
+   tree/container inventory, actual localhost binds and port-race rejection. Prove the run survives launcher exit and is observable in a
+   fresh controller turn (separate from any synthetic fixture). Verify scoped endpoints/configuration, provider and Clerk prerequisites,
+   pinned Cosmos readiness and data plane, and scoped authenticated telemetry without external exporter overrides. Do not change trust,
+   install dependencies, copy credentials, or adopt existing volumes implicitly.
+2. **Exact endpoints.** Require run-bound AppHost notifications: `local-bootstrap` exited zero and exp, local Identity, API and website are
+   healthy. Match real connections to independently attested owned listeners, exact leased ports on `127.0.0.1`, and the expected routes
+   without redirects. Require strict TLS for the scoped website DNS name and service IP SANs on API/dashboard, with no bypass or
+   wildcard-only match. Verify dashboard TLS at its token-free origin; verify dashboard/resource-service access and the other scoped
+   listeners separately. A responding process or a healthy sibling is not evidence.
+3. **Read-only smoke.** A dedicated attach-only browser runner must obtain a fresh verified scope before navigation. No `webServer`
+   fallback, `BASE_URL` or arbitrary URL/command input, insecure TLS, foreign redirects or unapproved origins, auth submission, token
+   minting, or credential-bearing reports/artifacts. Check the ordinary `/auth/sign-in/` in the browser and verify the expected local
+   persona metadata at `/personas` and API OpenAPI metadata at `/swagger/v1/swagger.json` against the same owned graph. A shell page,
+   generic HTTP 200, blocked auth/provider flow, or a browser fixture is not a smoke pass. The verified-scope browser attachment and
+   connected-listener/TLS proof needed for this runner are not implemented; the existing website preview runner is not a fallback.
+4. **Two worktrees and cleanup.** From two independent canonical checkouts, prove distinct current run identities, ports, isolated storage,
+   bootstrap and both named smokes. With separate data-write approval, verify scoped Azurite/queue/seed-link behavior and an owned
+   disposable write visible only to its graph. Keep a foreign listener untouched; prove a failing smoke redacts the result. After an
+   exact-run stop and restart, prove owned descendants/containers are gone after stop, the sibling is unaffected, and both scopes' data
+   persists. Verify an old stop command cannot stop a replacement. If ownership/cleanup is ambiguous, stop testing and retain receipts and
+   volumes; do not signal by PID, prune, or delete.
+
+After the native acceptance above exists, publish a handoff only after a fresh ownership check, both fixed named probes, and a final recheck
+of the exact canonical run, listener identities, TLS peers and graph health. Return only the verified website/dashboard origins, the run ID,
+named smoke results and the run-guarded stop command to be used from that checkout. Never hand off endpoints on a blocked result. Until
+then, use the [legacy integration slot](../../DEVELOPMENT.md#reserve-one-full-stack-integration-slot).
+
 ### Mode 1: Aspire (default — `npm run dev -- --engine <rancher|podman>`)
 
 > [!NOTE] Ordinary Aspire startup preserves local data. First use initializes Alice, Bob, Charlie, and Dmitryi; an explicit, confirmed

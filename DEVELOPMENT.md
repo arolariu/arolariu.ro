@@ -117,12 +117,23 @@ build, typecheck, dev server, or Playwright run per worktree at a time: they can
 serialize .NET builds and tests that share referenced projects within one worktree. Use a separate worktree when those checks must run
 concurrently.
 
+### Scoped Aspire: offline checks only
+
+On Windows with explicit Podman, the [scoped runbook](infra/Local/readme.md#scoped-aspire-gates-windows-podman) lists the current preflight,
+ownership status, and exact-run stop guard. `prepared` is a prerequisite result; `owned` is a process-ownership result. Neither permits
+handing off a URL. There is no scoped start command or live scoped browser runner. The offline handoff tests exercise injected evidence, not
+a running stack.
+
+Do not use `E2E_WORKTREE_PORT` as a substitute for scoped Aspire acceptance: it still owns a **website-only** preview. The ordinary auth
+route and existing local persona activation are unchanged. Until the runbook's separately authorized two-worktree acceptance passes, use the
+single human-owned full-stack slot below for integration.
+
 ### Reserve one full-stack integration slot
 
-Aspire and Selfhost are **not** worktree-isolated. One human operator at a time owns the host's full stack. Record the owner, checkout,
-HEAD, mode, verified endpoints, and state (`active` or `released`) in the integration handoff. Start only after the previous owner releases
-it; verify the running resources and endpoints from the current dashboard or engine. Worker sessions do not start, stop, or reset these
-stacks. The slot is a coordination rule, not a host lock.
+Default Aspire (Rancher or Podman) and Selfhost are **not** worktree-isolated. One human operator at a time owns the host's full stack.
+Record the owner, checkout, HEAD, mode, verified endpoints, and state (`active` or `released`) in the integration handoff. Start only after
+the previous owner releases it; verify the running resources and endpoints from the current dashboard or engine. Worker sessions do not
+start, stop, or reset these stacks. The slot is a coordination rule, not a host lock.
 
 Do not run the root `npm run test:e2e` as a local worker check; that is the Newman runner, not the website's Playwright script. A separately
 approved [API integration run](sites/api.arolariu.ro/README.md) requires an explicit Aspire profile, an approved local persona on a

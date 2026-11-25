@@ -21,7 +21,7 @@ import {LocalBlobStorageLive, type LocalBlobStorage} from "../../container-runti
 import {runSelfhost} from "../../container-runtime/selfhost.ts";
 import type {ContainerEngineInput, SelfhostAction, SelfhostInput} from "../../container-runtime/types.ts";
 import {inspectWorktreeLaunch, stopWorktreeLaunch} from "../../container-runtime/worktreeAspire.ts";
-import {readWorktreeLaunch, WorktreePlatform} from "../../container-runtime/worktreeLease.ts";
+import {isWorktreeRunId, readWorktreeLaunch, WorktreePlatform} from "../../container-runtime/worktreeLease.ts";
 import {localWorktreePlatform} from "../../container-runtime/worktreePlatform.ts";
 import {inspectWorktreeAspire} from "../../container-runtime/worktreePreflight.ts";
 import {ReportedFailure} from "../../platform/exit.ts";
@@ -92,26 +92,37 @@ export function makeDevCommand(options: DevCommandOptions = {}): CliSubcommand {
         }
       }).pipe(withCommandOutput("worktree-preflight")),
   ).pipe(Command.withDescription("Inspects native Windows Aspire worktree prerequisites without preparing or launching anything."));
-  const lifecycle = (action: "status" | "stop") =>
-    Command.make(action, {engine: Flag.Literals("engine", ["podman"])}, () =>
+  const lifecycle = (action: "status" | "stop") => {
+    const flags = {
+      engine: Flag.Literals("engine", ["podman"]),
+      ...(action === "stop"
+        ? {expectedRun: Flag.String("expected-run").pipe(Flag.optional, Flag.withDescription("Refuse to stop a different run."))}
+        : {}),
+    };
+    return Command.make(action, flags, ({expectedRun}) =>
       Effect.gen(function* () {
-        const platform = yield* localWorktreePlatform();
-        const checkout = yield* platform.checkout;
         const result = yield* Effect.gen(function* () {
+          const runId = expectedRun === undefined ? undefined : Option.getOrUndefined(expectedRun);
+          if (runId !== undefined && !isWorktreeRunId(runId))
+            return {status: "blocked", reason: "The expected run ID is invalid."} as const;
+          const platform = yield* localWorktreePlatform();
+          const checkout = yield* platform.checkout;
           if (checkout === undefined)
             return {status: "blocked", reason: "Run from the current canonical Windows linked worktree."} as const;
-          const lease = yield* readWorktreeLaunch(checkout);
-          if (!lease) return {status: "idle"} as const;
-          if (lease.mode !== "aspire") return {status: "blocked", reason: "This is not a scoped Aspire lease."} as const;
-          if (action === "stop") return yield* stopWorktreeLaunch(lease);
-          const status = yield* inspectWorktreeLaunch(lease);
-          return status === "blocked"
-            ? ({status, reason: "Run ownership could not be verified; no readiness is reported."} as const)
-            : ({status, scopeId: lease.scopeId, runId: lease.runId} as const);
-        }).pipe(
-          Effect.provideService(WorktreePlatform, platform),
-          Effect.catchTag("WorktreeLaunchError", ({message}) => Effect.succeed({status: "blocked", reason: message} as const)),
-        );
+          return yield* Effect.gen(function* () {
+            const lease = yield* readWorktreeLaunch(checkout);
+            if (!lease)
+              return runId === undefined
+                ? ({status: "idle"} as const)
+                : ({status: "blocked", reason: "The expected scoped run is not current."} as const);
+            if (lease.mode !== "aspire") return {status: "blocked", reason: "This is not a scoped Aspire lease."} as const;
+            if (action === "stop") return yield* stopWorktreeLaunch(lease, runId);
+            const status = yield* inspectWorktreeLaunch(lease);
+            return status === "blocked"
+              ? ({status, reason: "Run ownership could not be verified; no readiness is reported."} as const)
+              : ({status, scopeId: lease.scopeId, runId: lease.runId} as const);
+          }).pipe(Effect.provideService(WorktreePlatform, platform));
+        }).pipe(Effect.catchTag("WorktreeLaunchError", ({message}) => Effect.succeed({status: "blocked", reason: message} as const)));
         const presenter = yield* Presenter;
         yield* Effect.orDie(presenter.json(toJsonValue(result)));
         yield* presenter.line(
@@ -127,6 +138,7 @@ export function makeDevCommand(options: DevCommandOptions = {}): CliSubcommand {
           : "Stops only this linked worktree's verified scoped run, preserving volumes.",
       ),
     );
+  };
   const worktree = Command.make("worktree").pipe(Command.withSubcommands([preflight, lifecycle("status"), lifecycle("stop")]));
   return Command.make("dev").pipe(
     Command.withDescription("Local development environments."),

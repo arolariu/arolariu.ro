@@ -33,6 +33,9 @@ arolariu docs prepare-site
 arolariu rates update [--year <y>] [--from <y>] [--to <y>]
 arolariu dev aspire [--engine <rancher|podman>]
 arolariu dev selfhost [start|stop|logs] [--engine <rancher|podman>]
+arolariu dev worktree preflight --engine podman [--expected-root <path>]
+arolariu dev worktree status --engine podman
+arolariu dev worktree stop --engine podman [--expected-run <id>]
 arolariu containers build|run --target <frontend|backend|cv|exp> [--engine <rancher|podman>]
 arolariu containers compose --file <path> [--engine <rancher|podman>] -- <compose arguments...>
 arolariu test e2e <all|backend|frontend|cv>
@@ -43,6 +46,10 @@ arolariu lint <all|packages|cv|website|api|status|exp> [patterns...]
 Pass arguments through npm after `--`: `npm run doctor -- --quick --json`, `npm run rates:update -- --year 2025`. `--help` and a command
 group run without a subcommand (`arolariu`, `arolariu docs`, `arolariu dev`) print help and exit `0`. Slash aliases (`/h`, `/v`, `/q`, `/?`,
 …) do not exist.
+
+`npm run dev -- worktree …` is also routed to these scoped actions. There is no scoped `start` or live browser command. Preflight and
+ownership do not imply readiness; see the
+[scoped gates and acceptance checklist](../infra/Local/readme.md#scoped-aspire-gates-windows-podman).
 
 ### Global flags
 

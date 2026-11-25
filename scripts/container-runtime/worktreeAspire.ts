@@ -17,6 +17,7 @@ import {
   readWorktreeJson,
   readWorktreeLease,
   resolveWorktreeScope,
+  sameWorktreePath,
   sameWorktreeProcess,
   withWorktreeLock,
   WorktreeLaunchError,
@@ -34,6 +35,7 @@ import {
   type WorktreeVolumes,
   writeWorktreeLease,
 } from "./worktreeLease.ts";
+import type {WorktreeCheckout} from "./worktreePreflight.ts";
 
 /** Shutdown never requests deleting volumes or clearing data. */
 export type WorktreeStopResult =
@@ -311,22 +313,97 @@ export function inspectWorktreeLaunch(lease: WorktreeLease): Effect.Effect<"rese
       if (current.phase === "reserved") return "reserved" as const;
       const expected = current.processIdentity;
       if (current.phase !== "owned" || !expected) return "blocked" as const;
-      const directory = runDirectory(registry, current);
-      if (!(await worktreeDirectory(directory))) return "blocked" as const;
-      const ready = await readWorktreeJson(join(directory, "process.json"));
-      if (current.mode === "aspire") await verifyAspireDispatch(platform, current, expected, current.resourceOwnership ?? []);
-      return matchesWorktreeReceipt(ready, current, expected)
-        && worktreeRecord(ready)
-        && sameWorktreePorts(current.ports, ready["boundPorts"])
-        && sameWorktreeProcess(expected, await platform.processIdentity(expected.pid))
+      return (await verifyLiveSupervisor(platform, current, expected, runDirectory(registry, current)))
         ? ("owned" as const)
         : ("blocked" as const);
     });
   }).pipe(Effect.orElseSucceed(() => "blocked" as const));
 }
 
+async function verifyLiveSupervisor(
+  platform: WorktreeLaunchPlatform,
+  current: WorktreeLease,
+  expected: WorktreeProcessIdentity,
+  directory: string,
+): Promise<boolean> {
+  if (!(await worktreeDirectory(directory))) return false;
+  const ready = await readWorktreeJson(join(directory, "process.json"));
+  if (current.mode === "aspire") await verifyAspireDispatch(platform, current, expected, current.resourceOwnership ?? []);
+  return (
+    matchesWorktreeReceipt(ready, current, expected)
+    && worktreeRecord(ready)
+    && sameWorktreePorts(current.ports, ready["boundPorts"])
+    && sameWorktreeProcess(expected, await platform.processIdentity(expected.pid))
+  );
+}
+
+/** Point-in-time ownership snapshot, not permission to launch or proof of service readiness. */
+export type OwnedWorktreeAspire = WorktreeLease & {
+  readonly mode: "aspire";
+  readonly phase: "owned";
+  readonly processIdentity: WorktreeProcessIdentity;
+};
+
+function isOwnedAspire(lease: WorktreeLease | null): lease is OwnedWorktreeAspire {
+  return lease?.mode === "aspire" && lease.phase === "owned" && lease.processIdentity !== undefined;
+}
+
+function sameOwnedAspire(other: WorktreeLease | null, expected: OwnedWorktreeAspire): boolean {
+  if (!isOwnedAspire(other)) return false;
+  const journal = expected.resourceOwnership ?? [];
+  return (
+    other.scopeId === expected.scopeId
+    && other.runId === expected.runId
+    && other.engineId === expected.engineId
+    && sameWorktreePath(other.root, expected.root)
+    && sameWorktreePath(other.commonGitDir, expected.commonGitDir)
+    && sameWorktreePorts(expected.ports, other.ports)
+    && sameWorktreeProcess(expected.processIdentity, other.processIdentity)
+    && (other.resourceOwnership?.length ?? 0) === journal.length
+    && journal.every(({id}, index) => other.resourceOwnership?.[index]?.id === id)
+  );
+}
+
+/** Re-observes canonical checkout, pinned engine, lease and live supervisor for internal handoff only. */
+export function observeOwnedWorktreeAspire(
+  expected: WorktreeCheckout,
+  runId: string,
+  baseline?: OwnedWorktreeAspire,
+): Effect.Effect<OwnedWorktreeAspire | null, never, WorktreePlatform> {
+  return Effect.gen(function* () {
+    const {scopeId, checkout} = yield* resolveWorktreeScope(expected);
+    if (checkout.head !== expected.head || checkout.branch !== expected.branch) return null;
+    const platform = yield* WorktreePlatform;
+    const engineId = yield* platform.engine;
+    return yield* worktreeOperation("Worktree handoff ownership unavailable.", async () => {
+      const registry = await platform.registry(false);
+      if (!registry) return null;
+      const current = await readStableWorktreeLease(registry, scopeId);
+      if (
+        !isOwnedAspire(current)
+        || current.runId !== runId
+        || current.engineId !== engineId
+        || (baseline && !sameOwnedAspire(current, baseline))
+      )
+        return null;
+      const directory = runDirectory(registry, current);
+      if (
+        !(await verifyLiveSupervisor(platform, current, current.processIdentity, directory))
+        || (await readWorktreeJson(join(directory, "stop.json"))) !== undefined
+        || (await readWorktreeJson(join(directory, "exit.json"))) !== undefined
+      )
+        return null;
+      return sameOwnedAspire(await readStableWorktreeLease(registry, scopeId), current) ? current : null;
+    });
+  }).pipe(Effect.orElseSucceed(() => null));
+}
+
 /** Stops only the current, pinned, proven run. Invalid or partial unknown state remains fenced. */
-export function stopWorktreeLaunch(lease: WorktreeLease): Effect.Effect<WorktreeStopResult, never, WorktreePlatform> {
+export function stopWorktreeLaunch(
+  lease: WorktreeLease,
+  expectedRunId = lease.runId,
+): Effect.Effect<WorktreeStopResult, never, WorktreePlatform> {
+  if (lease.runId !== expectedRunId) return Effect.succeed({status: "blocked", reason: "The expected scoped run is not current."});
   return withCurrent<WorktreeStopResult>(
     lease,
     "Ownership or shutdown could not be verified; no uncertain resource was touched.",
