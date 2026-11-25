@@ -58,6 +58,7 @@ export function createWorktreeWebServer(
 
   return {
     cwd: websiteRoot,
+    env: {SITE_URL: preview.baseURL},
     command:
       `npm exec --no -- next dev --hostname ${preview.hostname} --port ${preview.port} --experimental-https`
       + ` --experimental-https-key ${CERTIFICATE_KEY} --experimental-https-cert ${CERTIFICATE}`,

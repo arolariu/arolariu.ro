@@ -40,10 +40,10 @@ import {
   TIMEOUTS,
   WEB_SERVER_CONFIG,
 } from "./tests/config";
-import {getWorktreePreview} from "./tests/config/environment";
+import {getTestRunDirectory, getWorktreePreview} from "./tests/config/environment";
 
 /** Storage state file path for sharing auth state across tests */
-const STORAGE_STATE_PATH = path.resolve(process.cwd(), "tests", "e2e-storage-state.json");
+const STORAGE_STATE_PATH = path.resolve(getTestRunDirectory(), "tests", "e2e-storage-state.json");
 
 // Get environment-specific configuration
 const envConfig = getEnvironmentConfig();
@@ -98,7 +98,7 @@ export default defineConfig({
 
   // ==================== Web Server ====================
   webServer: worktreePreview
-    ? createWorktreeWebServer(worktreePreview, process.cwd())
+    ? createWorktreeWebServer(worktreePreview, import.meta.dirname)
     : {
         command: WEB_SERVER_CONFIG.command,
         url: WEB_SERVER_CONFIG.url,

@@ -73,6 +73,7 @@ describe("website worktree preview", () => {
       expect(config).not.toHaveProperty("url");
       expect(config).not.toHaveProperty("port");
       expect(config).toHaveProperty("command", expect.stringContaining("--hostname 127.0.0.1 --port 3101"));
+      expect(config).toHaveProperty("env.SITE_URL", "https://127.0.0.1:3101");
     } finally {
       unlinkSync(key);
       unlinkSync(cert);

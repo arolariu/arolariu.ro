@@ -91,7 +91,13 @@ If there is no trusted CA or the test configuration is missing, stop and complet
 `mkcert -install` or copy private keys into a worker. For a manual preview run this from the root:
 
 ```powershell
-npm exec --no --workspace @arolariu/website -- next dev --hostname 127.0.0.1 --port 3101 --experimental-https --experimental-https-key certificates\localhost-key.pem --experimental-https-cert certificates\localhost.pem
+$previousSiteUrl = $env:SITE_URL
+try {
+  $env:SITE_URL = 'https://127.0.0.1:3101'
+  npm exec --no --workspace @arolariu/website -- next dev --hostname 127.0.0.1 --port 3101 --experimental-https --experimental-https-key certificates\localhost-key.pem --experimental-https-cert certificates\localhost.pem
+} finally {
+  $env:SITE_URL = $previousSiteUrl
+}
 ```
 
 For Playwright, stop any manual preview in the **same checkout** first. With the repo's Chromium browser already installed, run:
@@ -105,9 +111,10 @@ try {
 }
 ```
 
-The opt-in starts and stops its own loopback server and fails if its port is taken or its certificate pair is missing. It does not accept
-CI, remote test targets, `E2E_USE_PROD=true`, or a `BASE_URL` override. Keep one website build, dev server, or Playwright run per worktree
-at a time: they can overwrite the same `.next` or test state. Use a separate worktree for a concurrent website preview.
+The opt-in starts and stops its own loopback server, sets the child's `SITE_URL` to that preview, and fails if its port is taken or its
+certificate pair is missing. It does not accept CI, remote test targets, `E2E_USE_PROD=true`, or a `BASE_URL` override. Keep one website
+build, dev server, or Playwright run per worktree at a time: they can overwrite the same `.next` or test state. Use a separate worktree for
+a concurrent website preview.
 
 ### Reserve one full-stack integration slot
 

@@ -6,6 +6,8 @@
 
 /* eslint-disable no-magic-numbers, no-console -- Configuration uses explicit numeric values */
 
+import {resolve} from "node:path";
+
 import {parseWorktreePreview} from "../../scripts/worktreePreview";
 
 /** Supported test environments */
@@ -115,6 +117,11 @@ export function getWorktreePreview(): ReturnType<typeof parseWorktreePreview> {
     productionBuild: isProdBuild(),
     baseURL: process.env[ENV_KEYS.BASE_URL],
   });
+}
+
+/** Keeps opt-in test artifacts in the configured website instead of the invoking checkout. */
+export function getTestRunDirectory(): string {
+  return getWorktreePreview() ? resolve(import.meta.dirname, "..", "..") : process.cwd();
 }
 
 /**
