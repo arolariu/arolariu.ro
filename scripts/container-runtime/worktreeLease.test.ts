@@ -1,13 +1,59 @@
 // @vitest-environment node
 import {Effect} from "effect";
-import {link, readFile, writeFile} from "node:fs/promises";
+import {link, mkdir, mkdtemp, readFile, readdir, realpath, rm, symlink, writeFile} from "node:fs/promises";
+import {tmpdir} from "node:os";
 import {join} from "node:path";
 import {describe, expect, it} from "vitest";
 
 import {leaseFixture} from "./worktreeLease.testing.ts";
 import {claimWorktreeLaunch, listenWorktreePort, readWorktreeLaunch, WorktreePlatform} from "./worktreeLease.ts";
+import {openWorktreeRegistryRoute} from "./worktreePlatform.ts";
 
 describe("worktree lease", () => {
+  it("owns and disposes a fixture from a fresh checkout without planning artifacts", async () => {
+    const checkout = await mkdtemp(join(await realpath(tmpdir()), "arolariu-fresh-checkout-"));
+    try {
+      const fixture = await leaseFixture(checkout);
+      try {
+        expect(fixture.checkout.root).toBe(checkout);
+        expect(await readdir(checkout)).toEqual([]);
+        await writeFile(join(fixture.directory, "fixture.json"), "{}", {flag: "wx"});
+      } finally {
+        await fixture.dispose();
+      }
+      await expect(readdir(fixture.directory)).rejects.toMatchObject({code: "ENOENT"});
+    } finally {
+      await rm(checkout, {recursive: true});
+    }
+  });
+
+  it.each(["absent", "create"])("rejects a redirected ancestor before %s store access", async (mode) => {
+    const root = await mkdtemp(join(await realpath(tmpdir()), "arolariu-registry-route-"));
+    const target = join(root, "target");
+    const localData = join(target, "Local");
+    const redirected = join(root, "redirected");
+    let accesses = 0;
+    try {
+      await mkdir(localData, {recursive: true});
+      await symlink(target, redirected, process.platform === "win32" ? "junction" : "dir");
+      const openStore = async (parent: string) => {
+        accesses++;
+        if (mode === "absent") return null;
+        const store = join(parent, "store");
+        await mkdir(store);
+        return store;
+      };
+      const outcome = await Promise.allSettled([openWorktreeRegistryRoute(join(redirected, "Local"), openStore)]);
+      expect.soft(outcome[0]?.status).toBe("rejected");
+      expect.soft(accesses).toBe(0);
+      expect.soft(await readdir(localData)).toEqual([]);
+      // A canonical parent still reaches the exact same synthetic store boundary.
+      expect(await openWorktreeRegistryRoute(localData, openStore)).toBe(mode === "absent" ? null : join(localData, "store"));
+    } finally {
+      await rm(root, {recursive: true});
+    }
+  });
+
   it("concurrent claims produce only one owner", async () => {
     const fixture = await leaseFixture();
     try {

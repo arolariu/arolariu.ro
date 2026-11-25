@@ -7,6 +7,7 @@ import {Effect} from "effect";
 import {execFile} from "node:child_process";
 import {randomInt} from "node:crypto";
 import {realpath} from "node:fs/promises";
+import {dirname, isAbsolute, normalize} from "node:path";
 import {promisify} from "node:util";
 
 import type {Environment} from "../platform/Environment.ts";
@@ -71,12 +72,41 @@ try {
   return result;
 }
 
+/** Gates store access on the OS-known route. */
+export async function openWorktreeRegistryRoute(
+  parent: string,
+  openStore: (parent: string) => Promise<string | null>,
+): Promise<string | null> {
+  if (!isAbsolute(parent) || normalize(parent) !== parent || dirname(parent) === parent) throw new Error("Invalid registry parent");
+  for (let dir = parent; ; dir = dirname(dir)) {
+    if (!(await worktreeDirectory(dir))) throw new Error("Missing registry ancestor");
+    if (dirname(dir) === dir) break;
+  }
+  return openStore(parent);
+}
+
+const localAppData = "[Environment]::GetFolderPath([Environment+SpecialFolder]::LocalApplicationData)";
+
 /** Resolves a fixed OS-known per-user store; no environment path or caller path selects it. */
 export async function windowsWorktreeRegistry(create: boolean, kind: "aspire" | "fixture" = "aspire"): Promise<string | null> {
   const name = kind === "fixture" ? "arolariu-worktree-fixture-v1" : "arolariu-worktree-launch-v1";
-  const path = await observeWindows(`
-$local = [Environment]::GetFolderPath([Environment+SpecialFolder]::LocalApplicationData)
-if ($local -notmatch '^[A-Za-z]:\\\\' -or ![IO.Directory]::Exists($local)) { throw 'LocalApplicationData unavailable' }
+  const parent = await observeWindows(`[Console]::WriteLine(${localAppData})`);
+  if (!/^[a-z]:\\[^<>:"|?*\u0000-\u001f]+$/iu.test(parent)) throw new Error("LocalApplicationData unavailable");
+  return openWorktreeRegistryRoute(parent, async (checked) => {
+    const expected = Buffer.from(checked, "utf8").toString("base64");
+    const path = await observeWindows(`
+$local = ${localAppData}
+$expected = [Text.Encoding]::UTF8.GetString([Convert]::FromBase64String('${expected}'))
+if ($local -cne $expected -or [IO.DriveInfo]::new([IO.Path]::GetPathRoot($local)).DriveType -ne 'Fixed') {
+  throw 'LocalApplicationData route changed or unsupported'
+}
+# Check Windows reparse attributes in the same invocation before absence or ACL creation.
+for ($dir = [IO.DirectoryInfo]::new($local); $null -ne $dir; $dir = $dir.Parent) {
+  $attrs = [IO.File]::GetAttributes($dir.FullName)
+  if (($attrs -band [IO.FileAttributes]::Directory) -eq 0 -or ($attrs -band [IO.FileAttributes]::ReparsePoint) -ne 0) {
+    throw 'Redirected registry ancestor'
+  }
+}
 $root = [IO.Path]::Combine($local, '${name}')
 $sid = [Security.Principal.WindowsIdentity]::GetCurrent().User
 $system = [Security.Principal.SecurityIdentifier]::new('S-1-5-18')
@@ -111,9 +141,10 @@ foreach ($rule in $acl.GetAccessRules($true, $true, [Security.Principal.Security
 if (!$ownerRule) { throw 'Registry owner has no inherited access' }
 [Console]::WriteLine($root)
 `);
-  if (path === "absent") return null;
-  if (!/^[a-z]:\\[^\r\n]+$/iu.test(path) || !(await worktreeDirectory(path))) throw new Error("Invalid registry");
-  return path;
+    if (path === "absent") return null;
+    if (!sameWorktreePath(path, `${checked}\\${name}`) || !(await worktreeDirectory(path))) throw new Error("Invalid registry");
+    return path;
+  });
 }
 
 /** Captures existing Effect inspection services; no live mutating container adapter is installed. */

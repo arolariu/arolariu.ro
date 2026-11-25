@@ -1,5 +1,6 @@
 // @vitest-environment node
 import {Effect} from "effect";
+import {readFile, writeFile} from "node:fs/promises";
 import {join} from "node:path";
 import {describe, expect, it} from "vitest";
 
@@ -31,7 +32,89 @@ const processIdentity = {pid: 12345, started: "639312345678900000", image: "C:\\
 const container = {id: "b".repeat(64)};
 
 describe("worktree Aspire ownership", () => {
-  it.each(["recycled PID", "mismatched Podman ID"])("does not stop a %s", async (mismatch) => {
+  it("keeps an unknown container-only outcome pending even when every supplied ID is absent", async () => {
+    const fixture = await leaseFixture();
+    let removals = 0;
+    const platform: WorktreeLaunchPlatform = {
+      ...fixture.platform,
+      containers: {
+        verifyCompleteDispatch: async () => true,
+        inspect: async () => null,
+        removeExact: async () => {
+          removals++;
+        },
+      },
+    };
+    const run = <A, E>(effect: Effect.Effect<A, E, WorktreePlatform>) =>
+      Effect.runPromise(effect.pipe(Effect.provideService(WorktreePlatform, platform)));
+    try {
+      const lease = await run(claimWorktreeLaunch(fixture.checkout));
+      await run(beginWorktreeLaunch(lease));
+      const record = await Promise.allSettled([run(recordWorktreeOwnership(lease, {phase: "partial", containers: [container]}))]);
+      expect.soft(record[0]?.status).toBe("rejected");
+      expect.soft(await run(stopWorktreeLaunch(lease))).toMatchObject({status: "blocked"});
+      expect.soft(await run(readWorktreeLaunch(fixture.checkout))).toMatchObject({phase: "pending", runId: lease.runId});
+      // A persisted container-only partial from the previous code is not authority either.
+      const legacy = JSON.stringify({...lease, version: 1, phase: "partial", resourceOwnership: [container]});
+      const path = join(fixture.directory, lease.scopeId, "lease.json");
+      await writeFile(path, legacy);
+      expect(await run(stopWorktreeLaunch(lease))).toMatchObject({status: "blocked"});
+      expect(await readFile(path, "utf8")).toBe(legacy);
+      expect(removals).toBe(0);
+    } finally {
+      await fixture.dispose();
+    }
+  });
+
+  it.each(["unproven dispatch", "absent journal entry"])("keeps a supervisor-backed attempt pending with an %s", async (failure) => {
+    const fixture = await leaseFixture();
+    const platform: WorktreeLaunchPlatform = {
+      ...fixture.platform,
+      processIdentity: async () => processIdentity,
+      containers: {
+        verifyCompleteDispatch: async () => failure === "absent journal entry",
+        inspect: async () => null,
+        removeExact: async () => {
+          throw new Error("Unexpected removal");
+        },
+      },
+    };
+    const run = <A, E>(effect: Effect.Effect<A, E, WorktreePlatform>) =>
+      Effect.runPromise(effect.pipe(Effect.provideService(WorktreePlatform, platform)));
+    try {
+      const lease = await run(claimWorktreeLaunch(fixture.checkout));
+      const stage = await run(beginWorktreeLaunch(lease));
+      await publishWorktreeJson(join(stage.directory, "process.json"), worktreeProcessReceipt(lease, processIdentity));
+      await expect(run(recordWorktreeOwnership(lease, {phase: "partial", processIdentity, containers: [container]}))).rejects.toThrow(
+        "Could not prove ownership",
+      );
+      expect(await run(stopWorktreeLaunch(lease))).toMatchObject({status: "blocked"});
+      expect(await run(readWorktreeLaunch(fixture.checkout))).toMatchObject({phase: "pending", runId: lease.runId});
+      expect(await readWorktreeJson(join(stage.directory, "stop.json"))).toBeUndefined();
+    } finally {
+      await fixture.dispose();
+    }
+  });
+
+  it("reserves and stages Cosmos Data Explorer and Azurite Table as distinct host endpoints", async () => {
+    const fixture = await leaseFixture();
+    try {
+      await Effect.runPromise(
+        Effect.gen(function* () {
+          const lease = yield* claimWorktreeLaunch(fixture.checkout);
+          const staged = yield* beginWorktreeLaunch(lease);
+          const descriptor = yield* Effect.promise(() => readWorktreeJson(staged.descriptor));
+          expect(descriptor).toMatchObject({ports: lease.ports});
+          expect(descriptor).toMatchObject({ports: {cosmosDataExplorer: expect.any(Number), azuriteTable: expect.any(Number)}});
+          expect(new Set(Object.values(lease.ports)).size).toBe(19);
+        }).pipe(Effect.provideService(WorktreePlatform, fixture.platform)),
+      );
+    } finally {
+      await fixture.dispose();
+    }
+  });
+
+  it.each(["recycled PID", "mismatched Podman ID", "missing Podman ID"])("does not stop a %s", async (mismatch) => {
     const fixture = await leaseFixture();
     const operations: string[] = [];
     let afterRecord = false;
@@ -41,15 +124,21 @@ describe("worktree Aspire ownership", () => {
         processIdentity: async () =>
           afterRecord && mismatch === "recycled PID" ? {...processIdentity, started: "639312345678900001"} : processIdentity,
         containers: {
-          inspect: async () => ({id: "c".repeat(64), scopeId: "foreign", runId: "foreign"}),
+          verifyCompleteDispatch: async () => true,
+          inspect: async () => {
+            if (!afterRecord) return journalEntry;
+            return mismatch === "missing Podman ID" ? null : {id: "c".repeat(64), scopeId: "foreign", runId: "foreign"};
+          },
           removeExact: async () => {
             operations.push("remove");
           },
         },
       };
+      let journalEntry: {id: string; scopeId: string; runId: string} | null = null;
       const result = await Effect.runPromise(
         Effect.gen(function* () {
           const lease = yield* claimWorktreeLaunch(fixture.checkout);
+          journalEntry = {...container, scopeId: lease.scopeId, runId: lease.runId};
           const stage = yield* beginWorktreeLaunch(lease);
           yield* Effect.promise(() =>
             publishWorktreeJson(join(stage.directory, "process.json"), worktreeProcessReceipt(lease, processIdentity)),
@@ -76,14 +165,24 @@ describe("worktree Aspire ownership", () => {
   it("cleans up only owned resources after partial launch", async () => {
     const fixture = await leaseFixture();
     const removed: string[] = [];
+    let exited = false;
     try {
       const result = await Effect.runPromise(
         Effect.gen(function* () {
           const lease = yield* claimWorktreeLaunch(fixture.checkout);
-          yield* beginWorktreeLaunch(lease);
+          const stage = yield* beginWorktreeLaunch(lease);
+          const receipt = worktreeProcessReceipt(lease, processIdentity);
+          yield* Effect.promise(() => publishWorktreeJson(join(stage.directory, "process.json"), receipt));
           const platform: WorktreeLaunchPlatform = {
             ...fixture.platform,
+            processIdentity: async () => (exited ? null : processIdentity),
             containers: {
+              verifyCompleteDispatch: async (run, supervisor, journal) => {
+                expect(run).toEqual({engineId: lease.engineId, scopeId: lease.scopeId, runId: lease.runId});
+                expect(supervisor).toEqual(processIdentity);
+                expect(journal).toEqual([container]);
+                return true;
+              },
               inspect: async (engine, id) => {
                 expect(engine).toBe(lease.engineId);
                 expect(id).toBe(container.id);
@@ -96,7 +195,15 @@ describe("worktree Aspire ownership", () => {
               },
             },
           };
-          const owned = yield* recordWorktreeOwnership(lease, {containers: [container], phase: "partial"});
+          const owned = yield* recordWorktreeOwnership(lease, {processIdentity, containers: [container], phase: "partial"}).pipe(
+            Effect.provideService(WorktreePlatform, platform),
+          );
+          // Model a supervisor that acknowledged a previously verified cooperative stop.
+          yield* Effect.promise(async () => {
+            await publishWorktreeJson(join(stage.directory, "stop.json"), receipt);
+            await publishWorktreeJson(join(stage.directory, "exit.json"), {...receipt, reason: "stop"});
+            exited = true;
+          });
           return yield* stopWorktreeLaunch(owned).pipe(Effect.provideService(WorktreePlatform, platform));
         }).pipe(Effect.provideService(WorktreePlatform, fixture.platform)),
       );

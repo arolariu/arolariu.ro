@@ -53,7 +53,7 @@ const selector =
   /^(?:restore|msbuild|(?:import)?directorybuild|directorypackages|nuget_fallback|nuget_restore|custombefore|customafter|baseintermediateoutputpath|dotnet_cli_home|dotnet_msbuild_sdk_resolver|configuration$|platform$|targetframework|runtimeidentifier|dcpclipath$|dcpextensionsdir$|testingglobalpath$)/iu;
 // Microsoft.Common.props and Microsoft.Common.targets honor these intermediate selectors, too.
 const buildFileSelectorName =
-  "(?:DirectoryBuild(?:Props|Targets)Path|ImportDirectoryBuild(?:Props|Targets)|_DirectoryBuild(?:Props|Targets)(?:File|BasePath))";
+  "(?:DirectoryBuild(?:Props|Targets)Path|ImportDirectoryBuild(?:Props|Targets)|_DirectoryBuild(?:Props|Targets)(?:File|BasePath)|Custom(?:Before|After)DirectoryBuild(?:Props|Targets))";
 const buildFileSelector = new RegExp(`^${buildFileSelectorName}$`, "iu");
 const buildFileSelectorElement = new RegExp(`<${buildFileSelectorName}(?=[\\s/>])`, "iu");
 const supportedProperties = new Set([

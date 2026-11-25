@@ -6,6 +6,7 @@
 import {Effect} from "effect";
 import {spawn} from "node:child_process";
 import {realpath} from "node:fs/promises";
+import {tmpdir} from "node:os";
 import {basename, dirname, join, resolve} from "node:path";
 import {setTimeout as sleep} from "node:timers/promises";
 
@@ -60,7 +61,7 @@ export function launchWorktreeFixture(
         detached: true,
         stdio: "ignore",
         windowsHide: true,
-        env: {SystemRoot: "C:\\Windows", WINDIR: "C:\\Windows"},
+        env: {SystemRoot: "C:\\Windows", WINDIR: "C:\\Windows", TEMP: await realpath(tmpdir())},
       });
       await new Promise<void>((resolve, reject) => {
         child.once("spawn", resolve);
@@ -113,9 +114,9 @@ export function startWorktreeFixture(checkout: WorktreeCheckout): Effect.Effect<
 }
 
 async function permittedRegistry(registry: string): Promise<boolean> {
-  const workDirectory = resolve(checkoutRoot, ".superpowers");
-  if (sameWorktreePath(dirname(registry), workDirectory) && /^task-3-registry-[a-z0-9]+$/iu.test(basename(registry))) {
-    return (await worktreeDirectory(workDirectory)) && (await worktreeDirectory(registry));
+  const temp = await realpath(tmpdir());
+  if (sameWorktreePath(dirname(registry), temp) && /^arolariu-task-3-registry-[a-z0-9]{6}$/iu.test(basename(registry))) {
+    return worktreeDirectory(registry);
   }
   const known = await windowsWorktreeRegistry(false, "fixture");
   return known !== null && sameWorktreePath(known, registry);

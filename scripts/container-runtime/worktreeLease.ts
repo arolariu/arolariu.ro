@@ -28,8 +28,10 @@ export const worktreePortNames = [
   "localIdentity",
   "sql",
   "cosmos",
+  "cosmosDataExplorer",
   "azuriteBlob",
   "azuriteQueue",
+  "azuriteTable",
   "redis",
 ] as const;
 
@@ -75,6 +77,13 @@ export interface WorktreeLaunchPlatform {
   readonly candidatePort: () => number;
   readonly processIdentity: (pid: number) => Promise<WorktreeProcessIdentity | null>;
   readonly containers?: {
+    // Must positively prove dispatch ended and the complete run inventory on the pinned engine.
+    // A list of caller-supplied IDs, or failing to find a container, is not dispatch evidence.
+    readonly verifyCompleteDispatch: (
+      run: Pick<WorktreeLease, "engineId" | "scopeId" | "runId">,
+      supervisor: WorktreeProcessIdentity,
+      journal: readonly {readonly id: string}[],
+    ) => Promise<boolean>;
     readonly inspect: (engineId: string, id: string) => Promise<WorktreeContainerIdentity | null>;
     // Implementations must pin the same engine and verify identity/labels again at the operation.
     // No volume or name-based operation is part of this interface.
@@ -191,8 +200,7 @@ function decodeLease(value: unknown, scope: string): WorktreeLease {
     || !isWorktreePorts(ports)
     || (processIdentity !== undefined && !isWorktreeProcessIdentity(processIdentity))
     || (resourceOwnership !== undefined && !isWorktreeResourceOwnership(resourceOwnership))
-    || (phase === "owned" && processIdentity === undefined)
-    || (phase === "partial" && processIdentity === undefined && !resourceOwnership?.length)
+    || ((phase === "owned" || phase === "partial") && processIdentity === undefined)
     || ((phase === "reserved" || phase === "pending") && (processIdentity !== undefined || resourceOwnership !== undefined))
     || (mode === "fixture" && resourceOwnership !== undefined)
     || !worktreeRecord(volumes)

@@ -508,6 +508,14 @@ describe("worktree Aspire preflight", () => {
     ["ambient", "_DirectoryBuildTargetsBasePath", ""],
     ["ambient", "_DirectoryBuildPropsFile", ""],
     ["ambient", "_DirectoryBuildPropsBasePath", ""],
+    ["ambient", "CustomBeforeDirectoryBuildProps", ""],
+    ["ambient", "CustomAfterDirectoryBuildProps", ""],
+    ["ambient", "CustomBeforeDirectoryBuildTargets", ""],
+    ["ambient", "CustomAfterDirectoryBuildTargets", ""],
+    [appHostName, "CustomBeforeDirectoryBuildProps", appHostProject],
+    ["tooling/Directory.Build.props", "CustomAfterDirectoryBuildProps", "<Project><TargetFramework>net10.0</TargetFramework></Project>"],
+    ["tooling/src/Directory.Build.targets", "CustomBeforeDirectoryBuildTargets", "<Project></Project>"],
+    ["tooling/src/Directory.Build.targets", "cUsToMaFtErDiReCtOrYbUiLdTaRgEtS", "<Project></Project>"],
   ] as const)("blocks unmodeled build-file selectors in %s (%s) before probing or refreshing", async (path, key, xml) => {
     const alternate = "C:/synthetic/alternate.build.xml";
     const property = `<PropertyGroup><${key}>${alternate}</${key}></PropertyGroup>`;

@@ -20,6 +20,7 @@ import {
   sameWorktreeProcess,
   withWorktreeLock,
   WorktreeLaunchError,
+  type WorktreeContainerIdentity,
   type WorktreeLaunchPlatform,
   type WorktreeLease,
   worktreePortNames,
@@ -123,7 +124,34 @@ export function sameWorktreePorts(expected: WorktreePorts, actual: unknown): act
   return isWorktreePorts(actual) && worktreePortNames.every((name) => expected[name] === actual[name]);
 }
 
-/** Transitions a pending attempt only with fresh start and binding evidence, or exact partial ownership. */
+type ContainerAdapter = NonNullable<WorktreeLaunchPlatform["containers"]>;
+
+async function inspectOwnedContainer(adapter: ContainerAdapter, run: WorktreeLease, id: string): Promise<WorktreeContainerIdentity | null> {
+  const found = await adapter.inspect(run.engineId, id);
+  if (found !== null && (!found || found.id !== id || found.scopeId !== run.scopeId || found.runId !== run.runId)) {
+    throw new Error("Container ownership mismatch");
+  }
+  return found;
+}
+
+async function verifyAspireDispatch(
+  platform: WorktreeLaunchPlatform,
+  run: WorktreeLease,
+  supervisor: WorktreeProcessIdentity,
+  journal: NonNullable<WorktreeLease["resourceOwnership"]>,
+): Promise<ContainerAdapter> {
+  const adapter = platform.containers;
+  const {scopeId, runId, engineId} = run;
+  if (!adapter || (await adapter.verifyCompleteDispatch({scopeId, runId, engineId}, supervisor, journal)) !== true) {
+    throw new Error("Complete pinned dispatch not proven");
+  }
+  for (const {id} of journal) {
+    if ((await inspectOwnedContainer(adapter, run, id)) === null) throw new Error("Journal entry was not positively observed");
+  }
+  return adapter;
+}
+
+/** Transitions a pending attempt only with fresh supervisor evidence and a complete pinned Aspire journal. */
 export function recordWorktreeOwnership(
   lease: WorktreeLease,
   proof: WorktreeOwnershipProof,
@@ -132,12 +160,11 @@ export function recordWorktreeOwnership(
     const directory = runDirectory(registry, current);
     if (current.phase !== "pending" || !(await worktreeDirectory(directory))) throw new Error("Run not pending");
     const {phase, processIdentity, containers} = proof;
-    const receipt = processIdentity === undefined ? undefined : await readWorktreeJson(join(directory, "process.json"));
+    const receipt = await readWorktreeJson(join(directory, "process.json"));
     if (
-      (processIdentity !== undefined
-        && (!isWorktreeProcessIdentity(processIdentity)
-          || !matchesWorktreeReceipt(receipt, current, processIdentity)
-          || !sameWorktreeProcess(processIdentity, await platform.processIdentity(processIdentity.pid))))
+      !isWorktreeProcessIdentity(processIdentity)
+      || !matchesWorktreeReceipt(receipt, current, processIdentity)
+      || !sameWorktreeProcess(processIdentity, await platform.processIdentity(processIdentity.pid))
       || (phase === "owned"
         && (!sameWorktreePorts(current.ports, proof.boundPorts)
           || !worktreeRecord(receipt)
@@ -145,10 +172,11 @@ export function recordWorktreeOwnership(
       || (containers !== undefined && !isWorktreeResourceOwnership(containers))
     )
       throw new Error("Unproven ownership");
+    if (current.mode === "aspire") await verifyAspireDispatch(platform, current, processIdentity, containers ?? []);
     const next: WorktreeLease = {
       ...current,
       phase,
-      ...(processIdentity === undefined ? {} : {processIdentity}),
+      processIdentity,
       ...(containers === undefined ? {} : {resourceOwnership: containers}),
     };
     await writeWorktreeLease(registry, next);
@@ -187,7 +215,7 @@ export function matchesWorktreeReceipt(
 
 async function stopSupervisor(current: WorktreeLease, directory: string, platform: WorktreeLaunchPlatform): Promise<void> {
   const expected = current.processIdentity;
-  if (!expected) return;
+  if (!expected) throw new Error("Missing supervisor");
   const ready = await readWorktreeJson(join(directory, "process.json"));
   if (!matchesWorktreeReceipt(ready, current, expected)) throw new Error("No supervisor receipt");
   if (current.phase === "owned" && (!worktreeRecord(ready) || !sameWorktreePorts(current.ports, ready["boundPorts"]))) {
@@ -263,6 +291,7 @@ export function inspectWorktreeLaunch(lease: WorktreeLease): Effect.Effect<"rese
       const directory = runDirectory(registry, current);
       if (!(await worktreeDirectory(directory))) return "blocked" as const;
       const ready = await readWorktreeJson(join(directory, "process.json"));
+      if (current.mode === "aspire") await verifyAspireDispatch(platform, current, expected, current.resourceOwnership ?? []);
       return matchesWorktreeReceipt(ready, current, expected)
         && worktreeRecord(ready)
         && sameWorktreePorts(current.ports, ready["boundPorts"])
@@ -280,27 +309,23 @@ export function stopWorktreeLaunch(lease: WorktreeLease): Effect.Effect<Worktree
     "Ownership or shutdown could not be verified; no uncertain resource was touched.",
     async (current, registry, platform) => {
       if (current.phase === "pending") throw new Error("Launch outcome unknown");
-      const directory = runDirectory(registry, current);
-      if (current.phase !== "reserved" && !(await worktreeDirectory(directory))) throw new Error("Missing run directory");
-      const ids = current.resourceOwnership ?? [];
-      const containers = platform.containers;
-      if (ids.length && !containers) throw new Error("No pinned container adapter");
-      const verify = async (id: string) => {
-        if (!containers) throw new Error("No pinned container adapter");
-        const found = await containers.inspect(current.engineId, id);
-        if (found !== null && (!found || found.id !== id || found.scopeId !== current.scopeId || found.runId !== current.runId)) {
-          throw new Error("Container ownership mismatch");
-        }
-        return found;
-      };
-      // Prevalidate the whole journal before any shutdown, then revalidate each exact ID on removal.
-      for (const {id} of ids) await verify(id);
-      await stopSupervisor(current, directory, platform);
-      for (const {id} of ids) {
-        const exact = await verify(id);
-        if (exact && containers) {
-          await containers.removeExact(current.engineId, exact);
-          if ((await verify(id)) !== null) throw new Error("Container still present");
+      if (current.phase !== "reserved") {
+        const directory = runDirectory(registry, current);
+        const supervisor = current.processIdentity;
+        if (!supervisor || !(await worktreeDirectory(directory))) throw new Error("Missing owned supervisor");
+        const journal = current.resourceOwnership ?? [];
+        const adapter = current.mode === "aspire" ? await verifyAspireDispatch(platform, current, supervisor, journal) : undefined;
+        await stopSupervisor(current, directory, platform);
+        if (adapter) {
+          // A verified supervisor can clean up entries already witnessed in this stop. Never
+          // interpret an initially absent ID as dispatch evidence or fall back to names.
+          for (const {id} of journal) {
+            const exact = await inspectOwnedContainer(adapter, current, id);
+            if (exact) {
+              await adapter.removeExact(current.engineId, exact);
+              if ((await inspectOwnedContainer(adapter, current, id)) !== null) throw new Error("Container still present");
+            }
+          }
         }
       }
       await unlink(join(registry, current.scopeId, "lease.json"));
