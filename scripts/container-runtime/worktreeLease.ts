@@ -252,7 +252,7 @@ async function verifyWorktreeDescriptor(directory: string, lease: WorktreeLease)
     return;
   }
   if (!staged) throw new Error("Missing worktree stage");
-  const descriptor = await readWorktreeJson(join(directory, lease.runId, "descriptor.json"));
+  const descriptor = await readWorktreeRecord(join(directory, lease.runId, "descriptor.json"), parseWorktreeAuthorityJson);
   const {ports, volumes, ...header} = worktreeDescriptorFor(lease);
   if (
     !worktreeRecord(descriptor)
@@ -291,7 +291,33 @@ export async function worktreeDirectory(path: string): Promise<boolean> {
 }
 
 /** Reads a bounded, private, single-link record; absent is distinct from invalid. */
-export async function readWorktreeJson(path: string): Promise<unknown> {
+export function readWorktreeJson(path: string): Promise<unknown> {
+  return readWorktreeRecord(path, JSON.parse);
+}
+
+/** Checks member names before whole-record parsing can collapse them. Input is bounded by the registry file read. */
+function parseWorktreeAuthorityJson(text: string): unknown {
+  const objects: (Set<string> | null)[] = [];
+  // Consume whole strings (including escapes). A colon after JSON whitespace identifies an object member name.
+  const tokens = /"(?:[^"\\]|\\[\s\S])*"([ \t\r\n]*:)?|[{}[\]"]/gu;
+  for (const [token, separator] of text.matchAll(tokens)) {
+    if (token === "{") objects.push(new Set());
+    else if (token === "[") objects.push(null);
+    else if (token === "}" || token === "]") objects.pop();
+    else if (token === '"') throw new SyntaxError("Invalid registry JSON string");
+    else {
+      const names = objects.at(-1);
+      if (!names || separator === undefined) continue;
+      const name = JSON.parse(token.slice(0, -separator.length)) as string;
+      if (names.has(name)) throw new SyntaxError("Duplicate property in worktree authority record");
+      names.add(name);
+    }
+  }
+  // Native parsing still owns grammar, structure validation, and value decoding.
+  return JSON.parse(text);
+}
+
+async function readWorktreeRecord(path: string, parse: (text: string) => unknown): Promise<unknown> {
   let stat;
   try {
     stat = await lstat(path);
@@ -312,7 +338,7 @@ export async function readWorktreeJson(path: string): Promise<unknown> {
     const bytes = Buffer.alloc(maxFileSize + 1);
     const {bytesRead} = await file.read({buffer: bytes, length: bytes.length});
     if (bytesRead === 0 || bytesRead > maxFileSize || bytesRead !== (await file.stat()).size) throw new Error("Invalid registry file size");
-    return JSON.parse(new TextDecoder("utf-8", {fatal: true}).decode(bytes.subarray(0, bytesRead)));
+    return parse(new TextDecoder("utf-8", {fatal: true}).decode(bytes.subarray(0, bytesRead)));
   } finally {
     await file.close();
   }
@@ -348,7 +374,7 @@ export async function readWorktreeLease(registry: string, scope: string): Promis
   if (!scopePattern.test(scope)) throw new Error("Invalid scope");
   const directory = join(registry, scope);
   if (!(await worktreeDirectory(directory))) return null;
-  const value = await readWorktreeJson(join(directory, "lease.json"));
+  const value = await readWorktreeRecord(join(directory, "lease.json"), parseWorktreeAuthorityJson);
   if (value === undefined) return null;
   const lease = decodeLease(value, scope);
   await verifyWorktreeDescriptor(directory, lease);

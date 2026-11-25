@@ -166,6 +166,101 @@ describe("worktree Aspire ownership", () => {
     }
   });
 
+  it.each([
+    ["lease", "version", "version"],
+    ["descriptor", "version", "version"],
+    ["lease", "cosmosReadiness", "cosmos\\u0052eadiness"],
+    ["descriptor", "cosmosReadiness", "cosmos\\u0052eadiness"],
+  ] as const)("blocks duplicate authority properties in %s (%s as %s)", async (record, key, alias) => {
+    const fixture = await leaseFixture();
+    const observations: string[] = [];
+    let allowDispatch = true;
+    const platform: WorktreeLaunchPlatform = {
+      ...fixture.platform,
+      processIdentity: async () => {
+        observations.push("process");
+        return processIdentity;
+      },
+      containers: {
+        verifyCompleteDispatch: async () => {
+          observations.push("dispatch");
+          return allowDispatch;
+        },
+        inspect: async () => {
+          throw new Error("No container should be inspected");
+        },
+        removeExact: async () => {
+          throw new Error("No container should be removed");
+        },
+      },
+    };
+    const run = <A, E>(effect: Effect.Effect<A, E, WorktreePlatform>, selected = platform) =>
+      Effect.runPromise(effect.pipe(Effect.provideService(WorktreePlatform, selected)));
+    try {
+      const lease = await run(claimWorktreeLaunch(fixture.checkout));
+      const stage = await run(beginWorktreeLaunch(lease));
+      const processPath = join(stage.directory, "process.json");
+      await publishWorktreeJson(processPath, {...worktreeProcessReceipt(lease, processIdentity), boundPorts: lease.ports});
+      const owned = await run(recordWorktreeOwnership(lease, {phase: "owned", processIdentity, boundPorts: lease.ports}));
+      expect(await run(inspectWorktreeLaunch(owned))).toBe("owned");
+      allowDispatch = false; // Even on red, the synthetic adapter cannot enter shutdown.
+      observations.length = 0;
+
+      const leasePath = join(fixture.directory, lease.scopeId, "lease.json");
+      const path = record === "lease" ? leasePath : stage.descriptor;
+      const saved = await readFile(path, "utf8");
+      const value = key === "version" ? 2 : lease.ports.cosmosReadiness;
+      const member = `"${key}":${value}`;
+      const malformed = saved.replace(member, `"${alias}" \t:\n ${value},${member}`);
+      expect(malformed).not.toBe(saved);
+      expect(JSON.parse(malformed)).toEqual(JSON.parse(saved)); // Last-wins normalization hides the defect.
+      await writeFile(path, malformed);
+      const records = [leasePath, stage.descriptor, processPath];
+      const evidence = await Promise.all(records.map((file) => readFile(file)));
+
+      const status = await Promise.allSettled([run(readWorktreeLaunch(fixture.checkout))]);
+      expect.soft(status[0]?.status).toBe("rejected");
+      expect(await run(inspectWorktreeLaunch(owned))).toBe("blocked");
+      expect(await run(stopWorktreeLaunch(owned))).toMatchObject({status: "blocked"});
+      const sibling = {...fixture.checkout, root: join(fixture.checkout.root, "synthetic-sibling")};
+      await expect(
+        run(claimWorktreeLaunch(sibling), {
+          ...platform,
+          checkout: Effect.succeed(sibling),
+          candidatePort: () => {
+            observations.push("allocate");
+            throw new Error("Allocator must not run against a malformed sibling record");
+          },
+        }),
+      ).rejects.toThrow("Could not reserve");
+      expect.soft(observations).toEqual([]);
+      expect(await Promise.all(records.map((file) => readFile(file)))).toEqual(evidence);
+      expect(await readWorktreeJson(join(stage.directory, "stop.json"))).toBeUndefined();
+    } finally {
+      await fixture.dispose();
+    }
+  });
+
+  it("does not retire a reserved lease with duplicate authority properties", async () => {
+    const fixture = await leaseFixture();
+    const run = <A, E>(effect: Effect.Effect<A, E, WorktreePlatform>) =>
+      Effect.runPromise(effect.pipe(Effect.provideService(WorktreePlatform, fixture.platform)));
+    try {
+      const lease = await run(claimWorktreeLaunch(fixture.checkout));
+      const path = join(fixture.directory, lease.scopeId, "lease.json");
+      const saved = await readFile(path, "utf8");
+      const malformed = saved.replace('"phase":"reserved"', '"phase":"reserved","phase":"reserved"');
+      expect(malformed).not.toBe(saved);
+      expect(JSON.parse(malformed)).toEqual(JSON.parse(saved));
+      await writeFile(path, malformed);
+      expect.soft(await run(stopWorktreeLaunch(lease))).toMatchObject({status: "blocked"});
+      const retained = await Promise.allSettled([readFile(path, "utf8")]);
+      expect(retained[0]).toEqual({status: "fulfilled", value: malformed});
+    } finally {
+      await fixture.dispose();
+    }
+  });
+
   it.each(["recycled PID", "mismatched Podman ID", "missing Podman ID"])("does not stop a %s", async (mismatch) => {
     const fixture = await leaseFixture();
     const operations: string[] = [];
