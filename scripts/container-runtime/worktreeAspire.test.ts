@@ -1,6 +1,6 @@
 // @vitest-environment node
 import {Effect} from "effect";
-import {readFile, writeFile} from "node:fs/promises";
+import {mkdir, readFile, rmdir, writeFile} from "node:fs/promises";
 import {join} from "node:path";
 import {describe, expect, it} from "vitest";
 
@@ -213,6 +213,96 @@ describe("worktree Aspire ownership", () => {
       await fixture.dispose();
     }
   });
+
+  it.each(["resume", "unexplained absence", "vanished pending ID", "present completed ID", "recycled supervisor", "publication failure"])(
+    "keeps two-entry cleanup scoped on retry: %s",
+    async (scenario) => {
+      const fixture = await leaseFixture();
+      const ids = [container.id, "d".repeat(64)] as const;
+      const journal = ids.map((id) => ({id}));
+      const present = new Set<string>(ids);
+      const removals: string[] = [];
+      let failSecond = true;
+      let observed: typeof processIdentity | null = processIdentity;
+      let dispatchChecks = 0;
+      let retryInspectionsOfPending = 0;
+      const run = <A, E>(effect: Effect.Effect<A, E, WorktreePlatform>, platform = fixture.platform) =>
+        Effect.runPromise(effect.pipe(Effect.provideService(WorktreePlatform, platform)));
+      try {
+        const lease = await run(claimWorktreeLaunch(fixture.checkout));
+        const stage = await run(beginWorktreeLaunch(lease));
+        const receipt = worktreeProcessReceipt(lease, processIdentity);
+        const progressPath = join(stage.directory, `cleanup-${ids[0]}.json`);
+        await publishWorktreeJson(join(stage.directory, "process.json"), receipt);
+        const platform: WorktreeLaunchPlatform = {
+          ...fixture.platform,
+          processIdentity: async () => observed,
+          containers: {
+            verifyCompleteDispatch: async (run, supervisor, supplied) => {
+              dispatchChecks++;
+              expect(run).toEqual({engineId: lease.engineId, scopeId: lease.scopeId, runId: lease.runId});
+              expect(supervisor).toEqual(processIdentity);
+              expect(supplied).toEqual(journal);
+              return true;
+            },
+            inspect: async (engine, id) => {
+              expect(engine).toBe(lease.engineId);
+              expect(ids).toContain(id);
+              if (scenario === "vanished pending ID" && !failSecond && id === ids[1] && ++retryInspectionsOfPending === 2) {
+                present.delete(id);
+              }
+              return present.has(id) ? {id, scopeId: lease.scopeId, runId: lease.runId} : null;
+            },
+            removeExact: async (engine, owned) => {
+              expect(engine).toBe(lease.engineId);
+              expect(owned).toEqual({id: owned.id, scopeId: lease.scopeId, runId: lease.runId});
+              expect(present.has(owned.id)).toBe(true);
+              removals.push(owned.id);
+              if (owned.id === ids[1] && failSecond) throw new Error("Injected second removal failure");
+              present.delete(owned.id);
+              if (owned.id === ids[0] && scenario === "publication failure") await mkdir(progressPath);
+            },
+          },
+        };
+        const owned = await run(recordWorktreeOwnership(lease, {phase: "partial", processIdentity, containers: journal}), platform);
+        await publishWorktreeJson(join(stage.directory, "stop.json"), receipt);
+        await publishWorktreeJson(join(stage.directory, "exit.json"), {...receipt, reason: "stop"});
+        observed = null;
+
+        expect(await run(stopWorktreeLaunch(owned), platform)).toMatchObject({status: "blocked"});
+        expect([...present]).toEqual([ids[1]]);
+        expect(removals).toEqual(scenario === "publication failure" ? [ids[0]] : [...ids]);
+        expect(await run(readWorktreeLaunch(fixture.checkout), platform)).toMatchObject({resourceOwnership: journal});
+        if (scenario !== "publication failure") {
+          expect(await readWorktreeJson(progressPath)).toEqual({version: 1, containerId: ids[0], ...receipt});
+        }
+        expect(await readWorktreeJson(join(stage.directory, `cleanup-${ids[1]}.json`))).toBeUndefined();
+
+        failSecond = false;
+        if (scenario === "unexplained absence") present.delete(ids[1]);
+        if (scenario === "present completed ID") present.add(ids[0]);
+        if (scenario === "recycled supervisor") observed = {...processIdentity, started: "639312345678900001"};
+        if (scenario === "publication failure") {
+          await rmdir(progressPath); // Remove only the test's fault injection.
+          expect(await readWorktreeJson(progressPath)).toBeUndefined();
+        }
+        const retried = await run(stopWorktreeLaunch(owned), platform);
+        expect(dispatchChecks).toBe(3);
+        if (scenario === "resume") {
+          expect(retried).toMatchObject({status: "stopped", runId: lease.runId, preservedVolumes: lease.volumes});
+          expect(removals).toEqual([...ids, ids[1]]);
+          expect(present.size).toBe(0);
+          expect(await run(readWorktreeLaunch(fixture.checkout), platform)).toBeNull();
+        } else {
+          expect(retried).toMatchObject({status: "blocked"});
+          expect(removals).toEqual(scenario === "publication failure" ? [ids[0]] : [...ids]);
+          expect(await run(readWorktreeLaunch(fixture.checkout), platform)).toMatchObject({resourceOwnership: journal});
+        }
+      } finally {
+        await fixture.dispose();
+      }
+    },
+  );
 
   it("stop and restart retain the same scope volumes", async () => {
     const fixture = await leaseFixture();

@@ -139,6 +139,7 @@ async function verifyAspireDispatch(
   run: WorktreeLease,
   supervisor: WorktreeProcessIdentity,
   journal: NonNullable<WorktreeLease["resourceOwnership"]>,
+  completed?: ReadonlySet<string>,
 ): Promise<ContainerAdapter> {
   const adapter = platform.containers;
   const {scopeId, runId, engineId} = run;
@@ -146,7 +147,8 @@ async function verifyAspireDispatch(
     throw new Error("Complete pinned dispatch not proven");
   }
   for (const {id} of journal) {
-    if ((await inspectOwnedContainer(adapter, run, id)) === null) throw new Error("Journal entry was not positively observed");
+    const absent = (await inspectOwnedContainer(adapter, run, id)) === null;
+    if (absent !== (completed?.has(id) === true)) throw new Error("Journal entry disagrees with verified cleanup");
   }
   return adapter;
 }
@@ -213,7 +215,13 @@ export function matchesWorktreeReceipt(
   );
 }
 
-async function stopSupervisor(current: WorktreeLease, directory: string, platform: WorktreeLaunchPlatform): Promise<void> {
+// True only when this invocation observes the exact supervisor transition to stopped.
+async function stopSupervisor(
+  current: WorktreeLease,
+  directory: string,
+  platform: WorktreeLaunchPlatform,
+  resumingCleanup = false,
+): Promise<boolean> {
   const expected = current.processIdentity;
   if (!expected) throw new Error("Missing supervisor");
   const ready = await readWorktreeJson(join(directory, "process.json"));
@@ -231,8 +239,8 @@ async function stopSupervisor(current: WorktreeLease, directory: string, platfor
       && (exit["reason"] === "stop" || (current.mode === "fixture" && exit["reason"] === "ttl"))
     );
   };
-  if (observed === null && (await acknowledged())) return;
-  if (!sameWorktreeProcess(expected, observed)) throw new Error("Process no longer matches");
+  if (observed === null && (await acknowledged())) return false;
+  if (resumingCleanup || !sameWorktreeProcess(expected, observed)) throw new Error("Process shutdown could not be verified");
   const path = join(directory, "stop.json");
   const request = await readWorktreeJson(path);
   if (request === undefined) await publishWorktreeJson(path, worktreeProcessReceipt(current, expected));
@@ -243,10 +251,36 @@ async function stopSupervisor(current: WorktreeLease, directory: string, platfor
     await sleep(100);
     if (!(await acknowledged())) continue;
     const remaining = await platform.processIdentity(expected.pid);
-    if (remaining === null) return;
+    if (remaining === null) return true;
     if (!sameWorktreeProcess(expected, remaining)) throw new Error("PID recycled during stop");
   } while (performance.now() < deadline);
   throw new Error("No verified shutdown");
+}
+
+function cleanupReceiptPath(directory: string, id: string): string {
+  return join(directory, `cleanup-${id}.json`);
+}
+
+async function readCleanupProgress(
+  directory: string,
+  run: WorktreeLease,
+  supervisor: WorktreeProcessIdentity,
+  journal: NonNullable<WorktreeLease["resourceOwnership"]>,
+): Promise<ReadonlySet<string>> {
+  const completed = new Set<string>();
+  for (const {id} of journal) {
+    const receipt = await readWorktreeJson(cleanupReceiptPath(directory, id));
+    if (receipt === undefined) continue;
+    if (
+      !worktreeRecord(receipt)
+      || receipt["version"] !== 1
+      || receipt["containerId"] !== id
+      || !matchesWorktreeReceipt(receipt, run, supervisor)
+    )
+      throw new Error("Unverified cleanup receipt");
+    completed.add(id);
+  }
+  return completed;
 }
 
 /** Disposes a proven bind-race attempt without contacting the listener that won the race. */
@@ -314,18 +348,30 @@ export function stopWorktreeLaunch(lease: WorktreeLease): Effect.Effect<Worktree
         const supervisor = current.processIdentity;
         if (!supervisor || !(await worktreeDirectory(directory))) throw new Error("Missing owned supervisor");
         const journal = current.resourceOwnership ?? [];
-        const adapter = current.mode === "aspire" ? await verifyAspireDispatch(platform, current, supervisor, journal) : undefined;
-        await stopSupervisor(current, directory, platform);
-        if (adapter) {
-          // A verified supervisor can clean up entries already witnessed in this stop. Never
-          // interpret an initially absent ID as dispatch evidence or fall back to names.
+        if (current.mode === "aspire") {
+          const completed = await readCleanupProgress(directory, current, supervisor, journal);
+          const adapter = await verifyAspireDispatch(platform, current, supervisor, journal, completed);
+          const stoppedNow = await stopSupervisor(current, directory, platform, completed.size > 0);
           for (const {id} of journal) {
+            if (completed.has(id)) continue;
+            // Entries without receipts were positively observed before verified shutdown.
             const exact = await inspectOwnedContainer(adapter, current, id);
             if (exact) {
               await adapter.removeExact(current.engineId, exact);
               if ((await inspectOwnedContainer(adapter, current, id)) !== null) throw new Error("Container still present");
+            } else if (!stoppedNow) {
+              throw new Error("Pending container disappeared without verified cleanup");
             }
+            // Publish under the existing run lock before touching the next container. A lost
+            // publication leaves absence unexplained on retry, not a new cleanup authorization.
+            await publishWorktreeJson(cleanupReceiptPath(directory, id), {
+              version: 1,
+              containerId: id,
+              ...worktreeProcessReceipt(current, supervisor),
+            });
           }
+        } else {
+          await stopSupervisor(current, directory, platform);
         }
       }
       await unlink(join(registry, current.scopeId, "lease.json"));
