@@ -337,12 +337,12 @@ function fixture(
 function portableFixture(
   platform: "linux" | "darwin",
   variables: Readonly<Record<string, string>>,
-  engineResponses: Readonly<Record<string, string>>,
+  engineResponses: Readonly<Record<string, string | null>>,
   files: Readonly<Record<string, string>> = {},
 ) {
   const cwd = "/home/dev/git/worktrees/task";
   const common = "/home/dev/git/monorepo/.git";
-  const responses: Readonly<Record<string, string>> = {
+  const responses: Readonly<Record<string, string | null>> = {
     [`git ${gitCheckoutArgs.join(" ")}`]: `${cwd}\n${common}/worktrees/task\n${common}\n`,
     "git symbolic-ref --quiet HEAD": "refs/heads/chore/task\n",
     "git rev-parse --verify HEAD": `${head}\n`,
@@ -356,6 +356,7 @@ function portableFixture(
       scriptedOutcomes((request) => {
         const stdout = responses[commandLine(request)];
         if (stdout === undefined) throw new Error("Unapproved process in preflight");
+        if (stdout === null) return {kind: "exited", exitCode: 1, stdout: "", stderr: canary, durationMs: 0};
         return {kind: "succeeded", exitCode: 0, stdout, stderr: canary, durationMs: 0};
       }),
     ],
@@ -545,6 +546,7 @@ describe("worktree Aspire preflight", () => {
       {
         "podman system connection list --format json": "[]",
         "dotnet --list-sdks": scenario === "preview SDK" ? "10.0.100-preview.4 [/sdk]\n" : "10.0.103 [/sdk]\n",
+        "dotnet dev-certs https --check --trust": scenario === "wrong Python package" ? null : "",
       },
       {
         "tooling/Directory.Build.props": "<Project><PropertyGroup><TargetFramework>net10.0</TargetFramework></PropertyGroup></Project>",
@@ -575,6 +577,7 @@ describe("worktree Aspire preflight", () => {
       expect.arrayContaining([
         expect.objectContaining({id: "python-dependencies", status: python ? "pass" : "blocked"}),
         expect.objectContaining({id: "dotnet-sdk", status: dotnet ? "pass" : "blocked"}),
+        expect.objectContaining({id: "dotnet-tls", status: dotnet && scenario !== "wrong Python package" ? "pass" : "blocked"}),
       ]),
     );
     expect(
@@ -582,8 +585,54 @@ describe("worktree Aspire preflight", () => {
         .processCalls()
         .filter(({request}) => request.command === "dotnet")
         .map(({request}) => commandLine(request)),
-    ).toEqual(["dotnet --list-sdks"]);
+    ).toEqual(dotnet ? ["dotnet --list-sdks", "dotnet dev-certs https --check --trust"] : ["dotnet --list-sdks"]);
     expect(test.processCalls().some(({request}) => request.command.includes("python"))).toBe(false);
+  });
+
+  it.each([
+    {platform: "linux", scenario: "trusted", variables: {}, verify: true, trust: true},
+    {platform: "darwin", scenario: "trusted", variables: {}, verify: true, trust: true},
+    {platform: "linux", scenario: "untrusted", variables: {}, verify: true, trust: false},
+    {platform: "linux", scenario: "override", variables: {SSL_CERT_FILE: "/other/root.pem"}, verify: false, trust: false},
+    {platform: "darwin", scenario: "override", variables: {NODE_TLS_REJECT_UNAUTHORIZED: "0"}, verify: false, trust: false},
+    {platform: "linux", scenario: "relative data home", variables: {XDG_DATA_HOME: "relative"}, verify: false, trust: false},
+    {platform: "linux", scenario: "missing key", variables: {XDG_DATA_HOME: "/home/dev/xdg"}, verify: false, trust: false},
+  ] as const)("qualifies only existing $platform website trust ($scenario)", async ({platform, scenario, variables, verify, trust}) => {
+    const authority =
+      platform === "darwin"
+        ? "/home/dev/Library/Application Support/mkcert"
+        : scenario === "missing key"
+          ? "/home/dev/xdg/mkcert"
+          : "/home/dev/.local/share/mkcert";
+    const publicRoot = `${authority}/rootCA.pem`;
+    const key = `${authority}/rootCA-key.pem`;
+    const command =
+      platform === "darwin"
+        ? `/usr/bin/security verify-cert -L -l -q -R offline -p basic -c ${publicRoot}`
+        : `/usr/bin/openssl verify -check_ss_sig -purpose any -- ${publicRoot}`;
+    const test = portableFixture(
+      platform,
+      variables,
+      {
+        "podman system connection list --format json": "[]",
+        ...(verify ? {[command]: trust ? canary : null} : {}),
+      },
+      {[publicRoot]: "public fixture", ...(scenario === "missing key" ? {} : {[key]: canary})},
+    );
+
+    const result = await test.inspect("podman");
+
+    expect(result.status).toBe("blocked");
+    expect(result.capabilities).toContainEqual(expect.objectContaining({id: "website-tls", status: trust ? "pass" : "blocked"}));
+    expect(result.capabilities).toContainEqual(expect.objectContaining({id: "dotnet-tls", status: "blocked"}));
+    expect(
+      test
+        .processCalls()
+        .filter(({request}) => request.command === "/usr/bin/security" || request.command === "/usr/bin/openssl")
+        .map(({request}) => commandLine(request)),
+    ).toEqual(verify ? [command] : []);
+    expect(JSON.stringify(result)).not.toContain(canary);
+    expect(JSON.stringify(test.processCalls())).not.toContain(key);
   });
 
   it.each([

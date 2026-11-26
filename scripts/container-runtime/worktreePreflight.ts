@@ -94,7 +94,7 @@ function pathProfile(platform: NodeJS.Platform) {
     return windows ? normalized.toLowerCase() : normalized;
   };
   const isLocal = (path: string | undefined): path is string =>
-    windows ? localDrivePath(path) : path !== undefined && /^\/(?!\/)[^\u0000-\u001f]*$/u.test(path);
+    windows ? localDrivePath(path) : path !== undefined && /^\/(?!\/)[^\u0000-\u001f\u007f]*$/u.test(path);
   return {paths, key, isLocal, equal: (left: string, right: string): boolean => key(left) === key(right)};
 }
 
@@ -906,6 +906,54 @@ function inspectDotnetTls(root: string, hasPowerShell: boolean): Effect.Effect<W
           "",
         )
       : result;
+  });
+}
+
+function inspectPosixWebsiteTrust(
+  root: string,
+  env: EnvironmentSnapshot,
+  names: ReadonlySet<string>,
+): Effect.Effect<WorktreeCapability, never, ReadOnlyFiles | Process> {
+  return Effect.gen(function* () {
+    const blocked = capability(
+      "website-tls",
+      false,
+      "",
+      "Machine bootstrap: existing mkcert CA/signing-key presence or system trust could not be verified. See Setup actions infrastructure.mkcert.install and infrastructure.mkcert.trust (separate approval).",
+    );
+    const {platform, variables} = env;
+    if (platform !== "linux" && platform !== "darwin") return blocked;
+    if (
+      names.has("node_tls_reject_unauthorized")
+      || (platform === "linux"
+        && ["ssl_cert_file", "ssl_cert_dir", "openssl_conf", "openssl_conf_include", "openssl_modules"].some((name) => names.has(name)))
+    )
+      return blocked;
+    const {isLocal, equal} = pathProfile(platform);
+    const home = variables["HOME"];
+    const dataHome = variables["XDG_DATA_HOME"];
+    let caDirectory = variables["CAROOT"];
+    if (!caDirectory?.trim()) {
+      if (platform === "linux" && dataHome?.trim()) {
+        if (!isLocal(dataHome)) return blocked;
+        caDirectory = posix.join(dataHome, "mkcert");
+      } else if (isLocal(home)) {
+        caDirectory = posix.join(home, platform === "linux" ? ".local/share/mkcert" : "Library/Application Support/mkcert");
+      }
+    }
+    if (!isLocal(caDirectory) || (yield* canonicalPath(caDirectory)) !== caDirectory) return blocked;
+    const publicCa = posix.join(caDirectory, "rootCA.pem");
+    if (!(yield* ownedFile(publicCa, equal)) || !(yield* ownedFile(posix.join(caDirectory, "rootCA-key.pem"), equal))) return blocked;
+    // Only the public certificate is passed to the native trust probe.
+    const trust = yield* run(probes.infrastructure.posixMkcertTrust(platform, publicCa), {cwd: root});
+    return trust.kind === "succeeded"
+      ? capability(
+          "website-tls",
+          true,
+          "System trust accepts the existing mkcert CA and its signing-key file is present; no scoped leaf or browser connection was exercised.",
+          "",
+        )
+      : blocked;
   });
 }
 
@@ -1822,13 +1870,28 @@ function inspect(
     const expConfig = inspectExpConfig(root, env.platform);
     const python = inspectPython(root, env.platform);
     if (env.platform !== "win32" || env.architecture !== "x64") {
-      const sdk = toolingFramework(root, env.platform).pipe(Effect.flatMap((framework) => inspectDotnetSdk(root, framework?.version)));
+      const nativeTls = env.platform === "linux" || env.platform === "darwin";
+      const managed = Effect.gen(function* () {
+        const framework = yield* toolingFramework(root, env.platform);
+        const sdk = yield* inspectDotnetSdk(root, framework?.version);
+        if (!nativeTls) return [sdk];
+        const tls =
+          sdk.status === "pass"
+            ? yield* inspectDotnetTls(root, false)
+            : capability("dotnet-tls", false, "", "Not checked: the required .NET SDK was not observed.");
+        return [sdk, tls];
+      });
+      const checks = yield* Effect.all(
+        [...config, engine, artifacts, expConfig, python, ...(nativeTls ? [inspectPosixWebsiteTrust(root, env, names)] : [])],
+        {concurrency: "unbounded"},
+      );
       return {
         status: "blocked",
         checkout,
         capabilities: [
           checkoutCapability,
-          ...(yield* Effect.all([...config, engine, artifacts, expConfig, python, sdk], {concurrency: "unbounded"})),
+          ...checks,
+          ...(yield* managed),
           capability(
             "host-preparation",
             false,

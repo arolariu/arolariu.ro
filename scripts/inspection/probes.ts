@@ -601,6 +601,21 @@ function windowsMkcertTrust(): InspectionProbe {
   });
 }
 
+/** Evaluates an existing public CA with the native trust store, without importing it. */
+function posixMkcertTrust(platform: "linux" | "darwin", publicCertificate: string): InspectionProbe {
+  const certificate = validatePathLikeValue(publicCertificate, "mkcert public CA path");
+  if (!certificate.startsWith("/")) throw new Error("The mkcert public CA path must be absolute.");
+  return platform === "darwin"
+    ? registerProbe("infrastructure.mkcert.macos-trust", {
+        command: "/usr/bin/security",
+        args: ["verify-cert", "-L", "-l", "-q", "-R", "offline", "-p", "basic", "-c", certificate],
+      })
+    : registerProbe("infrastructure.mkcert.linux-trust", {
+        command: "/usr/bin/openssl",
+        args: ["verify", "-check_ss_sig", "-purpose", "any", "--", certificate],
+      });
+}
+
 /** Reads the Windows profile used by the installed Aspire resolver, not a guessed home override. */
 function windowsUserProfile(): InspectionProbe {
   return registerProbe("infrastructure.windows.user-profile", {
@@ -1084,6 +1099,7 @@ export const probes = {
     windowsPowerShellVersion,
     windowsDotnetTrust,
     windowsMkcertTrust,
+    posixMkcertTrust,
     windowsUserProfile,
     windowsPayload,
     portOwners: infrastructurePortOwners,
