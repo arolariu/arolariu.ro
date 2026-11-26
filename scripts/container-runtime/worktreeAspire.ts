@@ -158,7 +158,7 @@ async function verifyAspireDispatch(
   return adapter;
 }
 
-/** Transitions a pending attempt only with fresh supervisor evidence and a complete pinned Aspire journal. */
+/** Records proven ownership for cleanup even after checkout drift. Handoff checks the revision separately. */
 export function recordWorktreeOwnership(
   lease: WorktreeLease,
   proof: WorktreeOwnershipProof,
@@ -167,10 +167,6 @@ export function recordWorktreeOwnership(
     lease,
     "Could not prove ownership of this run.",
     Effect.fnUntraced(function* (current, registry, platform) {
-      const checkout = yield* platform.checkout;
-      if (checkout?.branch !== current.branch || checkout.head !== current.head) {
-        return yield* Effect.fail(new Error("Run revision changed before ownership observation"));
-      }
       const directory = runDirectory(registry, current);
       if (current.phase !== "pending" || !(yield* worktreeIO(() => worktreeDirectory(directory)))) {
         return yield* Effect.fail(new Error("Run not pending"));

@@ -144,6 +144,33 @@ describe("worktree Aspire ownership", () => {
     }
   });
 
+  it("can record and stop a proven staged run if the checkout moves before ownership is observed", async () => {
+    const fixture = await leaseFixture();
+    let checkout = fixture.checkout;
+    let observed: typeof processIdentity | null = processIdentity;
+    const platform = {
+      ...fixture.platform,
+      checkout: Effect.sync(() => checkout),
+      processIdentity: () => Effect.sync(() => observed),
+    };
+    const run = <A, E>(effect: Effect.Effect<A, E, WorktreePlatform>) =>
+      Effect.runPromise(effect.pipe(Effect.provideService(WorktreePlatform, platform)));
+    try {
+      const lease = await run(claimWorktreeLease(fixture.checkout, "fixture"));
+      const stage = await run(beginWorktreeLaunch(lease));
+      const receipt = worktreeProcessReceipt(lease, processIdentity);
+      await publishWorktreeJson(join(stage.directory, "process.json"), {...receipt, boundPorts: lease.ports});
+      checkout = {...checkout, head: "2".repeat(40)};
+      const owned = await run(recordWorktreeOwnership(lease, {phase: "owned", processIdentity, boundPorts: lease.ports}));
+      expect(owned.head).toBe(fixture.checkout.head);
+      await publishWorktreeJson(join(stage.directory, "exit.json"), {...receipt, reason: "ttl"});
+      observed = null;
+      expect(await run(stopWorktreeLaunch(owned), platform)).toMatchObject({status: "stopped", runId: lease.runId});
+    } finally {
+      await fixture.dispose();
+    }
+  });
+
   it.each([
     "v2 lease",
     "v2 descriptor",
