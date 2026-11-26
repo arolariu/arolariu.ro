@@ -182,6 +182,7 @@ function processKey(request: Readonly<ProcessRequest>, env: Readonly<Record<stri
   if (request.command !== "pwsh") return commandLine(request);
   const role = env?.["AROLARIU_PREFLIGHT_PAYLOAD_ROLE"];
   if (role !== undefined) return `pwsh:${role}`;
+  if (request.args.at(-1) === "$PSVersionTable.PSVersion.Major") return "pwsh:version";
   if (request.args.at(-1)?.includes("GetFolderPath")) return "pwsh:profile";
   return "pwsh";
 }
@@ -207,6 +208,8 @@ function fixture(
     "dotnet --version": "10.0.404\n",
     [`dotnet workload restore ${createRepositoryPaths(root).solution}`]: "",
     "dotnet tool restore": "",
+    "where.exe pwsh.exe": "C:/Program Files/PowerShell/7/pwsh.exe\n",
+    "pwsh:version": "7\n",
     "pwsh:profile": profile,
     "pwsh:swc": "unverified",
     ...overrides,
@@ -231,7 +234,7 @@ function fixture(
           },
         },
       }),
-      "tooling/Directory.Build.props": "<TargetFramework>net10.0</TargetFramework>",
+      "tooling/Directory.Build.props": "<Project><PropertyGroup><TargetFramework>net10.0</TargetFramework></PropertyGroup></Project>",
       "C:/podman/wsl/local-machine.json": JSON.stringify({
         Name: "local-machine",
         HostUser: {Rootful: false, UID: 1000},
@@ -259,6 +262,9 @@ function fixture(
         const payloadPath = options.env?.["AROLARIU_PREFLIGHT_PAYLOAD_PATH"]?.replaceAll("\\", "/");
         const stdout = responses[`${trackedCommand}:${payloadPath}`] ?? responses[trackedCommand];
         if (stdout === undefined) throw new Error("Unapproved process in preflight");
+        if (trackedCommand === "where.exe pwsh.exe" && stdout === "") {
+          return {kind: "exited", exitCode: 1, stdout, stderr: canary, durationMs: 0};
+        }
         return {kind: "succeeded", exitCode: 0, stdout, stderr: canary, durationMs: 0};
       }),
     ],
@@ -440,6 +446,60 @@ describe("worktree Aspire preflight", () => {
     );
   });
 
+  it
+    .runIf(process.platform === "win32")
+    .each([
+      "Directory.Solution.props",
+      "Directory.Solution.targets",
+      "C:/worktrees/Directory.Solution.props",
+      "C:/worktrees/Directory.Solution.targets",
+      "before.arolariu.sln.targets",
+      "after.arolariu.sln.targets",
+      "before.arolariu.slnx.targets",
+      "after.arolariu.slnx.targets",
+      "C:/sdk/10.0.404/Current/SolutionFile/ImportBefore/Local.targets",
+      "C:/sdk/10.0.404/Current/SolutionFile/ImportAfter/Local.targets",
+    ])("rejects an unsupported solution input at %s before restore and on read", async (input) => {
+    const sdkHooks = "C:/sdk/10.0.404/Current/SolutionFile/ImportAfter";
+    const test = fixture(
+      {},
+      {},
+      {
+        ...restoreFiles,
+        [`${sdkHooks}/Microsoft.NET.Sdk.Solution.targets`]: "<Project />",
+        [`${sdkHooks}/Microsoft.NuGet.ImportAfter.targets`]: "<Project />",
+        "before.other.sln.targets": "<Project />",
+        "C:/worktrees/before.arolariu.sln.targets": "<Project />",
+      },
+    );
+    const paths = createRepositoryPaths(root);
+    await Effect.runPromise(
+      Effect.gen(function* () {
+        const fs = yield* FileSystem.FileSystem;
+        expect(yield* recordWorktreeRestoreEvidence(paths, Effect.void)).toBe(true);
+        expect(yield* currentWorktreeRestoreEvidence(paths)).toMatch(/^[a-f0-9]{64}$/u);
+        if (input.includes("/ImportBefore/")) yield* fs.makeDirectory(input.slice(0, input.lastIndexOf("/")));
+        yield* fs.writeFileString(input, "<Project />");
+        const before = test.files();
+        let ran = false;
+        expect.soft(yield* currentWorktreeRestoreEvidence(paths)).toBeUndefined();
+        expect
+          .soft(
+            yield* recordWorktreeRestoreEvidence(
+              paths,
+              Effect.sync(() => {
+                ran = true;
+              }),
+            ),
+          )
+          .toBe(false);
+        expect.soft(ran).toBe(false);
+        expect(test.files()).toEqual(before);
+      }).pipe(Effect.provide(test.layer)),
+    );
+    test.expectNoTransport();
+  });
+
   it.runIf(process.platform === "win32").each([
     {label: "ambiguous SDK inventory", listing: "10.0.404 [C:/sdk]\n10.0.404 [C:/other-sdk]\n", globalJson: "{}"},
     {label: "unobservable selected SDK directory", listing: "10.0.404 [C:/other-sdk]\n", globalJson: "{}"},
@@ -497,29 +557,39 @@ describe("worktree Aspire preflight", () => {
 
   it
     .runIf(process.platform === "win32")
-    .each(["_DirectoryBuildTargetsFile", "_DirectoryBuildTargetsBasePath", "_DirectoryBuildPropsFile", "_DirectoryBuildPropsBasePath"])(
-    "does not reuse an otherwise matching restore receipt with ambient %s",
-    async (key) => {
-      const test = fixture({}, {}, restoreFiles);
-      const paths = createRepositoryPaths(root);
-      await Effect.runPromise(
-        Effect.gen(function* () {
-          const env = yield* Environment;
-          const fs = yield* FileSystem.FileSystem;
-          expect(yield* recordWorktreeRestoreEvidence(paths, Effect.void)).toBe(true);
-          expect(yield* currentWorktreeRestoreEvidence(paths)).toMatch(/^[a-f0-9]{64}$/u);
-          const before = yield* fs.readFileString(receiptPath);
-          const withSelector = Effect.provideService(Environment, {...env, variables: {...env.variables, [key]: "C:/synthetic/alternate"}});
-          expect(yield* currentWorktreeRestoreEvidence(paths).pipe(withSelector)).toBeUndefined();
-          expect(yield* recordWorktreeRestoreEvidence(paths, Effect.die("unsupported selector reached restore")).pipe(withSelector)).toBe(
-            false,
-          );
-          expect(yield* fs.readFileString(receiptPath)).toBe(before);
-        }).pipe(Effect.provide(test.layer)),
-      );
-      test.expectNoTransport();
-    },
-  );
+    .each([
+      "_DirectoryBuildTargetsFile",
+      "_DirectoryBuildTargetsBasePath",
+      "_DirectoryBuildPropsFile",
+      "_DirectoryBuildPropsBasePath",
+      "ImportDirectorySolutionProps",
+      "ImportDirectorySolutionTargets",
+      "DirectorySolutionPropsPath",
+      "DirectorySolutionTargetsPath",
+      "_DirectorySolutionPropsFile",
+      "_DirectorySolutionTargetsBasePath",
+      "ImportByWildcardBeforeSolution",
+      "NuGetRestoreTargets",
+    ])("does not reuse an otherwise matching restore receipt with ambient %s", async (key) => {
+    const test = fixture({}, {}, restoreFiles);
+    const paths = createRepositoryPaths(root);
+    await Effect.runPromise(
+      Effect.gen(function* () {
+        const env = yield* Environment;
+        const fs = yield* FileSystem.FileSystem;
+        expect(yield* recordWorktreeRestoreEvidence(paths, Effect.void)).toBe(true);
+        expect(yield* currentWorktreeRestoreEvidence(paths)).toMatch(/^[a-f0-9]{64}$/u);
+        const before = yield* fs.readFileString(receiptPath);
+        const withSelector = Effect.provideService(Environment, {...env, variables: {...env.variables, [key]: "C:/synthetic/alternate"}});
+        expect(yield* currentWorktreeRestoreEvidence(paths).pipe(withSelector)).toBeUndefined();
+        expect(yield* recordWorktreeRestoreEvidence(paths, Effect.die("unsupported selector reached restore")).pipe(withSelector)).toBe(
+          false,
+        );
+        expect(yield* fs.readFileString(receiptPath)).toBe(before);
+      }).pipe(Effect.provide(test.layer)),
+    );
+    test.expectNoTransport();
+  });
 
   it
     .runIf(process.platform === "win32")
@@ -800,6 +870,42 @@ describe("worktree Aspire preflight", () => {
     test.expectReadOnly();
   });
 
+  it.runIf(process.platform === "win32").each([
+    [
+      "ordinary comments",
+      appHostProject.replace("<PropertyGroup>", "<!-- notes about <Import /> -->\n<PropertyGroup>"),
+      "<Project><!-- <UsingTask /> --></Project>",
+      "pass",
+      true,
+    ],
+    ["unclosed AppHost project", appHostProject.replace("</Project>", ""), "<Project />", "blocked", false],
+    ["unclosed build targets", appHostProject, "<Project>", "blocked", false],
+    [
+      "commented SDK declaration",
+      appHostProject.replace(
+        '<Sdk Name="Aspire.AppHost.Sdk" Version="13.6.5" />',
+        '<!-- <Sdk Name="Aspire.AppHost.Sdk" Version="13.6.5" /> -->',
+      ),
+      "<Project />",
+      "blocked",
+      true,
+    ],
+  ] as const)("validates active build XML with %s", async (_label, project, targets, status, receipt) => {
+    const test = fixture({NUGET_PACKAGES: cache}, payloadFixtures, {
+      ...restoreFiles,
+      ...pinnedCliFiles,
+      ...resolverBundle(`${aspireHome}/bundle`),
+      [appHostName]: project,
+      "tooling/Directory.Build.targets": targets,
+    });
+    expect.soft((await test.inspect()).capabilities).toContainEqual(expect.objectContaining({id: "aspire-bundle", status}));
+    test.expectReadOnly();
+    expect(
+      await Effect.runPromise(recordWorktreeRestoreEvidence(createRepositoryPaths(root), Effect.void).pipe(Effect.provide(test.layer))),
+    ).toBe(receipt);
+    test.expectNoTransport();
+  });
+
   it.runIf(process.platform === "win32")("rejects a payload found only beside the NuGet tool, outside resolver selection", async () => {
     const test = fixture({NUGET_PACKAGES: cache}, {...payloadFixtures, "pwsh:profile": profile}, {...cliBundleFiles, ...pinnedCliFiles});
     expect((await test.inspect()).capabilities).toContainEqual(expect.objectContaining({id: "aspire-bundle", status: "blocked"}));
@@ -932,6 +1038,46 @@ describe("worktree Aspire preflight", () => {
     );
     const checkout = await Effect.runPromise(observeWorktreeCheckout().pipe(Effect.provide(test.layer)));
     expect(checkout).toMatchObject({branch: "chore/worktree+review@2", head});
+    test.expectReadOnly();
+  });
+
+  it.runIf(process.platform === "win32")("reports missing PowerShell before its dependent preflight probes", async () => {
+    const test = fixture(
+      {CAROOT: "C:/local-ca", NUGET_PACKAGES: cache},
+      {...payloadFixtures, "where.exe pwsh.exe": "", "mkcert --version": "v1.4.4", pwsh: "trusted", "pwsh:swc": "verified"},
+      {
+        ...nextFiles,
+        ...pinnedCliFiles,
+        ...resolverBundle(`${aspireHome}/bundle`),
+        "C:/local-ca/rootCA.pem": "inert test file",
+        "C:/local-ca/rootCA-key.pem": "inert test marker",
+        "node_modules/@next/swc-win32-x64-msvc/next-swc.win32-x64-msvc.node": portableExecutable(),
+      },
+    );
+    const result = await test.inspect();
+    expect
+      .soft(result.capabilities)
+      .toContainEqual(expect.objectContaining({id: "powershell", status: "blocked", detail: expect.stringMatching(/PowerShell 7.*PATH/u)}));
+    expect
+      .soft(result.capabilities.filter(({detail}) => detail.startsWith("Not checked: PowerShell")).map(({id}) => id))
+      .toEqual(["website-tls", "npm-dependencies", "aspire-bundle"]);
+    expect.soft(JSON.stringify(result)).not.toContain(canary);
+    expect(test.processCalls().some(({request}) => request.command === "pwsh")).toBe(false);
+    test.expectReadOnly();
+  });
+
+  it.runIf(process.platform === "win32")("rejects older PowerShell before running the dependent probes", async () => {
+    const test = fixture({}, {"pwsh:version": "6\n"});
+    const result = await test.inspect();
+    expect(result.capabilities).toContainEqual(
+      expect.objectContaining({id: "powershell", status: "blocked", detail: expect.stringMatching(/PowerShell 7 or later/u)}),
+    );
+    expect(
+      test
+        .processCalls()
+        .filter(({request}) => request.command === "pwsh")
+        .map(({request}) => processKey(request, undefined)),
+    ).toEqual(["pwsh:version"]);
     test.expectReadOnly();
   });
 

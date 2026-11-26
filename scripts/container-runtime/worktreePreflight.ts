@@ -10,16 +10,11 @@ import {Effect} from "effect";
 
 import {describeGitCheckout} from "../commands/doctor/modules/workspace.ts";
 import {createRepositoryPaths, type RepositoryPaths} from "../common/repository-paths.ts";
-import {inspectSolution, projectAppHostParameterKeys} from "../inspection/dotnet.ts";
+import {inspectSolution, projectAppHostParameterKeys, readBuildProjectXml, type BuildXmlElement} from "../inspection/dotnet.ts";
 import {inspectPath} from "../inspection/files.ts";
 import {inspectionProbeRunner, probes} from "../inspection/probes.ts";
 import {matchesLocalPythonPin, parseConfigurationObject} from "../inspection/python.ts";
-import {
-  currentWorktreeRestoreEvidence,
-  hasUnmodeledBuildFileSelector,
-  isUnmodeledBuildFileSelector,
-  worktreeRestoreRemediation,
-} from "../inspection/worktreeRestore.ts";
+import {currentWorktreeRestoreEvidence, isUnmodeledBuildFileSelector, worktreeRestoreRemediation} from "../inspection/worktreeRestore.ts";
 import {Environment, type EnvironmentSnapshot} from "../platform/Environment.ts";
 import {ReadOnlyFiles} from "../platform/Files.ts";
 import {Process} from "../platform/Process.ts";
@@ -582,6 +577,28 @@ function projectExpTypes(source: string): ReadonlyMap<string, string> | undefine
   return new Map(keys.map((key) => [key, typeof parsed[key]]));
 }
 
+function inspectPowerShell(root: string): Effect.Effect<WorktreeCapability, never, Process> {
+  return Effect.gen(function* () {
+    const outcome = yield* run(probes.workspace.executableResolution("pwsh.exe", "win32"), {cwd: root});
+    const entry = outcome.kind === "succeeded" ? outcome.stdout.split(/\r?\n/u)[0] : undefined;
+    const version =
+      localDrivePath(entry) && win32.basename(entry).toLowerCase() === "pwsh.exe"
+        ? yield* run(probes.infrastructure.windowsPowerShellVersion(), {cwd: root})
+        : undefined;
+    const major = version?.kind === "succeeded" ? version.stdout.trim() : "";
+    return capability(
+      "powershell",
+      /^\d{1,2}$/u.test(major) && Number(major) >= 7,
+      "PowerShell 7 or later was verified for read-only Windows probes.",
+      "Machine bootstrap: PowerShell 7 or later is required. Ensure the supported pwsh.exe is first on PATH, then rerun preflight.",
+    );
+  });
+}
+
+function blockedByPowerShell(id: string): WorktreeCapability {
+  return capability(id, false, "", "Not checked: PowerShell 7 (pwsh) is required. See the powershell prerequisite.");
+}
+
 function inspectWebsiteTrust(
   env: EnvironmentSnapshot,
   root: string,
@@ -1041,15 +1058,21 @@ function inspectToolPayload(
 }
 
 const bundleBuildOverride =
-  /[\u0000\ufffd]|<!|<\/?[\w.-]+:|<(?:Import(?:Group)?|Choose|Target|UsingTask|AspireCliBundlePath|AspireCliPath|DcpDir|DcpCliPath|DcpExtensionsDir|AspireDashboardDir|AspireDashboardPath|AspireHostingSDKVersion)\b/iu;
+  /^(?:Import(?:Group)?|Choose|Target|UsingTask|AspireCliBundlePath|AspireCliPath|DcpDir|DcpCliPath|DcpExtensionsDir|AspireDashboardDir|AspireDashboardPath|AspireHostingSDKVersion)\b/iu;
 
-function supportsBundleBuildFile(text: string): boolean {
-  const xml = text.replaceAll(/<!--[\s\S]*?-->/gu, "");
+function isBundleBuildOverride(name: string): boolean {
+  return bundleBuildOverride.test(name) || isUnmodeledBuildFileSelector(name);
+}
+
+function supportsBundleBuildFile(elements: readonly BuildXmlElement[] | undefined): elements is readonly BuildXmlElement[] {
   return (
-    xml.trim() !== ""
-    && !bundleBuildOverride.test(xml)
-    && !hasUnmodeledBuildFileSelector(xml)
-    && !/<(?:Sdk|AspireUseCliBundle|AspireCliInvocationMode)\b|<Project\b[^>]*\bSdk\s*=/iu.test(xml)
+    elements !== undefined
+    && elements.every(
+      ({name, attributes}) =>
+        !isBundleBuildOverride(name)
+        && !/^(?:Sdk|AspireUseCliBundle|AspireCliInvocationMode)\b/iu.test(name)
+        && (!/^Project\b/iu.test(name) || ![...attributes.keys()].some((key) => key.toLowerCase() === "sdk")),
+    )
   );
 }
 
@@ -1066,7 +1089,7 @@ function supportsAppHostBuildLayout(root: string): Effect.Effect<boolean, never,
       const targets = win32.join(dir, "Directory.Build.targets");
       if ((yield* inspectPath(targets)).kind !== "missing") {
         if (!samePath(dir, root) && !dir.toLowerCase().startsWith(`${checkout}\\`)) return false;
-        if (!supportsBundleBuildFile(yield* readManifest(targets))) return false;
+        if (!supportsBundleBuildFile(readBuildProjectXml(yield* readManifest(targets)))) return false;
       }
       if (dir === win32.dirname(dir)) return true;
     }
@@ -1118,7 +1141,7 @@ function inspectPinnedBundle(
   root: string,
   env: EnvironmentSnapshot,
   names: ReadonlySet<string>,
-  project: string,
+  app: readonly BuildXmlElement[],
   pin: string,
   framework: string,
 ): Effect.Effect<boolean, never, ReadOnlyFiles | Process> {
@@ -1161,30 +1184,54 @@ function inspectPinnedBundle(
       const hook = selectedVariable(env, key);
       if (!localDrivePath(hook) || (yield* inspectPath(hook)).kind !== "missing") return false;
     }
-    const app = project.replaceAll(/<!--[\s\S]*?-->/gu, "");
-    const settings = [...app.matchAll(/<PropertyGroup>\s*([\s\S]*?)<\/PropertyGroup>/gu)].map(([, group]) => group ?? "");
+    const [useBundle, ...otherUses] = app.filter(({name}) => /^AspireUseCliBundle\b/iu.test(name));
+    const [mode, ...otherModes] = app.filter(({name}) => /^AspireCliInvocationMode\b/iu.test(name));
+    const group = useBundle?.parent;
     if (
-      !settings.some(
-        (group) =>
-          group.includes("<AspireUseCliBundle>true</AspireUseCliBundle>")
-          && group.includes("<AspireCliInvocationMode>DnxPinned</AspireCliInvocationMode>"),
+      group?.name !== "PropertyGroup"
+      || group.parent !== app[0]
+      || group.attributes.size !== 0
+      || useBundle?.name !== "AspireUseCliBundle"
+      || useBundle.hasChildren
+      || useBundle.attributes.size !== 0
+      || useBundle.text !== "true"
+      || mode?.name !== "AspireCliInvocationMode"
+      || mode.parent !== group
+      || mode.hasChildren
+      || mode.attributes.size !== 0
+      || mode.text !== "DnxPinned"
+      || otherUses.length !== 0
+      || otherModes.length !== 0
+      || app.some(({name}) => isBundleBuildOverride(name))
+      || !app.some(
+        ({name, parent, attributes, selfClosing}) =>
+          name === "PackageReference"
+          && parent?.name === "ItemGroup"
+          && parent.parent === app[0]
+          && selfClosing
+          && attributes.size === 1
+          && attributes.get("Include") === "Aspire.Hosting.AppHost",
       )
-      || (app.match(/<AspireUseCliBundle\b/giu)?.length ?? 0) !== 1
-      || (app.match(/<AspireCliInvocationMode\b/giu)?.length ?? 0) !== 1
-      || bundleBuildOverride.test(app)
-      || hasUnmodeledBuildFileSelector(app)
-      || !/<PackageReference Include="Aspire\.Hosting\.AppHost"\s*\/>/u.test(app)
     )
       return false;
     // The resolver assembly is supplied by the Hosting.AppHost package, not just the SDK declaration.
-    const pins = yield* readManifest(win32.join(root, "tooling/Directory.Packages.props"));
-    const buildProps = yield* readManifest(win32.join(root, "tooling/Directory.Build.props"));
+    const pins = readBuildProjectXml(yield* readManifest(win32.join(root, "tooling/Directory.Packages.props")));
+    const buildProps = readBuildProjectXml(yield* readManifest(win32.join(root, "tooling/Directory.Build.props")));
+    if (!supportsBundleBuildFile(pins) || !supportsBundleBuildFile(buildProps) || !(yield* supportsAppHostBuildLayout(root))) return false;
+    const [hostingPin, ...otherPins] = pins.filter(
+      ({name, attributes}) =>
+        /^PackageVersion\b/iu.test(name)
+        && [...attributes].some(([key, value]) => /^(?:Include|Update)$/iu.test(key) && value.toLowerCase() === "aspire.hosting.apphost"),
+    );
     if (
-      !supportsBundleBuildFile(pins)
-      || !supportsBundleBuildFile(buildProps)
-      || !(yield* supportsAppHostBuildLayout(root))
-      || !/<PackageVersion Include="Aspire\.Hosting\.AppHost" Version="13\.6\.5"\s*\/>/u.test(pins)
-      || (pins.match(/<PackageVersion\b[^>]*(?:Include|Update)="Aspire\.Hosting\.AppHost"/giu)?.length ?? 0) !== 1
+      hostingPin?.name !== "PackageVersion"
+      || hostingPin.parent?.name !== "ItemGroup"
+      || hostingPin.parent.parent !== pins[0]
+      || !hostingPin.selfClosing
+      || hostingPin.attributes.size !== 2
+      || hostingPin.attributes.get("Include") !== "Aspire.Hosting.AppHost"
+      || hostingPin.attributes.get("Version") !== pin
+      || otherPins.length !== 0
     )
       return false;
     const explicit = selectedVariable(env, "aspireclibundlepath");
@@ -1246,12 +1293,31 @@ function inspectBundle(
   paths: RepositoryPaths,
   env: EnvironmentSnapshot,
   names: ReadonlySet<string>,
+  hasPowerShell: boolean,
 ): Effect.Effect<readonly WorktreeCapability[], never, ReadOnlyFiles | Process | Environment> {
   return Effect.gen(function* () {
-    const project = yield* readManifest(win32.join(paths.root, appHost));
-    const props = yield* readManifest(win32.join(paths.root, "tooling/Directory.Build.props"));
-    const pin = /<Sdk Name="Aspire\.AppHost\.Sdk" Version="(\d+\.\d+\.\d+)"\s*\/>/u.exec(project)?.[1];
-    const framework = /<TargetFramework>net(\d+)\.(\d+)<\/TargetFramework>/u.exec(props);
+    const project = readBuildProjectXml(yield* readManifest(win32.join(paths.root, appHost)));
+    const props = readBuildProjectXml(yield* readManifest(win32.join(paths.root, "tooling/Directory.Build.props")));
+    const pin = project
+      ?.find(
+        ({name, parent, attributes, selfClosing}) =>
+          name === "Sdk"
+          && parent === project[0]
+          && selfClosing
+          && attributes.size === 2
+          && attributes.get("Name") === "Aspire.AppHost.Sdk",
+      )
+      ?.attributes.get("Version");
+    const framework = /^net(\d+)\.(\d+)$/u.exec(
+      props?.find(
+        ({name, attributes, hasChildren, parent}) =>
+          name === "TargetFramework"
+          && attributes.size === 0
+          && !hasChildren
+          && parent?.name === "PropertyGroup"
+          && parent.parent === props[0],
+      )?.text ?? "",
+    );
     const sdks = yield* run(probes.dotnet.sdkList(), {cwd: paths.root, env: dotnetEnvironment});
     const sdk =
       framework !== null
@@ -1269,7 +1335,9 @@ function inspectBundle(
     const assets = appHostObserved && solution.issues.length === 0 && solution.restoreIssues.length === 0;
     const fresh = assets && receiptBefore !== undefined && (yield* currentWorktreeRestoreEvidence(paths)) === receiptBefore;
     const bundle = !!(
-      pin
+      hasPowerShell
+      && project
+      && pin
       && sdk
       && framework
       && (yield* inspectPinnedBundle(paths.root, env, names, project, pin, `net${framework[1]}.${framework[2]}`))
@@ -1289,12 +1357,14 @@ function inspectBundle(
           ? `Worktree preparation: local NuGet artifacts were observed, but the checkout-bound restore freshness evidence is absent, stale, or unavailable. ${worktreeRestoreRemediation}`
           : `Worktree preparation: solution restore artifacts could not be verified. ${worktreeRestoreRemediation}`,
       ),
-      capability(
-        "aspire-bundle",
-        bundle,
-        "The pinned DNX CLI and selected Aspire-home or explicit Windows Dashboard, managed runtime and DCP payloads were observed without execution.",
-        "Machine bootstrap: the pinned DNX CLI or selected Windows bundle could not be verified. See tooling/README.md (Development and debugging) for separately approved bundle preparation.",
-      ),
+      hasPowerShell
+        ? capability(
+            "aspire-bundle",
+            bundle,
+            "The pinned DNX CLI and selected Aspire-home or explicit Windows Dashboard, managed runtime and DCP payloads were observed without execution.",
+            "Machine bootstrap: the pinned DNX CLI or selected Windows bundle could not be verified. See tooling/README.md (Development and debugging) for separately approved bundle preparation.",
+          )
+        : blockedByPowerShell("aspire-bundle"),
     ];
   });
 }
@@ -1360,12 +1430,14 @@ function inspect(
     }
     const {root} = checkout;
     const paths = createRepositoryPaths(root);
+    const powershell = yield* inspectPowerShell(root);
+    const hasPowerShell = powershell.status === "pass";
     const checks = yield* Effect.all(
       [
         inspectPodman(root, names),
-        inspectWebsiteTrust(env, root, names),
+        hasPowerShell ? inspectWebsiteTrust(env, root, names) : Effect.succeed(blockedByPowerShell("website-tls")),
         inspectDotnetTls(root),
-        inspectNpm(root, env.architecture, names),
+        hasPowerShell ? inspectNpm(root, env.architecture, names) : Effect.succeed(blockedByPowerShell("npm-dependencies")),
         inspectWebsiteArtifacts(root),
         inspectPython(paths),
         inspectExpConfig(paths),
@@ -1374,9 +1446,10 @@ function inspect(
     );
     const capabilities = [
       capability("checkout", true, "Canonical, attached linked-worktree identity was observed.", ""),
+      powershell,
       ...(yield* Effect.all([inspectAppHostConfig(root, env), inspectWebsiteConfig(paths, env)], {concurrency: "unbounded"})),
       ...checks,
-      ...(yield* inspectBundle(paths, env, names)),
+      ...(yield* inspectBundle(paths, env, names, hasPowerShell)),
     ];
     return {status: capabilities.every((entry) => entry.status === "pass") ? "prepared" : "blocked", checkout, capabilities};
   });

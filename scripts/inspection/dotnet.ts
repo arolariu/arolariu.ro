@@ -593,7 +593,10 @@ function scanXml(
   options: Readonly<{
     root: string;
     utf8Only?: boolean;
+    allowCdata?: boolean;
+    allowProcessingInstructions?: boolean;
     element: (tag: ParsedXmlTag) => boolean;
+    close?: () => void;
     text?: (value: string) => boolean;
   }>,
 ): boolean {
@@ -628,6 +631,7 @@ function scanXml(
       continue;
     }
     if (source.startsWith("<![CDATA[", opening)) {
+      if (options.allowCdata === false) return false;
       const end = source.indexOf("]]>", opening + 9);
       const cdata = end < 0 ? undefined : source.slice(opening + 9, end);
       if (cdata === undefined || openElements.length === 0 || !hasValidXmlCharacters(cdata) || options.text?.(cdata) === false) {
@@ -642,7 +646,8 @@ function scanXml(
       const target = instruction === undefined ? undefined : parseXmlName(instruction, 0);
       const reservedXmlTarget = target?.name.toLowerCase() === "xml";
       if (
-        instruction === undefined
+        (!reservedXmlTarget && options.allowProcessingInstructions === false)
+        || instruction === undefined
         || target === undefined
         || !hasValidXmlCharacters(instruction)
         || (target.next < instruction.length && !isXmlWhitespace(instruction[target.next]))
@@ -678,6 +683,7 @@ function scanXml(
       if (openElements.pop() !== tag.name) {
         return false;
       }
+      options.close?.();
       continue;
     }
 
@@ -694,6 +700,61 @@ function scanXml(
   }
 
   return rootSeen && openElements.length === 0;
+}
+
+/** An active MSBuild XML element and its immediate context, without evaluating conditions or imports. */
+export interface BuildXmlElement {
+  readonly name: string;
+  readonly attributes: ReadonlyMap<string, string>;
+  readonly parent: BuildXmlElement | undefined;
+  readonly selfClosing: boolean;
+  readonly hasChildren: boolean;
+  readonly text: string;
+}
+
+/**
+ * Reads the literal MSBuild XML subset used by the local preflight and receipt profiles.
+ *
+ * @param source - Bounded UTF-8 project or build file text.
+ * @returns Active elements in source order, or unavailable for malformed or unsupported XML.
+ */
+export function readBuildProjectXml(source: string): readonly BuildXmlElement[] | undefined {
+  if (source.includes("\ufffd")) return undefined;
+  type ActiveElement = Omit<BuildXmlElement, "text" | "hasChildren"> & {text: string; hasChildren: boolean};
+  const active: ActiveElement[] = [];
+  const elements: BuildXmlElement[] = [];
+  const valid = scanXml(source, {
+    root: "Project",
+    utf8Only: true,
+    allowCdata: false,
+    allowProcessingInstructions: false,
+    element: ({name, attributes, selfClosing}) => {
+      const parent = active.at(-1);
+      if (
+        name.includes(":")
+        || [...attributes].some(
+          ([key, value]) =>
+            key.includes(":")
+            || (key === "xmlns" && (parent !== undefined || value !== "http://schemas.microsoft.com/developer/msbuild/2003")),
+        )
+      )
+        return false;
+      const element: ActiveElement = {name, attributes, parent, selfClosing, hasChildren: false, text: ""};
+      elements.push(element);
+      if (parent) parent.hasChildren = true;
+      if (!selfClosing) active.push(element);
+      return true;
+    },
+    close: () => {
+      active.pop();
+    },
+    text: (value) => {
+      const element = active.at(-1);
+      if (element) element.text += value;
+      return true;
+    },
+  });
+  return valid ? elements : undefined;
 }
 
 function parseSolutionProjectDeclarations(source: string): SolutionProjectDeclarations | undefined {

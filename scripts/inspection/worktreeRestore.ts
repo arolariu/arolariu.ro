@@ -11,7 +11,7 @@ import type {RepositoryPaths} from "../common/repository-paths.ts";
 import {Environment, type EnvironmentSnapshot} from "../platform/Environment.ts";
 import {ReadOnlyFiles} from "../platform/Files.ts";
 import type {Process} from "../platform/Process.ts";
-import {solutionProjectPaths, supportsLiteralNuGetConfig} from "./dotnet.ts";
+import {readBuildProjectXml, solutionProjectPaths, supportsLiteralNuGetConfig} from "./dotnet.ts";
 import {inspectPath} from "./files.ts";
 import {inspectionProbeRunner, probes} from "./probes.ts";
 
@@ -27,7 +27,8 @@ export const worktreeRestoreRemediation =
   "For missing restore artifacts or a missing or outdated config inventory, complete an ordinary approved Setup restore (npm run setup without the refresh flag) first, then request the opt-in receipt refresh. "
   + "For unsupported MSBuild or NuGet inputs, use supported inputs before refreshing. "
   + "The scoped profile does not support MSBuild response files. "
-  + "When separately approved, refresh with npm run setup -- --refresh-worktree-restore-evidence.";
+  + "Preview the full Setup plan with npm run setup -- --refresh-worktree-restore-evidence --dry-run. "
+  + "The refresh flag is not restore-only; approve the applicable Setup actions before removing --dry-run.";
 
 /** Required for any scoped invocation that evaluates MSBuild; never pass explicit `@` response files. */
 export const worktreeNoAutoResponse = "-noAutoResponse";
@@ -35,6 +36,8 @@ export const worktreeNoAutoResponse = "-noAutoResponse";
 const MAX_INPUT = 8 * 1024 * 1024;
 const MAX_NUGET_CONFIG_FILES = 64;
 const directoryResponseFile = "Directory.Build.rsp";
+const solutionBuildFiles = ["Directory.Solution.props", "Directory.Solution.targets"];
+const sdkSolutionHooks = new Set(["microsoft.net.sdk.solution.targets", "microsoft.nuget.importafter.targets"]);
 const inputs = [
   "Directory.Build.props",
   "Directory.Build.targets",
@@ -44,7 +47,7 @@ const inputs = [
   "packages.lock.json",
 ];
 const parentInputs = inputs.slice(0, 5);
-const knownImport = "<Import Project=\"$([MSBuild]::GetPathOfFileAbove('Directory.Build.props', '$(MSBuildThisFileDirectory)../'))\" />";
+const knownImport = "$([MSBuild]::GetPathOfFileAbove('Directory.Build.props', '$(MSBuildThisFileDirectory)../'))";
 const dotnetEnv = {
   DOTNET_CLI_TELEMETRY_OPTOUT: "1",
   DOTNET_SKIP_FIRST_TIME_EXPERIENCE: "1",
@@ -56,11 +59,14 @@ const drivePath = /^[a-z]:[\\/][^\u0000-\u001f]*$/iu;
 const localPath = /^[a-z]:[\\/][^<>:"|?*\u0000-\u001f]+$/iu;
 const selector =
   /^(?:restore|msbuild|(?:import)?directorybuild|directorypackages|nuget_fallback|nuget_restore|custombefore|customafter|baseintermediateoutputpath|dotnet_cli_home|dotnet_msbuild_sdk_resolver|configuration$|platform$|targetframework|runtimeidentifier|dcpclipath$|dcpextensionsdir$|testingglobalpath$)/iu;
+const solutionSelector =
+  /^(?:ImportDirectorySolution(?:Props|Targets)|DirectorySolution(?:Props|Targets)Path|_DirectorySolution(?:Props|Targets)(?:File|BasePath)|ImportByWildcard(?:Before|After)Solution|NuGetRestoreTargets)$/iu;
 // Microsoft.Common.props and Microsoft.Common.targets honor these intermediate selectors, too.
 const buildFileSelectorName =
   "(?:DirectoryBuild(?:Props|Targets)Path|ImportDirectoryBuild(?:Props|Targets)|_DirectoryBuild(?:Props|Targets)(?:File|BasePath)|Custom(?:Before|After)DirectoryBuild(?:Props|Targets))";
 const buildFileSelector = new RegExp(`^${buildFileSelectorName}$`, "iu");
-const buildFileSelectorElement = new RegExp(`<${buildFileSelectorName}(?=[\\s/>])`, "iu");
+const unsupportedBuildElement =
+  /^(?:UsingTask|ItemDefinitionGroup|CustomBefore.*|CustomAfter.*|Restore.*|MSBuildProjectExtensionsPath|BaseIntermediateOutputPath|MSBuildSDKsPath|DcpCliPath|DcpExtensionsDir)\b/iu;
 const supportedProperties = new Set([
   "msbuildprojectname",
   "msbuildprojectdirectory",
@@ -97,7 +103,13 @@ function ownedBytes(path: string, limit = MAX_INPUT): Effect.Effect<Uint8Array |
   }).pipe(Effect.orElseSucceed(() => undefined));
 }
 
-function observeResponseFreeSdk(root: string): Effect.Effect<string | undefined, never, ReadOnlyFiles | Process> {
+function observeRestoreSdk(
+  root: string,
+): Effect.Effect<
+  readonly [path: string, solutionHooks: readonly [name: string, digest: string][]] | undefined,
+  never,
+  ReadOnlyFiles | Process
+> {
   return Effect.gen(function* () {
     const options = {cwd: root, env: dotnetEnv};
     const selected = yield* inspectionProbeRunner.run(probes.dotnet.version(), options);
@@ -120,59 +132,97 @@ function observeResponseFreeSdk(root: string): Effect.Effect<string | undefined,
       || (yield* inspectPath(win32.join(sdk, "MSBuild.rsp"))).kind !== "missing"
     )
       return undefined;
-    return canonicalSdk.toLowerCase();
+    // Current's solution metaproject imports every entry in these SDK wildcard directories.
+    // Bind only the shipped hook names from the canonical SDK; additional hooks are unsupported.
+    const hooks: [string, string][] = [];
+    for (const phase of ["ImportBefore", "ImportAfter"]) {
+      const directory = win32.join(sdk, "Current", "SolutionFile", phase);
+      const observed = yield* inspectPath(directory);
+      if (observed.kind === "missing") continue;
+      if (observed.kind !== "directory" || !samePath(yield* files.realPath(directory), directory)) return undefined;
+      const names = yield* files.readDirectory(directory);
+      if (names.length > (phase === "ImportAfter" ? sdkSolutionHooks.size : 0)) return undefined;
+      const seen = new Set<string>();
+      for (const name of names) {
+        const key = name.toLowerCase();
+        if (!sdkSolutionHooks.has(key) || seen.has(key)) return undefined;
+        const bytes = yield* ownedBytes(win32.join(directory, name));
+        if (!bytes?.length) return undefined;
+        hooks.push([key, digest(bytes)]);
+        seen.add(key);
+      }
+    }
+    return [canonicalSdk.toLowerCase(), hooks.sort(([left], [right]) => left.localeCompare(right))] as const;
   }).pipe(Effect.orElseSucceed(() => undefined));
 }
 
-/**
- * Detects build-file selectors outside the static restore/bundle profile.
- *
- * @param xml - Build input text with comments removed.
- * @returns Whether the input can redirect or suppress a modeled build-file lookup.
- */
-export function hasUnmodeledBuildFileSelector(xml: string): boolean {
-  return buildFileSelectorElement.test(xml);
+function hasNoSolutionImports(solution: string): Effect.Effect<boolean, never, ReadOnlyFiles> {
+  return Effect.gen(function* () {
+    const {dir, base, name, ext} = win32.parse(solution);
+    // Current SDKs use legacy .sln sidecars even for .slnx. Fence both names beside
+    // the selected solution, but only Directory.Solution.* is searched in ancestors.
+    for (const filename of ext.toLowerCase() === ".slnx" ? [base, `${name}.sln`] : [base]) {
+      for (const phase of ["before", "after"]) {
+        if ((yield* inspectPath(win32.join(dir, `${phase}.${filename}.targets`))).kind !== "missing") return false;
+      }
+    }
+    for (let directory = dir; ; directory = win32.dirname(directory)) {
+      for (const name of solutionBuildFiles) {
+        if ((yield* inspectPath(win32.join(directory, name))).kind !== "missing") return false;
+      }
+      if (directory === win32.dirname(directory)) return true;
+    }
+  }).pipe(Effect.orElseSucceed(() => false));
 }
 
-/** Detects an ambient MSBuild build-file selector shared by bundle and restore validation. */
+/** Detects an MSBuild build-file selector shared by bundle and restore validation. */
 export function isUnmodeledBuildFileSelector(name: string): boolean {
   return buildFileSelector.test(name);
 }
 
+function supportsBuildExpressions(value: string): boolean {
+  const expressions = value.replaceAll(/\$\(\s*MSBuildProjectName\.EndsWith\('\.Tests'\)\)/gu, "");
+  return (
+    !expressions.includes("$([")
+    && [...expressions.matchAll(/\$\(([a-z0-9_-]+)/giu)].every(
+      ([, property]) => property !== undefined && supportedProperties.has(property.toLowerCase()),
+    )
+  );
+}
+
 function supportedInput(path: string, content: string, listed: ReadonlySet<string>): boolean {
-  const xml = content.replaceAll(/<!--[\s\S]*?-->/gu, "");
-  if (
-    hasUnmodeledBuildFileSelector(xml)
-    || /[\u0000\ufffd]|<!|<\/?[\w.-]+:|<(?:UsingTask|ItemDefinitionGroup|CustomBefore[^ >]*|CustomAfter[^ >]*|Restore[^ >]*|MSBuildProjectExtensionsPath|BaseIntermediateOutputPath|MSBuildSDKsPath|DcpCliPath|DcpExtensionsDir)\b/iu.test(
-      xml,
-    )
-  )
-    return false;
-  const imports = [...xml.matchAll(/<Import\b[^>]*>/giu)].map(([tag]) => tag.replaceAll(/\s+/gu, " "));
-  if (
-    imports.length > 0
-    && (!path.endsWith("sites\\api.arolariu.ro\\tests\\Directory.Build.props") || imports.length !== 1 || imports[0] !== knownImport)
-  )
-    return false;
-  const refs = [...xml.matchAll(/<ProjectReference\b[^>]*>/giu)];
-  const expressions = xml.replace(/<Import\b[^>]*>/giu, "").replaceAll(/\$\(\s*MSBuildProjectName\.EndsWith\('\.Tests'\)\)/gu, "");
-  if (
-    expressions.includes("$([")
-    || [...expressions.matchAll(/\$\(([a-z0-9_-]+)/giu)].some(
-      ([, property]) => property === undefined || !supportedProperties.has(property.toLowerCase()),
-    )
-  )
-    return false;
-  return refs.every(([tag]) => {
-    const target = /\bInclude=(?:"([^"]+)"|'([^']+)')/u.exec(tag);
-    const relative = target?.[1] ?? target?.[2];
-    return (
-      relative !== undefined
-      && /^[a-z0-9_.\\/ -]+$/iu.test(relative)
-      && !win32.isAbsolute(relative)
-      && listed.has(win32.resolve(win32.dirname(path), relative).toLowerCase())
-    );
-  });
+  const elements = readBuildProjectXml(content);
+  if (!elements) return false;
+  let importSeen = false;
+  for (const element of elements) {
+    const {name, attributes, text, selfClosing} = element;
+    if (isUnmodeledBuildFileSelector(name) || unsupportedBuildElement.test(name)) return false;
+    if (/^Import\b/iu.test(name)) {
+      if (
+        importSeen
+        || name !== "Import"
+        || !selfClosing
+        || !path.endsWith("sites\\api.arolariu.ro\\tests\\Directory.Build.props")
+        || attributes.size !== 1
+        || attributes.get("Project")?.replaceAll(/\s+/gu, " ") !== knownImport
+      )
+        return false;
+      importSeen = true;
+      continue;
+    }
+    if (!supportsBuildExpressions(text) || ![...attributes.values()].every(supportsBuildExpressions)) return false;
+    if (/^ProjectReference\b/iu.test(name)) {
+      const relative = attributes.get("Include");
+      if (
+        relative === undefined
+        || !/^[a-z0-9_.\\/ -]+$/iu.test(relative)
+        || win32.isAbsolute(relative)
+        || !listed.has(win32.resolve(win32.dirname(path), relative).toLowerCase())
+      )
+        return false;
+    }
+  }
+  return true;
 }
 
 function configPaths(value: unknown): string[] | undefined {
@@ -259,12 +309,16 @@ export function snapshotWorktreeRestoreInputs(
       || Object.keys(env.variables).some(
         (key) =>
           !optionalLocalHooks.has(key.toLowerCase())
-          && (selector.test(key) || isUnmodeledBuildFileSelector(key) || supportedProperties.has(key.toLowerCase())),
+          && (selector.test(key)
+            || solutionSelector.test(key)
+            || isUnmodeledBuildFileSelector(key)
+            || supportedProperties.has(key.toLowerCase())),
       )
     )
       return undefined;
     const root = yield* files.realPath(paths.root);
     if (!samePath(root, paths.root)) return undefined;
+    if (!(yield* hasNoSolutionImports(paths.solution))) return undefined;
     const absentHooks = new Map<string, string>();
     for (const [key, path] of Object.entries(env.variables)) {
       const name = key.toLowerCase();
@@ -336,7 +390,7 @@ export function snapshotWorktreeRestoreInputs(
     const managed = projectPaths.filter((project) => /\.(?:csproj|fsproj|vbproj)$/iu.test(project));
     const configs = yield* configInputs(env, managed);
     if (configs === undefined) return undefined;
-    const sdk = yield* observeResponseFreeSdk(root);
+    const sdk = yield* observeRestoreSdk(root);
     if (sdk === undefined) return undefined;
     return {
       root,

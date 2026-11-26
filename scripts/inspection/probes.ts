@@ -518,6 +518,14 @@ function podmanMachineInspect(name: string): InspectionProbe {
   });
 }
 
+/** Reads the major version of the PowerShell used by the scoped Windows probes. */
+function windowsPowerShellVersion(): InspectionProbe {
+  return registerProbe("infrastructure.windows.powershell-version", {
+    command: "pwsh",
+    args: ["-NoLogo", "-NoProfile", "-NonInteractive", "-Command", "$PSVersionTable.PSVersion.Major"],
+  });
+}
+
 /** Checks the existing public mkcert root in the Windows trust store without certificate downloads. */
 function windowsMkcertTrust(): InspectionProbe {
   return registerProbe("infrastructure.mkcert.windows-trust", {
@@ -1008,6 +1016,7 @@ export const probes = {
     containerList: infrastructureContainerList,
     mkcertVersion: infrastructureMkcertVersion,
     mkcertCaRoot: infrastructureMkcertCaRoot,
+    windowsPowerShellVersion,
     windowsMkcertTrust,
     windowsUserProfile,
     windowsPayload,
