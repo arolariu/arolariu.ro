@@ -1,0 +1,251 @@
+namespace AppHost.LocalDevelopment;
+
+using System.Diagnostics;
+using System.Globalization;
+using System.Runtime.InteropServices;
+using System.Runtime.Versioning;
+using System.Security.AccessControl;
+using System.Security.Principal;
+using System.Text.Json;
+
+/// <summary>Resolves the native registry independently of caller-supplied filesystem paths.</summary>
+internal static class WorktreeRegistry
+{
+  internal const string DirectoryName = "arolariu-native-aspire-v4";
+
+  internal static Task<string?> OpenAsync(bool create)
+  {
+    if (OperatingSystem.IsWindows()) return Task.FromResult(OpenWindows(create));
+    if (OperatingSystem.IsLinux() || OperatingSystem.IsMacOS())
+      return OpenPosixAsync(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), create);
+    throw new InvalidOperationException("The native registry command is unavailable.");
+  }
+
+  [SupportedOSPlatform("windows")]
+  internal static string? OpenWindows(bool create) =>
+    OpenWindows(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), create);
+
+  [SupportedOSPlatform("windows")]
+  internal static string? OpenWindows(string parent, bool create)
+  {
+    if (!Path.IsPathFullyQualified(parent) || !string.Equals(parent, Path.GetFullPath(parent), StringComparison.OrdinalIgnoreCase)
+      || new DriveInfo(Path.GetPathRoot(parent)!).DriveType != DriveType.Fixed)
+      throw new InvalidOperationException("A canonical fixed local registry route is required.");
+
+    for (var ancestor = new DirectoryInfo(parent); ancestor is not null; ancestor = ancestor.Parent)
+      RequireDirectory(ancestor);
+
+    using var identity = WindowsIdentity.GetCurrent();
+    SecurityIdentifier owner = identity.User ?? throw new InvalidOperationException("No Windows registry owner.");
+    SecurityIdentifier[] principals = [owner, new(WellKnownSidType.LocalSystemSid, null), new(WellKnownSidType.BuiltinAdministratorsSid, null)];
+    const InheritanceFlags inheritance = InheritanceFlags.ContainerInherit | InheritanceFlags.ObjectInherit;
+    var directory = new DirectoryInfo(Path.Combine(parent, DirectoryName));
+    if (!directory.Exists)
+    {
+      if (directory.LinkTarget is not null || File.Exists(directory.FullName))
+        throw new InvalidOperationException("The native registry path is occupied.");
+      if (!create) return null;
+      var protection = new DirectorySecurity();
+      protection.SetOwner(owner);
+      protection.SetAccessRuleProtection(isProtected: true, preserveInheritance: false);
+      foreach (SecurityIdentifier principal in principals)
+        protection.AddAccessRule(new FileSystemAccessRule(principal, FileSystemRights.FullControl, inheritance,
+          PropagationFlags.None, AccessControlType.Allow));
+      directory.Create(protection);
+      directory.Refresh();
+    }
+
+    RequireDirectory(directory);
+    DirectorySecurity acl = directory.GetAccessControl(AccessControlSections.Owner | AccessControlSections.Access);
+    var rules = acl.GetAccessRules(includeExplicit: true, includeInherited: true, typeof(SecurityIdentifier))
+      .OfType<FileSystemAccessRule>().ToArray();
+    if (!acl.AreAccessRulesProtected || !owner.Equals(acl.GetOwner(typeof(SecurityIdentifier)))
+      || !rules.Any(rule => owner.Equals(rule.IdentityReference))
+      || rules.Any(rule => rule.IsInherited || rule.AccessControlType != AccessControlType.Allow
+        || !principals.Any(principal => principal.Equals(rule.IdentityReference))
+        || rule.FileSystemRights != FileSystemRights.FullControl
+        || rule.InheritanceFlags != inheritance || rule.PropagationFlags != PropagationFlags.None))
+      throw new InvalidOperationException("The native registry permissions are not private.");
+    return directory.FullName;
+  }
+
+  [SupportedOSPlatform("linux")]
+  [SupportedOSPlatform("macos")]
+  internal static async Task<string?> OpenPosixAsync(string parent, bool create)
+  {
+    if (!Path.IsPathFullyQualified(parent) || parent != Path.GetFullPath(parent) || Path.GetPathRoot(parent) == parent
+      || parent.Any(char.IsControl))
+      throw new InvalidOperationException("A canonical POSIX user registry route is required.");
+
+    using var deadline = new CancellationTokenSource(TimeSpan.FromSeconds(10));
+    CancellationToken token = deadline.Token;
+    int user = await ReadPosixOwnerAsync("/usr/bin/id", ["-u"], token).ConfigureAwait(false);
+    if (user == 0) throw new InvalidOperationException("The POSIX worktree registry requires a non-root user.");
+
+    const UnixFileMode writableByOtherUsers = UnixFileMode.GroupWrite | UnixFileMode.OtherWrite;
+    for (var ancestor = new DirectoryInfo(parent); ancestor is not null; ancestor = ancestor.Parent)
+    {
+      RequireDirectory(ancestor);
+      int owner = await ReadDirectoryOwnerAsync(ancestor.FullName, token).ConfigureAwait(false);
+      if ((owner != user && (ancestor.FullName == parent || owner != 0))
+        || (File.GetUnixFileMode(ancestor.FullName) & writableByOtherUsers) != 0)
+        throw new InvalidOperationException("The POSIX registry route has an untrusted owner or writer.");
+      if (OperatingSystem.IsMacOS()) RequireNoMacOsAclGrants(ancestor.FullName);
+    }
+
+    const UnixFileMode privateMode = UnixFileMode.UserRead | UnixFileMode.UserWrite | UnixFileMode.UserExecute;
+    var directory = new DirectoryInfo(Path.Combine(parent, DirectoryName));
+    if (!directory.Exists)
+    {
+      if (directory.LinkTarget is not null || File.Exists(directory.FullName))
+        throw new InvalidOperationException("The native registry path is occupied.");
+      if (!create) return null;
+      Directory.CreateDirectory(directory.FullName, privateMode);
+      directory.Refresh();
+    }
+
+    RequireDirectory(directory);
+    int registryOwner = await ReadDirectoryOwnerAsync(directory.FullName, token).ConfigureAwait(false);
+    if (registryOwner != user || File.GetUnixFileMode(directory.FullName) != privateMode)
+      throw new InvalidOperationException("The native registry permissions are not private.");
+    if (OperatingSystem.IsMacOS()) RequireNoMacOsAclGrants(directory.FullName);
+    return directory.FullName;
+  }
+
+  [SupportedOSPlatform("macos")]
+  private static void RequireNoMacOsAclGrants(string path)
+  {
+    // Darwin ACL grants are not constrained by the Unix group and other mode bits.
+    const int extendedAcl = 0x100;
+    const int absent = 2; // filesec_get_property reports ENOENT for an absent Darwin ACL.
+    IntPtr nativePath = Marshal.StringToCoTaskMemUTF8(path);
+    IntPtr acl;
+    int error;
+    try
+    {
+      acl = GetMacOsAcl(nativePath, extendedAcl);
+      error = Marshal.GetLastPInvokeError();
+    }
+    finally
+    {
+      Marshal.FreeCoTaskMem(nativePath);
+    }
+    if (acl == IntPtr.Zero)
+    {
+      if (error == absent) return;
+      throw new InvalidOperationException("The macOS registry ACL could not be verified.");
+    }
+
+    try
+    {
+      const int noMoreEntries = 22; // Darwin acl_get_entry reports EINVAL past the last entry.
+      const int deny = 2;
+      for (int i = 0; i <= 128; i++)
+      {
+        int entryId = i == 0 ? 0 : -1; // ACL_FIRST_ENTRY then ACL_NEXT_ENTRY.
+        if (GetMacOsAclEntry(acl, entryId, out IntPtr entry) != 0)
+        {
+          if (Marshal.GetLastPInvokeError() == noMoreEntries) return;
+          break;
+        }
+        if (GetMacOsAclTag(entry, out int tag) != 0 || tag != deny) break;
+      }
+      throw new InvalidOperationException("The macOS registry ACL grants access or could not be verified.");
+    }
+    finally
+    {
+      _ = FreeMacOsAcl(acl);
+    }
+  }
+
+  [DllImport("/usr/lib/libSystem.B.dylib", EntryPoint = "acl_get_link_np", SetLastError = true)]
+  [SupportedOSPlatform("macos")]
+  private static extern IntPtr GetMacOsAcl(IntPtr path, int type);
+
+  [DllImport("/usr/lib/libSystem.B.dylib", EntryPoint = "acl_get_entry", SetLastError = true)]
+  [SupportedOSPlatform("macos")]
+  private static extern int GetMacOsAclEntry(IntPtr acl, int entryId, out IntPtr entry);
+
+  [DllImport("/usr/lib/libSystem.B.dylib", EntryPoint = "acl_get_tag_type")]
+  [SupportedOSPlatform("macos")]
+  private static extern int GetMacOsAclTag(IntPtr entry, out int tag);
+
+  [DllImport("/usr/lib/libSystem.B.dylib", EntryPoint = "acl_free")]
+  [SupportedOSPlatform("macos")]
+  private static extern int FreeMacOsAcl(IntPtr acl);
+
+  private static Task<int> ReadDirectoryOwnerAsync(string path, CancellationToken token) =>
+    ReadPosixOwnerAsync("/usr/bin/stat", OperatingSystem.IsMacOS() ? ["-f", "%u", "--", path] : ["--format=%u", "--", path], token);
+
+  private static async Task<int> ReadPosixOwnerAsync(string executable, string[] arguments, CancellationToken token)
+  {
+    var start = new ProcessStartInfo(executable)
+    {
+      UseShellExecute = false,
+      RedirectStandardOutput = true,
+      RedirectStandardError = true,
+      WorkingDirectory = "/",
+    };
+    foreach (string argument in arguments) start.ArgumentList.Add(argument);
+    using Process child = Process.Start(start) ?? throw new InvalidOperationException("The POSIX ownership probe is unavailable.");
+    string value = await child.StandardOutput.ReadToEndAsync(token).ConfigureAwait(false);
+    await child.WaitForExitAsync(token).ConfigureAwait(false);
+    if (child.ExitCode != 0
+      || !int.TryParse(value.TrimEnd('\n'), NumberStyles.None, CultureInfo.InvariantCulture, out int owner))
+      throw new InvalidOperationException("POSIX registry ownership could not be verified.");
+    return owner;
+  }
+
+  private static void RequireDirectory(DirectoryInfo directory)
+  {
+    if (!directory.Exists || (directory.Attributes & FileAttributes.ReparsePoint) != 0)
+      throw new InvalidOperationException("The native registry route contains a missing or redirected directory.");
+  }
+
+  internal static JsonDocument ReadStageRecord(string root, string path)
+  {
+    if (!Path.IsPathFullyQualified(path) || !Path.IsPathFullyQualified(root))
+      throw new InvalidOperationException("The native stage record path is not absolute.");
+
+    var comparison = OperatingSystem.IsWindows() ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal;
+    string relative = Path.GetRelativePath(root, path);
+    string[] components = relative.Split(Path.DirectorySeparatorChar);
+    if (components.Length is < 2 or > 3 || !string.Equals(path, Path.GetFullPath(path), comparison)
+      || !components.Take(components.Length - 1).All(component => component.Length == 32
+        && component.All(character => character is >= '0' and <= '9' or >= 'a' and <= 'f'))
+      || (components.Length == 2 ? components[^1] != "lease.json" : components[^1] != "descriptor.json"))
+      throw new InvalidOperationException("The native stage record is not in the anticipated registry route.");
+
+    RequireDirectory(new DirectoryInfo(root));
+    string directory = root;
+    foreach (string component in components.Take(components.Length - 1))
+    {
+      directory = Path.Combine(directory, component);
+      RequireDirectory(new DirectoryInfo(directory));
+    }
+
+    FileInfo record = new(path);
+    if (!record.Exists || (record.Attributes & FileAttributes.ReparsePoint) != 0)
+      throw new InvalidOperationException("The native stage record is missing or redirected.");
+    using var stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read);
+    if (stream.Length is <= 0 or > 64 * 1024)
+      throw new InvalidOperationException("The native stage record has an unsupported size.");
+    byte[] bytes = new byte[(int)stream.Length];
+    stream.ReadExactly(bytes);
+    if (stream.ReadByte() != -1) throw new InvalidOperationException("The native stage record changed during verification.");
+    JsonDocument document = JsonDocument.Parse(bytes);
+    if (HasUniqueNames(document.RootElement)) return document;
+    document.Dispose();
+    throw new InvalidOperationException("The native stage record contains repeated members.");
+  }
+
+  private static bool HasUniqueNames(JsonElement element)
+  {
+    if (element.ValueKind == JsonValueKind.Array)
+      return element.EnumerateArray().All(HasUniqueNames);
+    if (element.ValueKind != JsonValueKind.Object)
+      return true;
+    var names = new HashSet<string>(StringComparer.Ordinal);
+    return element.EnumerateObject().All(property => names.Add(property.Name) && HasUniqueNames(property.Value));
+  }
+}

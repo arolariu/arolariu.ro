@@ -1,6 +1,7 @@
 namespace arolariu.Backend.Core.Tests.Common.Telemetry;
 
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Net.Http;
@@ -35,49 +36,46 @@ public sealed class HealthTraceFilterTests
   private static readonly SemaphoreSlim _gate = new(1, 1);
 
   /// <summary>
-  /// Captures activities synchronously in <see cref="BaseProcessor{T}.OnEnd"/> and signals
-  /// a <see cref="SemaphoreSlim"/> so the real-route test can await the first activity instead
-  /// of polling a fixed deadline.
+  /// Observes only the request and control traces owned by this test.
   /// </summary>
-  private sealed class CapturingProcessor : BaseProcessor<Activity>
+  private sealed class CapturingProcessor(ActivityTraceId targetTrace, ActivityTraceId controlTrace) : BaseProcessor<Activity>
   {
-    private readonly List<Activity> _target;
-    private readonly SemaphoreSlim _signal = new(0, int.MaxValue);
+    private readonly ConcurrentQueue<Activity> _target = new();
 
-    /// <summary>Initialises the processor with the shared capture list.</summary>
-    public CapturingProcessor(List<Activity> target) => _target = target;
+    internal TaskCompletionSource TargetExported { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
+    internal TaskCompletionSource ControlExported { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
+    internal IReadOnlyList<Activity> Captured => _target.ToArray();
 
     /// <inheritdoc/>
     public override void OnEnd(Activity activity)
     {
-      _target.Add(activity);
-      _signal.Release();
-    }
-
-    /// <summary>
-    /// Waits up to <paramref name="timeout"/> for at least one activity to be captured.
-    /// </summary>
-    public Task<bool> WaitForActivityAsync(TimeSpan timeout) =>
-      _signal.WaitAsync(timeout);
-
-    /// <inheritdoc/>
-    protected override void Dispose(bool disposing)
-    {
-      if (disposing)
-        _signal.Dispose();
-      base.Dispose(disposing);
+      if (activity.TraceId == targetTrace)
+      {
+        _target.Enqueue(activity);
+        TargetExported.TrySetResult();
+      }
+      else if (activity.TraceId == controlTrace)
+        ControlExported.TrySetResult();
     }
   }
 
-  private static async Task<List<Activity>> ExportedActivitiesForAsync(
+  private static HttpRequestMessage TraceRequest(string path, ActivityTraceId trace)
+  {
+    var request = new HttpRequestMessage(HttpMethod.Get, new Uri(path, UriKind.Relative));
+    request.Headers.Add("traceparent", $"00-{trace}-{ActivitySpanId.CreateRandom()}-01");
+    return request;
+  }
+
+  private static async Task<IReadOnlyList<Activity>> ExportedActivitiesForAsync(
     string requestPath,
     TimeSpan absenceGuard = default)
   {
     await _gate.WaitAsync().ConfigureAwait(false);
     try
     {
-      var exported = new List<Activity>();
-      using var processor = new CapturingProcessor(exported);
+      ActivityTraceId targetTrace = ActivityTraceId.CreateRandom();
+      ActivityTraceId controlTrace = ActivityTraceId.CreateRandom();
+      using var processor = new CapturingProcessor(targetTrace, controlTrace);
 
       var host = await new HostBuilder()
         .ConfigureWebHost(webBuilder =>
@@ -100,17 +98,21 @@ public sealed class HealthTraceFilterTests
       try
       {
         using var client = host.GetTestClient();
-        using var response = await client.GetAsync(new Uri(requestPath, UriKind.Relative))
-          .ConfigureAwait(false);
+        using var request = TraceRequest(requestPath, targetTrace);
+        using var response = await client.SendAsync(request).ConfigureAwait(false);
 
         if (absenceGuard == default)
         {
           // Real-route path: wait until an activity arrives (up to 3s), then return immediately.
-          await processor.WaitForActivityAsync(TimeSpan.FromSeconds(3)).ConfigureAwait(false);
+          await processor.TargetExported.Task.WaitAsync(TimeSpan.FromSeconds(3)).ConfigureAwait(false);
         }
         else
         {
-          // Absence-assertion path: wait a short, deliberate interval so that any activity
+          // Prove another trace can arrive at this processor without being counted as the health request.
+          using var unrelated = TraceRequest("/api/background", controlTrace);
+          using var unrelatedResponse = await client.SendAsync(unrelated).ConfigureAwait(false);
+          await processor.ControlExported.Task.WaitAsync(TimeSpan.FromSeconds(3)).ConfigureAwait(false);
+          // Wait a short, deliberate interval so that any activity
           // that the filter should have suppressed has time to arrive — if the filter is
           // misconfigured, the activity will appear during this window. The window only needs
           // to outlast the server-side DisposeContext async gap (measured in milliseconds),
@@ -125,7 +127,7 @@ public sealed class HealthTraceFilterTests
         host.Dispose();
       }
 
-      return exported;
+      return processor.Captured;
     }
     finally
     {

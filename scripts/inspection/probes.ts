@@ -477,6 +477,238 @@ function gitLastCommit(): InspectionProbe {
   return registerProbe("workspace.git.last-commit", {command: "git", args: ["log", "--oneline", "-1", "HEAD"]});
 }
 
+/** Read-only probe for the checkout root, Git directories, and optional superproject. */
+function gitCheckout(): InspectionProbe {
+  return registerProbe("workspace.git.checkout", {
+    command: "git",
+    args: ["rev-parse", "--show-toplevel", "--absolute-git-dir", "--git-common-dir", "--show-superproject-working-tree"],
+  });
+}
+
+/** Read-only branch probe; a detached HEAD exits nonzero. */
+function gitBranch(): InspectionProbe {
+  return registerProbe("workspace.git.branch", {command: "git", args: ["symbolic-ref", "--quiet", "HEAD"]});
+}
+
+/** Read-only full object ID probe. */
+function gitHead(): InspectionProbe {
+  return registerProbe("workspace.git.head", {command: "git", args: ["rev-parse", "--verify", "HEAD"]});
+}
+
+/** Read-only NUL-delimited registry of Git worktrees. */
+function gitWorktreeList(): InspectionProbe {
+  return registerProbe("workspace.git.worktree-list", {command: "git", args: ["worktree", "list", "--porcelain", "-z"]});
+}
+
+/** Lists local Podman machine registrations without connecting to their engines. */
+function podmanMachineList(): InspectionProbe {
+  return registerProbe("infrastructure.podman.machine-list", {command: "podman", args: ["machine", "list", "--format", "json"]});
+}
+
+/**
+ * Inspects one locally registered Podman VM, without checking its engine socket.
+ *
+ * @param name - Bare token from the local machine registry.
+ * @returns Registered inspection probe.
+ */
+function podmanMachineInspect(name: string): InspectionProbe {
+  return registerProbe("infrastructure.podman.machine-inspect", {
+    command: "podman",
+    args: ["machine", "inspect", validateBareTokenName(name, "Podman machine name")],
+  });
+}
+
+/** Reads the engine connected to the existing native Linux Podman API socket. */
+function podmanSocketInfo(): InspectionProbe {
+  return registerProbe("infrastructure.podman.socket-info", {command: "podman", args: ["--remote", "info", "--format", "json"]});
+}
+
+/** Reads the Moby daemon ID inside Rancher Desktop's running VM. */
+function rancherGuestEngineId(): InspectionProbe {
+  return registerProbe("infrastructure.rancher.guest-engine-id", {
+    command: "rdctl",
+    args: ["shell", "docker", "--host", "unix:///var/run/docker.sock", "info", "--format", "{{.ID}}"],
+  });
+}
+
+/** Reads structured engine evidence through the caller's pinned local Docker endpoint. */
+function rancherEngineInfo(): InspectionProbe {
+  return registerProbe("infrastructure.rancher.engine-info", {command: "docker", args: ["info", "--format", "{{json .}}"]});
+}
+
+/** Reads the version of the PowerShell used by the scoped Windows probes. */
+function windowsPowerShellVersion(): InspectionProbe {
+  return registerProbe("infrastructure.windows.powershell-version", {
+    command: "pwsh",
+    args: ["-NoLogo", "-NoProfile", "-NonInteractive", "-Command", "$PSVersionTable.PSVersion.ToString()"],
+  });
+}
+
+/** Verifies the SDK's exact localhost certificate candidates using the Windows trust engine. */
+function windowsDotnetTrust(): InspectionProbe {
+  return registerProbe("infrastructure.windows.dotnet-trust", {
+    command: "pwsh",
+    args: [
+      "-NoLogo",
+      "-NoProfile",
+      "-NonInteractive",
+      "-Command",
+      [
+        "$ErrorActionPreference = 'Stop'",
+        "$thumbprints = $env:AROLARIU_PREFLIGHT_CERT_THUMBPRINTS -split ','",
+        "if ($thumbprints.Count -lt 1 -or $thumbprints.Count -gt 16 -or @($thumbprints | Where-Object { $_ -cnotmatch '^[0-9A-F]{40}$' }).Count) { exit 1 }",
+        "$store = [Security.Cryptography.X509Certificates.X509Store]::new('My','CurrentUser')",
+        "try {",
+        "  $store.Open('ReadOnly')",
+        "  foreach ($thumbprint in $thumbprints) {",
+        "    $matches = $store.Certificates.Find('FindByThumbprint', $thumbprint, $false)",
+        "    if ($matches.Count -ne 1) { exit 1 }",
+        "    $cert = $matches[0]",
+        "    if ($cert.Subject -cne 'CN=localhost' -or $cert.Issuer -cne $cert.Subject -or -not $cert.HasPrivateKey -or -not ($cert.Extensions.Oid.Value -contains '1.3.6.1.4.1.311.84.1.1')) { exit 1 }",
+        "    $chain = [Security.Cryptography.X509Certificates.X509Chain]::new(); $key = $null",
+        "    try {",
+        "      $chain.ChainPolicy.DisableCertificateDownloads = $true",
+        "      $chain.ChainPolicy.RevocationMode = 'NoCheck'",
+        "      $null = $chain.ChainPolicy.ApplicationPolicy.Add([Security.Cryptography.Oid]::new('1.3.6.1.5.5.7.3.1'))",
+        "      if (-not $chain.Build($cert) -or $chain.ChainElements.Count -ne 1) { exit 1 }",
+        "      $key = [Security.Cryptography.X509Certificates.RSACertificateExtensions]::GetRSAPrivateKey($cert)",
+        "      if ($null -eq $key) { exit 1 }",
+        "      $null = $key.SignData([byte[]](1,2,3),[Security.Cryptography.HashAlgorithmName]::SHA256,[Security.Cryptography.RSASignaturePadding]::Pkcs1)",
+        "    } finally { if ($null -ne $key) { $key.Dispose() }; $chain.Dispose() }",
+        "  }; 'verified'; exit 0",
+        "} catch { exit 1 } finally { $store.Dispose() }",
+      ].join("\n"),
+    ],
+  });
+}
+
+/** Checks the existing public mkcert root in the Windows trust store without certificate downloads. */
+function windowsMkcertTrust(): InspectionProbe {
+  return registerProbe("infrastructure.mkcert.windows-trust", {
+    command: "pwsh",
+    args: [
+      "-NoLogo",
+      "-NoProfile",
+      "-NonInteractive",
+      "-Command",
+      [
+        "$ErrorActionPreference = 'Stop'",
+        "$cert = [Security.Cryptography.X509Certificates.X509Certificate2]::CreateFromPem([IO.File]::ReadAllText($env:AROLARIU_PREFLIGHT_PUBLIC_CA))",
+        "$chain = [Security.Cryptography.X509Certificates.X509Chain]::new()",
+        "try { $chain.ChainPolicy.DisableCertificateDownloads = $true; $chain.ChainPolicy.RevocationMode = 'NoCheck'; if ($chain.Build($cert)) { 'trusted'; exit 0 }; exit 1 } finally { $chain.Dispose(); $cert.Dispose() }",
+      ].join("; "),
+    ],
+  });
+}
+
+/** Evaluates an existing public CA with the native trust store, without importing it. */
+function posixMkcertTrust(platform: "linux" | "darwin", publicCertificate: string): InspectionProbe {
+  const certificate = validatePathLikeValue(publicCertificate, "mkcert public CA path");
+  if (!certificate.startsWith("/")) throw new Error("The mkcert public CA path must be absolute.");
+  return platform === "darwin"
+    ? registerProbe("infrastructure.mkcert.macos-trust", {
+        command: "/usr/bin/security",
+        args: ["verify-cert", "-L", "-l", "-q", "-R", "offline", "-p", "basic", "-c", certificate],
+      })
+    : registerProbe("infrastructure.mkcert.linux-trust", {
+        command: "/usr/bin/openssl",
+        args: ["verify", "-check_ss_sig", "-purpose", "any", "--", certificate],
+      });
+}
+
+/** Reads the Windows profile used by the installed Aspire resolver, not a guessed home override. */
+function windowsUserProfile(): InspectionProbe {
+  return registerProbe("infrastructure.windows.user-profile", {
+    command: "pwsh",
+    args: [
+      "-NoLogo",
+      "-NoProfile",
+      "-NonInteractive",
+      "-Command",
+      "[Environment]::GetFolderPath([Environment+SpecialFolder]::UserProfile)",
+    ],
+  });
+}
+
+/** Uses Windows version resources and the built-in PEReader; never loads or runs the inspected image. */
+function windowsPayload(): InspectionProbe {
+  return registerProbe("infrastructure.windows.payload", {
+    command: "pwsh",
+    args: [
+      "-NoLogo",
+      "-NoProfile",
+      "-NonInteractive",
+      "-Command",
+      [
+        "$ErrorActionPreference = 'Stop'",
+        "$role = $env:AROLARIU_PREFLIGHT_PAYLOAD_ROLE",
+        "$path = $env:AROLARIU_PREFLIGHT_PAYLOAD_PATH",
+        "$stream = $null; $pe = $null",
+        "try {",
+        "  $stream = [IO.File]::OpenRead($path); if ($stream.Length -gt 268435456) { exit 1 }",
+        "  $pe = [System.Reflection.PortableExecutable.PEReader]::new($stream)",
+        "  $header = $pe.PEHeaders.PEHeader",
+        "  if ($null -eq $header) { exit 1 }",
+        "  if ($role -eq 'swc') {",
+        "    if (-not $pe.PEHeaders.IsDll -or $pe.HasMetadata) { exit 1 }",
+        "    $exports = $header.ExportTableDirectory",
+        "    if ($exports.Size -lt 40 -or $exports.RelativeVirtualAddress -le 0) { exit 1 }",
+        "    $table = $pe.GetSectionData($exports.RelativeVirtualAddress).GetReader(0,40)",
+        "    $table.Offset = 24; $count = $table.ReadUInt32(); $null = $table.ReadUInt32(); $names = $table.ReadInt32()",
+        "    if ($count -eq 0 -or $count -gt 4096 -or $names -le 0) { exit 1 }",
+        "    $entries = $pe.GetSectionData($names).GetReader(0, (4 * $count))",
+        "    $symbol = 'napi_register_module_v1'",
+        "    for ($i = 0; $i -lt $count; $i++) {",
+        "      $rva = $entries.ReadInt32(); if ($rva -le 0) { exit 1 }",
+        "      $block = $pe.GetSectionData($rva)",
+        "      if ($block.Length -lt ($symbol.Length + 1)) { continue }",
+        "      $name = $block.GetReader(0, ($symbol.Length + 1))",
+        "      if ($name.ReadUTF8($symbol.Length) -ceq $symbol -and $name.ReadByte() -eq 0) { 'verified'; exit 0 }",
+        "    }; exit 1",
+        "  }",
+        "  if ($role -eq 'managed-library') {",
+        "    $cor = $pe.PEHeaders.CorHeader",
+        "    if (-not $pe.PEHeaders.IsDll -or -not $pe.HasMetadata -or $null -eq $cor -or $cor.EntryPointTokenOrRelativeVirtualAddress -ne 0) { exit 1 }",
+        "    if ($pe.PEHeaders.CoffHeader.Machine -eq 'I386' -and ($cor.Flags -band [System.Reflection.PortableExecutable.CorFlags]::Requires32Bit)) { exit 1 }",
+        "    $reader = [System.Reflection.Metadata.PEReaderExtensions]::GetMetadataReader($pe)",
+        "    if (-not $reader.IsAssembly -or $reader.GetString($reader.GetAssemblyDefinition().Name) -ine [IO.Path]::GetFileNameWithoutExtension($path)) { exit 1 }",
+        "    'verified'; exit 0",
+        "  }",
+        "  if ($role -in @('native-library', 'native-executable')) {",
+        "    if ($null -ne $pe.PEHeaders.CorHeader -or $pe.HasMetadata) { exit 1 }",
+        "    if ($role -eq 'native-library' -and -not $pe.PEHeaders.IsDll) { exit 1 }",
+        "    if ($role -eq 'native-executable' -and ($pe.PEHeaders.IsDll -or $header.AddressOfEntryPoint -eq 0)) { exit 1 }",
+        "    'verified'; exit 0",
+        "  }",
+        "  $version = [Diagnostics.FileVersionInfo]::GetVersionInfo($path)",
+        "  if ($role -eq 'dcp') {",
+        "    if ($pe.PEHeaders.IsDll -or $header.AddressOfEntryPoint -eq 0 -or $version.ProductName -cne 'Developer Control Plane' -or $version.ProductVersion -notmatch '^\\d+\\.\\d+\\.\\d+(?: [0-9a-f]{7,64})?$') { exit 1 }",
+        "  } else {",
+        "    $pin = [regex]::Escape($env:AROLARIU_PREFLIGHT_PAYLOAD_VERSION)",
+        "    if ($version.ProductVersion -notmatch ('^' + $pin + '(?:\\+[0-9a-f]{7,64})?$')) { exit 1 }",
+        "    switch ($role) {",
+        "      'cli' {",
+        "        if (-not $pe.HasMetadata -or $null -eq $pe.PEHeaders.CorHeader) { exit 1 }",
+        "        $reader = [System.Reflection.Metadata.PEReaderExtensions]::GetMetadataReader($pe)",
+        "        if (-not $reader.IsAssembly) { exit 1 }",
+        "        $assembly = $reader.GetAssemblyDefinition(); $name = $reader.GetString($assembly.Name)",
+        "        $token = $pe.PEHeaders.CorHeader.EntryPointTokenOrRelativeVirtualAddress",
+        "        if ($name -notin @('aspire', 'Aspire.Cli') -or ($token -shr 24) -ne 6) { exit 1 }",
+        "        $entry = [System.Reflection.Metadata.Ecma335.MetadataTokens]::MethodDefinitionHandle($token -band 0xffffff)",
+        "        if ($reader.GetMethodDefinition($entry).RelativeVirtualAddress -le 0) { exit 1 }",
+        "      }",
+        "      'cli-native' { if ($version.ProductName -ine 'aspire' -or $header.AddressOfEntryPoint -eq 0 -or $pe.PEHeaders.IsDll) { exit 1 } }",
+        "      'managed' { if ($version.ProductName -cne 'aspire-managed' -or $header.AddressOfEntryPoint -eq 0 -or $pe.PEHeaders.IsDll) { exit 1 } }",
+        "      'dashboard' { if ($version.ProductName -cne 'Aspire.Dashboard' -or $header.AddressOfEntryPoint -eq 0 -or $pe.PEHeaders.IsDll) { exit 1 } }",
+        "      default { exit 1 }",
+        "    }",
+        "  }; 'verified'; exit 0",
+        "} catch { exit 1 } finally { if ($null -ne $pe) { $pe.Dispose() }; if ($null -ne $stream) { $stream.Dispose() } }",
+      ].join("\n"),
+    ],
+  });
+}
+
 /**
  * Builds the exact, platform-specific read-only executable-resolution probe command.
  *
@@ -521,6 +753,11 @@ function dotnetVersion(): InspectionProbe {
 /** Read-only installed SDK list probe. */
 function dotnetSdkList(): InspectionProbe {
   return registerProbe("dotnet.sdk-list", {command: "dotnet", args: ["--list-sdks"]});
+}
+
+/** Read-only installed shared framework inventory. */
+function dotnetRuntimeList(): InspectionProbe {
+  return registerProbe("dotnet.runtimes", {command: "dotnet", args: ["--list-runtimes"]});
 }
 
 /** Read-only `dotnet --info` probe. */
@@ -588,6 +825,11 @@ function dotnetCertificate(mode: DotnetCertificateMode = "presence"): Inspection
   const validatedMode = validateDotnetCertificateMode(mode);
   const args = validatedMode === "trust" ? ["dev-certs", "https", "--check", "--trust"] : ["dev-certs", "https", "--check"];
   return registerProbe(`dotnet.certificate:${validatedMode}`, {command: "dotnet", args});
+}
+
+/** Lists the stock SDK's candidate certificates in machine-readable form without changing trust. */
+function dotnetCertificateInventory(): InspectionProbe {
+  return registerProbe("dotnet.certificate-inventory", {command: "dotnet", args: ["dev-certs", "https", "--check-trust-machine-readable"]});
 }
 
 /**
@@ -812,17 +1054,23 @@ export const probes = {
     gitVersion,
     gitStatus,
     gitLastCommit,
+    gitCheckout,
+    gitBranch,
+    gitHead,
+    gitWorktreeList,
     executableResolution,
   },
   dotnet: {
     version: dotnetVersion,
     sdkList: dotnetSdkList,
+    runtimeList: dotnetRuntimeList,
     info: dotnetInfo,
     workloads: dotnetWorkloads,
     nugetLocals: dotnetNugetLocals,
     localTools: dotnetLocalTools,
     userSecrets: dotnetUserSecrets,
     certificate: dotnetCertificate,
+    certificateInventory: dotnetCertificateInventory,
   },
   python: {
     version: pythonVersion,
@@ -840,9 +1088,20 @@ export const probes = {
     composeVersion: infrastructureComposeVersion,
     runtimeContext: infrastructureRuntimeContext,
     runtimeInfo: infrastructureRuntimeInfo,
+    podmanMachineList,
+    podmanMachineInspect,
+    podmanSocketInfo,
+    rancherGuestEngineId,
+    rancherEngineInfo,
     containerList: infrastructureContainerList,
     mkcertVersion: infrastructureMkcertVersion,
     mkcertCaRoot: infrastructureMkcertCaRoot,
+    windowsPowerShellVersion,
+    windowsDotnetTrust,
+    windowsMkcertTrust,
+    posixMkcertTrust,
+    windowsUserProfile,
+    windowsPayload,
     portOwners: infrastructurePortOwners,
   },
 } as const;

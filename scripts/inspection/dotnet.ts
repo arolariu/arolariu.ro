@@ -113,6 +113,7 @@ interface JsonScanState {
   cursor: number;
   duplicateTrackedIdentity: boolean;
   readonly source: string;
+  readonly allowFlattenedParameters: boolean;
 }
 
 type JsonObjectContext = "root" | "parameters" | "other";
@@ -555,7 +556,7 @@ function parseXmlTag(source: string): ParsedXmlTag | undefined {
   return {attributes, closing: false, name: parsedName.name, selfClosing: false};
 }
 
-function isValidXmlDeclaration(instruction: string): boolean {
+function isValidXmlDeclaration(instruction: string, utf8Only: boolean): boolean {
   const declaration = parseXmlTag(instruction);
   if (declaration === undefined || declaration.closing || declaration.selfClosing || declaration.name !== "xml") {
     return false;
@@ -571,7 +572,7 @@ function isValidXmlDeclaration(instruction: string): boolean {
 
   const encoding = attributes[cursor];
   if (encoding?.[0] === "encoding") {
-    if (!/^[A-Za-z][A-Za-z0-9._-]*$/u.test(encoding[1])) {
+    if (utf8Only ? encoding[1].toLowerCase() !== "utf-8" : !/^[A-Za-z][A-Za-z0-9._-]*$/u.test(encoding[1])) {
       return false;
     }
     cursor += 1;
@@ -587,11 +588,19 @@ function isValidXmlDeclaration(instruction: string): boolean {
   return cursor === attributes.length;
 }
 
-function parseSolutionProjectDeclarations(source: string): SolutionProjectDeclarations | undefined {
-  const paths: string[] = [];
+function scanXml(
+  source: string,
+  options: Readonly<{
+    root: string;
+    utf8Only?: boolean;
+    allowCdata?: boolean;
+    allowProcessingInstructions?: boolean;
+    element: (tag: ParsedXmlTag) => boolean;
+    close?: () => void;
+    text?: (value: string) => boolean;
+  }>,
+): boolean {
   const openElements: string[] = [];
-  let declarationCount = 0;
-  let hasInvalidPath = false;
   let rootSeen = false;
   let xmlDeclarationSeen = false;
   let cursor = 0;
@@ -600,9 +609,14 @@ function parseSolutionProjectDeclarations(source: string): SolutionProjectDeclar
     const opening = source.indexOf("<", cursor);
     const textEnd = opening < 0 ? source.length : opening;
     const text = source.slice(cursor, textEnd);
-    if (text.includes("]]>") || decodeXmlReferences(text) === undefined || (openElements.length === 0 && text.trim() !== "")) {
-      return undefined;
-    }
+    const decoded = decodeXmlReferences(text);
+    if (
+      text.includes("]]>")
+      || decoded === undefined
+      || (openElements.length === 0 && text.trim() !== "")
+      || options.text?.(decoded) === false
+    )
+      return false;
     if (opening < 0) {
       break;
     }
@@ -611,16 +625,17 @@ function parseSolutionProjectDeclarations(source: string): SolutionProjectDeclar
       const end = source.indexOf("-->", opening + 4);
       const comment = end < 0 ? undefined : source.slice(opening + 4, end);
       if (comment === undefined || !hasValidXmlCharacters(comment) || comment.includes("--") || comment.endsWith("-")) {
-        return undefined;
+        return false;
       }
       cursor = end + 3;
       continue;
     }
     if (source.startsWith("<![CDATA[", opening)) {
+      if (options.allowCdata === false) return false;
       const end = source.indexOf("]]>", opening + 9);
       const cdata = end < 0 ? undefined : source.slice(opening + 9, end);
-      if (cdata === undefined || openElements.length === 0 || !hasValidXmlCharacters(cdata)) {
-        return undefined;
+      if (cdata === undefined || openElements.length === 0 || !hasValidXmlCharacters(cdata) || options.text?.(cdata) === false) {
+        return false;
       }
       cursor = end + 3;
       continue;
@@ -631,7 +646,8 @@ function parseSolutionProjectDeclarations(source: string): SolutionProjectDeclar
       const target = instruction === undefined ? undefined : parseXmlName(instruction, 0);
       const reservedXmlTarget = target?.name.toLowerCase() === "xml";
       if (
-        instruction === undefined
+        (!reservedXmlTarget && options.allowProcessingInstructions === false)
+        || instruction === undefined
         || target === undefined
         || !hasValidXmlCharacters(instruction)
         || (target.next < instruction.length && !isXmlWhitespace(instruction[target.next]))
@@ -640,9 +656,9 @@ function parseSolutionProjectDeclarations(source: string): SolutionProjectDeclar
             || rootSeen
             || xmlDeclarationSeen
             || (opening !== 0 && !(opening === 1 && source.codePointAt(0) === 0xfeff))
-            || !isValidXmlDeclaration(instruction)))
+            || !isValidXmlDeclaration(instruction, options.utf8Only === true)))
       ) {
-        return undefined;
+        return false;
       }
       if (reservedXmlTarget) {
         xmlDeclarationSeen = true;
@@ -651,46 +667,155 @@ function parseSolutionProjectDeclarations(source: string): SolutionProjectDeclar
       continue;
     }
     if (source.startsWith("<!", opening)) {
-      return undefined;
+      return false;
     }
 
     const tagEnd = findXmlTagEnd(source, opening + 1);
     if (tagEnd === undefined) {
-      return undefined;
+      return false;
     }
     const tag = parseXmlTag(source.slice(opening + 1, tagEnd));
     cursor = tagEnd + 1;
     if (tag === undefined) {
-      return undefined;
+      return false;
     }
     if (tag.closing) {
       if (openElements.pop() !== tag.name) {
-        return undefined;
+        return false;
       }
+      options.close?.();
       continue;
     }
 
     if (openElements.length === 0) {
-      if (rootSeen || tag.name !== "Solution") {
-        return undefined;
+      if (rootSeen || tag.name !== options.root) {
+        return false;
       }
       rootSeen = true;
     }
-    if (tag.name === "Project") {
-      declarationCount += 1;
-      const projectPath = tag.attributes.get("Path");
-      if (projectPath === undefined || projectPath.trim() === "") {
-        hasInvalidPath = true;
-      } else {
-        paths.push(projectPath);
-      }
-    }
+    if (!options.element(tag)) return false;
     if (!tag.selfClosing) {
       openElements.push(tag.name);
     }
   }
 
-  return rootSeen && openElements.length === 0 ? {declarationCount, hasInvalidPath, paths} : undefined;
+  return rootSeen && openElements.length === 0;
+}
+
+/** An active MSBuild XML element and its immediate context, without evaluating conditions or imports. */
+export interface BuildXmlElement {
+  readonly name: string;
+  readonly attributes: ReadonlyMap<string, string>;
+  readonly parent: BuildXmlElement | undefined;
+  readonly selfClosing: boolean;
+  readonly hasChildren: boolean;
+  readonly text: string;
+}
+
+/**
+ * Reads the literal MSBuild XML subset used by the local preflight and receipt profiles.
+ *
+ * @param source - Bounded UTF-8 project or build file text.
+ * @returns Active elements in source order, or unavailable for malformed or unsupported XML.
+ */
+export function readBuildProjectXml(source: string): readonly BuildXmlElement[] | undefined {
+  return readLiteralXml(source, "Project");
+}
+
+/** Reads active DNX settings elements without treating comments as registrations. */
+export function readDotnetToolSettingsXml(source: string): readonly BuildXmlElement[] | undefined {
+  return readLiteralXml(source, "DotNetCliTool");
+}
+
+function readLiteralXml(source: string, root: "Project" | "DotNetCliTool"): readonly BuildXmlElement[] | undefined {
+  if (source.includes("\ufffd")) return undefined;
+  type ActiveElement = Omit<BuildXmlElement, "text" | "hasChildren"> & {text: string; hasChildren: boolean};
+  const active: ActiveElement[] = [];
+  const elements: BuildXmlElement[] = [];
+  const valid = scanXml(source, {
+    root,
+    utf8Only: true,
+    allowCdata: false,
+    allowProcessingInstructions: false,
+    element: ({name, attributes, selfClosing}) => {
+      const parent = active.at(-1);
+      if (
+        name.includes(":")
+        || [...attributes].some(
+          ([key, value]) =>
+            key.includes(":")
+            || (key === "xmlns"
+              && (root !== "Project" || parent !== undefined || value !== "http://schemas.microsoft.com/developer/msbuild/2003")),
+        )
+      )
+        return false;
+      const element: ActiveElement = {name, attributes, parent, selfClosing, hasChildren: false, text: ""};
+      elements.push(element);
+      if (parent) parent.hasChildren = true;
+      if (!selfClosing) active.push(element);
+      return true;
+    },
+    close: () => {
+      active.pop();
+    },
+    text: (value) => {
+      const element = active.at(-1);
+      if (element) element.text += value;
+      return true;
+    },
+  });
+  return valid ? elements : undefined;
+}
+
+function parseSolutionProjectDeclarations(source: string): SolutionProjectDeclarations | undefined {
+  const paths: string[] = [];
+  let declarationCount = 0;
+  let hasInvalidPath = false;
+  const valid = scanXml(source, {
+    root: "Solution",
+    element: (tag) => {
+      if (tag.name === "Project") {
+        declarationCount += 1;
+        const projectPath = tag.attributes.get("Path");
+        if (projectPath === undefined || projectPath.trim() === "") {
+          hasInvalidPath = true;
+        } else {
+          paths.push(projectPath);
+        }
+      }
+      return true;
+    },
+  });
+  return valid ? {declarationCount, hasInvalidPath, paths} : undefined;
+}
+
+/**
+ * Checks whether bounded NuGet config bytes fit the literal-only receipt profile.
+ * No settings, variable names or expanded values are returned.
+ *
+ * @param bytes - Config bytes read within the caller's size limit.
+ * @returns Whether the config is supported UTF-8 XML with no environment-dependent values.
+ */
+export function supportsLiteralNuGetConfig(bytes: Uint8Array): boolean {
+  let xml: string;
+  try {
+    xml = new TextDecoder("utf-8", {fatal: true}).decode(bytes);
+  } catch {
+    return false;
+  }
+  return scanXml(xml, {
+    root: "configuration",
+    utf8Only: true,
+    element: ({attributes}) => {
+      for (const value of attributes.values()) {
+        if (/%[^%]+%/u.test(value)) return false;
+      }
+      return true;
+    },
+    // Settings are normally attributes. Refuse percent markers in element text too,
+    // without attempting to model how adjacent text and CDATA might be combined.
+    text: (value) => !value.includes("%"),
+  });
 }
 
 /**
@@ -789,7 +914,17 @@ function inspectSolutionProject(
   });
 }
 
-function inspectSolution(paths: RepositoryPaths): Effect.Effect<SolutionInspection, never, ReadOnlyFiles> {
+/**
+ * Checks declared managed projects and their local restore-asset files, without running restore.
+ *
+ * @param paths - Canonical repository paths.
+ * @param verifyAssets - Optional stricter verification of the already validated managed project path.
+ * @returns Solution integrity issues and missing or invalid restore artifacts.
+ */
+export function inspectSolution(
+  paths: RepositoryPaths,
+  verifyAssets?: (project: string) => Effect.Effect<boolean, never, ReadOnlyFiles>,
+): Effect.Effect<SolutionInspection, never, ReadOnlyFiles> {
   return Effect.gen(function* () {
     const canonicalRoot = yield* Effect.result(realPath(paths.root));
     if (Result.isFailure(canonicalRoot)) {
@@ -861,10 +996,26 @@ function inspectSolution(paths: RepositoryPaths): Effect.Effect<SolutionInspecti
       }
       if (project.success.restoreIssue !== undefined) {
         restoreIssues.add(project.success.restoreIssue);
+      } else if (project.success.issue === undefined && verifyAssets !== undefined && requiresRestoreAssets(projectPath)) {
+        if (!(yield* verifyAssets(resolvedProject))) restoreIssues.add(`Unverified NuGet restore artifacts: ${projectPath}`);
       }
     }
     return {issues: [...issues].sort(compareText), restoreIssues: [...restoreIssues].sort(compareText)};
   });
+}
+
+/**
+ * Projects normalized solution project paths without evaluating MSBuild.
+ *
+ * @param source - Solution XML.
+ * @returns Declared projects, or `undefined` for unsupported or ambiguous declarations.
+ */
+export function solutionProjectPaths(source: string): readonly string[] | undefined {
+  const declarations = parseSolutionProjectDeclarations(source);
+  if (!declarations || declarations.hasInvalidPath || declarations.declarationCount === 0) return undefined;
+  const paths = declarations.paths.map(normalizeSolutionProjectPath);
+  if (paths.some((path) => path === undefined) || new Set(paths.map((path) => path?.toLowerCase())).size !== paths.length) return undefined;
+  return paths.filter((path) => path !== undefined);
 }
 
 function skipJsonWhitespace(state: JsonScanState): void {
@@ -947,13 +1098,15 @@ function scanJsonObject(state: JsonScanState, context: JsonObjectContext): boole
         ? "Parameters"
         : context === "parameters"
           ? canonicalRequiredAppHostParameterKey(`Parameters:${key}`)
-          : undefined;
+          : context === "root" && state.allowFlattenedParameters
+            ? canonicalRequiredAppHostParameterKey(key)
+            : undefined;
     if (trackedIdentity !== undefined) {
       if (trackedIdentities.has(trackedIdentity)) {
         state.duplicateTrackedIdentity = true;
       }
       trackedIdentities.add(trackedIdentity);
-      if (context === "root") {
+      if (trackedIdentity === "Parameters") {
         childContext = "parameters";
       }
     }
@@ -995,8 +1148,8 @@ function scanJsonValue(state: JsonScanState, objectContext: JsonObjectContext): 
   return true;
 }
 
-function hasDuplicateTrackedConfigurationIdentity(source: string): boolean | undefined {
-  const state: JsonScanState = {source, cursor: 0, duplicateTrackedIdentity: false};
+function hasDuplicateTrackedConfigurationIdentity(source: string, allowFlattenedParameters = false): boolean | undefined {
+  const state: JsonScanState = {source, cursor: 0, duplicateTrackedIdentity: false, allowFlattenedParameters};
   if (!scanJsonValue(state, "root")) {
     return undefined;
   }
@@ -1036,6 +1189,38 @@ function configuredTrackedParameters(document: unknown): readonly string[] | und
     }
   }
   return configured;
+}
+
+/**
+ * Projects the allowlisted AppHost parameters of one JSON provider into nonblank evidence.
+ *
+ * @param source - Appsettings or standard user-secrets JSON, never included in the result.
+ * @returns Configured/blank key facts, or `undefined` for malformed or ambiguous configuration.
+ */
+export function projectAppHostParameterKeys(source: string): ReadonlyMap<RequiredAppHostParameterKey, boolean> | undefined {
+  try {
+    if (hasDuplicateTrackedConfigurationIdentity(source, true) !== false) return undefined;
+    const parsed: unknown = JSON.parse(source);
+    if (!isRecord(parsed)) return undefined;
+    const facts = new Map<RequiredAppHostParameterKey, boolean>();
+    const add = (name: string, value: unknown): boolean => {
+      const key = canonicalRequiredAppHostParameterKey(name);
+      if (key === undefined) return true;
+      if (facts.has(key) || (value !== null && typeof value !== "string")) return false;
+      facts.set(key, typeof value === "string" && value.trim() !== "");
+      return true;
+    };
+    for (const [name, value] of Object.entries(parsed)) {
+      if (name.toLowerCase() === "parameters") {
+        if (!isRecord(value) || !Object.entries(value).every(([key, entry]) => add(`Parameters:${key}`, entry))) return undefined;
+      } else if (!add(name, value)) {
+        return undefined;
+      }
+    }
+    return facts;
+  } catch {
+    return undefined;
+  }
 }
 
 function inspectAppHostFiles(paths: RepositoryPaths): Effect.Effect<AppHostFileOutcome, never, ReadOnlyFiles> {

@@ -20,8 +20,15 @@ public sealed partial class AzureStorageQueueBroker
   private static QueueServiceClient CreateQueueServiceClient(IOptionsManager optionsManager)
   {
     ArgumentNullException.ThrowIfNull(optionsManager);
-    string blobEndpoint = optionsManager.GetApplicationOptions().StorageAccountEndpoint;
-    Uri queueEndpoint = ResolveQueueEndpoint(new Uri(blobEndpoint));
+    return CreateQueueServiceClient(optionsManager.GetApplicationOptions());
+  }
+
+  internal static QueueServiceClient CreateQueueServiceClient(ApplicationOptions options)
+  {
+    ArgumentNullException.ThrowIfNull(options);
+    Uri queueEndpoint = string.IsNullOrWhiteSpace(options.StorageQueueEndpoint)
+      ? ResolveQueueEndpoint(new Uri(options.StorageAccountEndpoint))
+      : ParseScopedQueueEndpoint(options.StorageQueueEndpoint);
 
     if (queueEndpoint.Scheme.Equals(Uri.UriSchemeHttp, StringComparison.OrdinalIgnoreCase))
     {
@@ -31,6 +38,18 @@ public sealed partial class AzureStorageQueueBroker
     }
 
     return new QueueServiceClient(queueEndpoint, AzureCredentialFactory.CreateCredential());
+  }
+
+  private static Uri ParseScopedQueueEndpoint(string endpoint)
+  {
+    if (!Uri.TryCreate(endpoint, UriKind.Absolute, out var parsed)
+        || !parsed.IsLoopback || parsed.Scheme != Uri.UriSchemeHttp
+        || parsed.UserInfo.Length != 0 || parsed.Query.Length != 0 || parsed.Fragment.Length != 0
+        || !string.Equals(parsed.AbsolutePath.TrimEnd('/'), "/devstoreaccount1", StringComparison.Ordinal))
+    {
+      throw new InvalidOperationException("The configured local queue endpoint must target the loopback Azurite account.");
+    }
+    return parsed;
   }
 
   internal static Uri ResolveQueueEndpoint(Uri blobEndpoint)

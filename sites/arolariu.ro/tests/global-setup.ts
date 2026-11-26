@@ -6,14 +6,14 @@
  * @module playwright-global-setup
  */
 
-import {chromium, type FullConfig} from "@playwright/test";
+import {chromium} from "@playwright/test";
 import * as fs from "node:fs";
 import * as path from "node:path";
 
-import {isProdBuild} from "./config/environment";
+import {getTestRunDirectory, getWorktreePreview, isProdBuild} from "./config/environment";
 
 /** Storage state file path for sharing auth state across tests */
-export const STORAGE_STATE_PATH = path.join(process.cwd(), "tests", "e2e-storage-state.json");
+export const STORAGE_STATE_PATH = path.join(getTestRunDirectory(), "tests", "e2e-storage-state.json");
 
 /**
  * Writes the EULA-accepted cookie so tests bypass the consent dialog.
@@ -23,15 +23,16 @@ export const STORAGE_STATE_PATH = path.join(process.cwd(), "tests", "e2e-storage
  * runs over HTTP (cookie must be non-secure to apply), dev runs over HTTPS
  * via `next dev --experimental-https` (cookie can stay secure).
  */
-export default async function globalSetup(_config: FullConfig): Promise<void> {
+export default async function globalSetup(): Promise<void> {
+  const preview = getWorktreePreview();
   const browser = await chromium.launch();
-  const context = await browser.newContext({ignoreHTTPSErrors: true});
+  const context = await browser.newContext({ignoreHTTPSErrors: !preview});
 
   await context.addCookies([
     {
       name: "eula-accepted",
       value: "true",
-      domain: "localhost",
+      domain: preview?.hostname ?? "localhost",
       path: "/",
       httpOnly: false,
       secure: !isProdBuild(),

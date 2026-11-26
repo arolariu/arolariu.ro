@@ -33,8 +33,10 @@ import {Clock, Effect, Redacted} from "effect";
 import {satisfiesMinimum, type MinimumVersion} from "../../../common/requirements.ts";
 import type {DotnetFacts} from "../../../inspection/dotnet.ts";
 import type {InspectionOutcome} from "../../../inspection/types.ts";
+import {worktreeNoAutoResponse, worktreeRestoreRemediation} from "../../../inspection/worktreeRestore.ts";
+import {recordWorktreeRestoreEvidence} from "../worktreeRestoreEvidence.ts";
 import {Environment} from "../../../platform/Environment.ts";
-import {formatProcessRequest, type ProcessError, type ProcessRequest} from "../../../platform/Process.ts";
+import {formatProcessRequest, Process, type ProcessError, type ProcessRequest} from "../../../platform/Process.ts";
 import {SetupActionFailed} from "../errors.ts";
 import {phaseResult, processFailureOutput, runPhaseCommand, submitSetupAction, type PhaseCommandOptions} from "../phase-support.ts";
 import type {
@@ -92,6 +94,7 @@ type DotnetStep<A> = Effect.Effect<A, SetupActionFailed, SetupRequirements>;
 
 const APPHOST_PROJECT_SEGMENTS = ["tooling", "src", "AppHost", "AppHost.csproj"] as const;
 const REQUIRED_APPHOST_SECRET_KEYS = ["Parameters:sql-password", "Parameters:redis-password"] as const;
+const SOLUTION_RESTORE_ACTION = "dotnet.solution-restore";
 const REQUIRED_LOCAL_TOOL_NAME = "defaultdocumentation.console";
 const DOTNET_MANUAL_INSTALL = "Install the required SDK from https://dotnet.microsoft.com/download, then rerun setup.";
 const DOTNET_INSTALL_ACTION = "dotnet.install-sdk";
@@ -299,7 +302,13 @@ function unavailableOrInvalidEvidence(outcome: Readonly<InspectionOutcome<Dotnet
  */
 function runDotnetMutation(
   context: SetupContext,
-  action: Readonly<{id: string; scope: SetupActionScope; summary: string; mutate: DotnetStep<void>}>,
+  action: Readonly<{
+    id: string;
+    scope: SetupActionScope;
+    summary: string;
+    mutate: DotnetStep<void>;
+    verifiedOutcome?: () => InspectionOutcome<DotnetFacts> | undefined;
+  }>,
 ): DotnetStep<DotnetMutationOutcome> {
   return Effect.gen(function* () {
     let attempted = false;
@@ -311,7 +320,13 @@ function runDotnetMutation(
         attempted = true;
         return action.mutate;
       }),
-    }).pipe(Effect.ensuring(Effect.suspend(() => (attempted ? context.inspection.invalidate("dotnet") : Effect.void))));
+    }).pipe(
+      Effect.ensuring(
+        Effect.suspend(() =>
+          attempted && action.verifiedOutcome?.() === undefined ? context.inspection.invalidate("dotnet") : Effect.void,
+        ),
+      ),
+    );
 
     if (submitted.kind === "failed") {
       return yield* new SetupActionFailed({actionId: action.id, message: submitted.message});
@@ -319,7 +334,7 @@ function runDotnetMutation(
     if (submitted.kind === "planned" || submitted.kind === "declined") {
       return {disposition: submitted.kind};
     }
-    return {disposition: "executed", outcome: yield* context.inspection.inspect("dotnet")};
+    return {disposition: "executed", outcome: action.verifiedOutcome?.() ?? (yield* context.inspection.inspect("dotnet"))};
   });
 }
 
@@ -467,10 +482,19 @@ function restores(context: SetupContext): readonly RestoreDefinition[] {
       },
     },
     {
-      id: "dotnet.solution-restore",
+      id: SOLUTION_RESTORE_ACTION,
       scope: "repository",
-      summary: "Restore solution NuGet dependencies.",
-      command: {command: "dotnet", args: ["restore", context.paths.solution]},
+      summary: context.options.refreshWorktreeRestoreEvidence
+        ? "Force solution NuGet restore and refresh checkout-local worktree evidence."
+        : "Restore solution NuGet dependencies.",
+      command: {
+        command: "dotnet",
+        args: [
+          "restore",
+          context.paths.solution,
+          ...(context.options.refreshWorktreeRestoreEvidence ? ["--force", worktreeNoAutoResponse] : []),
+        ],
+      },
       verify: ({after}) =>
         after.solutionRestoreIssues.length > 0
           ? {failures: [...after.solutionRestoreIssues], evidence: []}
@@ -516,15 +540,67 @@ function runRestoreActions(
   return Effect.gen(function* () {
     let facts = initialFacts;
     for (const restore of restores(context)) {
+      let verifiedRefresh: InspectionOutcome<DotnetFacts> | undefined;
+      const refresh = restore.id === SOLUTION_RESTORE_ACTION && context.options.refreshWorktreeRestoreEvidence;
+      const execute = refresh
+        ? Effect.flatMap(Process, (process) =>
+            process
+              .run(restore.command, {
+                cwd: context.paths.root,
+                output: "capture",
+                echo: false,
+                timeout: LONG_RUNNING_MUTATION_TIMEOUT_MS,
+              })
+              .pipe(
+                Effect.asVoid,
+                Effect.mapError(
+                  () =>
+                    new SetupActionFailed({
+                      actionId: restore.id,
+                      message: "Forced solution NuGet restore failed. Restore diagnostics are withheld.",
+                    }),
+                ),
+              ),
+          )
+        : runMutationCommand(context, restore.id, `Restore action '${restore.id}' failed.`, restore.command, {
+            cwd: context.paths.root,
+            output: "tee",
+            timeoutMs: LONG_RUNNING_MUTATION_TIMEOUT_MS,
+          });
       const mutation = yield* runDotnetMutation(context, {
         id: restore.id,
         scope: restore.scope,
         summary: restore.summary,
-        mutate: runMutationCommand(context, restore.id, `Restore action '${restore.id}' failed.`, restore.command, {
-          cwd: context.paths.root,
-          output: "tee",
-          timeoutMs: LONG_RUNNING_MUTATION_TIMEOUT_MS,
-        }),
+        mutate: refresh
+          ? Effect.gen(function* () {
+              const verify = Effect.gen(function* () {
+                yield* context.inspection.invalidate("dotnet");
+                const outcome = yield* context.inspection.inspect("dotnet");
+                if (
+                  outcome.kind !== "available"
+                  || outcome.value.solutionIssues.length > 0
+                  || restore.verify({before: facts, after: outcome.value}).failures.length > 0
+                )
+                  return false;
+                verifiedRefresh = outcome;
+                return true;
+              });
+              const recorded = yield* recordWorktreeRestoreEvidence(context.paths, execute, verify).pipe(
+                Effect.catchTag("PlatformError", () => Effect.succeed(false)),
+              );
+              if (recorded === "finalization-failed")
+                return yield* new SetupActionFailed({
+                  actionId: restore.id,
+                  message: "Checkout-local restore evidence could not finalize. Check the refresh lock before rerunning Setup.",
+                });
+              if (!recorded)
+                return yield* new SetupActionFailed({
+                  actionId: restore.id,
+                  message: `Checkout-local restore evidence could not be refreshed. Check for a concurrent refresh or changed inputs. ${worktreeRestoreRemediation}`,
+                });
+            })
+          : execute,
+        verifiedOutcome: () => verifiedRefresh,
       });
 
       if (mutation.disposition === "planned") {

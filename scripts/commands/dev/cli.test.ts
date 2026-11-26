@@ -11,11 +11,17 @@
  */
 
 import {Effect} from "effect";
+import {readFile} from "node:fs/promises";
+import {join} from "node:path";
 import {describe, expect, it} from "vitest";
 
 import {makeRootCommand, runCli} from "../../cli.ts";
 import {SELFHOST_SQL_PASSWORD, selfhostFixture} from "../../container-runtime/selfhost.testing.ts";
+import {beginWorktreeLaunch, recordWorktreeOwnership, worktreeProcessReceipt} from "../../container-runtime/worktreeAspire.ts";
+import {claimWorktreeLaunch, publishWorktreeJson, readWorktreeJson, WorktreePlatform} from "../../container-runtime/worktreeLease.ts";
+import {leaseFixture} from "../../platform/__fixtures__/worktreeLease.testing.ts";
 import {exitCodeFor, type CommandExitCode} from "../../platform/exit.ts";
+import {ReadOnlyFiles} from "../../platform/Files.ts";
 import {makeTestLayer, type RecordedProcessCall} from "../../platform/testing.ts";
 import {makeDevCommand} from "./cli.ts";
 
@@ -65,10 +71,271 @@ async function runSelfhostCli(argv: readonly string[]): Promise<{
   };
 }
 
+const unverifiedWorktreeEnvironment = {
+  platform: "linux",
+  cwd: "/fixtures/worktree",
+  variables: {GIT_DIR: "/fixtures/override.git"},
+} as const;
+
 describe("dev command", () => {
+  it.each([
+    ["podman", ["dev", "worktree"]],
+    ["rancher", ["dev", "aspire", "worktree"]],
+  ] as const)("reports blocked %s worktree preflight as one JSON document", async (engine, prefix) => {
+    const harness = makeTestLayer({environment: {platform: "win32", cwd: "C:/repo"}});
+    const argv = [...prefix, "preflight", "--engine", engine, "--expected-root", "C:/missing", "--json"];
+
+    const exit = await Effect.runPromiseExit(runCli(argv, makeRootCommand([makeDevCommand()])).pipe(Effect.provide(harness.layer)));
+
+    expect(exitCodeFor(exit, undefined)).toBe(1);
+    const stdout = harness
+      .output()
+      .filter((record) => record.stream === "stdout")
+      .map((record) => record.text);
+    expect(stdout).toHaveLength(1);
+    expect(JSON.parse(stdout.join(""))).toMatchObject({
+      status: "blocked",
+      checkout: null,
+      capabilities: [{id: "checkout", status: "blocked"}],
+    });
+    expect(harness.processCalls()).toEqual([]);
+  });
+
+  it.each([[], ["--engine", "docker"]])("requires an explicit supported engine for worktree preflight", async (...engine) => {
+    const result = await run(["dev", "worktree", "preflight", ...engine], {AROLARIU_CONTAINER_ENGINE: "podman"});
+
+    expect(result.code).toBe(2);
+    expect(result.calls).toEqual([]);
+  });
+
+  it.each([
+    ["status", ["dev", "worktree"]],
+    ["stop", ["dev", "worktree"]],
+    ["status", ["dev", "aspire", "worktree"]],
+    ["stop", ["dev", "aspire", "worktree"]],
+  ] as const)("blocks default scoped %s without inspecting the host (%j)", async (action, prefix) => {
+    const harness = makeTestLayer({environment: {platform: "win32", cwd: "C:\\synthetic\\worktree"}});
+    const resolvedPaths: string[] = [];
+    const exit = await Effect.runPromiseExit(
+      Effect.gen(function* () {
+        const files = yield* ReadOnlyFiles;
+        yield* runCli([...prefix, action, "--engine", "podman", "--json"]).pipe(
+          Effect.provideService(ReadOnlyFiles, {
+            ...files,
+            realPath: (path) => {
+              resolvedPaths.push(path);
+              return files.realPath(path);
+            },
+          }),
+        );
+      }).pipe(Effect.provide(harness.layer)),
+    );
+    expect(exitCodeFor(exit, undefined)).toBe(1);
+    const stdout = harness.output().filter(({stream}) => stream === "stdout");
+    expect(stdout).toHaveLength(1);
+    expect.soft(JSON.parse(stdout[0]?.text ?? "")).toEqual({
+      status: "blocked",
+      reason:
+        action === "status" ? "Native scoped ownership status is unavailable." : "Supply the exact foreground run ID with --expected-run.",
+    });
+    expect(resolvedPaths).toEqual([]);
+    expect(harness.processCalls()).toEqual([]);
+  });
+
+  it.each([
+    ["start", "--engine", "docker"],
+    ["stop", "--engine", "podman", "--pid", "1234"],
+    ["stop", "--engine", "podman", "--expected-root", "C:/another-worktree"],
+    ["status", "--engine", "docker"],
+  ])("rejects unsupported scoped action or authority flags (%s)", async (...args) => {
+    const result = await run(["dev", "worktree", ...args]);
+    expect(result.code).toBe(2);
+    expect(result.calls).toEqual([]);
+  });
+
+  it("blocks scoped start on unsupported hosts without spawning AppHost", async () => {
+    const harness = makeTestLayer({environment: {platform: "linux", architecture: "arm64"}});
+    const exit = await Effect.runPromiseExit(
+      runCli(["dev", "aspire", "worktree", "start", "--engine", "podman"], makeRootCommand([makeDevCommand()])).pipe(
+        Effect.provide(harness.layer),
+      ),
+    );
+    expect(exitCodeFor(exit, undefined)).toBe(1);
+    expect(harness.processCalls()).toEqual([]);
+  });
+
+  it("uses preflight to block an unprepared Linux x64 launch before building or spawning AppHost", async () => {
+    const harness = makeTestLayer({environment: {...unverifiedWorktreeEnvironment, architecture: "x64", effectiveUserId: 1000}});
+    const exit = await Effect.runPromiseExit(
+      runCli(["dev", "worktree", "start", "--engine", "podman", "--json"], makeRootCommand([makeDevCommand()])).pipe(
+        Effect.provide(harness.layer),
+      ),
+    );
+    expect(exitCodeFor(exit, undefined)).toBe(1);
+    const stdout = harness.output().find(({stream}) => stream === "stdout");
+    expect(JSON.parse(stdout?.text ?? "")).toEqual({status: "blocked", reason: "Scoped preflight is blocked: checkout."});
+    expect(harness.processCalls()).toEqual([]);
+  });
+
+  it.each([
+    ["--json", "worktree", "--verbose", "preflight", "--engine", "podman"],
+    ["--json", "worktree", "--log-level", "warn", "preflight", "--engine", "podman"],
+    ["--log-level", "none", "worktree", "status", "--json", "--engine=podman"],
+    ["--verbose=false", "worktree", "--log-level=none", "stop", "--engine", "podman", "--json"],
+    ["worktree", "preflight", "--engine", "podman", "--verbose", "--json"],
+  ])("routes the npm worktree alias with global flags (%j)", async (...args) => {
+    const harness = makeTestLayer({environment: unverifiedWorktreeEnvironment});
+    const exit = await Effect.runPromiseExit(
+      runCli(["dev", "aspire", ...args], makeRootCommand([makeDevCommand()])).pipe(Effect.provide(harness.layer)),
+    );
+    expect(exitCodeFor(exit, undefined)).toBe(1);
+    const stdout = harness.output().filter(({stream}) => stream === "stdout");
+    expect(stdout).toHaveLength(1);
+    expect(JSON.parse(stdout[0]?.text ?? "")).toMatchObject({status: "blocked"});
+    expect(harness.processCalls()).toEqual([]);
+  });
+
+  it.each([
+    {args: ["--verbose", "worktree", "--help"], usage: "worktree <subcommand>", flag: "preflight"},
+    {args: ["worktree", "--json", "stop", "-h"], usage: "worktree stop", flag: "--expected-run"},
+    {args: ["--help", "worktree", "preflight"], usage: "worktree preflight", flag: "--expected-root"},
+  ])("shows scoped help through the npm worktree alias ($usage)", async ({args, usage, flag}) => {
+    const harness = makeTestLayer();
+    const exit = await Effect.runPromiseExit(
+      runCli(["dev", "aspire", ...args], makeRootCommand([makeDevCommand()])).pipe(Effect.provide(harness.layer)),
+    );
+    expect(exitCodeFor(exit, undefined)).toBe(0);
+    const output = harness
+      .output()
+      .map(({text}) => text)
+      .join("");
+    expect(output).toContain(usage);
+    expect(output).toContain(flag);
+    expect(harness.processCalls()).toEqual([]);
+  });
+
+  it.each([
+    ["--verbose", "worktree", "start", "--engine", "docker"],
+    ["--json", "worktree", "--unknown", "status", "--engine", "podman"],
+    ["--json=maybe", "worktree", "status", "--engine", "podman"],
+    ["--log-level", "worktree", "status", "--engine", "podman"],
+    ["--engine", "podman", "worktree", "status"],
+    ["worktree", "stop", "--engine"],
+    ["worktree", "status", "--engine", "podman", "extra"],
+    ["--", "worktree", "status"],
+  ])("rejects malformed npm worktree arguments without invoking legacy Aspire (%j)", async (...args) => {
+    const result = await run(["dev", "aspire", ...args], {AROLARIU_CONTAINER_ENGINE: "podman"});
+    expect(result.code).toBe(2);
+    expect(result.calls).toEqual([]);
+  });
+
+  it.each(["b".repeat(32), "not-an-id?token=fake-token"])(
+    "keeps guarded worktree stop blocked without verified authority",
+    async (runId) => {
+      const harness = makeTestLayer({environment: unverifiedWorktreeEnvironment});
+      const argv = ["dev", "aspire", "worktree", "stop", "--engine", "podman", "--expected-run", runId, "--json"];
+
+      const exit = await Effect.runPromiseExit(runCli(argv, makeRootCommand([makeDevCommand()])).pipe(Effect.provide(harness.layer)));
+
+      expect(exitCodeFor(exit, undefined)).toBe(1);
+      const stdout = harness.output().filter(({stream}) => stream === "stdout");
+      expect(stdout).toHaveLength(1);
+      expect(JSON.parse(stdout[0]?.text ?? "")).toEqual({
+        status: "blocked",
+        reason:
+          runId.length === 32
+            ? "The requested foreground run is not current on the verified engine."
+            : "Supply the exact foreground run ID with --expected-run.",
+      });
+      expect(stdout[0]?.text).not.toMatch(/fake-token|stopCommand|https?:/);
+      expect(harness.processCalls()).toEqual([]);
+    },
+  );
+
+  it.each(["absent", "matching", "stale", "invalid"])("applies the expected-run guard in a canonical owned scope (%s)", async (guard) => {
+    const fixture = await leaseFixture();
+    try {
+      const supervisor = {pid: 100, started: "638500000000000000", image: "offline-supervisor.exe"};
+      const dispatchChecks: string[] = [];
+      const processChecks: number[] = [];
+      let observedProcess: typeof supervisor | null = supervisor;
+      const platform = {
+        ...fixture.platform,
+        containers: {
+          verifyCompleteDispatch: async ({runId}: {runId: string}) => {
+            dispatchChecks.push(runId);
+            return true;
+          },
+          inspect: async () => {
+            throw new Error("No containers in the fixture");
+          },
+          removeExact: async () => {
+            throw new Error("No removals authorized");
+          },
+        },
+        processIdentity: (pid: number) =>
+          Effect.sync(() => {
+            processChecks.push(pid);
+            return observedProcess;
+          }),
+      };
+      const runScoped = <A, E>(effect: Effect.Effect<A, E, WorktreePlatform>) =>
+        Effect.runPromise(effect.pipe(Effect.provideService(WorktreePlatform, platform)));
+      const lease = await runScoped(claimWorktreeLaunch(fixture.checkout));
+      const stage = await runScoped(beginWorktreeLaunch(lease));
+      const receipt = worktreeProcessReceipt(lease, supervisor);
+      const processPath = join(stage.directory, "process.json");
+      const exitPath = join(stage.directory, "exit.json");
+      const leasePath = join(fixture.directory, lease.scopeId, "lease.json");
+      await publishWorktreeJson(processPath, {...receipt, boundPorts: lease.ports});
+      await runScoped(recordWorktreeOwnership(lease, {phase: "owned", processIdentity: supervisor, boundPorts: lease.ports}));
+      const files = [leasePath, stage.descriptor, processPath];
+      const original = await Promise.all(files.map((path) => readFile(path)));
+      dispatchChecks.length = processChecks.length = 0;
+      if (guard === "absent" || guard === "matching") {
+        // Positively acknowledged prior cooperative shutdown; no actual child process is involved.
+        await publishWorktreeJson(exitPath, {...receipt, reason: "stop"});
+        observedProcess = null;
+      }
+      const staleId = `${lease.runId[0] === "b" ? "a" : "b"}${lease.runId.slice(1)}`;
+      const guardedId = guard === "matching" ? lease.runId : guard === "invalid" ? "not-an-id?token=fake-token" : staleId;
+      const flag = guard === "absent" ? [] : ["--expected-run", guardedId];
+      const argv = ["dev", "aspire", "worktree", "stop", "--engine", "podman", "--json", ...flag];
+      const harness = makeTestLayer({environment: {platform: "linux"}});
+      const options = {worktreePlatform: Effect.succeed(platform)};
+      const exit = await Effect.runPromiseExit(
+        runCli(argv, makeRootCommand([makeDevCommand(options)])).pipe(Effect.provide(harness.layer)),
+      );
+      const stdout = harness.output().filter(({stream}) => stream === "stdout");
+
+      expect(harness.processCalls()).toEqual([]);
+      expect(stdout).toHaveLength(1);
+      expect(await runScoped(readWorktreeJson(join(stage.directory, "stop.json")))).toBeUndefined();
+      if (guard === "stale" || guard === "invalid") {
+        expect(exitCodeFor(exit, undefined)).toBe(1);
+        expect(JSON.parse(stdout[0]?.text ?? "")).toEqual({
+          status: "blocked",
+          reason: guard === "invalid" ? "The expected run ID is invalid." : "The expected scoped run is not current.",
+        });
+        expect(dispatchChecks).toEqual([]);
+        expect(processChecks).toEqual([]);
+        expect(await runScoped(readWorktreeJson(exitPath))).toBeUndefined();
+        expect(await Promise.all(files.map((path) => readFile(path)))).toEqual(original);
+      } else {
+        expect(exitCodeFor(exit, undefined)).toBe(0);
+        expect(JSON.parse(stdout[0]?.text ?? "")).toEqual({status: "stopped", runId: lease.runId, preservedVolumes: lease.volumes});
+        expect(dispatchChecks).toEqual([lease.runId]);
+        expect(processChecks).toEqual([supervisor.pid]);
+        expect(await runScoped(readWorktreeJson(leasePath))).toBeUndefined();
+      }
+    } finally {
+      await fixture.dispose();
+    }
+  });
+
   it("maps aspire engine", async () => {
     // Arrange
-    const argv = ["dev", "aspire", "--engine", "rancher"];
+    const argv = ["dev", "aspire", "--log-level", "warn", "--engine", "rancher", "--verbose"];
 
     // Act
     const result = await run(argv, {AROLARIU_CONTAINER_ENGINE: "podman", ASPIRE_CONTAINER_RUNTIME: "podman"});

@@ -20,6 +20,14 @@ public sealed class InvoiceScenarioInitializer(
   /// <param name="cancellationToken">Cancels initialization without rolling back completed writes.</param>
   /// <returns>A task that completes when the initialization receipt is complete.</returns>
   public Task InitializeAsync(string seedDataDirectory, CancellationToken cancellationToken)
+    => InitializeAsync(seedDataDirectory, useBoundBlobOrigin: false, cancellationToken);
+
+  /// <summary>Initializes using the bound blob container URI when the caller reserves it across runs.</summary>
+  /// <param name="seedDataDirectory">The directory containing the four coordinated persona JSON files.</param>
+  /// <param name="useBoundBlobOrigin">Whether the client points at the durable worktree binding.</param>
+  /// <param name="cancellationToken">Cancels initialization without rolling back completed writes.</param>
+  /// <returns>A task that completes when the initialization receipt is complete.</returns>
+  public Task InitializeAsync(string seedDataDirectory, bool useBoundBlobOrigin, CancellationToken cancellationToken)
   {
     ArgumentNullException.ThrowIfNull(timeProvider);
     return new LocalScenarioBootstrap(
@@ -27,7 +35,8 @@ public sealed class InvoiceScenarioInitializer(
       new LocalAzuriteSeedWriter(blobs, queues),
       timeProvider,
       LocalDataRetryPolicies.Default[LocalDataRetryPolicies.ScenarioTransient],
-      retryLog)
+      retryLog,
+      useBoundBlobOrigin ? blobs.GetBlobContainerClient(LocalDataContract.BlobContainerName).Uri : null)
       .RunAsync(seedDataDirectory, cancellationToken);
   }
 }

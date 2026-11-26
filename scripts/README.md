@@ -33,6 +33,10 @@ arolariu docs prepare-site
 arolariu rates update [--year <y>] [--from <y>] [--to <y>]
 arolariu dev aspire [--engine <rancher|podman>]
 arolariu dev selfhost [start|stop|logs] [--engine <rancher|podman>]
+arolariu dev worktree preflight --engine <podman|rancher> [--expected-root <path>]
+arolariu dev worktree start --engine <podman|rancher>
+arolariu dev worktree status --engine <podman|rancher>
+arolariu dev worktree stop --engine <podman|rancher> [--expected-run <id>]
 arolariu containers build|run --target <frontend|backend|cv|exp> [--engine <rancher|podman>]
 arolariu containers compose --file <path> [--engine <rancher|podman>] -- <compose arguments...>
 arolariu test e2e <all|backend|frontend|cv>
@@ -43,6 +47,13 @@ arolariu lint <all|packages|cv|website|api|status|exp> [patterns...]
 Pass arguments through npm after `--`: `npm run doctor -- --quick --json`, `npm run rates:update -- --year 2025`. `--help` and a command
 group run without a subcommand (`arolariu`, `arolariu docs`, `arolariu dev`) print help and exit `0`. Slash aliases (`/h`, `/v`, `/q`, `/?`,
 …) do not exist.
+
+`npm run dev -- worktree …` also accepts these scoped actions. Global flags can be interleaved, for example
+`npm run dev -- --json worktree --log-level warn preflight --engine podman`. Use `npm run dev -- worktree --help` for the group or
+`npm run dev -- worktree stop --help` for an action. Preflight is read-only. Scoped `start` keeps the stack in the foreground on prepared
+Windows, Linux, and macOS x64 hosts. `stop` requires the printed run ID and the matching engine; it requests shutdown but does not certify
+that the owner exited. Native `status` and detached browser handoff are not available. See the
+[scoped gates and acceptance checklist](../infra/Local/readme.md#scoped-aspire-gates).
 
 ### Global flags
 

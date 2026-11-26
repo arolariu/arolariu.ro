@@ -6,6 +6,12 @@
 
 /* eslint-disable no-magic-numbers, no-console -- Configuration uses explicit numeric values */
 
+import {execFileSync} from "node:child_process";
+import {realpathSync} from "node:fs";
+import {relative, resolve} from "node:path";
+
+import {parseWorktreePreview} from "../../scripts/worktreePreview";
+
 /** Supported test environments */
 export type TestEnvironment = "ci" | "local" | "local-full" | "staging" | "production";
 
@@ -36,6 +42,7 @@ const ENV_KEYS = {
   BASE_URL: "BASE_URL",
   PLAYWRIGHT_WORKERS: "PLAYWRIGHT_WORKERS",
   E2E_USE_PROD: "E2E_USE_PROD",
+  E2E_WORKTREE_PORT: "E2E_WORKTREE_PORT",
 } as const;
 
 /** Simple debug check for config logging (avoids circular import) */
@@ -103,6 +110,90 @@ export function isLocal(): boolean {
   return env === "local" || env === "local-full";
 }
 
+/** Resolves the local worktree-only preview configuration, when requested. */
+export function getWorktreePreview(): ReturnType<typeof parseWorktreePreview> {
+  return parseWorktreePreview({
+    port: process.env[ENV_KEYS.E2E_WORKTREE_PORT],
+    testEnvironment: process.env[ENV_KEYS.TEST_ENV],
+    ci: isCI(),
+    productionBuild: isProdBuild(),
+    baseURL: process.env[ENV_KEYS.BASE_URL],
+  });
+}
+
+function isExplicitRemoteTarget(): boolean {
+  const override = process.env[ENV_KEYS.BASE_URL];
+  if (!override) {
+    const environment = getEnvironment();
+    return environment === "staging" || environment === "production";
+  }
+
+  const url = URL.parse(override);
+  if (!url || (url.protocol !== "https:" && url.protocol !== "http:")) return false;
+  // URL parsing canonicalizes numeric loopback aliases such as 127.1 and [::ffff:127.0.0.1].
+  const host = url.hostname.replace(/\.$/u, "");
+  return (
+    host !== "localhost"
+    && !host.endsWith(".localhost")
+    && !/^127\.\d+\.\d+\.\d+$/u.test(host)
+    && host !== "0.0.0.0"
+    && host !== "[::]"
+    && host !== "[::1]"
+    && !/^\[::ffff:7f[\da-f]{2}:/u.test(host)
+    && host !== "[::ffff:0:0]"
+  );
+}
+
+/**
+ * Selects whether unscoped Playwright may start or reuse the legacy server.
+ *
+ * @param websiteRoot - Directory containing the actual website configuration, not the invoking cwd.
+ * @returns `false` for an explicitly selected remote target; `true` for a verified primary checkout.
+ */
+export function useLegacyWebServer(websiteRoot: string): boolean {
+  if (isExplicitRemoteTarget()) return false;
+
+  const env = {...process.env};
+  // npm/Nx and Git hooks may inherit Git's checkout-routing environment.
+  const routing = new Set(["GIT_DIR", "GIT_COMMON_DIR", "GIT_WORK_TREE", "GIT_IMPLICIT_WORK_TREE", "GIT_CEILING_DIRECTORIES"]);
+  for (const key of Object.keys(env)) {
+    if (routing.has(key.toUpperCase())) delete env[key];
+  }
+  let linked: boolean;
+  try {
+    const root = realpathSync(resolve(websiteRoot, "../.."));
+    const [topLevel, gitDir, commonDir] = execFileSync(
+      "git",
+      ["rev-parse", "--path-format=absolute", "--show-toplevel", "--git-dir", "--git-common-dir"],
+      {cwd: root, env, encoding: "utf8", timeout: 5000, windowsHide: true, stdio: ["ignore", "pipe", "pipe"]},
+    )
+      .trimEnd()
+      .split(/\r?\n/u);
+    if (!topLevel || !gitDir || !commonDir || relative(root, realpathSync(topLevel)) !== "") {
+      throw new Error("Git did not identify the website's checkout.");
+    }
+    linked = relative(realpathSync(gitDir), realpathSync(commonDir)) !== "";
+  } catch (error) {
+    throw new Error(
+      "Cannot verify the website's Git checkout for the legacy Playwright server; use E2E_WORKTREE_PORT for a scoped preview.",
+      {
+        cause: error,
+      },
+    );
+  }
+  if (linked) {
+    throw new Error(
+      "Local Playwright in a linked Git worktree requires E2E_WORKTREE_PORT; it cannot start or reuse the legacy server on port 3000.",
+    );
+  }
+  return true;
+}
+
+/** Keeps opt-in test artifacts in the configured website instead of the invoking checkout. */
+export function getTestRunDirectory(): string {
+  return getWorktreePreview() ? resolve(import.meta.dirname, "..", "..") : process.cwd();
+}
+
 /**
  * Get the base URL for the current environment.
  *
@@ -112,6 +203,9 @@ export function isLocal(): boolean {
  * - dev (`next dev --experimental-https`) uses HTTPS via auto-generated cert
  */
 export function getBaseURL(): string {
+  const worktreePreview = getWorktreePreview();
+  if (worktreePreview) return worktreePreview.baseURL;
+
   const customURL = process.env[ENV_KEYS.BASE_URL];
   if (customURL) {
     return customURL;
@@ -193,7 +287,7 @@ export function getEnvironmentConfig(): EnvironmentConfig {
     },
   };
 
-  return configs[env];
+  return getWorktreePreview() === undefined ? configs[env] : {...configs[env], reuseExistingServer: false};
 }
 
 /**

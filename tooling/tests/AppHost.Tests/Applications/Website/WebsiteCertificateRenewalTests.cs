@@ -1,5 +1,6 @@
 namespace AppHost.Tests.Applications.Website;
 
+using System.Net;
 using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
 
@@ -32,6 +33,27 @@ public sealed class WebsiteCertificateRenewalTests
     root = Path.Combine(Path.GetTempPath(), "website-certificates-" + Guid.NewGuid().ToString("N"));
     certificates = Directory.CreateDirectory(Path.Combine(root, "certificates")).FullName;
     authorityDirectory = Directory.CreateDirectory(Path.Combine(root, "mkcert")).FullName;
+  }
+
+  /// <summary>Checks that a scoped browser certificate does not cover a sibling or an IP address.</summary>
+  [TestMethod]
+  public void CreateScopedLeaves_WebsiteAndService_UseExactSeparateNamesAndKeys()
+  {
+    using var authority = CreateAuthority("CN=Test scoped CA");
+    string scope = new('a', 32);
+    var (website, service) = WebsiteCertificateRenewal.CreateScopedLeaves(authority, scope, Now);
+    using (website)
+    using (service)
+    {
+      var websiteNames = website.Extensions.OfType<X509SubjectAlternativeNameExtension>().Single();
+      var serviceNames = service.Extensions.OfType<X509SubjectAlternativeNameExtension>().Single();
+      CollectionAssert.AreEqual(new[] { $"wt-{scope}.localhost", "localhost" }, websiteNames.EnumerateDnsNames().ToArray());
+      Assert.IsFalse(websiteNames.EnumerateIPAddresses().Any());
+      CollectionAssert.AreEqual(new[] { IPAddress.Loopback }, serviceNames.EnumerateIPAddresses().ToArray());
+      Assert.IsFalse(serviceNames.EnumerateDnsNames().Any());
+      Assert.IsTrue(website.HasPrivateKey && service.HasPrivateKey);
+      Assert.IsFalse(website.GetPublicKey().AsSpan().SequenceEqual(service.GetPublicKey()));
+    }
   }
 
   /// <summary>Removes the per-test directories.</summary>

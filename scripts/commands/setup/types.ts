@@ -32,6 +32,8 @@ export interface SetupInput {
   readonly dryRun: boolean;
   /** Approves system-scoped mutations without prompting. */
   readonly yes: boolean;
+  /** Forces the existing solution restore action to refresh checkout-bound Windows preflight evidence. */
+  readonly refreshWorktreeRestoreEvidence?: boolean;
   /** Optional explicitly selected container engine. */
   readonly engine?: ContainerEngine;
 }

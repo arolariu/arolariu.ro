@@ -10,6 +10,7 @@ import * as path from "node:path";
 import type {FullConfig} from "@playwright/test";
 
 import {OUTPUT_DIRS, REPORTER_PATHS} from "./config";
+import {getTestRunDirectory} from "./config/environment";
 
 /**
  * Clean up temporary files created during testing.
@@ -25,7 +26,7 @@ async function cleanupTempFiles(): Promise<void> {
   for (const pattern of tempPatterns) {
     try {
       // Simple cleanup - in production you'd use glob
-      const dir = path.dirname(pattern);
+      const dir = path.dirname(path.resolve(getTestRunDirectory(), pattern));
       if (fs.existsSync(dir)) {
         console.log(`[Global Teardown] Cleaned up temp files in: ${dir}`);
       }
@@ -108,7 +109,7 @@ async function readResultsWithRetry(filePath: string, maxAttempts = 3): Promise<
  * Generate a summary of the test run.
  */
 async function generateSummary(): Promise<void> {
-  const resultsPath = REPORTER_PATHS.jsonOutput;
+  const resultsPath = path.resolve(getTestRunDirectory(), REPORTER_PATHS.jsonOutput);
 
   if (!fs.existsSync(resultsPath)) {
     console.log("[Global Teardown] No results file found, skipping summary");

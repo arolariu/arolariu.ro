@@ -23,6 +23,8 @@ export interface EnvironmentSnapshot {
   readonly platform: NodeJS.Platform;
   /** Host CPU architecture identifier. */
   readonly architecture: string;
+  /** Effective POSIX user ID, where available. */
+  readonly effectiveUserId?: number;
   /** Whether standard input is attached to an interactive terminal. */
   readonly stdinIsTTY: boolean;
   /** Whether standard output is attached to an interactive terminal. */
@@ -50,12 +52,14 @@ export function layerEnvironment(snapshot: EnvironmentSnapshot): Layer.Layer<Env
  * @returns A snapshot whose `variables` is a frozen copy of `process.env`.
  */
 function snapshotProcess(): EnvironmentSnapshot {
+  const effectiveUserId = process.geteuid?.();
   return {
     variables: Object.freeze({...process.env}),
     cwd: process.cwd(),
     executablePath: process.execPath,
     platform: process.platform,
     architecture: process.arch,
+    ...(effectiveUserId === undefined ? {} : {effectiveUserId}),
     stdinIsTTY: process.stdin.isTTY === true,
     stdoutIsTTY: process.stdout.isTTY === true,
     isCI: Boolean(process.env["CI"] ?? process.env["GITHUB_ACTIONS"]),

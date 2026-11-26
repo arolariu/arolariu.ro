@@ -1,0 +1,36 @@
+namespace AppHost;
+
+using AppHost.LocalDevelopment;
+
+/// <summary>Routes startup before constructing a builder or reading/writing the legacy configuration.</summary>
+internal static class AppHostStartup
+{
+  internal const string RegistryArgument = "--worktree-registry";
+
+  internal static async Task<bool> TryHandleRegistryAsync(string[] args, string? descriptorMarker, TextWriter output)
+  {
+    if (!args.Any(argument => argument.Equals(RegistryArgument, StringComparison.OrdinalIgnoreCase)
+        || argument.StartsWith($"{RegistryArgument}=", StringComparison.OrdinalIgnoreCase))) return false;
+    if (descriptorMarker is not null || args.Length != 2 || args[0] != RegistryArgument
+      || args[1] is not ("read" or "create"))
+      throw new InvalidOperationException("The native registry command is unavailable.");
+    string? path = await WorktreeRegistry.OpenAsync(args[1] == "create").ConfigureAwait(false);
+    await output.WriteLineAsync(path ?? "absent").ConfigureAwait(false);
+    return true;
+  }
+
+  internal static void Run(string[] args, string? descriptorMarker, Action<string[]> runLegacy)
+  {
+    ArgumentNullException.ThrowIfNull(args);
+    ArgumentNullException.ThrowIfNull(runLegacy);
+    if (descriptorMarker is not null || args.Any(argument =>
+      argument.Equals("--worktree-descriptor", StringComparison.OrdinalIgnoreCase)
+      || argument.StartsWith("--worktree-descriptor=", StringComparison.OrdinalIgnoreCase)
+      || argument.StartsWith(WorktreeLaunchScope.RunArgument, StringComparison.OrdinalIgnoreCase)))
+    {
+      // Markers never carry launch authority; there is no production verifier or dispatcher.
+      throw new InvalidOperationException(WorktreeLaunchScope.LaunchBlocked);
+    }
+    runLegacy(args);
+  }
+}

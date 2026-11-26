@@ -4,6 +4,133 @@
 
 Two coexisting modes for local development.
 
+These full stacks have host-wide ports or named resources. Run only one at a time on a host, even from different Git worktrees. Use the
+[parallel worktree integration handoff](../../DEVELOPMENT.md#reserve-one-full-stack-integration-slot) before starting or stopping a stack.
+
+### Scoped Aspire gates
+
+Scoped Aspire has a **foreground x64 launch path** on Windows, Linux, and macOS. Concurrent full-stack acceptance has been verified on
+Windows; the Linux and macOS paths still need native full-stack acceptance. Run preflight from the intended canonical linked checkout and
+select either `podman` or `rancher` explicitly:
+
+| Command                                                                                       | What it proves (or does)                                                                                                   |
+| --------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------- |
+| `node scripts/cli.ts dev worktree preflight --engine <podman\|rancher> --json`                | Read-only checkout, engine, configuration, trust, dependencies, pinned bundle, and restore evidence.                       |
+| `node scripts/cli.ts dev worktree status --engine <podman\|rancher> --json`                   | Returns `blocked` (exit 1) because a trusted native registry/process adapter is unavailable. It does not inspect the host. |
+| `node scripts/cli.ts dev worktree stop --engine <podman\|rancher> --expected-run <id> --json` | Requests cooperative shutdown for the matching foreground run on the verified engine. It does not certify process exit.    |
+
+Podman preflight checks a registered, running local machine on Windows and macOS, or an existing rootless API socket at
+`$XDG_RUNTIME_DIR/podman/podman.sock` on Linux. The Linux runtime directory must be private to the current user; the socket must be owned by
+that user, unredirected, and unchanged during the probe. Rancher requires a running Moby guest and checks that its daemon ID matches the
+local Windows Docker pipe or `$HOME/.rd/docker.sock` on Linux and macOS. Remote connection overrides are not supported. Preflight does not
+start the runtimes. Linux checks the mkcert public CA with OpenSSL; macOS evaluates it in the local keychain without fetching certificates.
+Preflight never imports a CA or creates a .NET certificate. Linux and macOS require a non-root user and a private, canonical registry route.
+Preflight checks the POSIX route's owner and mode before building; AppHost rechecks it and inspects macOS ACLs before dispatch. The current
+SQL Server image requires a supported x86-64 execution environment; preflight does not qualify ARM emulation.
+
+After preflight passes, run `node scripts/cli.ts dev worktree start --engine rancher` (or `--engine podman`) from the same checkout. Keep
+that foreground command open. To request cooperative shutdown, use `dev worktree stop --engine <engine> --expected-run <id>` with the run ID
+printed by the launcher. The request does not itself prove shutdown; wait for the foreground owner to finish. Native `status` and detached
+handoff are not available. Do not use a guessed descriptor, URL or PID, an engine-wide stop, or a reset to bypass a block. The scoped model
+has no reset and preserves its own volumes.
+
+On Windows, if a newer global Aspire CLI is already installed, prepare the pinned CLI in a separate cache rather than replacing the global
+installation. In a PowerShell session, use the AppHost SDK version from `tooling/src/AppHost/AppHost.csproj`:
+
+```powershell
+$env:ASPIRE_HOME = Join-Path $env:LOCALAPPDATA 'arolariu-worktree\aspire\13.6.5'
+Remove-Item Env:ASPIRECLIPATH -ErrorAction SilentlyContinue
+dnx Aspire.Cli@13.6.5 -- setup --install-path $env:ASPIRE_HOME --non-interactive --nologo
+node scripts/cli.ts dev worktree preflight --engine rancher --json
+```
+
+On an approved Windows trust change, `dotnet dev-certs https --trust` can display an interactive Windows confirmation for the localhost
+development certificate. If the SDK cannot enumerate the root store, scoped preflight checks the SDK-listed localhost certificates against
+the Windows trust engine and verifies that each private key is usable. Neither check replaces an HTTPS request to the running service.
+
+On Linux and macOS, prepare each checkout with tools and dependencies native to that host. Do not reuse a Windows checkout's installed
+`node_modules`, EXP `.venv`, or NuGet `obj` outputs. After separately approving the bundle download, use the same AppHost SDK pin:
+
+```sh
+export ASPIRE_HOME="$HOME/.local/share/arolariu-worktree/aspire/13.6.5"
+dotnet tool exec Aspire.Cli@13.6.5 --yes -- setup --install-path "$ASPIRE_HOME" --non-interactive --nologo
+node scripts/cli.ts dev worktree preflight --engine podman --json
+```
+
+Retain that `ASPIRE_HOME` in the launch shell; the POSIX preflight rejects explicit bundle overrides and case variants of the variable. On
+Linux, if Podman is installed but the rootless API socket is inactive, start the existing `podman.socket` **user** unit on systemd-based
+hosts (`systemctl --user start podman.socket`). Do not substitute a forwarded Windows or rootful socket. A healthy engine check alone does
+not establish that the checkout, SDK, trust stores, or application configuration are ready.
+
+To preview the receipt-refresh work, run `npm run setup -- --refresh-worktree-restore-evidence --dry-run` first. The refresh flag selects a
+forced restore **inside full Setup**; it is not a restore-only command. Review the entire plan, including independent actions such as
+checkout preparation or browser installation, and obtain approval for the applicable actions before running without `--dry-run`.
+
+The [internal handoff test](../../scripts/container-runtime/worktreeReadiness.test.ts) uses a disposable registry and injected evidence. No
+current command calls this gate with native evidence. The offline result is `blocked` with a fixed stage and reason for missing evidence,
+unverified ownership, incomplete resource/endpoint or launcher-exit evidence, failed smoke, failed revalidation, or timeout. It never
+includes a URL, stop command, raw error, or log path on failure.
+
+#### Foreground two-worktree acceptance
+
+Use two prepared checkouts on the same host. Record each check's result, engine, checkout revision and run ID; never record credentials,
+dashboard login URLs, or token-bearing logs.
+
+1. From each checkout, run preflight and then `node scripts/cli.ts dev worktree start --engine <engine>` in a separate terminal. Keep both
+   launchers open until both report a healthy scoped graph. Do not use legacy Aspire as a fallback.
+2. Check each printed website origin with TLS validation enabled. Confirm `/api/health/` reports `Healthy` against that checkout's own API
+   and EXP, then open `/auth/sign-in/` in a single browser context. Use distinct, non-authentication host-only cookie values to verify that
+   neither origin can read the other's cookie. Check each engine's exact run-labeled inventory and mounted volumes; do not infer data
+   isolation from the URLs alone.
+3. Run `node scripts/cli.ts dev worktree stop --engine <engine> --expected-run <id>` from one checkout and wait for that foreground owner to
+   exit. Check that its run-labeled containers and lease are gone, its volumes remain, and the sibling still serves HTTPS. Repeat for the
+   sibling. For restart acceptance, restart the first checkout while its sibling is up and verify that only the new run ID can stop it and
+   that its data survives.
+
+Run the same-engine and mixed-engine pairs independently when both engines are available. Foreground acceptance does not show that an agent
+can exit and leave a verified stack behind.
+
+#### Evidence required before a detached scoped handoff
+
+These are additional gates for a **separately authorized detached-runtime wave**. No current command publishes a detached handoff:
+
+1. **Preparation and lifetime.** Establish canonical checkout, exact v4 stage/lease and verified build revision on the pinned engine. Supply
+   a production verifier for the protected runtime inputs, dependency artifacts, certificates and owned volumes; verify PID, creation time,
+   image, process tree/container inventory, actual localhost binds and port-race rejection. Prove the run survives launcher exit and is
+   observable in a fresh controller turn (separate from any synthetic fixture). Verify scoped endpoints/configuration, provider and Clerk
+   prerequisites, pinned Cosmos readiness and data plane, and scoped authenticated telemetry without external exporter overrides. Do not
+   change trust, install dependencies, copy credentials, or adopt existing volumes implicitly. Require fresh v2 restore evidence: the scoped
+   profile rejects `Directory.Build.rsp` in the solution/project ancestry, `MSBuild.rsp` in the uniquely observed local SDK, and SDK
+   search-path overrides. The approved receipt refresh disables automatic response files with `-noAutoResponse`; any future scoped MSBuild
+   invocation must do the same and reject explicit `@` response files. If a launcher command cannot enforce this, do not let it evaluate
+   MSBuild implicitly. Ordinary Setup is unchanged.
+2. **Exact endpoints.** Require run-bound AppHost notifications: `local-bootstrap` exited zero and exp, local Identity, API and website are
+   healthy. Match real connections to independently attested owned listeners, exact leased ports on `127.0.0.1`, and the expected routes
+   without redirects. Require strict TLS for the scoped website DNS name and service IP SANs on API/dashboard, with no bypass or
+   wildcard-only match. Verify dashboard TLS at its token-free origin; verify dashboard/resource-service access and the other scoped
+   listeners separately. A responding process or a healthy sibling is not evidence.
+3. **Read-only smoke.** A dedicated attach-only browser runner must obtain a fresh verified scope before navigation. No `webServer`
+   fallback, `BASE_URL` or arbitrary URL/command input, insecure TLS, foreign redirects or unapproved origins, auth submission, token
+   minting, or credential-bearing reports/artifacts. Check the ordinary `/auth/sign-in/` in the browser and verify the expected local
+   persona metadata at `/personas` and API OpenAPI metadata at `/swagger/v1/swagger.json` against the same owned graph. A shell page,
+   generic HTTP 200, blocked auth/provider flow, or a browser fixture is not a smoke pass. The verified-scope browser attachment and
+   connected-listener/TLS proof needed for this runner are not implemented; the existing website preview runner is not a fallback.
+4. **Two worktrees and cleanup.**
+   - Start the second canonical worktree while the first is serving. Both must remain healthy with distinct run identities, leased ports,
+     and separately bootstrapped seeded data; both must pass the named smokes.
+   - In the **same browser profile**, confirm neither graph can see the other's cookies or browser storage. With separate data-write
+     approval, verify scoped Azurite/queue/seed-link behavior and a disposable write visible only to its graph.
+   - Verify allocation skips an unrelated occupied port without changing or stopping its listener. Separately exercise a missing
+     prerequisite and a failed smoke; neither may return `ready`, a URL, or a handoff stop command.
+   - Stop one exact run, verify only its owned descendants and containers are gone, then restart it. The sibling must keep serving
+     throughout and both scopes must retain their data. Verify the old stop command refuses the replacement. If ownership or cleanup is
+     ambiguous, stop testing and retain receipts and volumes; do not signal by PID, prune, or delete.
+
+After the native acceptance above exists, publish a handoff only after a fresh ownership check, both fixed named probes, and a final recheck
+of the exact canonical run, listener identities, TLS peers and graph health. Return only the verified website/dashboard origins, the run ID,
+named smoke results and the run-guarded stop command to be used from that checkout. Never hand off endpoints on a blocked result. Until
+then, use the [legacy integration slot](../../DEVELOPMENT.md#reserve-one-full-stack-integration-slot).
+
 ### Mode 1: Aspire (default — `npm run dev -- --engine <rancher|podman>`)
 
 > [!NOTE] Ordinary Aspire startup preserves local data. First use initializes Alice, Bob, Charlie, and Dmitryi; an explicit, confirmed

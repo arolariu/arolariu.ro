@@ -154,6 +154,11 @@ public abstract class ApplicationOptions
   public string StorageAccountEndpoint { get; set; } = string.Empty;
 
   /// <summary>
+  /// Gets or sets the explicit loopback Azurite queue service endpoint for scoped local development.
+  /// </summary>
+  public string StorageQueueEndpoint { get; set; } = string.Empty;
+
+  /// <summary>
   /// Gets or sets the connection string for the relational SQL database.
   /// This database stores structured business data requiring ACID compliance and complex queries.
   /// </summary>
