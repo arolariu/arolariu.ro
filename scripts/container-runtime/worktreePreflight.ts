@@ -219,13 +219,13 @@ function observeCheckout(
     const branchName = ref.startsWith(branchPrefix) ? ref.slice(branchPrefix.length) : "";
     const hash = head.stdout.trimEnd();
     if (!branchName || /[\p{C}\p{Zl}\p{Zp} \ufffd]/u.test(branchName) || !/^(?:[a-f0-9]{40}|[a-f0-9]{64})$/u.test(hash)) return undefined;
-    const registeredHeads = registration?.filter((entry) => entry.startsWith("HEAD "));
-    const registeredBranches = registration?.filter((entry) => entry.startsWith("branch "));
     const listing = yield* run(probes.workspace.gitWorktreeList(), gitOptions);
     if (listing.kind !== "succeeded" || !listing.stdout.endsWith("\0\0")) return undefined;
     const registrations = listing.stdout.split("\0\0").map((entry) => entry.split("\0"));
     const matches = registrations.filter(([path]) => path?.startsWith("worktree ") && samePath(path.slice(9), root));
     const [registration] = matches;
+    const registeredHeads = registration?.filter((entry) => entry.startsWith("HEAD "));
+    const registeredBranches = registration?.filter((entry) => entry.startsWith("branch "));
     if (
       matches.length !== 1
       || !registration
