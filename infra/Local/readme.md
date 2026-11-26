@@ -7,22 +7,27 @@ Two coexisting modes for local development.
 These full stacks have host-wide ports or named resources. Run only one at a time on a host, even from different Git worktrees. Use the
 [parallel worktree integration handoff](../../DEVELOPMENT.md#reserve-one-full-stack-integration-slot) before starting or stopping a stack.
 
-### Scoped Aspire gates (Windows Podman)
+### Scoped Aspire gates
 
-Scoped Aspire is **not launchable**. It is separate from the one-human-slot legacy modes below. Preflight can be run from the intended
-canonical Windows linked checkout with explicit Podman selection:
+Scoped Aspire is **not launchable**. It is separate from the one-human-slot legacy modes below. Run preflight from the intended canonical
+linked checkout and select either `podman` or `rancher` explicitly:
 
-| Command                                                                            | What it proves (or does)                                                                                                                          |
-| ---------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `node scripts/cli.ts dev worktree preflight --engine podman --json`                | Read-only prerequisite inspection, including local engine, trust and prepared inputs. `prepared` does not install, launch, or contact a provider. |
-| `node scripts/cli.ts dev worktree status --engine podman --json`                   | Returns `blocked` (exit 1) because the trusted Windows registry/process adapter is unavailable. It does not report `idle` or inspect the host.    |
-| `node scripts/cli.ts dev worktree stop --engine podman --expected-run <id> --json` | Returns the same `blocked` result without touching the registry, engine, or a process. A run ID never grants authority.                           |
+| Command                                                                            | What it proves (or does)                                                                                                     |
+| ---------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------- |
+| `node scripts/cli.ts dev worktree preflight --engine <podman\|rancher> --json`     | Read-only checkout and local engine inspection. Windows x64 also checks trust and prepared inputs. No provider is exercised. |
+| `node scripts/cli.ts dev worktree status --engine podman --json`                   | Returns `blocked` (exit 1) because a trusted native registry/process adapter is unavailable. It does not inspect the host.   |
+| `node scripts/cli.ts dev worktree stop --engine podman --expected-run <id> --json` | Returns the same `blocked` result without touching the registry, engine, or a process. A run ID never grants authority.      |
+
+Podman preflight checks a registered, running local machine on Windows and macOS, or an existing rootless API socket at
+`$XDG_RUNTIME_DIR/podman/podman.sock` on Linux. Rancher requires a running Moby guest and checks that its daemon ID matches the local
+Windows Docker pipe or `$HOME/.rd/docker.sock` on Linux and macOS. Remote connection overrides are not supported. Preflight does not start
+the runtimes. Outside Windows x64 it reports checkout and engine evidence but stays `blocked`: full host preparation is not implemented
+there. The current SQL Server image requires a supported x86-64 execution environment; preflight does not qualify ARM emulation.
 
 The scoped CLI has no `start` action and the native AppHost startup fence is unconditional. Native status and stop remain blocked until a
-trusted Windows adapter can verify the protected registry and process identity with bounded cleanup through the owned child handle.
-Ownership, guarded stop, and handoff are tested only with injected fixture evidence. Do not try a descriptor flag, guessed URL or PID, an
-engine-wide stop, or a reset to bypass a block. Legacy Aspire and Selfhost keep their existing commands and data; the scoped model provides
-no reset.
+trusted adapter can verify the protected registry and process identity with bounded cleanup through the owned child handle. Ownership,
+guarded stop, and handoff are tested only with injected fixture evidence. Do not try a descriptor flag, guessed URL or PID, an engine-wide
+stop, or a reset to bypass a block. Legacy Aspire and Selfhost keep their existing commands and data; the scoped model provides no reset.
 
 To preview the receipt-refresh work, run `npm run setup -- --refresh-worktree-restore-evidence --dry-run` first. The refresh flag selects a
 forced restore **inside full Setup**; it is not a restore-only command. Review the entire plan, including independent actions such as

@@ -25,6 +25,9 @@ const head = "0123456789abcdef0123456789abcdef01234567";
 const gitCheckoutArgs = ["rev-parse", "--show-toplevel", "--absolute-git-dir", "--git-common-dir", "--show-superproject-working-tree"];
 const canary = "must-not-appear-in-preflight";
 const trustedBackend = JSON.stringify({version: {Version: "6.2.1"}, host: {os: "linux", hostname: canary}, store: {}});
+const guestDockerInfo = "rdctl shell docker --host unix:///var/run/docker.sock info --format {{.ID}}";
+const localDockerInfo = "docker info --format {{json .}}";
+const rancherInfo = JSON.stringify({ID: "test-engine-1", OSType: "linux", ServerVersion: "29.0.1", Name: canary});
 const registeredWorktree = `worktree ${root}\0HEAD ${head}\0branch refs/heads/chore/task\0\0`;
 const localMachineContext = {
   Name: "local-machine",
@@ -273,14 +276,14 @@ function fixture(
   return {
     ...harness,
     expectNoTransport: () => expect(harness.httpCalls()).toEqual([]),
-    inspect: (expectedRoot?: string) =>
+    inspect: (expectedRoot?: string, engine: "podman" | "rancher" = "podman") =>
       Effect.runPromise(
         Effect.gen(function* () {
           const readonly = yield* ReadOnlyFiles;
           const forbidSecrets = (path: string): void => {
             expect(path).not.toMatch(/[/\\](?:rootCA-key\.pem|keys[/\\]id)$/iu);
           };
-          return yield* inspectWorktreeAspire({engine: "podman", ...(expectedRoot === undefined ? {} : {expectedRoot})}).pipe(
+          return yield* inspectWorktreeAspire({engine, ...(expectedRoot === undefined ? {} : {expectedRoot})}).pipe(
             Effect.provideService(ReadOnlyFiles, {
               ...readonly,
               readFile: (path) => {
@@ -319,7 +322,131 @@ function fixture(
   };
 }
 
+function portableFixture(
+  platform: "linux" | "darwin",
+  variables: Readonly<Record<string, string>>,
+  engineResponses: Readonly<Record<string, string>>,
+  files: Readonly<Record<string, string>> = {},
+) {
+  const cwd = "/home/dev/git/worktrees/task";
+  const common = "/home/dev/git/monorepo/.git";
+  const responses: Readonly<Record<string, string>> = {
+    [`git ${gitCheckoutArgs.join(" ")}`]: `${cwd}\n${common}/worktrees/task\n${common}\n`,
+    "git symbolic-ref --quiet HEAD": "refs/heads/chore/task\n",
+    "git rev-parse --verify HEAD": `${head}\n`,
+    "git worktree list --porcelain -z": `worktree ${cwd}\0HEAD ${head}\0branch refs/heads/chore/task\0\0`,
+    ...engineResponses,
+  };
+  const test = makeTestLayer({
+    environment: {cwd, platform, architecture: "x64", variables: {HOME: "/home/dev", ...variables}},
+    files: {"package.json": '{"name":"@arolariu/monorepo"}', [`${common}/worktrees/task/gitdir`]: "", ...files},
+    processes: [
+      scriptedOutcomes((request) => {
+        const stdout = responses[commandLine(request)];
+        if (stdout === undefined) throw new Error("Unapproved process in preflight");
+        return {kind: "succeeded", exitCode: 0, stdout, stderr: canary, durationMs: 0};
+      }),
+    ],
+  });
+  return {
+    ...test,
+    checkout: {root: cwd, commonGitDir: common, head},
+    inspect: (engine: "rancher" | "podman", expectedRoot = cwd) =>
+      Effect.runPromise(inspectWorktreeAspire({engine, expectedRoot}).pipe(Effect.provide(test.layer))),
+  };
+}
+
 describe("worktree Aspire preflight", () => {
+  it.each(["linux", "darwin"] as const)("verifies an attached %s checkout without Windows probes", async (platform) => {
+    const test = portableFixture(platform, {}, {[guestDockerInfo]: "test-engine-1\n", [localDockerInfo]: rancherInfo});
+
+    expect(await test.inspect("rancher", test.checkout.root.replace("task", "Task"))).toMatchObject({status: "blocked", checkout: null});
+    expect(test.processCalls()).toHaveLength(0);
+    const result = await test.inspect("rancher");
+    expect(result).toMatchObject({status: "blocked", checkout: test.checkout});
+    expect(result.capabilities).toEqual([
+      expect.objectContaining({id: "checkout", status: "pass"}),
+      expect.objectContaining({id: "rancher-backend", status: "pass"}),
+      expect.objectContaining({id: "host-preparation", status: "blocked"}),
+    ]);
+    expect(test.processCalls().map(({request}) => request.command)).toEqual(["git", "git", "git", "git", "rdctl", "docker"]);
+    expect(test.processCalls().at(-1)?.options.env?.["DOCKER_HOST"]).toBe("unix:///home/dev/.rd/docker.sock");
+    expect(JSON.stringify(result)).not.toContain(canary);
+  });
+
+  it.each([false, true])("uses only the rootless Linux Podman socket (inherited override: %s)", async (override) => {
+    const socketInfo = "podman --remote info --format json";
+    const test = portableFixture(
+      "linux",
+      {XDG_RUNTIME_DIR: "/run/user/1000", ...(override ? {CONTAINER_HOST: "ssh://dev@example.com/run/podman.sock"} : {})},
+      {[socketInfo]: trustedBackend},
+    );
+
+    const result = await test.inspect("podman");
+
+    expect(result.status).toBe("blocked");
+    expect(result.capabilities).toContainEqual(expect.objectContaining({id: "podman-backend", status: override ? "blocked" : "pass"}));
+    const calls = test.processCalls().filter(({request}) => request.command === "podman");
+    expect(calls.map(({request}) => commandLine(request))).toEqual(override ? [] : [socketInfo]);
+    if (!override) expect(calls[0]?.options.env?.["CONTAINER_HOST"]).toBe("unix:///run/user/1000/podman/podman.sock");
+  });
+
+  it("uses the registered local Podman machine on macOS, not the native Linux socket", async () => {
+    const configDir = "/home/dev/.config/containers/podman/machine/applehv";
+    const identity = "/home/dev/.local/share/containers/podman/machine/machine";
+    const ssh = {...localMachineSsh, IdentityPath: identity};
+    const test = portableFixture(
+      "darwin",
+      {XDG_RUNTIME_DIR: "/run/user/1000"},
+      {
+        "podman system connection list --format json": JSON.stringify([{...localMachineContext, Identity: identity}]),
+        "podman machine list --format json": JSON.stringify([{Name: "local-machine", Running: true, Starting: false, ...ssh}]),
+        "podman machine inspect local-machine": JSON.stringify([{...localMachineInspect, ConfigDir: {Path: configDir}, SSHConfig: ssh}]),
+        "podman info --format json": trustedBackend,
+      },
+      {
+        [`${configDir}/local-machine.json`]: JSON.stringify({Name: "local-machine", HostUser: {Rootful: false, UID: 1000}, SSH: ssh}),
+        [identity]: canary,
+      },
+    );
+
+    const result = await test.inspect("podman");
+
+    expect(result.status).toBe("blocked");
+    expect(result.capabilities).toContainEqual(expect.objectContaining({id: "podman-backend", status: "pass"}));
+    expect(test.processCalls().at(-1)?.options.env).toMatchObject({CONTAINER_HOST: localMachineContext.URI, CONTAINER_SSHKEY: identity});
+    expect(JSON.stringify(result)).not.toContain(canary);
+  });
+
+  it("verifies the Windows Rancher pipe against the running guest daemon", async () => {
+    const test = fixture({}, {[guestDockerInfo]: "test-engine-1\n", [localDockerInfo]: rancherInfo});
+
+    const result = await test.inspect(undefined, "rancher");
+
+    expect(result.capabilities).toContainEqual(expect.objectContaining({id: "rancher-backend", status: "pass"}));
+    expect(test.processCalls().find(({request}) => commandLine(request) === localDockerInfo)?.options.env?.["DOCKER_HOST"]).toBe(
+      "npipe:////./pipe/docker_engine",
+    );
+    expect(test.processCalls().some(({request}) => request.command === "podman")).toBe(false);
+    expect(JSON.stringify(result)).not.toContain(canary);
+    test.expectReadOnly();
+  });
+
+  it.each([
+    ["an inherited endpoint override", {dOcKeR_cOnTeXt: canary}, "test-engine-1\n", false],
+    ["a missing running Moby guest", {}, "", false],
+    ["a different daemon on the shared named pipe", {}, "another-engine\n", true],
+  ] as const)("blocks Rancher with %s", async (_label, variables, guest, contactedPipe) => {
+    const test = fixture(variables, {[guestDockerInfo]: guest, [localDockerInfo]: rancherInfo});
+
+    const result = await test.inspect(undefined, "rancher");
+
+    expect(result.capabilities).toContainEqual(expect.objectContaining({id: "rancher-backend", status: "blocked"}));
+    expect(test.processCalls().some(({request}) => commandLine(request) === localDockerInfo)).toBe(contactedPipe);
+    expect(JSON.stringify(result)).not.toContain(canary);
+    test.expectReadOnly();
+  });
+
   it.runIf(process.platform === "win32")("suppresses tracing in actual scoped Git child options, not in other probes", async () => {
     const variables = {
       gIt_TrAcE: "C:/synthetic/trace",
@@ -1589,7 +1716,7 @@ describe("worktree Aspire preflight", () => {
         expect(prepared.capabilities).toContainEqual({
           id: "podman-backend",
           status: "blocked",
-          detail: "Machine bootstrap: No pinned default Windows Podman machine was verified. See Podman Desktop in infra/Local/readme.md.",
+          detail: "Engine bootstrap: No pinned default local Podman machine was verified. See Podman Desktop in infra/Local/readme.md.",
         });
       expect(test.processCalls().some(({request}) => commandLine(request) === "podman info --format json")).toBe(scenario === "prepared");
       expect(JSON.stringify(prepared)).not.toContain(canary);

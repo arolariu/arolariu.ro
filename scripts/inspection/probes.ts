@@ -518,6 +518,24 @@ function podmanMachineInspect(name: string): InspectionProbe {
   });
 }
 
+/** Reads the engine connected to the existing native Linux Podman API socket. */
+function podmanSocketInfo(): InspectionProbe {
+  return registerProbe("infrastructure.podman.socket-info", {command: "podman", args: ["--remote", "info", "--format", "json"]});
+}
+
+/** Reads the Moby daemon ID inside Rancher Desktop's running VM. */
+function rancherGuestEngineId(): InspectionProbe {
+  return registerProbe("infrastructure.rancher.guest-engine-id", {
+    command: "rdctl",
+    args: ["shell", "docker", "--host", "unix:///var/run/docker.sock", "info", "--format", "{{.ID}}"],
+  });
+}
+
+/** Reads structured engine evidence through the caller's pinned local Docker endpoint. */
+function rancherEngineInfo(): InspectionProbe {
+  return registerProbe("infrastructure.rancher.engine-info", {command: "docker", args: ["info", "--format", "{{json .}}"]});
+}
+
 /** Reads the version of the PowerShell used by the scoped Windows probes. */
 function windowsPowerShellVersion(): InspectionProbe {
   return registerProbe("infrastructure.windows.powershell-version", {
@@ -1013,6 +1031,9 @@ export const probes = {
     runtimeInfo: infrastructureRuntimeInfo,
     podmanMachineList,
     podmanMachineInspect,
+    podmanSocketInfo,
+    rancherGuestEngineId,
+    rancherEngineInfo,
     containerList: infrastructureContainerList,
     mkcertVersion: infrastructureMkcertVersion,
     mkcertCaRoot: infrastructureMkcertCaRoot,

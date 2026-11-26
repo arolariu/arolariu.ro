@@ -73,7 +73,9 @@ export function makeDevCommand(options: DevCommandOptions = {}): CliSubcommand {
   const preflight = Command.make(
     "preflight",
     {
-      engine: Flag.Literals("engine", ["podman"]).pipe(Flag.withDescription("Explicit Windows Podman engine selection.")),
+      engine: Flag.Literals("engine", ["rancher", "podman"]).pipe(
+        Flag.withDescription("Explicit local Rancher Desktop or Podman selection."),
+      ),
       expectedRoot: Flag.String("expected-root").pipe(Flag.optional, Flag.withDescription("Expected canonical linked-worktree root.")),
     },
     ({engine, expectedRoot}) =>
@@ -92,7 +94,7 @@ export function makeDevCommand(options: DevCommandOptions = {}): CliSubcommand {
           return yield* new ReportedFailure({exitCode: 1, message: "Worktree Aspire preflight is blocked."});
         }
       }).pipe(withCommandOutput("worktree-preflight")),
-  ).pipe(Command.withDescription("Inspects native Windows Aspire worktree prerequisites without preparing or launching anything."));
+  ).pipe(Command.withDescription("Inspects local Aspire worktree prerequisites without preparing or launching anything."));
   const lifecycle = (action: "status" | "stop") => {
     const flags = {
       engine: Flag.Literals("engine", ["podman"]),

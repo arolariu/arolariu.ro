@@ -1,10 +1,10 @@
 /**
- * @fileoverview Read-only prerequisite evidence for a native Windows Aspire worktree.
+ * @fileoverview Read-only checkout, engine and host prerequisite evidence for an Aspire worktree.
  * @module scripts/container-runtime/worktreePreflight
  */
 
 import {createHash} from "node:crypto";
-import {win32} from "node:path";
+import {posix, win32} from "node:path";
 
 import {Effect} from "effect";
 
@@ -18,11 +18,12 @@ import {currentWorktreeRestoreEvidence, isUnmodeledBuildFileSelector, worktreeRe
 import {Environment, type EnvironmentSnapshot} from "../platform/Environment.ts";
 import {ReadOnlyFiles} from "../platform/Files.ts";
 import {Process} from "../platform/Process.ts";
+import type {ContainerEngine} from "./types.ts";
 
-/** Input for the Windows/Podman prerequisite inspection. */
+/** Input for scoped prerequisite inspection. */
 export interface WorktreePreflightInput {
   readonly expectedRoot?: string;
-  readonly engine: "podman";
+  readonly engine: ContainerEngine;
 }
 
 /** Canonical Git identity; no paths to configuration or credentials are included. */
@@ -79,12 +80,26 @@ function parseJson(text: string): unknown {
   }
 }
 
-function samePath(left: string, right: string): boolean {
-  return win32.normalize(left).toLowerCase() === win32.normalize(right).toLowerCase();
+function pathProfile(platform: NodeJS.Platform) {
+  const windows = platform === "win32";
+  const paths = windows ? win32 : posix;
+  const key = (path: string): string => {
+    const normalized = paths.normalize(path);
+    return windows ? normalized.toLowerCase() : normalized;
+  };
+  const isLocal = (path: string | undefined): path is string =>
+    windows ? localDrivePath(path) : path !== undefined && /^\/(?!\/)[^\u0000-\u001f]*$/u.test(path);
+  return {paths, key, isLocal, equal: (left: string, right: string): boolean => key(left) === key(right)};
 }
 
 function localDrivePath(path: string | undefined): path is string {
   return path !== undefined && /^[a-z]:[\\/][^\u0000-\u001f]*$/iu.test(path);
+}
+
+const samePath = pathProfile("win32").equal;
+
+function isWorktreePlatform(platform: NodeJS.Platform): boolean {
+  return platform === "win32" || platform === "linux" || platform === "darwin";
 }
 
 function canonicalPath(path: string): Effect.Effect<string | undefined, never, ReadOnlyFiles> {
@@ -92,19 +107,19 @@ function canonicalPath(path: string): Effect.Effect<string | undefined, never, R
 }
 
 // Disallow redirection through a junction/symlink. The checkout itself has already been canonicalized.
-function ownedFile(path: string): Effect.Effect<boolean, never, ReadOnlyFiles> {
+function ownedFile(path: string, equal = samePath): Effect.Effect<boolean, never, ReadOnlyFiles> {
   return Effect.gen(function* () {
     const canonical = yield* canonicalPath(path);
-    if (canonical === undefined || !samePath(canonical, path)) return false;
+    if (canonical === undefined || !equal(canonical, path)) return false;
     const files = yield* ReadOnlyFiles;
     const info = yield* files.stat(canonical);
     return info.type === "File" && info.size > 0;
   }).pipe(Effect.orElseSucceed(() => false));
 }
 
-function readManifest(path: string): Effect.Effect<string, never, ReadOnlyFiles> {
+function readManifest(path: string, equal = samePath): Effect.Effect<string, never, ReadOnlyFiles> {
   return Effect.gen(function* () {
-    if (!(yield* ownedFile(path))) return "";
+    if (!(yield* ownedFile(path, equal))) return "";
     const files = yield* ReadOnlyFiles;
     const bytes = yield* files.readBytesBounded(path, MAX_MANIFEST_BYTES);
     return new TextDecoder().decode(bytes);
@@ -171,17 +186,18 @@ function inspectPayload(
 }
 
 function observeCheckout(
-  input: Readonly<WorktreePreflightInput>,
+  expectedRoot: string | undefined,
   env: EnvironmentSnapshot,
   names: ReadonlySet<string>,
 ): Effect.Effect<WorktreeCheckout | undefined, never, ReadOnlyFiles | Process> {
   return Effect.gen(function* () {
     if (["git_dir", "git_work_tree", "git_common_dir", "git_namespace"].some((key) => names.has(key))) return undefined;
+    const {paths, equal, isLocal} = pathProfile(env.platform);
     const root = yield* canonicalPath(env.cwd);
-    if (!localDrivePath(root)) return undefined;
-    if (input.expectedRoot !== undefined) {
-      const expected = yield* canonicalPath(win32.resolve(env.cwd, input.expectedRoot));
-      if (expected === undefined || !samePath(expected, root)) return undefined;
+    if (!isLocal(root)) return undefined;
+    if (expectedRoot !== undefined) {
+      const expected = yield* canonicalPath(paths.resolve(env.cwd, expectedRoot));
+      if (expected === undefined || !equal(expected, root)) return undefined;
     }
 
     // Clear case variants from the inherited Windows environment. Explicitly disable
@@ -202,8 +218,8 @@ function observeCheckout(
     const metadata = yield* run(probes.workspace.gitCheckout(), gitOptions);
     if (metadata.kind !== "succeeded") return undefined;
     const checkout = yield* describeGitCheckout(metadata.stdout, root, env.platform);
-    if (checkout?.kind !== "linked-worktree" || !localDrivePath(checkout.commonDirectory)) return undefined;
-    const manifest = yield* readManifest(win32.join(root, "package.json"));
+    if (checkout?.kind !== "linked-worktree" || !isLocal(checkout.commonDirectory)) return undefined;
+    const manifest = yield* readManifest(paths.join(root, "package.json"), equal);
     if (record(parseJson(manifest))?.["name"] !== "@arolariu/monorepo") return undefined;
 
     const branch = yield* run(probes.workspace.gitBranch(), gitOptions);
@@ -217,7 +233,7 @@ function observeCheckout(
     const listing = yield* run(probes.workspace.gitWorktreeList(), gitOptions);
     if (listing.kind !== "succeeded" || !listing.stdout.endsWith("\0\0")) return undefined;
     const registrations = listing.stdout.split("\0\0").map((entry) => entry.split("\0"));
-    const matches = registrations.filter(([path]) => path?.startsWith("worktree ") && samePath(path.slice(9), root));
+    const matches = registrations.filter(([path]) => path?.startsWith("worktree ") && equal(path.slice(9), root));
     const [registration] = matches;
     const registeredHeads = registration?.filter((entry) => entry.startsWith("HEAD "));
     const registeredBranches = registration?.filter((entry) => entry.startsWith("branch "));
@@ -239,8 +255,8 @@ function observeCheckout(
 export function observeWorktreeCheckout(): Effect.Effect<WorktreeCheckout | undefined, never, Environment | ReadOnlyFiles | Process> {
   return Effect.gen(function* () {
     const env = yield* Environment;
-    if (env.platform !== "win32") return undefined;
-    return yield* observeCheckout({engine: "podman"}, env, new Set(Object.keys(env.variables).map((name) => name.toLowerCase())));
+    if (!isWorktreePlatform(env.platform)) return undefined;
+    return yield* observeCheckout(undefined, env, new Set(Object.keys(env.variables).map((name) => name.toLowerCase())));
   });
 }
 
@@ -251,8 +267,10 @@ function registeredPodmanConnection(
   name: string,
   uri: string,
   identity: string,
+  platform: NodeJS.Platform,
 ): Effect.Effect<PodmanRegistration | undefined, never, Process | ReadOnlyFiles> {
   return Effect.gen(function* () {
+    const {paths, equal, key, isLocal} = pathProfile(platform);
     const endpoint = URL.parse(uri);
     if (endpoint === null) return undefined;
     const port = Number(endpoint.port);
@@ -280,12 +298,12 @@ function registeredPodmanConnection(
       || typeof user !== "string"
       || !/^[a-z0-9_.-]+$/iu.test(user)
       || typeof listedIdentity !== "string"
-      || !samePath(identity, listedIdentity)
+      || !equal(identity, listedIdentity)
     )
       return undefined;
     const sshMatches = (ssh: Readonly<Record<string, unknown>> | undefined): boolean => {
       const path = ssh?.["IdentityPath"];
-      return ssh?.["Port"] === port && ssh["RemoteUsername"] === user && typeof path === "string" && samePath(path, identity);
+      return ssh?.["Port"] === port && ssh["RemoteUsername"] === user && typeof path === "string" && equal(path, identity);
     };
 
     const inspection = yield* run(probes.infrastructure.podmanMachineInspect(machine), {cwd: root});
@@ -299,12 +317,12 @@ function registeredPodmanConnection(
       || typeof rootful !== "boolean"
       || !sshMatches(record(selected["SSHConfig"]))
       || typeof configDir !== "string"
-      || !localDrivePath(configDir)
+      || !isLocal(configDir)
     )
       return undefined;
 
     // Machine inspect describes SSH but not the guest UID needed to identify the rootless socket.
-    const document = record(parseJson(yield* readManifest(win32.join(configDir, `${machine}.json`))));
+    const document = record(parseJson(yield* readManifest(paths.join(configDir, `${machine}.json`), equal)));
     const hostUser = record(document?.["HostUser"]);
     const uid = hostUser?.["UID"];
     if (
@@ -316,7 +334,11 @@ function registeredPodmanConnection(
       return undefined;
     const expectedName = rootful ? `${machine}-root` : machine;
     const socket = rootful ? "/run/podman/podman.sock" : `/run/user/${String(uid)}/podman/podman.sock`;
-    if (name !== expectedName || uri !== `ssh://${rootful ? "root" : user}@127.0.0.1:${port}${socket}` || !(yield* ownedFile(identity))) {
+    if (
+      name !== expectedName
+      || uri !== `ssh://${rootful ? "root" : user}@127.0.0.1:${port}${socket}`
+      || !(yield* ownedFile(identity, equal))
+    ) {
       return undefined;
     }
     const created = selected["Created"];
@@ -327,33 +349,35 @@ function registeredPodmanConnection(
       || !Number.isFinite(Date.parse(created))
       || created.startsWith("0001-")
       || canonical === undefined
-      || !samePath(canonical, configDir)
+      || !equal(canonical, configDir)
     )
       return undefined;
     const fingerprint = createHash("sha256")
-      .update(JSON.stringify([name, uri, win32.normalize(identity).toLowerCase(), canonical.toLowerCase(), created]))
+      .update(JSON.stringify([name, uri, key(identity), key(canonical), created]))
       .digest("hex");
     return {uri, identity, fingerprint};
   });
 }
 
+function hasPodmanOverrides(names: ReadonlySet<string>): boolean {
+  return [
+    "container_host",
+    "container_connection",
+    "container_sshkey",
+    "containers_conf",
+    "containers_conf_override",
+    "podman_connections_conf",
+  ].some((key) => names.has(key));
+}
+
 function observePodmanRegistration(
   root: string,
   names: ReadonlySet<string>,
+  platform: NodeJS.Platform,
 ): Effect.Effect<PodmanRegistration | "overrides" | undefined, never, Process | ReadOnlyFiles> {
   return Effect.gen(function* () {
-    if (
-      [
-        "container_host",
-        "container_connection",
-        "container_sshkey",
-        "containers_conf",
-        "containers_conf_override",
-        "podman_connections_conf",
-      ].some((key) => names.has(key))
-    ) {
-      return "overrides" as const;
-    }
+    if (hasPodmanOverrides(names)) return "overrides" as const;
+    const {isLocal} = pathProfile(platform);
     const context = yield* run(probes.infrastructure.runtimeContext("podman"), {cwd: root});
     const connections = context.kind === "succeeded" ? parseJson(context.stdout) : undefined;
     const entries = Array.isArray(connections) ? connections.map(record) : [];
@@ -369,11 +393,11 @@ function observePodmanRegistration(
       || !/^ssh:\/\/[a-z0-9_.-]+@127\.0\.0\.1:[1-9]\d{0,4}\/run\/(?:user\/\d+\/)?podman\/podman\.sock$/iu.test(uri)
       || URL.parse(uri) === null
       || typeof identity !== "string"
-      || !localDrivePath(identity)
+      || !isLocal(identity)
     ) {
       return undefined;
     }
-    return yield* registeredPodmanConnection(root, name, uri, identity);
+    return yield* registeredPodmanConnection(root, name, uri, identity, platform);
   });
 }
 
@@ -387,37 +411,102 @@ export function observeWorktreeEngine(
     const registration = yield* observePodmanRegistration(
       checkout.root,
       new Set(Object.keys(env.variables).map((key) => key.toLowerCase())),
+      env.platform,
     );
     return typeof registration === "object" ? registration.fingerprint : undefined;
   });
 }
 
-function inspectPodman(root: string, names: ReadonlySet<string>): Effect.Effect<WorktreeCapability, never, Process | ReadOnlyFiles> {
+function isEngineVersion(version: unknown): boolean {
+  return typeof version === "string" && /^\d+\.\d+\.\d+(?:[-+][\w.-]+)?$/u.test(version);
+}
+
+function isLinuxPodman(info: unknown): boolean {
+  const response = record(info);
+  return (
+    isEngineVersion(record(response?.["version"])?.["Version"])
+    && record(response?.["host"])?.["os"] === "linux"
+    && record(response?.["store"]) !== undefined
+  );
+}
+
+function localUnixSocket(directory: string | undefined, path: string): string | undefined {
+  if (!pathProfile("linux").isLocal(directory) || /[%?#]/u.test(directory)) return undefined;
+  return `unix://${posix.join(directory, path)}`;
+}
+
+function inspectPodman(
+  root: string,
+  names: ReadonlySet<string>,
+  env: EnvironmentSnapshot,
+): Effect.Effect<WorktreeCapability, never, Process | ReadOnlyFiles> {
   return Effect.gen(function* () {
-    const blocked = (detail: string) => capability("podman-backend", false, "", `Machine bootstrap: ${detail}`);
-    const registration = yield* observePodmanRegistration(root, names);
+    const blocked = (detail: string) => capability("podman-backend", false, "", `Engine bootstrap: ${detail}`);
+    if (env.platform === "linux") {
+      if (hasPodmanOverrides(names)) return blocked("Podman connection overrides are unsupported.");
+      const endpoint = localUnixSocket(env.variables["XDG_RUNTIME_DIR"], "podman/podman.sock");
+      if (endpoint === undefined) return blocked("Set XDG_RUNTIME_DIR and start the local rootless Podman API socket separately.");
+      const info = yield* run(probes.infrastructure.podmanSocketInfo(), {cwd: root, env: {CONTAINER_HOST: endpoint}});
+      return capability(
+        "podman-backend",
+        info.kind === "succeeded" && isLinuxPodman(parseJson(info.stdout)),
+        "The pinned local rootless Podman socket returned structured Linux engine information.",
+        "The local rootless Podman API socket did not respond with valid engine information. Verify it separately.",
+      );
+    }
+
+    const registration = yield* observePodmanRegistration(root, names, env.platform);
     if (registration === "overrides") {
       return blocked("Podman connection overrides are unsupported. Select the local Podman Desktop machine without overrides.");
     }
     if (registration === undefined) {
-      return blocked("No pinned default Windows Podman machine was verified. See Podman Desktop in infra/Local/readme.md.");
+      return blocked("No pinned default local Podman machine was verified. See Podman Desktop in infra/Local/readme.md.");
     }
     const info = yield* run(probes.infrastructure.runtimeInfo("podman"), {
       cwd: root,
       env: {CONTAINER_HOST: registration.uri, CONTAINER_SSHKEY: registration.identity},
     });
-    const response = info.kind === "succeeded" ? record(parseJson(info.stdout)) : undefined;
-    const version = record(response?.["version"])?.["Version"];
-    const responsive =
-      typeof version === "string"
-      && /^\d+\.\d+\.\d+(?:[-+][\w.-]+)?$/u.test(version)
-      && record(response?.["host"])?.["os"] === "linux"
-      && record(response?.["store"]) !== undefined;
     return capability(
       "podman-backend",
-      responsive,
+      info.kind === "succeeded" && isLinuxPodman(parseJson(info.stdout)),
       "The pinned local Podman machine returned structured Linux engine information.",
       "Machine bootstrap: the local Podman backend did not return valid engine information. Verify the selected Podman machine separately.",
+    );
+  });
+}
+
+function inspectRancher(
+  root: string,
+  names: ReadonlySet<string>,
+  env: EnvironmentSnapshot,
+): Effect.Effect<WorktreeCapability, never, Process> {
+  return Effect.gen(function* () {
+    const id = "rancher-backend";
+    const blocked = (detail: string) => capability(id, false, "", detail);
+    if (
+      ["docker_host", "docker_context", "docker_config", "docker_tls", "docker_tls_verify", "docker_cert_path"].some((key) =>
+        names.has(key),
+      )
+    ) {
+      return blocked("Docker endpoint or configuration overrides are unsupported for scoped Rancher preflight.");
+    }
+    const endpoint =
+      env.platform === "win32" ? "npipe:////./pipe/docker_engine" : localUnixSocket(env.variables["HOME"], ".rd/docker.sock");
+    if (endpoint === undefined) return blocked("Set HOME to locate the local Rancher Desktop socket.");
+
+    // The Windows pipe is shared by Docker-compatible products; a context name or Moby banner does not identify its owner.
+    const guest = yield* run(probes.infrastructure.rancherGuestEngineId(), {cwd: root});
+    const guestId = guest.kind === "succeeded" ? guest.stdout.trim() : "";
+    if (!/^[a-z0-9][a-z0-9:-]{0,255}$/iu.test(guestId)) {
+      return blocked("Could not verify a running Rancher Desktop Moby daemon via rdctl. Start Rancher Desktop in Moby mode separately.");
+    }
+    const local = yield* run(probes.infrastructure.rancherEngineInfo(), {cwd: root, env: {DOCKER_HOST: endpoint}});
+    const info = local.kind === "succeeded" ? record(parseJson(local.stdout)) : undefined;
+    return capability(
+      id,
+      info?.["ID"] === guestId && info["OSType"] === "linux" && isEngineVersion(info["ServerVersion"]),
+      "The pinned local Docker endpoint matches the Moby daemon in the running Rancher Desktop guest.",
+      "The local Docker endpoint was unavailable or did not match the running Rancher Desktop Moby daemon.",
     );
   });
 }
@@ -1371,10 +1460,10 @@ function inspectBundle(
 }
 
 /**
- * Inspects an attached, canonical Windows worktree and its bounded local prerequisites.
+ * Inspects an attached, canonical worktree and its bounded local prerequisites.
  * Configuration is projected to key facts in-process; no setup, trust mutation, or launch is performed.
  *
- * @param input - Expected canonical checkout and explicit Podman engine selection.
+ * @param input - Expected canonical checkout and explicit local engine selection.
  * @returns Redacted evidence. Only a separate, approved runtime check can verify an owned launch.
  */
 export function inspectWorktreeAspire(
@@ -1407,14 +1496,14 @@ function inspect(
   names: ReadonlySet<string>,
 ): Effect.Effect<WorktreePreflightResult, never, Process | ReadOnlyFiles | Environment> {
   return Effect.gen(function* () {
-    if (env.platform !== "win32" || input.engine !== "podman") {
+    if (!isWorktreePlatform(env.platform)) {
       return {
         status: "blocked",
         checkout: null,
-        capabilities: [capability("checkout", false, "", "Worktree preflight supports native Windows and explicit Podman only.")],
+        capabilities: [capability("checkout", false, "", "Worktree preflight supports Windows, Linux and macOS only.")],
       };
     }
-    const checkout = yield* observeCheckout(input, env, names);
+    const checkout = yield* observeCheckout(input.expectedRoot, env, names);
     if (checkout === undefined) {
       return {
         status: "blocked",
@@ -1430,12 +1519,30 @@ function inspect(
       };
     }
     const {root} = checkout;
+    const checkoutCapability = capability("checkout", true, "Canonical, attached linked-worktree identity was observed.", "");
+    const engine = input.engine === "podman" ? inspectPodman(root, names, env) : inspectRancher(root, names, env);
+    if (env.platform !== "win32" || env.architecture !== "x64") {
+      return {
+        status: "blocked",
+        checkout,
+        capabilities: [
+          checkoutCapability,
+          yield* engine,
+          capability(
+            "host-preparation",
+            false,
+            "",
+            "Full scoped prerequisites are implemented only for Windows x64; checkout and engine evidence does not qualify this host.",
+          ),
+        ],
+      };
+    }
     const paths = createRepositoryPaths(root);
     const powershell = yield* inspectPowerShell(root);
     const hasPowerShell = powershell.status === "pass";
     const checks = yield* Effect.all(
       [
-        inspectPodman(root, names),
+        engine,
         hasPowerShell ? inspectWebsiteTrust(env, root, names) : Effect.succeed(blockedByPowerShell("website-tls")),
         inspectDotnetTls(root),
         hasPowerShell ? inspectNpm(root, env.architecture, names) : Effect.succeed(blockedByPowerShell("npm-dependencies")),
@@ -1446,7 +1553,7 @@ function inspect(
       {concurrency: "unbounded"},
     );
     const capabilities = [
-      capability("checkout", true, "Canonical, attached linked-worktree identity was observed.", ""),
+      checkoutCapability,
       powershell,
       ...(yield* Effect.all([inspectAppHostConfig(root, env), inspectWebsiteConfig(paths, env)], {concurrency: "unbounded"})),
       ...checks,
