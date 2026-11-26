@@ -173,6 +173,7 @@ public sealed class ConfigRefreshHostedService(
       ConfigurationEndpoint = source.ConfigurationEndpoint,
       StorageAccountName = source.StorageAccountName,
       StorageAccountEndpoint = source.StorageAccountEndpoint,
+      StorageQueueEndpoint = source.StorageQueueEndpoint,
       SqlConnectionString = source.SqlConnectionString,
       NoSqlConnectionString = source.NoSqlConnectionString,
       ApplicationInsightsEndpoint = source.ApplicationInsightsEndpoint,

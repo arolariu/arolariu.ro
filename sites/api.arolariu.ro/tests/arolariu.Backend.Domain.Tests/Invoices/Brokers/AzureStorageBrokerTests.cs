@@ -5,6 +5,7 @@ using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 
+using arolariu.Backend.Common.Options;
 using arolariu.Backend.Domain.Invoices.Brokers.QueueBroker;
 using arolariu.Backend.Domain.Invoices.DDD.Analysis.Contracts;
 
@@ -35,6 +36,32 @@ public sealed class AzureStorageBrokerTests
     Uri queueEndpoint = AzureStorageQueueBroker.ResolveQueueEndpoint(new Uri(blobEndpoint));
 
     Assert.AreEqual(new Uri(expectedQueueEndpoint), queueEndpoint);
+  }
+
+  /// <summary>Verifies the configured scoped queue port takes precedence over the blob port.</summary>
+  [TestMethod]
+  public void CreateQueueServiceClient_ScopedStorage_UsesExplicitQueueEndpoint()
+  {
+    var options = new LocalOptions
+    {
+      StorageAccountEndpoint = "http://127.0.0.1:24115/devstoreaccount1",
+      StorageQueueEndpoint = "http://127.0.0.1:24116/devstoreaccount1",
+    };
+
+    QueueServiceClient client = AzureStorageQueueBroker.CreateQueueServiceClient(options);
+
+    Assert.AreEqual(new Uri(options.StorageQueueEndpoint), client.Uri);
+  }
+
+  /// <summary>Verifies an explicit local queue cannot silently target another service.</summary>
+  [TestMethod]
+  [DataRow("http://storage.example.test:24116/devstoreaccount1")]
+  [DataRow("http://127.0.0.1:24116/other-account")]
+  public void CreateQueueServiceClient_ForeignScopedEndpoint_RefusesToConnect(string endpoint)
+  {
+    var options = new LocalOptions { StorageQueueEndpoint = endpoint };
+
+    Assert.ThrowsExactly<InvalidOperationException>(() => AzureStorageQueueBroker.CreateQueueServiceClient(options));
   }
 
   /// <summary>

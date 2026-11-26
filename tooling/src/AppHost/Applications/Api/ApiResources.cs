@@ -29,6 +29,7 @@ internal static class ApiResources
       .WithEnvironment("Kestrel__Certificates__Default__Path", scope.Runtime.ServiceCertificatePath)
       .WithEnvironment("Kestrel__Certificates__Default__KeyPath", scope.Runtime.ServiceKeyPath)
       .WithEnvironment("EXP_PROXY_URL", scope.Url("exp", "http"))
+      .WithEnvironment("AzureOptions__StorageQueueEndpoint", scope.QueueUrl)
       .WithEnvironment("LOCAL_DEVELOPMENT_IDENTITY_URL", scope.Url("localIdentity", "http"))
       .WithEnvironment("LOCAL_SWAGGER_ORIGIN", scope.Url("api", "https"))
       .WithIconName("CodeBlock");
