@@ -47,6 +47,20 @@ On an approved Windows trust change, `dotnet dev-certs https --trust` can displa
 development certificate. If the SDK cannot enumerate the root store, scoped preflight checks the SDK-listed localhost certificates against
 the Windows trust engine and verifies that each private key is usable. Neither check replaces an HTTPS request to the running service.
 
+On Linux and macOS, prepare each checkout with tools and dependencies native to that host. Do not reuse a Windows checkout's installed
+`node_modules`, EXP `.venv`, or NuGet `obj` outputs. After separately approving the bundle download, use the same AppHost SDK pin:
+
+```sh
+export ASPIRE_HOME="$HOME/.local/share/arolariu-worktree/aspire/13.6.5"
+dotnet tool exec Aspire.Cli@13.6.5 --yes -- setup --install-path "$ASPIRE_HOME" --non-interactive --nologo
+node scripts/cli.ts dev worktree preflight --engine podman --json
+```
+
+Retain that `ASPIRE_HOME` in the launch shell; the POSIX preflight rejects explicit bundle overrides and case variants of the variable. On
+Linux, if Podman is installed but the rootless API socket is inactive, start the existing `podman.socket` **user** unit on systemd-based
+hosts (`systemctl --user start podman.socket`). Do not substitute a forwarded Windows or rootful socket. A healthy engine check alone does
+not establish that the checkout, SDK, trust stores, or application configuration are ready.
+
 To preview the receipt-refresh work, run `npm run setup -- --refresh-worktree-restore-evidence --dry-run` first. The refresh flag selects a
 forced restore **inside full Setup**; it is not a restore-only command. Review the entire plan, including independent actions such as
 checkout preparation or browser installation, and obtain approval for the applicable actions before running without `--dry-run`.
@@ -56,9 +70,28 @@ current command calls this gate with native evidence. The offline result is `blo
 unverified ownership, incomplete resource/endpoint or launcher-exit evidence, failed smoke, failed revalidation, or timeout. It never
 includes a URL, stop command, raw error, or log path on failure.
 
-#### Evidence required before a scoped handoff
+#### Foreground two-worktree acceptance
 
-This is the acceptance checklist for a **separately authorized runtime wave**, not a procedure to start a stack from this revision:
+Use two prepared checkouts on the same host. Record each check's result, engine, checkout revision and run ID; never record credentials,
+dashboard login URLs, or token-bearing logs.
+
+1. From each checkout, run preflight and then `node scripts/cli.ts dev worktree start --engine <engine>` in a separate terminal. Keep both
+   launchers open until both report a healthy scoped graph. Do not use legacy Aspire as a fallback.
+2. Check each printed website origin with TLS validation enabled. Confirm `/api/health/` reports `Healthy` against that checkout's own API
+   and EXP, then open `/auth/sign-in/` in a single browser context. Use distinct, non-authentication host-only cookie values to verify that
+   neither origin can read the other's cookie. Check each engine's exact run-labeled inventory and mounted volumes; do not infer data
+   isolation from the URLs alone.
+3. Run `node scripts/cli.ts dev worktree stop --engine <engine> --expected-run <id>` from one checkout and wait for that foreground owner to
+   exit. Check that its run-labeled containers and lease are gone, its volumes remain, and the sibling still serves HTTPS. Repeat for the
+   sibling. For restart acceptance, restart the first checkout while its sibling is up and verify that only the new run ID can stop it and
+   that its data survives.
+
+Run the same-engine and mixed-engine pairs independently when both engines are available. Foreground acceptance does not show that an agent
+can exit and leave a verified stack behind.
+
+#### Evidence required before a detached scoped handoff
+
+These are additional gates for a **separately authorized detached-runtime wave**. No current command publishes a detached handoff:
 
 1. **Preparation and lifetime.** Establish canonical checkout, exact v4 stage/lease and verified build revision on the pinned engine. Supply
    a production verifier for the protected runtime inputs, dependency artifacts, certificates and owned volumes; verify PID, creation time,

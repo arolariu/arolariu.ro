@@ -135,7 +135,8 @@ describe("dev command", () => {
     expect(stdout).toHaveLength(1);
     expect.soft(JSON.parse(stdout[0]?.text ?? "")).toEqual({
       status: "blocked",
-      reason: "The trusted Windows registry/process adapter is unavailable.",
+      reason:
+        action === "status" ? "Native scoped ownership status is unavailable." : "Supply the exact foreground run ID with --expected-run.",
     });
     expect(resolvedPaths).toEqual([]);
     expect(harness.processCalls()).toEqual([]);
@@ -244,7 +245,7 @@ describe("dev command", () => {
         reason:
           runId.length === 32
             ? "The requested foreground run is not current on the verified engine."
-            : "The trusted Windows registry/process adapter is unavailable.",
+            : "Supply the exact foreground run ID with --expected-run.",
       });
       expect(stdout[0]?.text).not.toMatch(/fake-token|stopCommand|https?:/);
       expect(harness.processCalls()).toEqual([]);

@@ -111,7 +111,13 @@ export function makeDevCommand(options: DevCommandOptions = {}): CliSubcommand {
             if (action === "stop" && requested !== undefined && isWorktreeRunId(requested)) {
               return yield* Effect.map(requestNativeWorktreeStop(engine, requested), () => ({status: "stop-requested"}) as const);
             }
-            return {status: "blocked", reason: "The trusted Windows registry/process adapter is unavailable."} as const;
+            return {
+              status: "blocked",
+              reason:
+                action === "status"
+                  ? "Native scoped ownership status is unavailable."
+                  : "Supply the exact foreground run ID with --expected-run.",
+            } as const;
           }
           const runId = expectedRun === undefined ? undefined : Option.getOrUndefined(expectedRun);
           if (runId !== undefined && !isWorktreeRunId(runId))
@@ -121,8 +127,7 @@ export function makeDevCommand(options: DevCommandOptions = {}): CliSubcommand {
             return {status: "blocked", reason: "The selected engine does not match the trusted runtime adapter."} as const;
           }
           const checkout = yield* platform.checkout;
-          if (checkout === undefined)
-            return {status: "blocked", reason: "Run from the current canonical Windows linked worktree."} as const;
+          if (checkout === undefined) return {status: "blocked", reason: "Run from the current canonical linked worktree."} as const;
           return yield* Effect.gen(function* () {
             const lease = yield* readWorktreeLaunch(checkout);
             if (!lease)
@@ -148,8 +153,8 @@ export function makeDevCommand(options: DevCommandOptions = {}): CliSubcommand {
     ).pipe(
       Command.withDescription(
         action === "status"
-          ? "Scoped ownership status is blocked until a trusted Windows registry/process adapter is available."
-          : "Scoped stop is blocked until a trusted Windows registry/process adapter is available.",
+          ? "Reports blocked until native scoped ownership status is available."
+          : "Requests cooperative shutdown of the exact foreground run. Requires --expected-run.",
       ),
     );
   };
