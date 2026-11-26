@@ -165,7 +165,7 @@ describe("worktree Aspire ownership", () => {
       expect(owned.head).toBe(fixture.checkout.head);
       await publishWorktreeJson(join(stage.directory, "exit.json"), {...receipt, reason: "ttl"});
       observed = null;
-      expect(await run(stopWorktreeLaunch(owned), platform)).toMatchObject({status: "stopped", runId: lease.runId});
+      expect(await run(stopWorktreeLaunch(owned))).toMatchObject({status: "stopped", runId: lease.runId});
     } finally {
       await fixture.dispose();
     }
