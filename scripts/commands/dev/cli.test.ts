@@ -71,6 +71,12 @@ async function runSelfhostCli(argv: readonly string[]): Promise<{
   };
 }
 
+const unverifiedWorktreeEnvironment = {
+  platform: "linux",
+  cwd: "/fixtures/worktree",
+  variables: {GIT_DIR: "/fixtures/override.git"},
+} as const;
+
 describe("dev command", () => {
   it.each([
     ["podman", ["dev", "worktree"]],
@@ -164,7 +170,7 @@ describe("dev command", () => {
     ["--verbose=false", "worktree", "--log-level=none", "stop", "--engine", "podman", "--json"],
     ["worktree", "preflight", "--engine", "podman", "--verbose", "--json"],
   ])("routes the npm worktree alias with global flags (%j)", async (...args) => {
-    const harness = makeTestLayer({environment: {platform: "linux"}});
+    const harness = makeTestLayer({environment: unverifiedWorktreeEnvironment});
     const exit = await Effect.runPromiseExit(
       runCli(["dev", "aspire", ...args], makeRootCommand([makeDevCommand()])).pipe(Effect.provide(harness.layer)),
     );
@@ -212,7 +218,7 @@ describe("dev command", () => {
   it.each(["b".repeat(32), "not-an-id?token=fake-token"])(
     "keeps guarded worktree stop blocked without verified authority",
     async (runId) => {
-      const harness = makeTestLayer({environment: {platform: "linux"}});
+      const harness = makeTestLayer({environment: unverifiedWorktreeEnvironment});
       const argv = ["dev", "aspire", "worktree", "stop", "--engine", "podman", "--expected-run", runId, "--json"];
 
       const exit = await Effect.runPromiseExit(runCli(argv, makeRootCommand([makeDevCommand()])).pipe(Effect.provide(harness.layer)));
