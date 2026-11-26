@@ -404,6 +404,52 @@ public sealed class ResourceCompositionTests
   }
 
   [TestMethod]
+  [DataRow("matching")]
+  [DataRow("changed-engine")]
+  [DataRow("changed-revision")]
+  [DataRow("changed-port")]
+  [DataRow("not-pending")]
+  public void LoadPendingStage_RejectsDriftBeforeAcceptingLaunchInputs(string scenario)
+  {
+    var parent = Directory.CreateTempSubdirectory("arolariu-pending-test-");
+    try
+    {
+      var fixture = ScopeFixture.Create('a', 24000, parent.FullName);
+      const string branch = "feature/scoped";
+      string head = new('a', 40);
+      string enginePin = new('e', 64);
+      string commonGitDir = System.IO.Path.Combine(parent.FullName, "metadata", ".git");
+      Directory.CreateDirectory(System.IO.Path.GetDirectoryName(fixture.Path)!);
+      string descriptor = JsonSerializer.Serialize(new
+      {
+        version = WorktreeLaunchScope.LaunchVersion, root = fixture.Root, scopeId = fixture.ScopeId, runId = fixture.RunId,
+        branch, head, engine = "rancher", mode = "aspire", ports = fixture.Ports, volumes = fixture.Volumes,
+        loopbackHost = "127.0.0.1", websiteOrigin = fixture.WebsiteOrigin,
+      });
+      File.WriteAllText(fixture.Path, descriptor);
+      var leasePorts = new Dictionary<string, int>(fixture.Ports);
+      if (scenario == "changed-port") leasePorts["exp"] = 24999;
+      File.WriteAllText(System.IO.Path.Combine(parent.FullName, fixture.ScopeId, "lease.json"), JsonSerializer.Serialize(new
+      {
+        version = WorktreeLaunchScope.LaunchVersion, root = fixture.Root, scopeId = fixture.ScopeId, runId = fixture.RunId,
+        commonGitDir, branch, head = scenario == "changed-revision" ? new string('b', 40) : head,
+        engine = "rancher", engineId = scenario == "changed-engine" ? new string('d', 64) : enginePin,
+        mode = "aspire", phase = scenario == "not-pending" ? "reserved" : "pending", ports = leasePorts, volumes = fixture.Volumes,
+      }));
+      WorktreeLaunchScope Load() => WorktreeStageVerifier.LoadPending(parent.FullName, fixture.Path, fixture.ScopeId, fixture.Root, commonGitDir,
+        branch, head, "rancher", enginePin, fixture.Volumes, fixture.Runtime);
+      if (scenario == "matching")
+        Assert.AreEqual(fixture.Ports["exp"], Load().Port("exp"));
+      else
+        Assert.ThrowsExactly<InvalidOperationException>(() => Load());
+    }
+    finally
+    {
+      parent.Delete(recursive: true);
+    }
+  }
+
+  [TestMethod]
   public void ReadStageRecord_RejectsNoncanonicalPathAndDuplicatePropertyBeforeAcceptingAuthority()
   {
     var root = Directory.CreateTempSubdirectory("arolariu-record-test-");
