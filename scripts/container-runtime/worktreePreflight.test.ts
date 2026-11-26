@@ -1,6 +1,10 @@
 // @vitest-environment node
-import {Effect, FileSystem, Layer, PlatformError, Sink, Stream} from "effect";
+import {Effect, FileSystem, Layer, Option, PlatformError, Sink, Stream} from "effect";
 import {type ChildProcess, ChildProcessSpawner} from "effect/process";
+import {mkdir, mkdtemp, realpath, rmdir} from "node:fs/promises";
+import {createServer} from "node:net";
+import {tmpdir} from "node:os";
+import {join} from "node:path";
 import {describe, expect, it} from "vitest";
 
 import {Process, ProcessLive, type ProcessRequest} from "../platform/Process.ts";
@@ -24,7 +28,13 @@ const guardedRestore = commandLine({...forcedRestoreRequest, args: [...forcedRes
 const head = "0123456789abcdef0123456789abcdef01234567";
 const gitCheckoutArgs = ["rev-parse", "--show-toplevel", "--absolute-git-dir", "--git-common-dir", "--show-superproject-working-tree"];
 const canary = "must-not-appear-in-preflight";
-const trustedBackend = JSON.stringify({version: {Version: "6.2.1"}, host: {os: "linux", hostname: canary}, store: {}});
+const trustedBackend = JSON.stringify({
+  version: {Version: "6.2.1"},
+  host: {os: "linux", hostname: canary, security: {rootless: true}},
+  store: {},
+});
+const linuxRuntimeDirectory = "/run/user/1000";
+const linuxPodmanSocket = `${linuxRuntimeDirectory}/podman/podman.sock`;
 const guestDockerInfo = "rdctl shell docker --host unix:///var/run/docker.sock info --format {{.ID}}";
 const localDockerInfo = "docker info --format {{json .}}";
 const rancherInfo = JSON.stringify({ID: "test-engine-1", OSType: "linux", ServerVersion: "29.0.1", Name: canary});
@@ -340,7 +350,7 @@ function portableFixture(
     ...engineResponses,
   };
   const test = makeTestLayer({
-    environment: {cwd, platform, architecture: "x64", variables: {HOME: "/home/dev", ...variables}},
+    environment: {cwd, platform, architecture: "x64", effectiveUserId: 1000, variables: {HOME: "/home/dev", ...variables}},
     files: {"package.json": '{"name":"@arolariu/monorepo"}', [`${common}/worktrees/task/gitdir`]: "", ...files},
     processes: [
       scriptedOutcomes((request) => {
@@ -352,10 +362,49 @@ function portableFixture(
   });
   return {
     ...test,
-    checkout: {root: cwd, commonGitDir: common, head},
+    checkout: {root: cwd, commonGitDir: common, head, branch: "chore/task"},
     inspect: (engine: "rancher" | "podman", expectedRoot = cwd) =>
       Effect.runPromise(inspectWorktreeAspire({engine, expectedRoot}).pipe(Effect.provide(test.layer))),
   };
+}
+
+function linuxSocketFixture(
+  scenario: "stable" | "changed" | "redirected" | "regular file" | "rootful" | "override" | "foreign" | "shared runtime",
+) {
+  const test = portableFixture(
+    "linux",
+    {XDG_RUNTIME_DIR: linuxRuntimeDirectory, ...(scenario === "override" ? {CONTAINER_HOST: canary} : {})},
+    {
+      "podman --remote info --format json":
+        scenario === "rootful" ? trustedBackend.replace('"rootless":true', '"rootless":false') : trustedBackend,
+    },
+    {[linuxPodmanSocket]: ""},
+  );
+  let socketReads = 0;
+  const filesLayer = Layer.effect(
+    ReadOnlyFiles,
+    Effect.map(ReadOnlyFiles, (files) => ({
+      ...files,
+      realPath: (path) =>
+        path === linuxPodmanSocket && scenario === "redirected" ? Effect.succeed("/other/podman.sock") : files.realPath(path),
+      stat: (path) =>
+        Effect.map(files.stat(path), (info) => {
+          if (path === linuxRuntimeDirectory) return {...info, mode: scenario === "shared runtime" ? 0o755 : 0o700, uid: Option.some(1000)};
+          return path === linuxPodmanSocket
+            ? {
+                ...info,
+                type: scenario === "regular file" ? ("File" as const) : ("Socket" as const),
+                dev: 1n,
+                uid: Option.some(scenario === "foreign" ? 1001 : 1000),
+                ino: Option.some(scenario === "changed" ? BigInt(++socketReads) : 2n),
+              }
+            : info;
+        }),
+    })),
+  );
+  const run = <A, E>(effect: Effect.Effect<A, E, Environment | ReadOnlyFiles | Process>) =>
+    Effect.runPromise(effect.pipe(Effect.provide(filesLayer), Effect.provide(test.layer)));
+  return {...test, run};
 }
 
 describe("worktree Aspire preflight", () => {
@@ -409,6 +458,28 @@ describe("worktree Aspire preflight", () => {
     expect(JSON.stringify(result)).not.toContain(canary);
   });
 
+  it.each([
+    ["linux", "test-engine-1", true],
+    ["darwin", "test-engine-1", true],
+    ["linux", "different-daemon", false],
+  ] as const)("binds Rancher on %s only when the daemon ID matches (%s)", async (platform, guestId, verified) => {
+    const test = portableFixture(platform, {}, {[guestDockerInfo]: guestId, [localDockerInfo]: rancherInfo});
+    const binding = await Effect.runPromise(bindWorktreeEngine(test.checkout, "rancher").pipe(Effect.provide(test.layer)));
+    if (verified) {
+      expect(binding).toEqual({
+        engine: "rancher",
+        fingerprint: expect.stringMatching(/^[a-f0-9]{64}$/u),
+        environment: {
+          DOCKER_HOST: "unix:///home/dev/.rd/docker.sock",
+          ASPIRE_CONTAINER_RUNTIME: "docker",
+          DOTNET_ASPIRE_CONTAINER_RUNTIME: "docker",
+        },
+      });
+    } else {
+      expect(binding).toBeUndefined();
+    }
+  });
+
   it.each(["linux", "darwin"] as const)(
     "checks portable preparation in the %s checkout without exposing configuration",
     async (platform) => {
@@ -455,22 +526,74 @@ describe("worktree Aspire preflight", () => {
     },
   );
 
-  it.each([false, true])("uses only the rootless Linux Podman socket (inherited override: %s)", async (override) => {
-    const socketInfo = "podman --remote info --format json";
-    const test = portableFixture(
-      "linux",
-      {XDG_RUNTIME_DIR: "/run/user/1000", ...(override ? {CONTAINER_HOST: "ssh://dev@example.com/run/podman.sock"} : {})},
-      {[socketInfo]: trustedBackend},
-    );
-
-    const result = await test.inspect("podman");
+  it.each([
+    ["stable", true, true],
+    ["changed", false, true],
+    ["redirected", false, false],
+    ["regular file", false, false],
+    ["foreign", false, false],
+    ["shared runtime", false, false],
+    ["rootful", false, true],
+    ["override", false, false],
+  ] as const)("pins only the verified native Linux Podman socket (%s)", async (scenario, verified, contactsSocket) => {
+    const test = linuxSocketFixture(scenario);
+    const result = await test.run(inspectWorktreeAspire({engine: "podman"}));
+    const binding = await test.run(bindWorktreeEngine(test.checkout, "podman"));
 
     expect(result.status).toBe("blocked");
-    expect(result.capabilities).toContainEqual(expect.objectContaining({id: "podman-backend", status: override ? "blocked" : "pass"}));
+    expect(result.capabilities).toContainEqual(expect.objectContaining({id: "podman-backend", status: verified ? "pass" : "blocked"}));
     const calls = test.processCalls().filter(({request}) => request.command === "podman");
-    expect(calls.map(({request}) => commandLine(request))).toEqual(override ? [] : [socketInfo]);
-    if (!override) expect(calls[0]?.options.env?.["CONTAINER_HOST"]).toBe("unix:///run/user/1000/podman/podman.sock");
+    expect(calls.map(({request}) => commandLine(request))).toEqual(
+      contactsSocket ? Array<string>(2).fill("podman --remote info --format json") : [],
+    );
+    if (verified) {
+      expect(binding).toEqual({
+        engine: "podman",
+        fingerprint: expect.stringMatching(/^[a-f0-9]{64}$/u),
+        environment: {
+          CONTAINER_HOST: `unix://${linuxPodmanSocket}`,
+          ASPIRE_CONTAINER_RUNTIME: "podman",
+          DOTNET_ASPIRE_CONTAINER_RUNTIME: "podman",
+        },
+      });
+      expect(await test.run(observeWorktreeEngine(test.checkout, "podman"))).toBe(binding?.fingerprint);
+    } else {
+      expect(binding).toBeUndefined();
+    }
   });
+
+  it.runIf(process.platform === "linux" && (process.geteuid?.() ?? 0) > 0)(
+    "reads native Unix socket ownership through the live filesystem adapter",
+    async () => {
+      const effectiveUserId = process.geteuid?.();
+      if (effectiveUserId === undefined) throw new Error("Expected a POSIX user ID");
+      const runtime = await mkdtemp(join(await realpath(tmpdir()), "wtsock-"));
+      const engineDirectory = join(runtime, "podman");
+      const socket = join(engineDirectory, "podman.sock");
+      const listener = createServer();
+      try {
+        await mkdir(engineDirectory);
+        await new Promise<void>((resolve, reject) => {
+          listener.once("error", reject);
+          listener.listen(socket, resolve);
+        });
+        const harness = makeTestLayer({
+          fileSystem: "node",
+          environment: {platform: "linux", architecture: "x64", effectiveUserId, variables: {XDG_RUNTIME_DIR: runtime}},
+          processes: [scriptedOutcomes(() => ({kind: "succeeded", exitCode: 0, stdout: trustedBackend, stderr: "", durationMs: 0}))],
+        });
+        const checkout = {root: runtime, commonGitDir: runtime, branch: "chore/task", head};
+        const binding = await Effect.runPromise(bindWorktreeEngine(checkout, "podman").pipe(Effect.provide(harness.layer)));
+        expect(binding?.environment["CONTAINER_HOST"]).toBe(`unix://${socket}`);
+        expect(harness.processCalls().map(({request}) => commandLine(request))).toEqual(["podman --remote info --format json"]);
+      } finally {
+        if (listener.listening)
+          await new Promise<void>((resolve, reject) => listener.close((error) => (error ? reject(error) : resolve())));
+        await rmdir(engineDirectory);
+        await rmdir(runtime);
+      }
+    },
+  );
 
   it("uses the registered local Podman machine on macOS, not the native Linux socket", async () => {
     const configDir = "/home/dev/.config/containers/podman/machine/applehv";
@@ -495,7 +618,9 @@ describe("worktree Aspire preflight", () => {
 
     expect(result.status).toBe("blocked");
     expect(result.capabilities).toContainEqual(expect.objectContaining({id: "podman-backend", status: "pass"}));
-    expect(test.processCalls().at(-1)?.options.env).toMatchObject({CONTAINER_HOST: localMachineContext.URI, CONTAINER_SSHKEY: identity});
+    const binding = await Effect.runPromise(bindWorktreeEngine(test.checkout, "podman").pipe(Effect.provide(test.layer)));
+    expect(binding).toMatchObject({engine: "podman", fingerprint: expect.stringMatching(/^[a-f0-9]{64}$/u)});
+    expect(binding?.environment).toMatchObject({CONTAINER_HOST: localMachineContext.URI, CONTAINER_SSHKEY: identity});
     expect(JSON.stringify(result)).not.toContain(canary);
   });
 

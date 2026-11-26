@@ -6,7 +6,7 @@
 import {createHash} from "node:crypto";
 import {posix, win32} from "node:path";
 
-import {Effect} from "effect";
+import {Effect, Option} from "effect";
 
 import {describeGitCheckout} from "../commands/doctor/modules/workspace.ts";
 import {createRepositoryPaths, type RepositoryPaths} from "../common/repository-paths.ts";
@@ -419,7 +419,11 @@ export function observeWorktreeEngine(
       const observed = yield* observeRancherBackend(checkout.root, names, env);
       return "fingerprint" in observed ? observed.fingerprint : undefined;
     }
-    if (env.platform !== "win32") return undefined;
+    if (env.platform === "linux") {
+      const observed = yield* observeLinuxPodmanSocket(checkout.root, names, env);
+      return "fingerprint" in observed ? observed.fingerprint : undefined;
+    }
+    if (env.platform !== "win32" && env.platform !== "darwin") return undefined;
     const registration = yield* observePodmanRegistration(checkout.root, names, env.platform);
     return typeof registration === "object" ? registration.fingerprint : undefined;
   });
@@ -432,14 +436,14 @@ export interface WorktreeEngineBinding {
   readonly environment: Readonly<Record<string, string>>;
 }
 
-/** Pins a responsive Windows backend and the exact environment DCP and its container commands must inherit. */
+/** Pins a responsive, verified x64 backend and its exact local runtime routing. */
 export function bindWorktreeEngine(
   checkout: WorktreeCheckout,
   engine: ContainerEngine,
 ): Effect.Effect<WorktreeEngineBinding | undefined, never, Environment | Process | ReadOnlyFiles> {
   return Effect.gen(function* () {
     const env = yield* Environment;
-    if (env.platform !== "win32" || env.architecture !== "x64") return undefined;
+    if (!isWorktreePlatform(env.platform) || env.architecture !== "x64") return undefined;
     const names = new Set(Object.keys(env.variables).map((name) => name.toLowerCase()));
     if (engine === "rancher") {
       const observed = yield* observeRancherBackend(checkout.root, names, env);
@@ -448,6 +452,16 @@ export function bindWorktreeEngine(
         engine,
         fingerprint: observed.fingerprint,
         environment: {DOCKER_HOST: observed.endpoint, ASPIRE_CONTAINER_RUNTIME: "docker", DOTNET_ASPIRE_CONTAINER_RUNTIME: "docker"},
+      };
+    }
+
+    if (env.platform === "linux") {
+      const observed = yield* observeLinuxPodmanSocket(checkout.root, names, env);
+      if ("reason" in observed) return undefined;
+      return {
+        engine,
+        fingerprint: observed.fingerprint,
+        environment: {CONTAINER_HOST: observed.endpoint, ASPIRE_CONTAINER_RUNTIME: "podman", DOTNET_ASPIRE_CONTAINER_RUNTIME: "podman"},
       };
     }
 
@@ -484,6 +498,62 @@ function localUnixSocket(directory: string | undefined, path: string): string | 
   return `unix://${posix.join(directory, path)}`;
 }
 
+function linuxPodmanSocketIdentity(
+  directory: string,
+  socket: string,
+  uid: number,
+): Effect.Effect<string | undefined, never, ReadOnlyFiles> {
+  return Effect.gen(function* () {
+    if ((yield* canonicalPath(socket)) !== socket) return undefined;
+    const files = yield* ReadOnlyFiles;
+    const runtime = yield* files.stat(directory);
+    const info = yield* files.stat(socket);
+    const inode = Option.getOrUndefined(info.ino);
+    if (
+      runtime.type !== "Directory"
+      || (runtime.mode & 0o077) !== 0
+      || Option.getOrUndefined(runtime.uid) !== uid
+      || info.type !== "Socket"
+      || Option.getOrUndefined(info.uid) !== uid
+      || inode === undefined
+      || inode <= 0n
+    )
+      return undefined;
+    return createHash("sha256")
+      .update(JSON.stringify(["podman", socket, uid, String(info.dev), String(inode)]))
+      .digest("hex");
+  }).pipe(Effect.orElseSucceed(() => undefined));
+}
+
+function observeLinuxPodmanSocket(
+  root: string,
+  names: ReadonlySet<string>,
+  env: EnvironmentSnapshot,
+): Effect.Effect<{readonly endpoint: string; readonly fingerprint: string} | {readonly reason: string}, never, Process | ReadOnlyFiles> {
+  return Effect.gen(function* () {
+    if (hasPodmanOverrides(names)) return {reason: "Podman connection overrides are unsupported."};
+    const directory = env.variables["XDG_RUNTIME_DIR"];
+    const uid = env.effectiveUserId;
+    const endpoint = localUnixSocket(directory, "podman/podman.sock");
+    if (directory === undefined || posix.normalize(directory) !== directory || endpoint === undefined || uid === undefined || uid < 1) {
+      return {reason: "Set a canonical XDG_RUNTIME_DIR and start the local rootless Podman API socket as the current user."};
+    }
+    const socket = endpoint.slice("unix://".length);
+    const first = yield* linuxPodmanSocketIdentity(directory, socket, uid);
+    if (first === undefined) return {reason: "The expected Podman socket is missing, redirected, or not private to the current user."};
+
+    const response = yield* run(probes.infrastructure.podmanSocketInfo(), {cwd: root, env: {CONTAINER_HOST: endpoint}});
+    const info = response.kind === "succeeded" ? parseJson(response.stdout) : undefined;
+    if (!isLinuxPodman(info) || record(record(record(info)?.["host"])?.["security"])?.["rootless"] !== true) {
+      return {reason: "The local Podman API socket did not return valid rootless Linux engine information."};
+    }
+    if ((yield* linuxPodmanSocketIdentity(directory, socket, uid)) !== first) {
+      return {reason: "The local Podman socket changed during verification."};
+    }
+    return {endpoint, fingerprint: first};
+  });
+}
+
 function inspectPodman(
   root: string,
   names: ReadonlySet<string>,
@@ -492,16 +562,10 @@ function inspectPodman(
   return Effect.gen(function* () {
     const blocked = (detail: string) => capability("podman-backend", false, "", `Engine bootstrap: ${detail}`);
     if (env.platform === "linux") {
-      if (hasPodmanOverrides(names)) return blocked("Podman connection overrides are unsupported.");
-      const endpoint = localUnixSocket(env.variables["XDG_RUNTIME_DIR"], "podman/podman.sock");
-      if (endpoint === undefined) return blocked("Set XDG_RUNTIME_DIR and start the local rootless Podman API socket separately.");
-      const info = yield* run(probes.infrastructure.podmanSocketInfo(), {cwd: root, env: {CONTAINER_HOST: endpoint}});
-      return capability(
-        "podman-backend",
-        info.kind === "succeeded" && isLinuxPodman(parseJson(info.stdout)),
-        "The pinned local rootless Podman socket returned structured Linux engine information.",
-        "The local rootless Podman API socket did not respond with valid engine information. Verify it separately.",
-      );
+      const observed = yield* observeLinuxPodmanSocket(root, names, env);
+      return "reason" in observed
+        ? blocked(observed.reason)
+        : capability("podman-backend", true, "The private local Podman socket returned structured rootless Linux engine information.", "");
     }
 
     const registration = yield* observePodmanRegistration(root, names, env.platform);
