@@ -6,7 +6,7 @@ import {Environment} from "../platform/Environment.ts";
 import {ReadOnlyFiles} from "../platform/Files.ts";
 import type {PlatformServices} from "../platform/layers.ts";
 import {Presenter} from "../platform/Output.ts";
-import {Process} from "../platform/Process.ts";
+import {Process, type ProcessRequest} from "../platform/Process.ts";
 import {runOwnedWorktreeProcess} from "../platform/WorktreeProcess.ts";
 import type {ContainerEngine} from "./types.ts";
 import {getContainerAdapter} from "./adapters.ts";
@@ -28,14 +28,14 @@ import {prepareWorktreeVolumes} from "./worktreeVolumes.ts";
 
 const registryName = "arolariu-native-aspire-v4";
 
-function appHostExecutable(root: string, paths: typeof posix): string {
-  return paths.join(root, "tooling/src/AppHost/bin/Debug/net10.0", paths === win32 ? "AppHost.exe" : "AppHost");
+function appHostArtifact(root: string, paths: typeof posix): string {
+  return paths.join(root, "tooling/src/AppHost/bin/Debug/net10.0", paths === win32 ? "AppHost.exe" : "AppHost.dll");
 }
 
-function currentRegistry(native: string, cwd: string, process: typeof Process.Service, create: boolean, paths: typeof posix) {
+function currentRegistry(native: ProcessRequest, cwd: string, process: typeof Process.Service, create: boolean, paths: typeof posix) {
   return Effect.gen(function* () {
     const result = yield* process.run(
-      {command: native, args: ["--worktree-registry", create ? "create" : "read"]},
+      {command: native.command, args: [...native.args, "--worktree-registry", create ? "create" : "read"]},
       {cwd, echo: false, output: "capture"},
     );
     const path = result.stdout.trimEnd();
@@ -46,18 +46,18 @@ function currentRegistry(native: string, cwd: string, process: typeof Process.Se
   });
 }
 
-function ownedAppHost(root: string, paths: typeof posix): Effect.Effect<string | undefined, never, ReadOnlyFiles> {
+function ownedAppHost(root: string, paths: typeof posix): Effect.Effect<ProcessRequest | undefined, never, ReadOnlyFiles> {
   return Effect.gen(function* () {
     const files = yield* ReadOnlyFiles;
-    const expected = appHostExecutable(root, paths);
+    const expected = appHostArtifact(root, paths);
     const native = yield* files.realPath(expected);
     const stat = yield* files.stat(native);
-    return stat.type === "File"
-      && (paths === win32
-        ? win32.normalize(native).toLowerCase() === expected.toLowerCase()
-        : native === expected && (stat.mode & 0o111) !== 0)
-      ? native
-      : undefined;
+    if (stat.type !== "File" || stat.size <= 0) return undefined;
+    if (paths === win32) {
+      return win32.normalize(native).toLowerCase() === expected.toLowerCase() ? {command: native, args: []} : undefined;
+    }
+    // Use the same PATH-resolved .NET host used by preflight and build.
+    return native === expected ? {command: "dotnet", args: [native]} : undefined;
   }).pipe(Effect.orElseSucceed(() => undefined));
 }
 
@@ -141,6 +141,8 @@ export function startNativeWorktree(engine: ContainerEngine): Effect.Effect<void
 
     const native = yield* ownedAppHost(checkout.root, paths);
     if (!native) return yield* fail("The AppHost executable is not checkout-owned.");
+    const registry = (create: boolean) => currentRegistry(native, checkout.root, process, create, paths);
+    yield* worktreeOperation("The native registry could not be checked.", registry(false));
     const presenter = yield* Presenter;
     const docs = yield* Effect.result(
       process.run(
@@ -149,7 +151,6 @@ export function startNativeWorktree(engine: ContainerEngine): Effect.Effect<void
       ),
     );
     if (Result.isFailure(docs)) return yield* fail("The scoped documentation site could not be prepared.");
-    const registry = (create: boolean) => currentRegistry(native, checkout.root, process, create, paths);
     const verifyCheckout = observeWorktreeCheckout().pipe(
       Effect.provideService(Environment, env),
       Effect.provideService(Process, process),

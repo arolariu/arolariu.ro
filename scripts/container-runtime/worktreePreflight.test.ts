@@ -3,7 +3,7 @@ import {Effect, FileSystem, Layer, Option, PlatformError, Sink, Stream} from "ef
 import {type ChildProcess, ChildProcessSpawner} from "effect/process";
 import {mkdir, mkdtemp, realpath, rmdir} from "node:fs/promises";
 import {createServer} from "node:net";
-import {tmpdir} from "node:os";
+import {homedir} from "node:os";
 import {join} from "node:path";
 import {describe, expect, it} from "vitest";
 
@@ -34,14 +34,14 @@ const gitCheckoutArgs = ["rev-parse", "--show-toplevel", "--absolute-git-dir", "
 const canary = "must-not-appear-in-preflight";
 const trustedBackend = JSON.stringify({
   version: {Version: "6.2.1"},
-  host: {os: "linux", hostname: canary, security: {rootless: true}},
+  host: {os: "linux", arch: "amd64", hostname: canary, security: {rootless: true}},
   store: {},
 });
 const linuxRuntimeDirectory = "/run/user/1000";
 const linuxPodmanSocket = `${linuxRuntimeDirectory}/podman/podman.sock`;
 const guestDockerInfo = "rdctl shell docker --host unix:///var/run/docker.sock info --format {{.ID}}";
 const localDockerInfo = "docker info --format {{json .}}";
-const rancherInfo = JSON.stringify({ID: "test-engine-1", OSType: "linux", ServerVersion: "29.0.1", Name: canary});
+const rancherInfo = JSON.stringify({ID: "test-engine-1", OSType: "linux", Architecture: "x86_64", ServerVersion: "29.0.1", Name: canary});
 const registeredWorktree = `worktree ${root}\0HEAD ${head}\0branch refs/heads/chore/task\0\0`;
 const localMachineContext = {
   Name: "local-machine",
@@ -374,14 +374,28 @@ function portableFixture(
 }
 
 function linuxSocketFixture(
-  scenario: "stable" | "changed" | "redirected" | "regular file" | "rootful" | "override" | "foreign" | "shared runtime",
+  scenario:
+    | "stable"
+    | "changed"
+    | "redirected"
+    | "regular file"
+    | "rootful"
+    | "override"
+    | "foreign"
+    | "shared runtime"
+    | "writable ancestor"
+    | "arm64 guest",
 ) {
   const test = portableFixture(
     "linux",
     {XDG_RUNTIME_DIR: linuxRuntimeDirectory, ...(scenario === "override" ? {CONTAINER_HOST: canary} : {})},
     {
       "podman --remote info --format json":
-        scenario === "rootful" ? trustedBackend.replace('"rootless":true', '"rootless":false') : trustedBackend,
+        scenario === "rootful"
+          ? trustedBackend.replace('"rootless":true', '"rootless":false')
+          : scenario === "arm64 guest"
+            ? trustedBackend.replace('"amd64"', '"arm64"')
+            : trustedBackend,
     },
     {[linuxPodmanSocket]: ""},
   );
@@ -395,6 +409,8 @@ function linuxSocketFixture(
       stat: (path) =>
         Effect.map(files.stat(path), (info) => {
           if (path === linuxRuntimeDirectory) return {...info, mode: scenario === "shared runtime" ? 0o755 : 0o700, uid: Option.some(1000)};
+          if (info.type === "Directory" && linuxPodmanSocket.startsWith(path === "/" ? path : `${path}/`))
+            return {...info, mode: scenario === "writable ancestor" && path === "/run/user" ? 0o775 : 0o755, uid: Option.some(0)};
           return path === linuxPodmanSocket
             ? {
                 ...info,
@@ -483,6 +499,25 @@ describe("worktree Aspire preflight", () => {
     } else {
       expect(binding).toBeUndefined();
     }
+  });
+
+  it("refuses a matching Rancher daemon when the guest is ARM64", async () => {
+    const test = portableFixture(
+      "darwin",
+      {},
+      {
+        [guestDockerInfo]: "test-engine-1",
+        [localDockerInfo]: rancherInfo.replace('"x86_64"', '"aarch64"'),
+      },
+    );
+    expect(await Effect.runPromise(bindWorktreeEngine(test.checkout, "rancher").pipe(Effect.provide(test.layer)))).toBeUndefined();
+    expect((await test.inspect("rancher")).capabilities).toContainEqual(
+      expect.objectContaining({
+        id: "rancher-backend",
+        status: "blocked",
+        detail: expect.stringContaining("x86-64"),
+      }),
+    );
   });
 
   it.each(["linux", "darwin"] as const)(
@@ -639,7 +674,12 @@ describe("worktree Aspire preflight", () => {
     expect(JSON.stringify(test.processCalls())).not.toContain(key);
   });
 
-  it.each(["linux", "darwin"] as const)("rejects an unverified binary in the %s pinned DNX tool cache", async (platform) => {
+  it.each([
+    ["linux", "ASPIRE_HOME", true],
+    ["darwin", "ASPIRE_HOME", true],
+    ["linux", "aspire_home", false],
+    ["darwin", "AspireCliBundlePath", false],
+  ] as const)("rejects unverified %s DNX payload with %s", async (platform, variable, inspectPayload) => {
     const rid = platform === "linux" ? "linux-x64" : "osx-x64";
     const runtime = `aspire.cli.${rid}`;
     const cache = "/home/dev/cache";
@@ -647,7 +687,7 @@ describe("worktree Aspire preflight", () => {
     const bundle = "/home/dev/aspire/versions/13.6.5";
     const test = portableFixture(
       platform,
-      {NUGET_PACKAGES: cache, ASPIRE_HOME: "/home/dev/aspire"},
+      {NUGET_PACKAGES: cache, [variable]: "/home/dev/aspire"},
       {
         "podman system connection list --format json": "[]",
         "dotnet --list-sdks": "10.0.404 [/sdk]\n",
@@ -688,17 +728,12 @@ describe("worktree Aspire preflight", () => {
     );
     const result = await Effect.runPromise(inspectWorktreeAspire({engine: "podman"}).pipe(Effect.provide(fs), Effect.provide(test.layer)));
     expect(result.capabilities).toContainEqual(expect.objectContaining({id: "aspire-bundle", status: "blocked"}));
-    expect(read).toContain(nativeFile);
+    if (inspectPayload) expect(read).toContain(nativeFile);
+    else expect(read).not.toContain(nativeFile);
     expect(test.processCalls().some(({request}) => request.command === nativeFile)).toBe(false);
   });
 
-  it.each([
-    ["linux", "x64", true, true],
-    ["darwin", "x64", true, true],
-    ["linux", "x64", false, false],
-    ["darwin", "x64", false, false],
-    ["linux", "arm64", true, false],
-  ] as const)("checks checkout-local %s SWC (host %s, matching binary %s)", async (platform, architecture, matching, verified) => {
+  it.each(["linux", "darwin"] as const)("rejects a header-only %s SWC binary in the expected package", async (platform) => {
     const suffix = platform === "linux" ? "linux-x64-gnu" : "darwin-x64";
     const name = `@next/swc-${suffix}`;
     const filename = `next-swc.${suffix}.node`;
@@ -709,7 +744,7 @@ describe("worktree Aspire preflight", () => {
       header.setUint32(0, 0x7f454c46);
       bytes.set([2, 1, 1], 4);
       header.setUint16(16, 3, true);
-      header.setUint16(18, matching ? 62 : 183, true);
+      header.setUint16(18, 62, true);
       header.setUint32(20, 1, true);
       header.setBigUint64(32, 64n, true);
       header.setUint16(52, 64, true);
@@ -717,7 +752,7 @@ describe("worktree Aspire preflight", () => {
       header.setUint16(56, 1, true);
     } else {
       header.setUint32(0, 0xfeedfacf, true);
-      header.setUint32(4, matching ? 0x01000007 : 0x0100000c, true);
+      header.setUint32(4, 0x01000007, true);
       header.setUint32(12, 8, true);
       header.setUint32(16, 1, true);
       header.setUint32(20, 32, true);
@@ -741,14 +776,9 @@ describe("worktree Aspire preflight", () => {
         [`${packageDirectory}/${filename}`]: bytes,
       },
     );
-    const result = await Effect.runPromise(
-      Effect.gen(function* () {
-        const environment = yield* Environment;
-        return yield* inspectWorktreeAspire({engine: "podman"}).pipe(Effect.provideService(Environment, {...environment, architecture}));
-      }).pipe(Effect.provide(test.layer)),
-    );
+    const result = await test.inspect("podman");
     expect(result.status).toBe("blocked");
-    expect(result.capabilities).toContainEqual(expect.objectContaining({id: "npm-dependencies", status: verified ? "pass" : "blocked"}));
+    expect(result.capabilities).toContainEqual(expect.objectContaining({id: "npm-dependencies", status: "blocked"}));
     expect(test.processCalls().map(({request}) => request.command)).not.toContain("node");
   });
 
@@ -759,6 +789,8 @@ describe("worktree Aspire preflight", () => {
     ["regular file", false, false],
     ["foreign", false, false],
     ["shared runtime", false, false],
+    ["writable ancestor", false, false],
+    ["arm64 guest", false, true],
     ["rootful", false, true],
     ["override", false, false],
   ] as const)("pins only the verified native Linux Podman socket (%s)", async (scenario, verified, contactsSocket) => {
@@ -793,7 +825,7 @@ describe("worktree Aspire preflight", () => {
     async () => {
       const effectiveUserId = process.geteuid?.();
       if (effectiveUserId === undefined) throw new Error("Expected a POSIX user ID");
-      const runtime = await mkdtemp(join(await realpath(tmpdir()), "wtsock-"));
+      const runtime = await mkdtemp(join(await realpath(homedir()), "wtsock-"));
       const engineDirectory = join(runtime, "podman");
       const socket = join(engineDirectory, "podman.sock");
       const listener = createServer();

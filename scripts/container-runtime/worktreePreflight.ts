@@ -486,9 +486,11 @@ function isEngineVersion(version: unknown): boolean {
 
 function isLinuxPodman(info: unknown): boolean {
   const response = record(info);
+  const host = record(response?.["host"]);
   return (
     isEngineVersion(record(response?.["version"])?.["Version"])
-    && record(response?.["host"])?.["os"] === "linux"
+    && host?.["os"] === "linux"
+    && (host["arch"] === "amd64" || host["arch"] === "x86_64")
     && record(response?.["store"]) !== undefined
   );
 }
@@ -504,21 +506,18 @@ function linuxPodmanSocketIdentity(
   uid: number,
 ): Effect.Effect<string | undefined, never, ReadOnlyFiles> {
   return Effect.gen(function* () {
-    if ((yield* canonicalPath(socket)) !== socket) return undefined;
+    if ((yield* canonicalPath(directory)) !== directory || (yield* canonicalPath(socket)) !== socket) return undefined;
     const files = yield* ReadOnlyFiles;
-    const runtime = yield* files.stat(directory);
+    for (let path = posix.dirname(socket); ; path = posix.dirname(path)) {
+      const directoryInfo = yield* files.stat(path);
+      const owner = Option.getOrUndefined(directoryInfo.uid);
+      if (directoryInfo.type !== "Directory" || (owner !== 0 && owner !== uid) || (directoryInfo.mode & 0o022) !== 0) return undefined;
+      if (path === directory && (owner !== uid || (directoryInfo.mode & 0o077) !== 0)) return undefined;
+      if (path === posix.dirname(path)) break;
+    }
     const info = yield* files.stat(socket);
     const inode = Option.getOrUndefined(info.ino);
-    if (
-      runtime.type !== "Directory"
-      || (runtime.mode & 0o077) !== 0
-      || Option.getOrUndefined(runtime.uid) !== uid
-      || info.type !== "Socket"
-      || Option.getOrUndefined(info.uid) !== uid
-      || inode === undefined
-      || inode <= 0n
-    )
-      return undefined;
+    if (info.type !== "Socket" || Option.getOrUndefined(info.uid) !== uid || inode === undefined || inode <= 0n) return undefined;
     return createHash("sha256")
       .update(JSON.stringify(["podman", socket, uid, String(info.dev), String(inode)]))
       .digest("hex");
@@ -616,6 +615,9 @@ function observeRancherBackend(
     const info = local.kind === "succeeded" ? record(parseJson(local.stdout)) : undefined;
     if (info?.["ID"] !== guestId || info["OSType"] !== "linux" || !isEngineVersion(info["ServerVersion"])) {
       return blocked("The local Docker endpoint was unavailable or did not match the running Rancher Desktop Moby daemon.");
+    }
+    if (info["Architecture"] !== "x86_64" && info["Architecture"] !== "amd64") {
+      return blocked("Scoped services require an x86-64 Rancher Desktop guest.");
     }
     return {
       endpoint,
@@ -957,39 +959,16 @@ function inspectPosixWebsiteTrust(
   });
 }
 
-function inspectPosixSwc(
-  file: string,
-  platform: "linux" | "darwin",
-  equal: (left: string, right: string) => boolean,
-): Effect.Effect<boolean, never, ReadOnlyFiles> {
-  return Effect.gen(function* () {
-    if (!(yield* ownedFile(file, equal))) return false;
-    const files = yield* ReadOnlyFiles;
-    const data = yield* files.readPrefix(file);
-    const size = BigInt((yield* files.stat(file)).size);
-    const header = new DataView(data.buffer, data.byteOffset, data.byteLength);
-    if (platform === "linux") {
-      if (data.length < 64 || header.getUint32(0) !== 0x7f454c46 || data[4] !== 2 || data[5] !== 1 || data[6] !== 1) return false;
-      const offset = header.getBigUint64(32, true);
-      const count = header.getUint16(56, true);
-      return (
-        header.getUint16(16, true) === 3
-        && header.getUint16(18, true) === 62
-        && header.getUint32(20, true) === 1
-        && header.getUint16(52, true) === 64
-        && header.getUint16(54, true) === 56
-        && offset >= 64n
-        && count > 0
-        && offset + BigInt(count * 56) <= size
-      );
-    }
-    if (data.length < 32 || header.getUint32(0, true) !== 0xfeedfacf || header.getUint32(4, true) !== 0x01000007) return false;
-    const type = header.getUint32(12, true);
-    const count = header.getUint32(16, true);
-    const commands = header.getUint32(20, true);
-    return (type === 6 || type === 8) && count > 0 && commands >= count * 8 && BigInt(32 + commands) < size;
-  }).pipe(Effect.orElseSucceed(() => false));
-}
+// Addon digests from the POSIX x64 archives after checking their npm lockfile integrity.
+const posixSwc = new Map([
+  [
+    "16.4.6",
+    {
+      linux: "7af1dc4c46f19dccf485964112ad89f20fc5573c9992d8444bf489783b2abe76",
+      darwin: "3600c87375dae74b9a6473c21e41beba372d04bf4fa40f87f31f002f6d3a5470",
+    },
+  ],
+]);
 
 function inspectSwc(
   root: string,
@@ -1001,6 +980,8 @@ function inspectSwc(
     const {platform, architecture} = env;
     if (platform !== "win32" && platform !== "linux" && platform !== "darwin") return false;
     if (platform === "win32" ? machineType(architecture) === undefined : architecture !== "x64") return false;
+    const pin = platform === "win32" ? undefined : posixSwc.get(version)?.[platform];
+    if (platform !== "win32" && pin === undefined) return false;
     const {paths, equal} = pathProfile(platform);
     const suffix = platform === "win32" ? `win32-${architecture}-msvc` : platform === "linux" ? "linux-x64-gnu" : "darwin-x64";
     const name = `@next/swc-${suffix}`;
@@ -1023,7 +1004,9 @@ function inspectSwc(
         && candidate["version"] === version
         && candidate["main"] === filename
         && (!locked || record(packages[location])?.["version"] === version)
-        && (yield* platform === "win32" ? inspectPayload(root, binding, architecture, "swc") : inspectPosixSwc(binding, platform, equal))
+        && (yield* pin === undefined
+          ? inspectPayload(root, binding, architecture, "swc")
+          : inspectPinnedPosixFile(binding, pin, equal, false))
       )
         return true;
       if (locked && (yield* inspectPath(directory)).kind !== "missing") return false;
@@ -1699,6 +1682,14 @@ function inspectPinnedBundle(
     if (platform !== "win32" && platform !== "linux" && platform !== "darwin") return false;
     const {paths, equal, isLocal} = pathProfile(platform);
     const windows = platform === "win32";
+    if (
+      !windows
+      && Object.keys(env.variables).some((name) => {
+        const key = name.toUpperCase();
+        return key === "ASPIRECLIBUNDLEPATH" || ((key === "ASPIRE_HOME" || key === "NUGET_PACKAGES") && name !== key);
+      })
+    )
+      return false;
     // This layout was read from the installed 13.6.5 SDK. Other resolver/profile contracts need separate evidence.
     const unsupported = [
       "aspireclipath",

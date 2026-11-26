@@ -15,6 +15,8 @@ it("drains shutdown diagnostics after requesting cooperative AppHost exit", asyn
       const spawner = ChildProcessSpawner.make((command) =>
         Effect.gen(function* () {
           if (command._tag !== "StandardCommand") return yield* Effect.die("Expected a single process");
+          expect(command.command).toBe("dotnet");
+          expect(command.args).toEqual(["/repo/AppHost.dll", "--run-verified-worktree"]);
           const input = command.options.stdin;
           if (input === undefined || typeof input === "string" || "stream" in input)
             return yield* Effect.die("Expected the cooperative stdin stream");
@@ -38,7 +40,7 @@ it("drains shutdown diagnostics after requesting cooperative AppHost exit", asyn
       );
 
       const exitCode = yield* runOwnedWorktreeProcess(
-        "AppHost",
+        {command: "dotnet", args: ["/repo/AppHost.dll"]},
         process.cwd(),
         {},
         "{}",

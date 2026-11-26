@@ -1,10 +1,11 @@
 /** @fileoverview Foreground supervisor with cooperative pipe-close shutdown. */
 import {Deferred, Effect, Exit, Fiber, Scope, Stream} from "effect";
 import {ChildProcess, ChildProcessSpawner} from "effect/process";
+import type {ProcessRequest} from "./Process.ts";
 
 /** Starts only the verified native AppHost entrypoint, without sending a PID-based kill on release. */
 export function runOwnedWorktreeProcess(
-  executable: string,
+  entrypoint: Readonly<ProcessRequest>,
   cwd: string,
   environment: Readonly<Record<string, string>>,
   startup: string,
@@ -16,7 +17,7 @@ export function runOwnedWorktreeProcess(
       const spawner = yield* ChildProcessSpawner.ChildProcessSpawner;
       const scope = yield* Scope.make();
       const shutdown = yield* Deferred.make<void>();
-      const command = ChildProcess.make(executable, ["--run-verified-worktree"], {
+      const command = ChildProcess.make(entrypoint.command, [...entrypoint.args, "--run-verified-worktree"], {
         cwd,
         env: environment,
         extendEnv: false,
