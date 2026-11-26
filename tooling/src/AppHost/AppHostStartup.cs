@@ -7,15 +7,15 @@ internal static class AppHostStartup
 {
   internal const string RegistryArgument = "--worktree-registry";
 
-  internal static bool TryHandleRegistry(string[] args, string? descriptorMarker, TextWriter output)
+  internal static async Task<bool> TryHandleRegistryAsync(string[] args, string? descriptorMarker, TextWriter output)
   {
     if (!args.Any(argument => argument.Equals(RegistryArgument, StringComparison.OrdinalIgnoreCase)
         || argument.StartsWith($"{RegistryArgument}=", StringComparison.OrdinalIgnoreCase))) return false;
     if (descriptorMarker is not null || args.Length != 2 || args[0] != RegistryArgument
-      || args[1] is not ("read" or "create") || !OperatingSystem.IsWindows())
+      || args[1] is not ("read" or "create"))
       throw new InvalidOperationException("The native registry command is unavailable.");
-    string? path = WorktreeRegistry.OpenWindows(args[1] == "create");
-    output.WriteLine(path ?? "absent");
+    string? path = await WorktreeRegistry.OpenAsync(args[1] == "create").ConfigureAwait(false);
+    await output.WriteLineAsync(path ?? "absent").ConfigureAwait(false);
     return true;
   }
 

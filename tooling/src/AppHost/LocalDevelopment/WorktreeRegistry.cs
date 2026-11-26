@@ -1,5 +1,7 @@
 namespace AppHost.LocalDevelopment;
 
+using System.Diagnostics;
+using System.Globalization;
 using System.Runtime.Versioning;
 using System.Security.AccessControl;
 using System.Security.Principal;
@@ -9,6 +11,13 @@ using System.Text.Json;
 internal static class WorktreeRegistry
 {
   internal const string DirectoryName = "arolariu-native-aspire-v4";
+
+  internal static Task<string?> OpenAsync(bool create)
+  {
+    if (OperatingSystem.IsWindows()) return Task.FromResult(OpenWindows(create));
+    if (OperatingSystem.IsLinux()) return OpenLinuxAsync(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), create);
+    throw new InvalidOperationException("The native registry command is unavailable.");
+  }
 
   [SupportedOSPlatform("windows")]
   internal static string? OpenWindows(bool create) =>
@@ -56,6 +65,65 @@ internal static class WorktreeRegistry
         || rule.InheritanceFlags != inheritance || rule.PropagationFlags != PropagationFlags.None))
       throw new InvalidOperationException("The native registry permissions are not private.");
     return directory.FullName;
+  }
+
+  [SupportedOSPlatform("linux")]
+  internal static async Task<string?> OpenLinuxAsync(string parent, bool create)
+  {
+    if (!Path.IsPathFullyQualified(parent) || parent != Path.GetFullPath(parent) || Path.GetPathRoot(parent) == parent
+      || parent.Any(char.IsControl))
+      throw new InvalidOperationException("A canonical Linux user registry route is required.");
+
+    using var deadline = new CancellationTokenSource(TimeSpan.FromSeconds(10));
+    CancellationToken token = deadline.Token;
+    int user = await ReadLinuxOwnerAsync("/usr/bin/id", ["-u"], token).ConfigureAwait(false);
+    if (user == 0) throw new InvalidOperationException("The Linux worktree registry requires a non-root user.");
+
+    const UnixFileMode writableByOtherUsers = UnixFileMode.GroupWrite | UnixFileMode.OtherWrite;
+    for (var ancestor = new DirectoryInfo(parent); ancestor is not null; ancestor = ancestor.Parent)
+    {
+      RequireDirectory(ancestor);
+      int owner = await ReadLinuxOwnerAsync("/usr/bin/stat", ["--format=%u", "--", ancestor.FullName], token).ConfigureAwait(false);
+      if ((owner != user && (ancestor.FullName == parent || owner != 0))
+        || (File.GetUnixFileMode(ancestor.FullName) & writableByOtherUsers) != 0)
+        throw new InvalidOperationException("The Linux registry route has an untrusted owner or writer.");
+    }
+
+    const UnixFileMode privateMode = UnixFileMode.UserRead | UnixFileMode.UserWrite | UnixFileMode.UserExecute;
+    var directory = new DirectoryInfo(Path.Combine(parent, DirectoryName));
+    if (!directory.Exists)
+    {
+      if (directory.LinkTarget is not null || File.Exists(directory.FullName))
+        throw new InvalidOperationException("The native registry path is occupied.");
+      if (!create) return null;
+      Directory.CreateDirectory(directory.FullName, privateMode);
+      directory.Refresh();
+    }
+
+    RequireDirectory(directory);
+    int registryOwner = await ReadLinuxOwnerAsync("/usr/bin/stat", ["--format=%u", "--", directory.FullName], token).ConfigureAwait(false);
+    if (registryOwner != user || File.GetUnixFileMode(directory.FullName) != privateMode)
+      throw new InvalidOperationException("The native registry permissions are not private.");
+    return directory.FullName;
+  }
+
+  private static async Task<int> ReadLinuxOwnerAsync(string executable, string[] arguments, CancellationToken token)
+  {
+    var start = new ProcessStartInfo(executable)
+    {
+      UseShellExecute = false,
+      RedirectStandardOutput = true,
+      RedirectStandardError = true,
+      WorkingDirectory = "/",
+    };
+    foreach (string argument in arguments) start.ArgumentList.Add(argument);
+    using Process child = Process.Start(start) ?? throw new InvalidOperationException("The Linux ownership probe is unavailable.");
+    string value = await child.StandardOutput.ReadToEndAsync(token).ConfigureAwait(false);
+    await child.WaitForExitAsync(token).ConfigureAwait(false);
+    if (child.ExitCode != 0
+      || !int.TryParse(value.TrimEnd('\n'), NumberStyles.None, CultureInfo.InvariantCulture, out int owner))
+      throw new InvalidOperationException("Linux registry ownership could not be verified.");
+    return owner;
   }
 
   private static void RequireDirectory(DirectoryInfo directory)

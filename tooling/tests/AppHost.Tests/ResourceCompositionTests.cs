@@ -396,11 +396,11 @@ public sealed class ResourceCompositionTests
   [DataRow("--worktree-registry", "create", "extra")]
   [DataRow("--worktree-registry=create", "", "")]
   [DataRow("--WORKTREE-REGISTRY", "read", "")]
-  public void Startup_MalformedRegistryRequest_RefusesBeforeLegacy(string flag, string mode, string extra)
+  public async Task Startup_MalformedRegistryRequest_RefusesBeforeLegacy(string flag, string mode, string extra)
   {
     string[] args = new[] { flag, mode, extra }.Where(arg => arg.Length > 0).ToArray();
     using var output = new StringWriter();
-    Assert.ThrowsExactly<InvalidOperationException>(() => AppHostStartup.TryHandleRegistry(args, null, output));
+    await Assert.ThrowsExactlyAsync<InvalidOperationException>(() => AppHostStartup.TryHandleRegistryAsync(args, null, output));
     Assert.IsEmpty(output.ToString());
   }
 
@@ -500,6 +500,43 @@ public sealed class ResourceCompositionTests
     finally
     {
       parent.Delete(recursive: true);
+    }
+  }
+
+  [TestMethod]
+  [SupportedOSPlatform("linux")]
+  public async Task OpenWorktreeRegistry_Linux_RequiresPrivateDirectoryAndProtectedAncestors()
+  {
+    if (!OperatingSystem.IsLinux())
+    {
+      Assert.Inconclusive("POSIX registry permissions require Linux.");
+      return;
+    }
+
+    const UnixFileMode privateMode = UnixFileMode.UserRead | UnixFileMode.UserWrite | UnixFileMode.UserExecute;
+    string home = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
+    string parent = System.IO.Path.Combine(home, $"arolariu-registry-test-{Guid.NewGuid():N}");
+    Directory.CreateDirectory(parent, privateMode);
+    string root = System.IO.Path.Combine(parent, WorktreeRegistry.DirectoryName);
+    try
+    {
+      Assert.IsNull(await WorktreeRegistry.OpenLinuxAsync(parent, create: false));
+      Directory.CreateDirectory(root, privateMode | UnixFileMode.GroupRead);
+      await Assert.ThrowsExactlyAsync<InvalidOperationException>(() => WorktreeRegistry.OpenLinuxAsync(parent, create: true));
+      Directory.Delete(root);
+      Directory.CreateSymbolicLink(root, parent);
+      await Assert.ThrowsExactlyAsync<InvalidOperationException>(() => WorktreeRegistry.OpenLinuxAsync(parent, create: false));
+      Directory.Delete(root);
+
+      Assert.AreEqual(root, await WorktreeRegistry.OpenLinuxAsync(parent, create: true));
+      Assert.AreEqual(privateMode, File.GetUnixFileMode(root));
+      Assert.AreEqual(root, await WorktreeRegistry.OpenLinuxAsync(parent, create: false));
+      File.SetUnixFileMode(parent, privateMode | UnixFileMode.GroupWrite);
+      await Assert.ThrowsExactlyAsync<InvalidOperationException>(() => WorktreeRegistry.OpenLinuxAsync(parent, create: false));
+    }
+    finally
+    {
+      Directory.Delete(parent, recursive: true);
     }
   }
 

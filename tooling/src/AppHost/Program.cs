@@ -13,7 +13,7 @@ if (descriptor is not null && args is [WorktreeLaunchScope.RunArgument])
     Environment.ExitCode = 1;
   }
 }
-else if (!AppHostStartup.TryHandleRegistry(args, descriptor, Console.Out))
+else if (!await AppHostStartup.TryHandleRegistryAsync(args, descriptor, Console.Out).ConfigureAwait(false))
   AppHostStartup.Run(args, descriptor, RunLegacy);
 
 static void RunLegacy(string[] args)
