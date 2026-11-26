@@ -4,8 +4,11 @@ import {mkdir, readFile, rmdir, unlink, writeFile} from "node:fs/promises";
 import {join} from "node:path";
 import {describe, expect, it} from "vitest";
 
+import {fixtureEngine, launchWorktreeFixture, startWorktreeFixture} from "../platform/__fixtures__/worktreeAspire.fixture.ts";
+import {leaseFixture} from "../platform/__fixtures__/worktreeLease.testing.ts";
+import {windowsWorktreeFixtureRegistry, windowsWorktreeProcessIdentity} from "../platform/__fixtures__/worktreeWindows.fixture.ts";
 import {makeNodeLayer} from "../platform/layers.ts";
-import {fixtureEngine, launchWorktreeFixture, startWorktreeFixture} from "./worktreeAspire.fixture.ts";
+import {listenWorktreePort} from "../platform/WorktreeHost.ts";
 import {
   beginWorktreeLaunch,
   inspectWorktreeLaunch,
@@ -13,11 +16,9 @@ import {
   stopWorktreeLaunch,
   worktreeProcessReceipt,
 } from "./worktreeAspire.ts";
-import {leaseFixture} from "./worktreeLease.testing.ts";
 import {
   claimWorktreeLaunch,
   claimWorktreeLease,
-  listenWorktreePort,
   publishWorktreeJson,
   readWorktreeJson,
   readWorktreeLaunch,
@@ -25,11 +26,11 @@ import {
   WorktreePlatform,
   type WorktreeLease,
 } from "./worktreeLease.ts";
-import {windowsWorktreeProcessIdentity, windowsWorktreeRegistry} from "./worktreePlatform.ts";
 import {observeWorktreeCheckout} from "./worktreePreflight.ts";
 
 const processIdentity = {pid: 12345, started: "639312345678900000", image: "C:\\runtime\\node.exe"};
 const container = {id: "b".repeat(64)};
+const fixtureLayer = makeNodeLayer({mode: "silent", verbose: false, color: false, context: "ttl-fixture"});
 
 describe("worktree Aspire ownership", () => {
   it("keeps an unknown container-only outcome pending even when every supplied ID is absent", async () => {
@@ -70,7 +71,7 @@ describe("worktree Aspire ownership", () => {
     const fixture = await leaseFixture();
     const platform: WorktreeLaunchPlatform = {
       ...fixture.platform,
-      processIdentity: async () => processIdentity,
+      processIdentity: () => Effect.succeed(processIdentity),
       containers: {
         verifyCompleteDispatch: async () => failure === "absent journal entry",
         inspect: async () => null,
@@ -90,7 +91,7 @@ describe("worktree Aspire ownership", () => {
       );
       expect(await run(stopWorktreeLaunch(lease))).toMatchObject({status: "blocked"});
       expect(await run(readWorktreeLaunch(fixture.checkout))).toMatchObject({phase: "pending", runId: lease.runId});
-      expect(await readWorktreeJson(join(stage.directory, "stop.json"))).toBeUndefined();
+      expect(await run(readWorktreeJson(join(stage.directory, "stop.json")))).toBeUndefined();
     } finally {
       await fixture.dispose();
     }
@@ -103,12 +104,12 @@ describe("worktree Aspire ownership", () => {
         Effect.gen(function* () {
           const lease = yield* claimWorktreeLaunch(fixture.checkout);
           const staged = yield* beginWorktreeLaunch(lease);
-          const descriptor = yield* Effect.promise(() => readWorktreeJson(staged.descriptor));
+          const descriptor = yield* readWorktreeJson(staged.descriptor);
           expect(descriptor).toMatchObject({version: 2, ports: lease.ports});
           expect(descriptor).toMatchObject({
             ports: {cosmosDataExplorer: expect.any(Number), cosmosReadiness: expect.any(Number), azuriteTable: expect.any(Number)},
           });
-          const saved = yield* Effect.promise(() => readWorktreeJson(join(fixture.directory, lease.scopeId, "lease.json")));
+          const saved = yield* readWorktreeJson(join(fixture.directory, lease.scopeId, "lease.json"));
           expect(saved).toMatchObject({version: 2, ports: lease.ports});
           expect(new Set(Object.values(lease.ports)).size).toBe(20);
         }).pipe(Effect.provideService(WorktreePlatform, fixture.platform)),
@@ -154,13 +155,13 @@ describe("worktree Aspire ownership", () => {
       if (invalid === "missing descriptor port" || invalid === "colliding descriptor ports" || invalid === "wrong leased port")
         await writeFile(stage.descriptor, JSON.stringify({...savedDescriptor, ports}));
       const expected = await readFile(path, "utf8");
-      const expectedDescriptor = await readWorktreeJson(stage.descriptor);
+      const expectedDescriptor = await run(readWorktreeJson(stage.descriptor));
       await expect(run(readWorktreeLaunch(fixture.checkout))).rejects.toThrow("registry could not be read");
       expect(await run(stopWorktreeLaunch(lease))).toMatchObject({status: "blocked"});
       await expect(run(claimWorktreeLaunch(fixture.checkout))).rejects.toThrow("Could not reserve");
       expect(await readFile(path, "utf8")).toBe(expected);
-      expect(await readWorktreeJson(stage.descriptor)).toEqual(expectedDescriptor);
-      expect(await readWorktreeJson(join(stage.directory, "stop.json"))).toBeUndefined();
+      expect(await run(readWorktreeJson(stage.descriptor))).toEqual(expectedDescriptor);
+      expect(await run(readWorktreeJson(join(stage.directory, "stop.json")))).toBeUndefined();
     } finally {
       await fixture.dispose();
     }
@@ -177,10 +178,11 @@ describe("worktree Aspire ownership", () => {
     let allowDispatch = true;
     const platform: WorktreeLaunchPlatform = {
       ...fixture.platform,
-      processIdentity: async () => {
-        observations.push("process");
-        return processIdentity;
-      },
+      processIdentity: () =>
+        Effect.sync(() => {
+          observations.push("process");
+          return processIdentity;
+        }),
       containers: {
         verifyCompleteDispatch: async () => {
           observations.push("dispatch");
@@ -235,7 +237,7 @@ describe("worktree Aspire ownership", () => {
       ).rejects.toThrow("Could not reserve");
       expect.soft(observations).toEqual([]);
       expect(await Promise.all(records.map((file) => readFile(file)))).toEqual(evidence);
-      expect(await readWorktreeJson(join(stage.directory, "stop.json"))).toBeUndefined();
+      expect(await run(readWorktreeJson(join(stage.directory, "stop.json")))).toBeUndefined();
     } finally {
       await fixture.dispose();
     }
@@ -268,8 +270,10 @@ describe("worktree Aspire ownership", () => {
     try {
       const platform: WorktreeLaunchPlatform = {
         ...fixture.platform,
-        processIdentity: async () =>
-          afterRecord && mismatch === "recycled PID" ? {...processIdentity, started: "639312345678900001"} : processIdentity,
+        processIdentity: () =>
+          Effect.sync(() =>
+            afterRecord && mismatch === "recycled PID" ? {...processIdentity, started: "639312345678900001"} : processIdentity,
+          ),
         containers: {
           verifyCompleteDispatch: async () => true,
           inspect: async () => {
@@ -297,7 +301,7 @@ describe("worktree Aspire ownership", () => {
           });
           afterRecord = true;
           const stopped = yield* stopWorktreeLaunch(owned);
-          const request = yield* Effect.promise(() => readWorktreeJson(join(stage.directory, "stop.json")));
+          const request = yield* readWorktreeJson(join(stage.directory, "stop.json"));
           return {stopped, request};
         }).pipe(Effect.provideService(WorktreePlatform, platform)),
       );
@@ -322,7 +326,7 @@ describe("worktree Aspire ownership", () => {
           yield* Effect.promise(() => publishWorktreeJson(join(stage.directory, "process.json"), receipt));
           const platform: WorktreeLaunchPlatform = {
             ...fixture.platform,
-            processIdentity: async () => (exited ? null : processIdentity),
+            processIdentity: () => Effect.sync(() => (exited ? null : processIdentity)),
             containers: {
               verifyCompleteDispatch: async (run, supervisor, journal) => {
                 expect(run).toEqual({engineId: lease.engineId, scopeId: lease.scopeId, runId: lease.runId});
@@ -383,7 +387,7 @@ describe("worktree Aspire ownership", () => {
         await publishWorktreeJson(join(stage.directory, "process.json"), receipt);
         const platform: WorktreeLaunchPlatform = {
           ...fixture.platform,
-          processIdentity: async () => observed,
+          processIdentity: () => Effect.sync(() => observed),
           containers: {
             verifyCompleteDispatch: async (run, supervisor, supplied) => {
               dispatchChecks++;
@@ -421,9 +425,9 @@ describe("worktree Aspire ownership", () => {
         expect(removals).toEqual(scenario === "publication failure" ? [ids[0]] : [...ids]);
         expect(await run(readWorktreeLaunch(fixture.checkout), platform)).toMatchObject({resourceOwnership: journal});
         if (scenario !== "publication failure") {
-          expect(await readWorktreeJson(progressPath)).toEqual({version: 1, containerId: ids[0], ...receipt});
+          expect(await run(readWorktreeJson(progressPath))).toEqual({version: 1, containerId: ids[0], ...receipt});
         }
-        expect(await readWorktreeJson(join(stage.directory, `cleanup-${ids[1]}.json`))).toBeUndefined();
+        expect(await run(readWorktreeJson(join(stage.directory, `cleanup-${ids[1]}.json`)))).toBeUndefined();
 
         failSecond = false;
         if (scenario === "unexplained absence") present.delete(ids[1]);
@@ -431,7 +435,7 @@ describe("worktree Aspire ownership", () => {
         if (scenario === "recycled supervisor") observed = {...processIdentity, started: "639312345678900001"};
         if (scenario === "publication failure") {
           await rmdir(progressPath); // Remove only the test's fault injection.
-          expect(await readWorktreeJson(progressPath)).toBeUndefined();
+          expect(await run(readWorktreeJson(progressPath))).toBeUndefined();
         }
         const retried = await run(stopWorktreeLaunch(owned), platform);
         expect(dispatchChecks).toBe(3);
@@ -496,7 +500,10 @@ describe("worktree Aspire ownership", () => {
     "smokes verified bind conflict, loopback ownership and cooperative fixture shutdown",
     async () => {
       const fixture = await leaseFixture();
-      const platform = {...fixture.platform, processIdentity: windowsWorktreeProcessIdentity};
+      const platform = {
+        ...fixture.platform,
+        processIdentity: windowsWorktreeProcessIdentity,
+      };
       const run = <A, E>(effect: Effect.Effect<A, E, WorktreePlatform>) =>
         Effect.runPromise(effect.pipe(Effect.provideService(WorktreePlatform, platform)));
       let live: WorktreeLease | undefined;
@@ -540,12 +547,11 @@ const controllerAction = process.env["AROLARIU_WORKTREE_TTL_CONTROLLER"];
 it.runIf(process.platform === "win32" && (controllerAction === "launch" || controllerAction === "observe" || controllerAction === "stop"))(
   "controller-only TTL fixture",
   async () => {
-    const options = {mode: "silent", verbose: false, color: false, context: "ttl-fixture"} as const;
-    const currentCheckout = observeWorktreeCheckout().pipe(Effect.provide(makeNodeLayer(options)));
+    const currentCheckout = observeWorktreeCheckout().pipe(Effect.provide(fixtureLayer));
     const checkout = await Effect.runPromise(currentCheckout);
     if (!checkout) throw new Error("Controller must run in the canonical Windows linked checkout");
     const platform: WorktreeLaunchPlatform = {
-      registry: (create) => windowsWorktreeRegistry(create, "fixture"),
+      registry: windowsWorktreeFixtureRegistry,
       checkout: currentCheckout,
       engine: Effect.succeed(fixtureEngine),
       candidatePort: () => 0,
@@ -555,7 +561,7 @@ it.runIf(process.platform === "win32" && (controllerAction === "launch" || contr
       Effect.runPromise(effect.pipe(Effect.provideService(WorktreePlatform, platform)));
     const read = () => run(readWorktreeLaunch(checkout));
     let lease = await read();
-    const launcher = controllerAction === "launch" ? await windowsWorktreeProcessIdentity(process.pid) : null;
+    const launcher = controllerAction === "launch" ? await run(platform.processIdentity(process.pid)) : null;
     if (controllerAction === "launch") {
       expect(lease).toBeNull();
       expect(launcher).not.toBeNull();

@@ -4,6 +4,8 @@ import {unlink} from "node:fs/promises";
 import {join} from "node:path";
 import {describe, expect, it, vi} from "vitest";
 
+import {leaseFixture} from "../platform/__fixtures__/worktreeLease.testing.ts";
+import {worktreeIO} from "../platform/WorktreeHost.ts";
 import {beginWorktreeLaunch, recordWorktreeOwnership, stopWorktreeLaunch, worktreeProcessReceipt} from "./worktreeAspire.ts";
 import {
   claimWorktreeLaunch,
@@ -14,7 +16,6 @@ import {
   WorktreePlatform,
   worktreeDescriptorFor,
 } from "./worktreeLease.ts";
-import {leaseFixture} from "./worktreeLease.testing.ts";
 import {validateWorktreeHandoff, type WorktreeReadinessSource} from "./worktreeReadiness.ts";
 
 const sensitive = "https://user:fake-secret@example.invalid/?token=fake-token";
@@ -36,7 +37,7 @@ async function readinessFixture() {
           ...fixture.platform,
           checkout: Effect.sync(() => checkout),
           engine: Effect.sync(() => engine),
-          processIdentity: async () => live,
+          processIdentity: () => Effect.sync(() => live),
           containers: {verifyCompleteDispatch: async () => dispatchVerified, inspect: async () => null, removeExact: remove},
         }),
       ),
@@ -150,7 +151,12 @@ async function readinessFixture() {
             await publishWorktreeJson(join(stage.directory, "stop.json"), receipt);
             break;
           case "lease retirement":
-            await withWorktreeLock(fixture.directory, () => unlink(join(fixture.directory, lease.scopeId, "lease.json")));
+            await run(
+              withWorktreeLock(
+                fixture.directory,
+                worktreeIO(() => unlink(join(fixture.directory, lease.scopeId, "lease.json"))),
+              ),
+            );
             break;
           default:
             throw new Error("Unsupported test case");
@@ -192,7 +198,7 @@ describe("offline worktree handoff", () => {
         smoke: ["website-auth-route", "seeded-identity-api-metadata"],
         stopCommand: `node scripts/cli.ts dev worktree stop --engine podman --expected-run ${lease.runId}`,
       });
-      expect(await readWorktreeJson(join(stage.directory, "stop.json"))).toBeUndefined();
+      expect(await fixture.run(readWorktreeJson(join(stage.directory, "stop.json")))).toBeUndefined();
       expect(fixture.remove).not.toHaveBeenCalled();
     } finally {
       await fixture.dispose();
@@ -489,7 +495,7 @@ describe("offline worktree handoff", () => {
 
       expect(result).toEqual({status: "blocked", reason: "The expected scoped run is not current."});
       expect(await run(readWorktreeLaunch(checkout))).toMatchObject({phase: "owned", runId: lease.runId});
-      expect(await readWorktreeJson(join(stage.directory, "stop.json"))).toBeUndefined();
+      expect(await run(readWorktreeJson(join(stage.directory, "stop.json")))).toBeUndefined();
       expect(fixture.remove).not.toHaveBeenCalled();
     } finally {
       await fixture.dispose();

@@ -119,10 +119,10 @@ concurrently.
 
 ### Scoped Aspire: offline checks only
 
-On Windows with explicit Podman, the [scoped runbook](infra/Local/readme.md#scoped-aspire-gates-windows-podman) lists the current preflight,
-ownership status, and exact-run stop guard. `prepared` is a prerequisite result; `owned` is a process-ownership result. Neither permits
-handing off a URL. There is no scoped start command or live scoped browser runner. The offline handoff tests exercise injected evidence, not
-a running stack.
+On Windows with explicit Podman, the [scoped runbook](infra/Local/readme.md#scoped-aspire-gates-windows-podman) lists the callable read-only
+preflight. `prepared` is a prerequisite result, not permission to hand off a URL. Native scoped status and stop return `blocked` until a
+trusted Windows registry/process adapter with bounded owned-handle cleanup is available. There is no scoped start command or live scoped
+browser runner. Ownership, guarded stop, and handoff tests exercise injected fixture evidence, not a running Aspire stack.
 
 Do not use `E2E_WORKTREE_PORT` as a substitute for scoped Aspire acceptance: it still owns a **website-only** preview. The ordinary auth
 route and existing local persona activation are unchanged. Until the runbook's separately authorized two-worktree acceptance passes, use the

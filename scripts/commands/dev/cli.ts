@@ -22,7 +22,6 @@ import {runSelfhost} from "../../container-runtime/selfhost.ts";
 import type {ContainerEngineInput, SelfhostAction, SelfhostInput} from "../../container-runtime/types.ts";
 import {inspectWorktreeLaunch, stopWorktreeLaunch} from "../../container-runtime/worktreeAspire.ts";
 import {isWorktreeRunId, readWorktreeLaunch, type WorktreeLaunchPlatform, WorktreePlatform} from "../../container-runtime/worktreeLease.ts";
-import {localWorktreePlatform} from "../../container-runtime/worktreePlatform.ts";
 import {inspectWorktreeAspire} from "../../container-runtime/worktreePreflight.ts";
 import {ReportedFailure} from "../../platform/exit.ts";
 import {Presenter, toJsonValue} from "../../platform/Output.ts";
@@ -36,7 +35,7 @@ const selfhostActions = ["start", "stop", "logs"] as const satisfies readonly Se
 export interface DevCommandOptions {
   /** Blob storage layer `dev selfhost` provisions Azurite through; defaults to {@link LocalBlobStorageLive}. */
   readonly localBlobStorage?: Layer.Layer<LocalBlobStorage>;
-  /** OS/engine boundary for scoped status and stop; defaults to {@link localWorktreePlatform}. */
+  /** Injected scoped lifecycle boundary. Native status and stop are blocked without a trusted adapter. */
   readonly worktreePlatform?: Effect.Effect<WorktreeLaunchPlatform>;
 }
 
@@ -104,10 +103,13 @@ export function makeDevCommand(options: DevCommandOptions = {}): CliSubcommand {
     return Command.make(action, flags, ({expectedRun}) =>
       Effect.gen(function* () {
         const result = yield* Effect.gen(function* () {
+          if (options.worktreePlatform === undefined) {
+            return {status: "blocked", reason: "The trusted Windows registry/process adapter is unavailable."} as const;
+          }
           const runId = expectedRun === undefined ? undefined : Option.getOrUndefined(expectedRun);
           if (runId !== undefined && !isWorktreeRunId(runId))
             return {status: "blocked", reason: "The expected run ID is invalid."} as const;
-          const platform = yield* options.worktreePlatform ?? localWorktreePlatform();
+          const platform = yield* options.worktreePlatform;
           const checkout = yield* platform.checkout;
           if (checkout === undefined)
             return {status: "blocked", reason: "Run from the current canonical Windows linked worktree."} as const;
@@ -136,8 +138,8 @@ export function makeDevCommand(options: DevCommandOptions = {}): CliSubcommand {
     ).pipe(
       Command.withDescription(
         action === "status"
-          ? "Reports this linked worktree's scoped ownership without probing service health."
-          : "Stops only this linked worktree's verified scoped run, preserving volumes.",
+          ? "Scoped ownership status is blocked until a trusted Windows registry/process adapter is available."
+          : "Scoped stop is blocked until a trusted Windows registry/process adapter is available.",
       ),
     );
   };

@@ -14,7 +14,6 @@ import {currentWorktreeRestoreEvidence} from "../inspection/worktreeRestore.ts";
 import {Environment} from "../platform/Environment.ts";
 import {ReadOnlyFiles} from "../platform/Files.ts";
 import {makeTestLayer, scriptedOutcomes} from "../platform/testing.ts";
-import {localWorktreePlatform} from "./worktreePlatform.ts";
 import {inspectWorktreeAspire, observeWorktreeCheckout, observeWorktreeEngine} from "./worktreePreflight.ts";
 
 const root = "C:/worktrees/task";
@@ -367,8 +366,7 @@ describe("worktree Aspire preflight", () => {
         yield* Effect.gen(function* () {
           const preflight = yield* inspectWorktreeAspire({engine: "podman"});
           expect(preflight.checkout?.head).toBe(head);
-          const platform = yield* localWorktreePlatform();
-          expect((yield* platform.checkout)?.head).toBe(head);
+          expect((yield* observeWorktreeCheckout())?.head).toBe(head);
           yield* inspectionProbeRunner.run(probes.workspace.gitBranch(), {cwd: root});
         }).pipe(
           Effect.provideService(Process, {

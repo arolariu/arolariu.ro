@@ -19,8 +19,9 @@ import {makeRootCommand, runCli} from "../../cli.ts";
 import {SELFHOST_SQL_PASSWORD, selfhostFixture} from "../../container-runtime/selfhost.testing.ts";
 import {beginWorktreeLaunch, recordWorktreeOwnership, worktreeProcessReceipt} from "../../container-runtime/worktreeAspire.ts";
 import {claimWorktreeLaunch, publishWorktreeJson, readWorktreeJson, WorktreePlatform} from "../../container-runtime/worktreeLease.ts";
-import {leaseFixture} from "../../container-runtime/worktreeLease.testing.ts";
+import {leaseFixture} from "../../platform/__fixtures__/worktreeLease.testing.ts";
 import {exitCodeFor, type CommandExitCode} from "../../platform/exit.ts";
+import {ReadOnlyFiles} from "../../platform/Files.ts";
 import {makeTestLayer, type RecordedProcessCall} from "../../platform/testing.ts";
 import {makeDevCommand} from "./cli.ts";
 
@@ -106,15 +107,32 @@ describe("dev command", () => {
     ["stop", ["dev", "worktree"]],
     ["status", ["dev", "aspire", "worktree"]],
     ["stop", ["dev", "aspire", "worktree"]],
-  ] as const)("blocks scoped %s outside an observed checkout (%j)", async (action, prefix) => {
-    const harness = makeTestLayer({environment: {platform: "linux"}});
+  ] as const)("blocks default scoped %s without inspecting the host (%j)", async (action, prefix) => {
+    const harness = makeTestLayer({environment: {platform: "win32", cwd: "C:\\synthetic\\worktree"}});
+    const resolvedPaths: string[] = [];
+    const guard = action === "stop" ? ["--expected-run", "1".repeat(32)] : [];
     const exit = await Effect.runPromiseExit(
-      runCli([...prefix, action, "--engine", "podman", "--json"], makeRootCommand([makeDevCommand()])).pipe(Effect.provide(harness.layer)),
+      Effect.gen(function* () {
+        const files = yield* ReadOnlyFiles;
+        yield* runCli([...prefix, action, "--engine", "podman", ...guard, "--json"]).pipe(
+          Effect.provideService(ReadOnlyFiles, {
+            ...files,
+            realPath: (path) => {
+              resolvedPaths.push(path);
+              return files.realPath(path);
+            },
+          }),
+        );
+      }).pipe(Effect.provide(harness.layer)),
     );
     expect(exitCodeFor(exit, undefined)).toBe(1);
     const stdout = harness.output().filter(({stream}) => stream === "stdout");
     expect(stdout).toHaveLength(1);
-    expect(JSON.parse(stdout[0]?.text ?? "")).toMatchObject({status: "blocked"});
+    expect.soft(JSON.parse(stdout[0]?.text ?? "")).toEqual({
+      status: "blocked",
+      reason: "The trusted Windows registry/process adapter is unavailable.",
+    });
+    expect(resolvedPaths).toEqual([]);
     expect(harness.processCalls()).toEqual([]);
   });
 
@@ -198,13 +216,16 @@ describe("dev command", () => {
       expect(exitCodeFor(exit, undefined)).toBe(1);
       const stdout = harness.output().filter(({stream}) => stream === "stdout");
       expect(stdout).toHaveLength(1);
-      expect(JSON.parse(stdout[0]?.text ?? "")).toEqual({status: "blocked", reason: expect.any(String)});
+      expect(JSON.parse(stdout[0]?.text ?? "")).toEqual({
+        status: "blocked",
+        reason: "The trusted Windows registry/process adapter is unavailable.",
+      });
       expect(stdout[0]?.text).not.toMatch(/fake-token|stopCommand|https?:/);
       expect(harness.processCalls()).toEqual([]);
     },
   );
 
-  it.each(["absent", "matching", "stale"])("applies the expected-run guard in a canonical owned scope (%s)", async (guard) => {
+  it.each(["absent", "matching", "stale", "invalid"])("applies the expected-run guard in a canonical owned scope (%s)", async (guard) => {
     const fixture = await leaseFixture();
     try {
       const supervisor = {pid: 100, started: "638500000000000000", image: "offline-supervisor.exe"};
@@ -225,10 +246,11 @@ describe("dev command", () => {
             throw new Error("No removals authorized");
           },
         },
-        processIdentity: async (pid: number) => {
-          processChecks.push(pid);
-          return observedProcess;
-        },
+        processIdentity: (pid: number) =>
+          Effect.sync(() => {
+            processChecks.push(pid);
+            return observedProcess;
+          }),
       };
       const runScoped = <A, E>(effect: Effect.Effect<A, E, WorktreePlatform>) =>
         Effect.runPromise(effect.pipe(Effect.provideService(WorktreePlatform, platform)));
@@ -243,13 +265,14 @@ describe("dev command", () => {
       const files = [leasePath, stage.descriptor, processPath];
       const original = await Promise.all(files.map((path) => readFile(path)));
       dispatchChecks.length = processChecks.length = 0;
-      if (guard !== "stale") {
+      if (guard === "absent" || guard === "matching") {
         // Positively acknowledged prior cooperative shutdown; no actual child process is involved.
         await publishWorktreeJson(exitPath, {...receipt, reason: "stop"});
         observedProcess = null;
       }
       const staleId = `${lease.runId[0] === "b" ? "a" : "b"}${lease.runId.slice(1)}`;
-      const flag = guard === "absent" ? [] : ["--expected-run", guard === "matching" ? lease.runId : staleId];
+      const guardedId = guard === "matching" ? lease.runId : guard === "invalid" ? "not-an-id?token=fake-token" : staleId;
+      const flag = guard === "absent" ? [] : ["--expected-run", guardedId];
       const argv = ["dev", "aspire", "worktree", "stop", "--engine", "podman", "--json", ...flag];
       const harness = makeTestLayer({environment: {platform: "linux"}});
       const options = {worktreePlatform: Effect.succeed(platform)};
@@ -260,20 +283,23 @@ describe("dev command", () => {
 
       expect(harness.processCalls()).toEqual([]);
       expect(stdout).toHaveLength(1);
-      expect(await readWorktreeJson(join(stage.directory, "stop.json"))).toBeUndefined();
-      if (guard === "stale") {
+      expect(await runScoped(readWorktreeJson(join(stage.directory, "stop.json")))).toBeUndefined();
+      if (guard === "stale" || guard === "invalid") {
         expect(exitCodeFor(exit, undefined)).toBe(1);
-        expect(JSON.parse(stdout[0]?.text ?? "")).toEqual({status: "blocked", reason: "The expected scoped run is not current."});
+        expect(JSON.parse(stdout[0]?.text ?? "")).toEqual({
+          status: "blocked",
+          reason: guard === "invalid" ? "The expected run ID is invalid." : "The expected scoped run is not current.",
+        });
         expect(dispatchChecks).toEqual([]);
         expect(processChecks).toEqual([]);
-        expect(await readWorktreeJson(exitPath)).toBeUndefined();
+        expect(await runScoped(readWorktreeJson(exitPath))).toBeUndefined();
         expect(await Promise.all(files.map((path) => readFile(path)))).toEqual(original);
       } else {
         expect(exitCodeFor(exit, undefined)).toBe(0);
         expect(JSON.parse(stdout[0]?.text ?? "")).toEqual({status: "stopped", runId: lease.runId, preservedVolumes: lease.volumes});
         expect(dispatchChecks).toEqual([lease.runId]);
         expect(processChecks).toEqual([supervisor.pid]);
-        expect(await readWorktreeJson(leasePath)).toBeUndefined();
+        expect(await runScoped(readWorktreeJson(leasePath))).toBeUndefined();
       }
     } finally {
       await fixture.dispose();

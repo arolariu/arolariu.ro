@@ -5,8 +5,9 @@ import {tmpdir} from "node:os";
 import {join} from "node:path";
 import {describe, expect, it} from "vitest";
 
-import {leaseFixture} from "./worktreeLease.testing.ts";
-import {claimWorktreeLaunch, listenWorktreePort, readWorktreeLaunch, WorktreePlatform} from "./worktreeLease.ts";
+import {leaseFixture} from "../platform/__fixtures__/worktreeLease.testing.ts";
+import {listenWorktreePort, worktreeIO} from "../platform/WorktreeHost.ts";
+import {claimWorktreeLaunch, readWorktreeLaunch, WorktreePlatform} from "./worktreeLease.ts";
 import {openWorktreeRegistryRoute} from "./worktreePlatform.ts";
 
 describe("worktree lease", () => {
@@ -36,19 +37,22 @@ describe("worktree lease", () => {
     try {
       await mkdir(localData, {recursive: true});
       await symlink(target, redirected, process.platform === "win32" ? "junction" : "dir");
-      const openStore = async (parent: string) => {
-        accesses++;
-        if (mode === "absent") return null;
-        const store = join(parent, "store");
-        await mkdir(store);
-        return store;
-      };
-      const outcome = await Promise.allSettled([openWorktreeRegistryRoute(join(redirected, "Local"), openStore)]);
+      const openStore = (parent: string) =>
+        worktreeIO(async () => {
+          accesses++;
+          if (mode === "absent") return null;
+          const store = join(parent, "store");
+          await mkdir(store);
+          return store;
+        });
+      const outcome = await Promise.allSettled([Effect.runPromise(openWorktreeRegistryRoute(join(redirected, "Local"), openStore))]);
       expect.soft(outcome[0]?.status).toBe("rejected");
       expect.soft(accesses).toBe(0);
       expect.soft(await readdir(localData)).toEqual([]);
       // A canonical parent still reaches the exact same synthetic store boundary.
-      expect(await openWorktreeRegistryRoute(localData, openStore)).toBe(mode === "absent" ? null : join(localData, "store"));
+      expect(await Effect.runPromise(openWorktreeRegistryRoute(localData, openStore))).toBe(
+        mode === "absent" ? null : join(localData, "store"),
+      );
     } finally {
       await rm(root, {recursive: true});
     }
@@ -77,7 +81,7 @@ describe("worktree lease", () => {
       const platform = {
         ...fixture.platform,
         candidatePort: () => (attempts++ === 0 ? occupied.port : 0),
-        processIdentity: () => Promise.reject(new Error("must not inspect an unowned listener")),
+        processIdentity: () => Effect.fail(new Error("must not inspect an unowned listener")),
       };
       const lease = await Effect.runPromise(claimWorktreeLaunch(fixture.checkout).pipe(Effect.provideService(WorktreePlatform, platform)));
       expect(Object.values(lease.ports)).not.toContain(occupied.port);

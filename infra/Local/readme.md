@@ -9,18 +9,20 @@ These full stacks have host-wide ports or named resources. Run only one at a tim
 
 ### Scoped Aspire gates (Windows Podman)
 
-Scoped Aspire is **not launchable**. It is separate from the one-human-slot legacy modes below. From the root of the intended, canonical
-Windows linked checkout, these CLI checks are implemented for an operator who has authorized the respective local observations or stop:
+Scoped Aspire is **not launchable**. It is separate from the one-human-slot legacy modes below. Preflight can be run from the intended
+canonical Windows linked checkout with explicit Podman selection:
 
-| Command                                                                            | What it proves (or does)                                                                                                                                       |
-| ---------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `node scripts/cli.ts dev worktree preflight --engine podman --json`                | Read-only prerequisite inspection, including local engine, trust and prepared inputs. `prepared` does not install, launch, or contact a provider.              |
-| `node scripts/cli.ts dev worktree status --engine podman --json`                   | Inspects current protected lease and ownership. `idle` does not exclude unmanaged listeners; `owned` does not attest to health, TLS, smoke or launch lifetime. |
-| `node scripts/cli.ts dev worktree stop --engine podman --expected-run <id> --json` | Stop is a lifecycle operation, not a health probe. The optional guard refuses absent or different runs; it never grants authority.                             |
+| Command                                                                            | What it proves (or does)                                                                                                                          |
+| ---------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `node scripts/cli.ts dev worktree preflight --engine podman --json`                | Read-only prerequisite inspection, including local engine, trust and prepared inputs. `prepared` does not install, launch, or contact a provider. |
+| `node scripts/cli.ts dev worktree status --engine podman --json`                   | Returns `blocked` (exit 1) because the trusted Windows registry/process adapter is unavailable. It does not report `idle` or inspect the host.    |
+| `node scripts/cli.ts dev worktree stop --engine podman --expected-run <id> --json` | Returns the same `blocked` result without touching the registry, engine, or a process. A run ID never grants authority.                           |
 
-The scoped CLI has no `start` action. The AppHost startup fence is unconditional and the production stage verifier and native dispatch and
-cleanup adapter do not exist. Do not try a descriptor flag, guessed URL or PID, an engine-wide stop, or a reset to bypass a block. An
-ambiguous run stays fenced. Legacy Aspire and Selfhost keep their existing commands and data; the scoped model provides no reset.
+The scoped CLI has no `start` action and the native AppHost startup fence is unconditional. Native status and stop remain blocked until a
+trusted Windows adapter can verify the protected registry and process identity with bounded cleanup through the owned child handle.
+Ownership, guarded stop, and handoff are tested only with injected fixture evidence. Do not try a descriptor flag, guessed URL or PID, an
+engine-wide stop, or a reset to bypass a block. Legacy Aspire and Selfhost keep their existing commands and data; the scoped model provides
+no reset.
 
 The [internal handoff test](../../scripts/container-runtime/worktreeReadiness.test.ts) uses a disposable registry and injected evidence. No
 current command calls this gate with native evidence. The offline result is `blocked` with a fixed stage and reason for missing evidence,

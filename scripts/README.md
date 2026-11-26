@@ -49,8 +49,10 @@ group run without a subcommand (`arolariu`, `arolariu docs`, `arolariu dev`) pri
 
 `npm run dev -- worktree …` also accepts these scoped actions. Global flags can be interleaved, for example
 `npm run dev -- --json worktree --log-level warn preflight --engine podman`. Use `npm run dev -- worktree --help` for the group or
-`npm run dev -- worktree stop --help` for an action. There is no scoped `start` or live browser command. Preflight and ownership do not
-imply readiness; see the [scoped gates and acceptance checklist](../infra/Local/readme.md#scoped-aspire-gates-windows-podman).
+`npm run dev -- worktree stop --help` for an action. Read-only preflight is callable but does not imply readiness. Native `status` and
+`stop` return `blocked` (exit 1) without inspecting the host or engine until a trusted Windows registry/process adapter with bounded
+owned-handle cleanup is available. Tests use injected fixture evidence only. There is no scoped `start` or live browser command; see the
+[scoped gates and acceptance checklist](../infra/Local/readme.md#scoped-aspire-gates-windows-podman).
 
 ### Global flags
 

@@ -3,13 +3,26 @@
  * @module scripts/container-runtime/worktreeLease
  */
 
-import {Context, Data, Effect} from "effect";
+import {Context, Data, Effect, Result} from "effect";
 import {createHash, randomBytes} from "node:crypto";
-import {link, lstat, mkdir, open, readdir, realpath, rename, unlink, writeFile} from "node:fs/promises";
-import {createServer} from "node:net";
-import {join, normalize} from "node:path";
-import {setTimeout as sleep} from "node:timers/promises";
+import {join} from "node:path";
 
+import {
+  acquireRegistryLock,
+  closeWorktreePorts,
+  listRegistryDirectory,
+  listenWorktreePort,
+  makeRegistryDirectory,
+  publishRegistryText,
+  readRegistryText,
+  registryEntryExists,
+  replaceRegistryText,
+  worktreeDirectory,
+  worktreeFileError,
+  worktreeIO,
+  worktreePathKey,
+  type WorktreePortReservation,
+} from "../platform/WorktreeHost.ts";
 import type {WorktreeCheckout} from "./worktreePreflight.ts";
 
 /** Both persisted authority records use this schema, within the existing protected registry route. */
@@ -75,11 +88,11 @@ export interface WorktreeLease {
 
 /** Local-only capabilities. Container management is disabled until an exact-ID adapter is supplied. */
 export interface WorktreeLaunchPlatform {
-  readonly registry: (create: boolean) => Promise<string | null>;
+  readonly registry: (create: boolean) => Effect.Effect<string | null, unknown>;
   readonly checkout: Effect.Effect<WorktreeCheckout | undefined>;
   readonly engine: Effect.Effect<string | undefined>;
   readonly candidatePort: () => number;
-  readonly processIdentity: (pid: number) => Promise<WorktreeProcessIdentity | null>;
+  readonly processIdentity: (pid: number) => Effect.Effect<WorktreeProcessIdentity | null, unknown>;
   readonly containers?: {
     // Must positively prove dispatch ended and the complete run inventory on the pinned engine.
     // A list of caller-supplied IDs, or failing to find a container, is not dispatch evidence.
@@ -116,15 +129,11 @@ export function isWorktreeRunId(value: string): boolean {
 
 /** Checks unredirected canonical path equality (Windows file names are case-insensitive here). */
 export function sameWorktreePath(left: string, right: string): boolean {
-  const normalized = (path: string) => (process.platform === "win32" ? normalize(path).toLowerCase() : normalize(path));
-  return normalized(left) === normalized(right);
+  return worktreePathKey(left) === worktreePathKey(right);
 }
 
 function scopeFor(checkout: Pick<WorktreeCheckout, "root" | "commonGitDir">): string {
-  const parts = [checkout.root, checkout.commonGitDir].map((path) => {
-    const value = normalize(path);
-    return process.platform === "win32" ? value.toLowerCase() : value;
-  });
+  const parts = [checkout.root, checkout.commonGitDir].map(worktreePathKey);
   return createHash("sha256").update(JSON.stringify(parts)).digest("hex").slice(0, 32);
 }
 
@@ -249,22 +258,22 @@ export function worktreeDescriptorFor(lease: WorktreeLease) {
   } as const;
 }
 
-async function verifyWorktreeDescriptor(directory: string, lease: WorktreeLease): Promise<void> {
-  const staged = await worktreeDirectory(join(directory, lease.runId));
+const verifyWorktreeDescriptor = Effect.fnUntraced(function* (directory: string, lease: WorktreeLease) {
+  const staged = yield* worktreeIO(() => worktreeDirectory(join(directory, lease.runId)));
   if (lease.phase === "reserved") {
     // A crash can leave an exclusive stage before the pending lease is published.
-    if (staged) throw new Error("Reserved run already has a stage");
+    if (staged) return yield* Effect.fail(new Error("Reserved run already has a stage"));
     return;
   }
-  if (!staged) throw new Error("Missing worktree stage");
-  const descriptor = await readWorktreeRecord(join(directory, lease.runId, "descriptor.json"), parseWorktreeAuthorityJson);
+  if (!staged) return yield* Effect.fail(new Error("Missing worktree stage"));
+  const descriptor = yield* readWorktreeRecord(join(directory, lease.runId, "descriptor.json"), parseWorktreeAuthorityJson);
   const {ports, volumes, ...header} = worktreeDescriptorFor(lease);
   if (
     !worktreeRecord(descriptor)
     || Object.keys(descriptor).length !== Object.keys(header).length + 2
     || Object.entries(header).some(([key, value]) => descriptor[key] !== value)
   )
-    throw new Error("Invalid worktree descriptor");
+    return yield* Effect.fail(new Error("Invalid worktree descriptor"));
   const stagedPorts = descriptor["ports"];
   const stagedVolumes = descriptor["volumes"];
   if (
@@ -274,29 +283,11 @@ async function verifyWorktreeDescriptor(directory: string, lease: WorktreeLease)
     || Object.keys(stagedVolumes).length !== Object.keys(volumes).length
     || Object.entries(volumes).some(([key, value]) => stagedVolumes[key] !== value)
   )
-    throw new Error("Worktree descriptor does not match its lease");
-}
-
-/** Tests for a specific filesystem error without suppressing other failures. */
-export function worktreeFileError(error: unknown, code: string): boolean {
-  return error instanceof Error && "code" in error && error.code === code;
-}
-
-/** Verifies a registry directory without traversing a reparse point. */
-export async function worktreeDirectory(path: string): Promise<boolean> {
-  try {
-    const stat = await lstat(path);
-    if (!stat.isDirectory() || stat.isSymbolicLink() || !sameWorktreePath(await realpath(path), path))
-      throw new Error("Redirected directory");
-    return true;
-  } catch (error) {
-    if (worktreeFileError(error, "ENOENT")) return false;
-    throw error;
-  }
-}
+    return yield* Effect.fail(new Error("Worktree descriptor does not match its lease"));
+});
 
 /** Reads a bounded, private, single-link record; absent is distinct from invalid. */
-export function readWorktreeJson(path: string): Promise<unknown> {
+export function readWorktreeJson(path: string): Effect.Effect<unknown, unknown> {
   return readWorktreeRecord(path, JSON.parse);
 }
 
@@ -322,85 +313,56 @@ function parseWorktreeAuthorityJson(text: string): unknown {
   return JSON.parse(text);
 }
 
-async function readWorktreeRecord(path: string, parse: (text: string) => unknown): Promise<unknown> {
-  let stat;
-  try {
-    stat = await lstat(path);
-    // Exclusive publications briefly have two links. Do not accept persistent hard links.
-    if (stat.nlink === 2) {
-      await sleep(20);
-      stat = await lstat(path);
-    }
-  } catch (error) {
-    if (worktreeFileError(error, "ENOENT")) return undefined;
-    throw error;
-  }
-  if (!stat.isFile() || stat.nlink !== 1 || stat.size > maxFileSize || !sameWorktreePath(await realpath(path), path)) {
-    throw new Error("Invalid registry file");
-  }
-  const file = await open(path, "r");
-  try {
-    const bytes = Buffer.alloc(maxFileSize + 1);
-    const {bytesRead} = await file.read({buffer: bytes, length: bytes.length});
-    if (bytesRead === 0 || bytesRead > maxFileSize || bytesRead !== (await file.stat()).size) throw new Error("Invalid registry file size");
-    return parse(new TextDecoder("utf-8", {fatal: true}).decode(bytes.subarray(0, bytesRead)));
-  } finally {
-    await file.close();
-  }
+function readWorktreeRecord(path: string, parse: (text: string) => unknown): Effect.Effect<unknown, unknown> {
+  return readRegistryText(path, maxFileSize).pipe(
+    Effect.flatMap((text) => (text === undefined ? Effect.succeed(undefined) : Effect.try(() => parse(text)))),
+  );
 }
 
 /** Publishes a record without overwrite or exposing partially written bytes to a reader. */
 export async function publishWorktreeJson(path: string, value: unknown): Promise<void> {
-  const temp = `${path}.${randomBytes(16).toString("hex")}.tmp`;
-  await writeFile(temp, JSON.stringify(value), {flag: "wx", mode: 0o600});
-  try {
-    // NTFS hard-link creation is atomic and fails if the destination already exists.
-    await link(temp, path);
-  } finally {
-    await unlink(temp);
-  }
+  await publishRegistryText(path, JSON.stringify(value));
 }
 
 /** Serializes registry mutations. A lock abandoned by a crash is never stolen. */
-export async function withWorktreeLock<A>(registry: string, action: () => Promise<A>): Promise<A> {
-  if (!(await worktreeDirectory(registry))) throw new Error("Missing registry");
-  const path = join(registry, "mutation.lock");
-  const mutex = await open(path, "wx", 0o600);
-  try {
-    return await action();
-  } finally {
-    await mutex.close();
-    await unlink(path);
-  }
+export function withWorktreeLock<A>(registry: string, action: Effect.Effect<A, unknown>): Effect.Effect<A, unknown> {
+  const acquire = worktreeIO(async () => {
+    if (!(await worktreeDirectory(registry))) throw new Error("Missing registry");
+    return acquireRegistryLock(join(registry, "mutation.lock"));
+  });
+  return Effect.acquireUseRelease(
+    acquire,
+    () => action,
+    (release) => worktreeIO(release),
+  );
 }
 
 /** Re-reads authoritative state, never trusting a lease passed by a caller as authority. */
-export async function readWorktreeLease(registry: string, scope: string): Promise<WorktreeLease | null> {
-  if (!scopePattern.test(scope)) throw new Error("Invalid scope");
-  const directory = join(registry, scope);
-  if (!(await worktreeDirectory(directory))) return null;
-  const value = await readWorktreeRecord(join(directory, "lease.json"), parseWorktreeAuthorityJson);
-  if (value === undefined) return null;
-  const lease = decodeLease(value, scope);
-  await verifyWorktreeDescriptor(directory, lease);
-  return lease;
+export function readWorktreeLease(registry: string, scope: string): Effect.Effect<WorktreeLease | null, unknown> {
+  return Effect.gen(function* () {
+    if (!scopePattern.test(scope)) return yield* Effect.fail(new Error("Invalid scope"));
+    const directory = join(registry, scope);
+    if (!(yield* worktreeIO(() => worktreeDirectory(directory)))) return null;
+    const value = yield* readWorktreeRecord(join(directory, "lease.json"), parseWorktreeAuthorityJson);
+    if (value === undefined) return null;
+    const lease = yield* Effect.try(() => decodeLease(value, scope));
+    yield* verifyWorktreeDescriptor(directory, lease);
+    return lease;
+  });
 }
 
 /** Read-only callers avoid reporting snapshots while any mutation is unresolved. */
-export async function readStableWorktreeLease(registry: string, scope: string): Promise<WorktreeLease | null> {
-  const verifyUnlocked = async () => {
-    try {
-      await lstat(join(registry, "mutation.lock"));
-      throw new Error("Registry is locked");
-    } catch (error) {
-      if (!worktreeFileError(error, "ENOENT")) throw error;
-    }
-  };
-  if (!(await worktreeDirectory(registry))) throw new Error("Missing registry");
-  await verifyUnlocked();
-  const lease = await readWorktreeLease(registry, scope);
-  await verifyUnlocked();
-  return lease;
+export function readStableWorktreeLease(registry: string, scope: string): Effect.Effect<WorktreeLease | null, unknown> {
+  const verifyUnlocked = worktreeIO(async () => {
+    if (await registryEntryExists(join(registry, "mutation.lock"))) throw new Error("Registry is locked");
+  });
+  return Effect.gen(function* () {
+    if (!(yield* worktreeIO(() => worktreeDirectory(registry)))) return yield* Effect.fail(new Error("Missing registry"));
+    yield* verifyUnlocked;
+    const lease = yield* readWorktreeLease(registry, scope);
+    yield* verifyUnlocked;
+    return lease;
+  });
 }
 
 /** Updates the current lease atomically, while the registry mutation lock is held. */
@@ -409,81 +371,62 @@ export async function writeWorktreeLease(registry: string, lease: WorktreeLease)
   decodeLease(data, lease.scopeId);
   const directory = join(registry, lease.scopeId);
   if (!(await worktreeDirectory(directory))) throw new Error("Missing scope");
-  const path = join(directory, "lease.json");
   const temp = join(directory, `${randomBytes(16).toString("hex")}.tmp`);
-  await writeFile(temp, JSON.stringify(data), {flag: "wx", mode: 0o600});
-  try {
-    await rename(temp, path);
-  } catch (error) {
-    await unlink(temp);
-    throw error;
-  }
+  await replaceRegistryText(join(directory, "lease.json"), temp, JSON.stringify(data));
 }
 
-/** Opens a TCP reservation on IPv4 loopback only; never identifies or stops another listener. */
-export async function listenWorktreePort(port: number): Promise<{readonly port: number; readonly close: () => Promise<void>}> {
-  const server = createServer((socket) => socket.destroy());
-  await new Promise<void>((resolve, reject) => {
-    server.once("error", reject);
-    server.listen({host: "127.0.0.1", port, exclusive: true}, resolve);
-  });
-  const address = server.address();
-  if (address === null || typeof address === "string") {
-    server.close();
-    throw new Error("Expected loopback port");
-  }
-  return {
-    port: address.port,
-    close: () => new Promise<void>((resolve, reject) => server.close((error) => (error ? reject(error) : resolve()))),
-  };
-}
-
-async function reservePorts(registry: string, candidate: () => number, publish: (ports: WorktreePorts) => Promise<void>): Promise<void> {
-  const names = await readdir(registry);
-  if (names.length > maxRegistryScopes + 1) throw new Error("Registry capacity exceeded");
+const reservePorts = Effect.fnUntraced(function* (
+  registry: string,
+  candidate: () => number,
+  publish: (ports: WorktreePorts) => Promise<void>,
+) {
+  const names = yield* worktreeIO(() => listRegistryDirectory(registry));
+  if (names.length > maxRegistryScopes + 1) return yield* Effect.fail(new Error("Registry capacity exceeded"));
   const unavailable = new Set<number>();
   for (const name of names.filter((entry) => scopePattern.test(entry))) {
-    const lease = await readWorktreeLease(registry, name);
+    const lease = yield* readWorktreeLease(registry, name);
     if (lease === null) continue;
     for (const port of Object.values(lease.ports)) {
-      if (unavailable.has(port)) throw new Error("Existing scope allocations collide");
+      if (unavailable.has(port)) return yield* Effect.fail(new Error("Existing scope allocations collide"));
       unavailable.add(port);
     }
   }
-  const sockets: Awaited<ReturnType<typeof listenWorktreePort>>[] = [];
+  const sockets: WorktreePortReservation[] = [];
   const allocation: Partial<WorktreePorts> = {};
   let trials = 0;
-  try {
-    for (const name of worktreePortNames) {
-      for (;;) {
-        if (++trials > maxAttempts) throw new Error("No scoped ports available");
-        let socket;
-        try {
-          socket = await listenWorktreePort(candidate());
-        } catch (error) {
-          if (worktreeFileError(error, "EADDRINUSE") || worktreeFileError(error, "EACCES")) continue;
-          throw error;
+  yield* Effect.acquireUseRelease(
+    Effect.succeed(sockets),
+    () =>
+      Effect.gen(function* () {
+        for (const name of worktreePortNames) {
+          for (;;) {
+            if (++trials > maxAttempts) return yield* Effect.fail(new Error("No scoped ports available"));
+            const opened = yield* Effect.result(worktreeIO(() => listenWorktreePort(candidate())));
+            if (Result.isFailure(opened)) {
+              if (worktreeFileError(opened.failure, "EADDRINUSE") || worktreeFileError(opened.failure, "EACCES")) continue;
+              return yield* Effect.fail(opened.failure);
+            }
+            const socket = opened.success;
+            if (socket.port < 1024 || unavailable.has(socket.port)) {
+              yield* worktreeIO(socket.close);
+              continue;
+            }
+            sockets.push(socket);
+            unavailable.add(socket.port);
+            Object.assign(allocation, {[name]: socket.port});
+            break;
+          }
         }
-        if (socket.port < 1024 || unavailable.has(socket.port)) {
-          await socket.close();
-          continue;
-        }
-        sockets.push(socket);
-        unavailable.add(socket.port);
-        Object.assign(allocation, {[name]: socket.port});
-        break;
-      }
-    }
-    if (!isWorktreePorts(allocation)) throw new Error("Incomplete port allocation");
-    await publish(allocation);
-  } finally {
-    await Promise.all(sockets.map(({close}) => close()));
-  }
-}
+        if (!isWorktreePorts(allocation)) return yield* Effect.fail(new Error("Incomplete port allocation"));
+        yield* worktreeIO(() => publish(allocation));
+      }),
+    closeWorktreePorts,
+  );
+});
 
 /** Runs a bounded registry operation without surfacing paths or raw OS messages. */
-export function worktreeOperation<A>(message: string, tryOperation: () => Promise<A>): Effect.Effect<A, WorktreeLaunchError> {
-  return Effect.tryPromise({try: tryOperation, catch: () => new WorktreeLaunchError({message})});
+export function worktreeOperation<A>(message: string, operation: Effect.Effect<A, unknown>): Effect.Effect<A, WorktreeLaunchError> {
+  return operation.pipe(Effect.mapError(() => new WorktreeLaunchError({message})));
 }
 
 /** Resolves current scope from fresh canonical checkout evidence, not from an input path or PID. */
@@ -523,32 +466,35 @@ export function claimWorktreeLease(
     if (!engineId || !idPattern.test(engineId)) return yield* new WorktreeLaunchError({message: "No pinned local engine was verified."});
     return yield* worktreeOperation(
       "Could not reserve this scope; a claim, registry lock, or invalid record may already exist.",
-      async () => {
-        const registry = await platform.registry(true);
-        if (registry === null) throw new Error("Missing registry");
-        return withWorktreeLock(registry, async () => {
-          if ((await readWorktreeLease(registry, scopeId)) !== null) throw new Error("Scope already claimed");
-          const directory = join(registry, scopeId);
-          let lease: WorktreeLease | undefined;
-          await reservePorts(registry, platform.candidatePort, async (ports) => {
-            if (!(await worktreeDirectory(directory))) await mkdir(directory, {mode: 0o700});
-            lease = {
-              scopeId,
-              runId: randomBytes(16).toString("hex"),
-              root: checkout.root,
-              commonGitDir: checkout.commonGitDir,
-              engineId,
-              phase: "reserved",
-              mode,
-              ports,
-              volumes: volumesFor(scopeId),
-            };
-            await writeWorktreeLease(registry, lease);
-          });
-          if (!lease) throw new Error("No lease");
-          return lease;
-        });
-      },
+      Effect.gen(function* () {
+        const registry = yield* platform.registry(true);
+        if (registry === null) return yield* Effect.fail(new Error("Missing registry"));
+        return yield* withWorktreeLock(
+          registry,
+          Effect.gen(function* () {
+            if ((yield* readWorktreeLease(registry, scopeId)) !== null) return yield* Effect.fail(new Error("Scope already claimed"));
+            const directory = join(registry, scopeId);
+            let lease: WorktreeLease | undefined;
+            yield* reservePorts(registry, platform.candidatePort, async (ports) => {
+              if (!(await worktreeDirectory(directory))) await makeRegistryDirectory(directory);
+              lease = {
+                scopeId,
+                runId: randomBytes(16).toString("hex"),
+                root: checkout.root,
+                commonGitDir: checkout.commonGitDir,
+                engineId,
+                phase: "reserved",
+                mode,
+                ports,
+                volumes: volumesFor(scopeId),
+              };
+              await writeWorktreeLease(registry, lease);
+            });
+            if (!lease) return yield* Effect.fail(new Error("No lease"));
+            return lease;
+          }),
+        );
+      }),
     ).pipe(Effect.uninterruptible);
   });
 }
@@ -558,10 +504,13 @@ export function readWorktreeLaunch(expected: WorktreeCheckout): Effect.Effect<Wo
   return Effect.gen(function* () {
     const platform = yield* WorktreePlatform;
     const {scopeId} = yield* resolveWorktreeScope(expected);
-    return yield* worktreeOperation("The protected worktree registry could not be read.", async () => {
-      const registry = await platform.registry(false);
-      if (registry === null) return null;
-      return readStableWorktreeLease(registry, scopeId);
-    });
+    return yield* worktreeOperation(
+      "The protected worktree registry could not be read.",
+      Effect.gen(function* () {
+        const registry = yield* platform.registry(false);
+        if (registry === null) return null;
+        return yield* readStableWorktreeLease(registry, scopeId);
+      }),
+    );
   });
 }
