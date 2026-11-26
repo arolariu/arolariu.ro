@@ -10,7 +10,8 @@ internal sealed record BootstrapOptions(
   string? CosmosConnectionString,
   string BlobStorageConnectionString,
   string QueueStorageConnectionString,
-  string SeedDataDirectory)
+  string SeedDataDirectory,
+  bool UseBoundBlobOrigin = false)
 {
   internal static BootstrapOptions FromEnvironment() =>
     FromEnvironment(Environment.GetEnvironmentVariable);
@@ -42,6 +43,7 @@ internal sealed record BootstrapOptions(
       readVariable("ConnectionStrings__queues")
         ?? throw new InvalidOperationException(
           "ConnectionStrings__queues is required."),
-      directory);
+      directory,
+      readVariable("AROLARIU_USE_BOUND_BLOB_ORIGIN") == "1");
   }
 }

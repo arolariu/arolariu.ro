@@ -140,7 +140,7 @@ describe("dev command", () => {
     ["start", "--engine", "podman"],
     ["stop", "--engine", "podman", "--pid", "1234"],
     ["stop", "--engine", "podman", "--expected-root", "C:/another-worktree"],
-    ["status", "--engine", "rancher"],
+    ["status", "--engine", "docker"],
   ])("rejects unsupported scoped action or authority flags (%s)", async (...args) => {
     const result = await run(["dev", "worktree", ...args]);
     expect(result.code).toBe(2);

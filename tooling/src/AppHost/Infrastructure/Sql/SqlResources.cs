@@ -26,6 +26,7 @@ internal static class SqlResources
       // DCP forwards TDS to the allocated container port while keeping the public port fixed.
       .WithEndpoint("tcp", endpoint => endpoint.IsProxied = true)
       .WithIconName("Database");
+    scope?.LabelContainer(sql);
     var database = sql.AddDatabase(LocalDataContract.SqlDatabaseName)
       .WithCreationScript(DatabaseCreationScript);
     builder.Services.AddHealthChecks().AddCheck("sql-ready",

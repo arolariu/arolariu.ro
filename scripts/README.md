@@ -34,8 +34,8 @@ arolariu rates update [--year <y>] [--from <y>] [--to <y>]
 arolariu dev aspire [--engine <rancher|podman>]
 arolariu dev selfhost [start|stop|logs] [--engine <rancher|podman>]
 arolariu dev worktree preflight --engine <podman|rancher> [--expected-root <path>]
-arolariu dev worktree status --engine podman
-arolariu dev worktree stop --engine podman [--expected-run <id>]
+arolariu dev worktree status --engine <podman|rancher>
+arolariu dev worktree stop --engine <podman|rancher> [--expected-run <id>]
 arolariu containers build|run --target <frontend|backend|cv|exp> [--engine <rancher|podman>]
 arolariu containers compose --file <path> [--engine <rancher|podman>] -- <compose arguments...>
 arolariu test e2e <all|backend|frontend|cv>

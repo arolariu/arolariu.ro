@@ -11,22 +11,23 @@ import {
   acquireRegistryLock,
   closeWorktreePorts,
   listRegistryDirectory,
-  listenWorktreePort,
   makeRegistryDirectory,
   publishRegistryText,
   readRegistryText,
   registryEntryExists,
   replaceRegistryText,
+  reserveWorktreeLoopbackPort,
   worktreeDirectory,
   worktreeFileError,
   worktreeIO,
   worktreePathKey,
   type WorktreePortReservation,
 } from "../platform/WorktreeHost.ts";
+import type {ContainerEngine} from "./types.ts";
 import type {WorktreeCheckout} from "./worktreePreflight.ts";
 
 /** Both persisted authority records use this schema, within the existing protected registry route. */
-export const worktreeLaunchVersion = 3;
+export const worktreeLaunchVersion = 4;
 
 /** Named host-side ports; these are reservations, not an observation of service health. */
 export const worktreePortNames = [
@@ -79,6 +80,7 @@ export interface WorktreeLease {
   readonly commonGitDir: string;
   readonly branch: string;
   readonly head: string;
+  readonly engine: ContainerEngine;
   readonly engineId: string;
   readonly phase: "reserved" | "pending" | "partial" | "owned";
   readonly mode: "aspire" | "fixture";
@@ -92,6 +94,7 @@ export interface WorktreeLease {
 export interface WorktreeLaunchPlatform {
   readonly registry: (create: boolean) => Effect.Effect<string | null, unknown>;
   readonly checkout: Effect.Effect<WorktreeCheckout | undefined>;
+  readonly engineKind?: ContainerEngine;
   readonly engine: Effect.Effect<string | undefined>;
   readonly candidatePort: () => number;
   readonly processIdentity: (pid: number) => Effect.Effect<WorktreeProcessIdentity | null, unknown>;
@@ -204,8 +207,22 @@ export function isWorktreeResourceOwnership(value: unknown): value is NonNullabl
 
 function decodeLease(value: unknown, scope: string): WorktreeLease {
   if (!worktreeRecord(value)) throw new Error("Invalid lease");
-  const {scopeId, runId, root, commonGitDir, branch, head, engineId, phase, mode, ports, volumes, processIdentity, resourceOwnership} =
-    value;
+  const {
+    scopeId,
+    runId,
+    root,
+    commonGitDir,
+    branch,
+    head,
+    engine,
+    engineId,
+    phase,
+    mode,
+    ports,
+    volumes,
+    processIdentity,
+    resourceOwnership,
+  } = value;
   if (
     value["version"] !== worktreeLaunchVersion
     || scopeId !== scope
@@ -220,6 +237,7 @@ function decodeLease(value: unknown, scope: string): WorktreeLease {
     || !/^(?:[a-f0-9]{40}|[a-f0-9]{64})$/u.test(head)
     || typeof runId !== "string"
     || !isWorktreeRunId(runId)
+    || (engine !== "podman" && engine !== "rancher")
     || typeof engineId !== "string"
     || !idPattern.test(engineId)
     || (phase !== "reserved" && phase !== "pending" && phase !== "partial" && phase !== "owned")
@@ -242,6 +260,7 @@ function decodeLease(value: unknown, scope: string): WorktreeLease {
     commonGitDir,
     branch,
     head,
+    engine,
     engineId,
     phase,
     mode,
@@ -254,7 +273,7 @@ function decodeLease(value: unknown, scope: string): WorktreeLease {
 
 /** Projects a descriptor from the current lease, never a caller-supplied set of names or ports. */
 export function worktreeDescriptorFor(lease: WorktreeLease) {
-  const {root, scopeId, runId, branch, head, ports, volumes, mode} = lease;
+  const {root, scopeId, runId, branch, head, engine, ports, volumes, mode} = lease;
   return {
     version: worktreeLaunchVersion,
     root,
@@ -262,6 +281,7 @@ export function worktreeDescriptorFor(lease: WorktreeLease) {
     runId,
     branch,
     head,
+    engine,
     mode,
     ports,
     volumes,
@@ -390,20 +410,53 @@ export async function writeWorktreeLease(registry: string, lease: WorktreeLease)
 
 const reservePorts = Effect.fnUntraced(function* (
   registry: string,
+  scope: string,
+  mode: WorktreeLease["mode"],
   candidate: () => number,
-  publish: (ports: WorktreePorts) => Promise<void>,
+  publish: (ports: WorktreePorts, hasBlobBinding: boolean) => Promise<void>,
 ) {
   const names = yield* worktreeIO(() => listRegistryDirectory(registry));
   if (names.length > maxRegistryScopes + 1) return yield* Effect.fail(new Error("Registry capacity exceeded"));
   const unavailable = new Set<number>();
+  const activeBlobPorts = new Map<number, string>();
+  const boundBlobPorts = new Map<number, string>();
+  let stableBlob: number | undefined;
   for (const name of names.filter((entry) => scopePattern.test(entry))) {
+    const directory = join(registry, name);
+    if (!(yield* worktreeIO(() => worktreeDirectory(directory)))) return yield* Effect.fail(new Error("Missing scope directory"));
+    const binding = yield* readWorktreeRecord(join(directory, "blob-port.json"), parseWorktreeAuthorityJson);
+    if (binding !== undefined) {
+      const port = worktreeRecord(binding) && binding["scopeId"] === name ? binding["port"] : undefined;
+      if (
+        typeof port !== "number"
+        || !Number.isInteger(port)
+        || port < 1024
+        || port > 65535
+        || !worktreeRecord(binding)
+        || Object.keys(binding).length !== 2
+        || boundBlobPorts.has(port)
+      )
+        return yield* Effect.fail(new Error("Invalid or colliding persistent blob port"));
+      boundBlobPorts.set(port, name);
+      if (name === scope && mode === "aspire") stableBlob = port;
+    }
     const lease = yield* readWorktreeLease(registry, name);
     if (lease === null) continue;
+    if (lease.mode === "aspire") activeBlobPorts.set(lease.ports.azuriteBlob, name);
+    if (lease.mode === "aspire" && binding !== undefined && boundBlobPorts.get(lease.ports.azuriteBlob) !== name) {
+      return yield* Effect.fail(new Error("Lease differs from its persistent blob binding"));
+    }
     for (const port of Object.values(lease.ports)) {
       if (unavailable.has(port)) return yield* Effect.fail(new Error("Existing scope allocations collide"));
       unavailable.add(port);
     }
   }
+  for (const [port, owner] of boundBlobPorts) {
+    if (unavailable.has(port) && activeBlobPorts.get(port) !== owner) {
+      return yield* Effect.fail(new Error("Persistent blob port overlaps an active lease"));
+    }
+  }
+  for (const port of boundBlobPorts.keys()) unavailable.add(port);
   const sockets: WorktreePortReservation[] = [];
   const allocation: Partial<WorktreePorts> = {};
   let trials = 0;
@@ -412,9 +465,15 @@ const reservePorts = Effect.fnUntraced(function* (
     () =>
       Effect.gen(function* () {
         for (const name of worktreePortNames) {
+          if (name === "azuriteBlob" && stableBlob !== undefined) {
+            // Persisted scan addresses retain this port. A busy binding cannot be silently renumbered.
+            sockets.push(yield* worktreeIO(() => reserveWorktreeLoopbackPort(stableBlob)));
+            Object.assign(allocation, {[name]: stableBlob});
+            continue;
+          }
           for (;;) {
             if (++trials > maxAttempts) return yield* Effect.fail(new Error("No scoped ports available"));
-            const opened = yield* Effect.result(worktreeIO(() => listenWorktreePort(candidate())));
+            const opened = yield* Effect.result(worktreeIO(() => reserveWorktreeLoopbackPort(candidate())));
             if (Result.isFailure(opened)) {
               if (worktreeFileError(opened.failure, "EADDRINUSE") || worktreeFileError(opened.failure, "EACCES")) continue;
               return yield* Effect.fail(opened.failure);
@@ -431,7 +490,7 @@ const reservePorts = Effect.fnUntraced(function* (
           }
         }
         if (!isWorktreePorts(allocation)) return yield* Effect.fail(new Error("Incomplete port allocation"));
-        yield* worktreeIO(() => publish(allocation));
+        yield* worktreeIO(() => publish(allocation, stableBlob !== undefined));
       }),
     closeWorktreePorts,
   );
@@ -488,8 +547,11 @@ export function claimWorktreeLease(
             if ((yield* readWorktreeLease(registry, scopeId)) !== null) return yield* Effect.fail(new Error("Scope already claimed"));
             const directory = join(registry, scopeId);
             let lease: WorktreeLease | undefined;
-            yield* reservePorts(registry, platform.candidatePort, async (ports) => {
+            yield* reservePorts(registry, scopeId, mode, platform.candidatePort, async (ports, hasBlobBinding) => {
               if (!(await worktreeDirectory(directory))) await makeRegistryDirectory(directory);
+              if (mode === "aspire" && !hasBlobBinding) {
+                await publishWorktreeJson(join(directory, "blob-port.json"), {scopeId, port: ports.azuriteBlob});
+              }
               lease = {
                 scopeId,
                 runId: randomBytes(16).toString("hex"),
@@ -497,6 +559,7 @@ export function claimWorktreeLease(
                 commonGitDir: checkout.commonGitDir,
                 branch: checkout.branch,
                 head: checkout.head,
+                engine: platform.engineKind ?? "podman",
                 engineId,
                 phase: "reserved",
                 mode,

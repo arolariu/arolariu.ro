@@ -82,7 +82,13 @@ function withCurrent<T>(
           registry,
           Effect.gen(function* () {
             const current = yield* readWorktreeLease(registry, scopeId);
-            if (!current || current.runId !== lease.runId || current.mode !== lease.mode || current.engineId !== engineId) {
+            if (
+              !current
+              || current.runId !== lease.runId
+              || current.mode !== lease.mode
+              || current.engine !== (platform.engineKind ?? "podman")
+              || current.engineId !== engineId
+            ) {
               return yield* Effect.fail(new Error("Lease or engine changed"));
             }
             return yield* action(current, registry, platform);
@@ -339,6 +345,7 @@ export function inspectWorktreeLaunch(lease: WorktreeLease): Effect.Effect<"rese
           || !current
           || current.runId !== lease.runId
           || current.mode !== lease.mode
+          || current.engine !== (platform.engineKind ?? "podman")
           || current.engineId !== engineId
         ) {
           return "blocked" as const;
@@ -389,6 +396,7 @@ function sameOwnedAspire(other: WorktreeLease | null, expected: OwnedWorktreeAsp
   return (
     other.scopeId === expected.scopeId
     && other.runId === expected.runId
+    && other.engine === expected.engine
     && other.engineId === expected.engineId
     && sameWorktreePath(other.root, expected.root)
     && sameWorktreePath(other.commonGitDir, expected.commonGitDir)
@@ -423,6 +431,7 @@ export function observeOwnedWorktreeAspire(
           || current.runId !== runId
           || current.branch !== checkout.branch
           || current.head !== checkout.head
+          || current.engine !== (platform.engineKind ?? "podman")
           || current.engineId !== engineId
           || (baseline && !sameOwnedAspire(current, baseline))
         )

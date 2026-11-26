@@ -407,18 +407,20 @@ function observePodmanRegistration(
   });
 }
 
-/** Fingerprints the registered local machine without contacting its backend or returning credentials. */
+/** Fingerprints the local backend registration without exposing engine routing or credentials. */
 export function observeWorktreeEngine(
   checkout: WorktreeCheckout,
+  engine: ContainerEngine = "podman",
 ): Effect.Effect<string | undefined, never, Environment | Process | ReadOnlyFiles> {
   return Effect.gen(function* () {
     const env = yield* Environment;
+    const names = new Set(Object.keys(env.variables).map((key) => key.toLowerCase()));
+    if (engine === "rancher" && isWorktreePlatform(env.platform)) {
+      const observed = yield* observeRancherBackend(checkout.root, names, env);
+      return "fingerprint" in observed ? observed.fingerprint : undefined;
+    }
     if (env.platform !== "win32") return undefined;
-    const registration = yield* observePodmanRegistration(
-      checkout.root,
-      new Set(Object.keys(env.variables).map((key) => key.toLowerCase())),
-      env.platform,
-    );
+    const registration = yield* observePodmanRegistration(checkout.root, names, env.platform);
     return typeof registration === "object" ? registration.fingerprint : undefined;
   });
 }
@@ -481,14 +483,13 @@ function inspectPodman(
   });
 }
 
-function inspectRancher(
+function observeRancherBackend(
   root: string,
   names: ReadonlySet<string>,
   env: EnvironmentSnapshot,
-): Effect.Effect<WorktreeCapability, never, Process> {
+): Effect.Effect<{readonly fingerprint: string} | {readonly reason: string}, never, Process> {
   return Effect.gen(function* () {
-    const id = "rancher-backend";
-    const blocked = (detail: string) => capability(id, false, "", detail);
+    const blocked = (reason: string) => ({reason});
     if (
       ["docker_host", "docker_context", "docker_config", "docker_tls", "docker_tls_verify", "docker_cert_path"].some((key) =>
         names.has(key),
@@ -508,13 +509,32 @@ function inspectRancher(
     }
     const local = yield* run(probes.infrastructure.rancherEngineInfo(), {cwd: root, env: {DOCKER_HOST: endpoint}});
     const info = local.kind === "succeeded" ? record(parseJson(local.stdout)) : undefined;
-    return capability(
-      id,
-      info?.["ID"] === guestId && info["OSType"] === "linux" && isEngineVersion(info["ServerVersion"]),
-      "The pinned local Docker endpoint matches the Moby daemon in the running Rancher Desktop guest.",
-      "The local Docker endpoint was unavailable or did not match the running Rancher Desktop Moby daemon.",
-    );
+    if (info?.["ID"] !== guestId || info["OSType"] !== "linux" || !isEngineVersion(info["ServerVersion"])) {
+      return blocked("The local Docker endpoint was unavailable or did not match the running Rancher Desktop Moby daemon.");
+    }
+    return {
+      fingerprint: createHash("sha256")
+        .update(JSON.stringify(["rancher", endpoint, guestId]))
+        .digest("hex"),
+    };
   });
+}
+
+function inspectRancher(
+  root: string,
+  names: ReadonlySet<string>,
+  env: EnvironmentSnapshot,
+): Effect.Effect<WorktreeCapability, never, Process> {
+  return Effect.map(observeRancherBackend(root, names, env), (observed) =>
+    "fingerprint" in observed
+      ? capability(
+          "rancher-backend",
+          true,
+          "The pinned local Docker endpoint matches the Moby daemon in the running Rancher Desktop guest.",
+          "",
+        )
+      : capability("rancher-backend", false, "", observed.reason),
+  );
 }
 
 function keyEvidence(

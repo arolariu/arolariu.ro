@@ -1,4 +1,4 @@
-/** @fileoverview Host I/O primitives for the scoped worktree registry and IPv4 reservations. */
+/** @fileoverview Host I/O primitives for the scoped worktree registry and loopback reservations. */
 import {Effect} from "effect";
 import {randomBytes} from "node:crypto";
 import {link, lstat, mkdir, open, readdir, realpath, rename, unlink, writeFile} from "node:fs/promises";
@@ -133,12 +133,12 @@ export interface WorktreePortReservation {
   readonly close: () => Promise<void>;
 }
 
-/** Opens a TCP reservation on IPv4 loopback only; never identifies or stops another listener. */
-export async function listenWorktreePort(port: number): Promise<WorktreePortReservation> {
+/** Opens a TCP reservation on the selected loopback address; never stops another listener. */
+export async function listenWorktreePort(port: number, host: "127.0.0.1" | "::1" = "127.0.0.1"): Promise<WorktreePortReservation> {
   const server = createServer((socket) => socket.destroy());
   await new Promise<void>((resolve, reject) => {
     server.once("error", reject);
-    server.listen({host: "127.0.0.1", port, exclusive: true}, resolve);
+    server.listen({host, port, exclusive: true}, resolve);
   });
   const address = server.address();
   if (address === null || typeof address === "string") {
@@ -149,6 +149,27 @@ export async function listenWorktreePort(port: number): Promise<WorktreePortRese
     port: address.port,
     close: () => new Promise<void>((resolve, reject) => server.close((error) => (error ? reject(error) : resolve()))),
   };
+}
+
+/** Reserves the same port on both loopback address families before it can be published in a lease. */
+export async function reserveWorktreeLoopbackPort(port: number): Promise<WorktreePortReservation> {
+  const ipv4 = await listenWorktreePort(port);
+  try {
+    const ipv6 = await listenWorktreePort(ipv4.port, "::1");
+    return {
+      port: ipv4.port,
+      close: async () => {
+        try {
+          await ipv4.close();
+        } finally {
+          await ipv6.close();
+        }
+      },
+    };
+  } catch (error) {
+    await ipv4.close();
+    throw error;
+  }
 }
 
 /** Attempts every close before returning any close failure. */

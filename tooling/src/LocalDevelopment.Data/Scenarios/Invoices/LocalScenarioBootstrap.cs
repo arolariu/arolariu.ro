@@ -14,7 +14,8 @@ internal sealed class LocalScenarioBootstrap(
   ILocalAzuriteSeedWriter storage,
   TimeProvider timeProvider,
   RetryPolicy? retry = null,
-  TextWriter? retryLog = null)
+  TextWriter? retryLog = null,
+  Uri? blobContainer = null)
 {
   internal async Task RunAsync(
     string seedDataDirectory,
@@ -25,7 +26,7 @@ internal sealed class LocalScenarioBootstrap(
     DateOnly anchor = DateOnly.FromDateTime(
       timeProvider.GetUtcNow().UtcDateTime);
     MaterializedSeedScenario proposedScenario =
-      SeedData.Materialize(manifest, anchor);
+      SeedData.Materialize(manifest, anchor, blobContainer);
 
     await RetryExecutor.ExecuteAsync(retry ?? LocalDataRetryPolicies.Default[LocalDataRetryPolicies.None], async token =>
     {
@@ -40,7 +41,7 @@ internal sealed class LocalScenarioBootstrap(
       if (state.Completed) { return; }
       MaterializedSeedScenario scenario = state.AnchorDateUtc == anchor
         ? proposedScenario
-        : SeedData.Materialize(manifest, state.AnchorDateUtc);
+        : SeedData.Materialize(manifest, state.AnchorDateUtc, blobContainer);
       token.ThrowIfCancellationRequested();
       await storage.EnsureSeedAsync(scenario, token).ConfigureAwait(false);
       token.ThrowIfCancellationRequested();

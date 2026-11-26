@@ -12,11 +12,11 @@ These full stacks have host-wide ports or named resources. Run only one at a tim
 Scoped Aspire is **not launchable**. It is separate from the one-human-slot legacy modes below. Run preflight from the intended canonical
 linked checkout and select either `podman` or `rancher` explicitly:
 
-| Command                                                                            | What it proves (or does)                                                                                                             |
-| ---------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------ |
-| `node scripts/cli.ts dev worktree preflight --engine <podman\|rancher> --json`     | Read-only checkout, engine, configuration and artifact inspection. Windows x64 also checks trust, dependencies and restore evidence. |
-| `node scripts/cli.ts dev worktree status --engine podman --json`                   | Returns `blocked` (exit 1) because a trusted native registry/process adapter is unavailable. It does not inspect the host.           |
-| `node scripts/cli.ts dev worktree stop --engine podman --expected-run <id> --json` | Returns the same `blocked` result without touching the registry, engine, or a process. A run ID never grants authority.              |
+| Command                                                                                       | What it proves (or does)                                                                                                             |
+| --------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------ |
+| `node scripts/cli.ts dev worktree preflight --engine <podman\|rancher> --json`                | Read-only checkout, engine, configuration and artifact inspection. Windows x64 also checks trust, dependencies and restore evidence. |
+| `node scripts/cli.ts dev worktree status --engine <podman\|rancher> --json`                   | Returns `blocked` (exit 1) because a trusted native registry/process adapter is unavailable. It does not inspect the host.           |
+| `node scripts/cli.ts dev worktree stop --engine <podman\|rancher> --expected-run <id> --json` | Returns the same `blocked` result without touching the registry, engine, or a process. A run ID never grants authority.              |
 
 Podman preflight checks a registered, running local machine on Windows and macOS, or an existing rootless API socket at
 `$XDG_RUNTIME_DIR/podman/podman.sock` on Linux. Rancher requires a running Moby guest and checks that its daemon ID matches the local
@@ -57,7 +57,7 @@ includes a URL, stop command, raw error, or log path on failure.
 
 This is the acceptance checklist for a **separately authorized runtime wave**, not a procedure to start a stack from this revision:
 
-1. **Preparation and lifetime.** Establish canonical checkout, exact v3 stage/lease and verified build revision on the pinned engine. Supply
+1. **Preparation and lifetime.** Establish canonical checkout, exact v4 stage/lease and verified build revision on the pinned engine. Supply
    a production verifier for the protected runtime inputs, dependency artifacts, certificates and owned volumes; verify PID, creation time,
    image, process tree/container inventory, actual localhost binds and port-race rejection. Prove the run survives launcher exit and is
    observable in a fresh controller turn (separate from any synthetic fixture). Verify scoped endpoints/configuration, provider and Clerk

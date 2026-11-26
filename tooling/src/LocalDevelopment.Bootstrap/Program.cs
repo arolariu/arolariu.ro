@@ -98,7 +98,7 @@ internal static class Program
         TimeProvider.System,
         Console.Out);
       await bootstrap
-        .InitializeAsync(options.SeedDataDirectory, cancellationToken)
+        .InitializeAsync(options.SeedDataDirectory, options.UseBoundBlobOrigin, cancellationToken)
         .ConfigureAwait(false);
       cancellationToken.ThrowIfCancellationRequested();
       return 0;

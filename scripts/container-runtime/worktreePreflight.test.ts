@@ -513,6 +513,32 @@ describe("worktree Aspire preflight", () => {
     test.expectReadOnly();
   });
 
+  it("binds a Rancher run to the daemon on both sides of the local pipe", async () => {
+    const observe = async (guestId: string, pipeId: string) => {
+      const test = fixture(
+        {},
+        {
+          [guestDockerInfo]: `${guestId}\n`,
+          [localDockerInfo]: JSON.stringify({...JSON.parse(rancherInfo), ID: pipeId}),
+        },
+      );
+      const pin = await Effect.runPromise(
+        Effect.gen(function* () {
+          const checkout = yield* observeWorktreeCheckout();
+          return checkout && (yield* observeWorktreeEngine(checkout, "rancher"));
+        }).pipe(Effect.provide(test.layer)),
+      );
+      test.expectReadOnly();
+      return pin;
+    };
+
+    const first = await observe("daemon-one", "daemon-one");
+    expect(first).toMatch(/^[a-f0-9]{64}$/u);
+    expect(await observe("daemon-one", "daemon-one")).toBe(first);
+    expect(await observe("daemon-two", "daemon-two")).not.toBe(first);
+    expect(await observe("daemon-one", "daemon-two")).toBeUndefined();
+  });
+
   it.each([
     ["an inherited endpoint override", {dOcKeR_cOnTeXt: canary}, "test-engine-1\n", false],
     ["a missing running Moby guest", {}, "", false],

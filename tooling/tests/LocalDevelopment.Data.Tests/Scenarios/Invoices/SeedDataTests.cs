@@ -240,6 +240,19 @@ public sealed class SeedDataTests
     }
   }
 
+  /// <summary>Scoped receipts use the blob container on the worktree's own host port.</summary>
+  [TestMethod]
+  public void Materialize_ScopedBlobContainer_UsesItsSeedScanOrigin()
+  {
+    var container = new Uri("http://127.0.0.1:24115/devstoreaccount1/invoices");
+    var scenario = SeedData.Materialize(SeedData.LoadScenario(ScenarioPath), new DateOnly(2026, 11, 4), container);
+    var scans = scenario.Invoices.SelectMany(invoice => invoice.Scans).ToArray();
+
+    Assert.HasCount(3, scans);
+    Assert.IsTrue(scans.All(scan => scan.Location.Port == container.Port
+      && scan.Location.AbsolutePath.StartsWith("/devstoreaccount1/invoices/seed/", StringComparison.Ordinal)));
+  }
+
   /// <summary>
   /// Verifies the same UTC anchor produces the same fixture-controlled values.
   /// </summary>

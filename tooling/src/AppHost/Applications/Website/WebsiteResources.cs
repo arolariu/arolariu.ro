@@ -6,6 +6,7 @@ using AppHost.Repository;
 using Aspire.Hosting;
 using Aspire.Hosting.ApplicationModel;
 using Aspire.Hosting.JavaScript;
+using Microsoft.Extensions.DependencyInjection;
 
 #pragma warning disable ASPIREJAVASCRIPT001
 
@@ -50,9 +51,11 @@ internal static class WebsiteResources
       .WithEnvironment("NODE_TLS_REJECT_UNAUTHORIZED", "1")
       .WithEnvironment("NODE_USE_SYSTEM_CA", "1")
       .WithIconName("Globe");
-    // A literal-IPv4 .NET probe cannot validate an exact browser-only DNS SAN. A verified
-    // scope-local host/SNI health adapter must precede real launch.
+    const string health = "scoped-website-https";
+    builder.Services.AddHealthChecks().AddCheck(health,
+      new ScopedWebsiteHealthCheck(new Uri($"{scope.WebsiteOrigin}/api/health/")));
     return scope.WithTelemetry(scope.WithNativeEndpoint(website, "website", "https")
+      .WithHealthCheck(health)
       .WithUrls(context =>
       {
         context.Urls.Clear();

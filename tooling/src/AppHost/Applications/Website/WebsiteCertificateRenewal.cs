@@ -205,27 +205,11 @@ internal static class WebsiteCertificateRenewal
   private static DateTimeOffset Issue(X509Certificate2 authority, string certificatesDirectory, DateTimeOffset now)
   {
     using RSA key = RSA.Create(2048);
-    var request = new CertificateRequest("CN=localhost", key, HashAlgorithmName.SHA256, RSASignaturePadding.Pkcs1);
     var names = new SubjectAlternativeNameBuilder();
     names.AddDnsName("localhost");
     names.AddIpAddress(IPAddress.Loopback);
     names.AddIpAddress(IPAddress.IPv6Loopback);
-    request.CertificateExtensions.Add(names.Build());
-    request.CertificateExtensions.Add(new X509BasicConstraintsExtension(false, false, 0, true));
-    request.CertificateExtensions.Add(
-      new X509KeyUsageExtension(X509KeyUsageFlags.DigitalSignature | X509KeyUsageFlags.KeyEncipherment, true));
-    request.CertificateExtensions.Add(
-      new X509EnhancedKeyUsageExtension([new Oid("1.3.6.1.5.5.7.3.1", "Server Authentication")], false));
-
-    // A certificate can't start before its CA (one setup created moments ago) or outlive it.
-    DateTimeOffset authorityStart = new(authority.NotBefore);
-    DateTimeOffset notBefore = now.AddMinutes(-5) > authorityStart ? now.AddMinutes(-5) : authorityStart;
-    DateTimeOffset authorityExpiry = new(authority.NotAfter);
-    DateTimeOffset fullLifetime = notBefore.AddMonths(CertificateLifetimeMonths);
-    DateTimeOffset notAfter = fullLifetime < authorityExpiry ? fullLifetime : authorityExpiry;
-    byte[] serialNumber = RandomNumberGenerator.GetBytes(16);
-    serialNumber[0] &= 0x7F;
-    using X509Certificate2 certificate = request.Create(authority, notBefore, notAfter, serialNumber);
+    using X509Certificate2 certificate = CreateLeaf(authority, key, "localhost", names, now, scoped: false);
 
     // The directory is git-ignored, so a fresh clone doesn't have it yet. Write the complete new pair first, then replace the
     // old files, so the website never loses its certificate.
@@ -237,6 +221,54 @@ internal static class WebsiteCertificateRenewal
     File.Move(keyPath + PendingSuffix, keyPath, overwrite: true);
     File.Move(certificatePath + PendingSuffix, certificatePath, overwrite: true);
     return new DateTimeOffset(certificate.NotAfter);
+  }
+
+  internal static (X509Certificate2 Website, X509Certificate2 Service) CreateScopedLeaves(
+    X509Certificate2 authority, string scopeId, DateTimeOffset now)
+  {
+    ArgumentNullException.ThrowIfNull(authority);
+    ArgumentNullException.ThrowIfNull(scopeId);
+    if (scopeId.Length != 32 || scopeId.Any(character => character is not (>= '0' and <= '9' or >= 'a' and <= 'f')))
+      throw new ArgumentException("A canonical worktree scope is required.", nameof(scopeId));
+    string host = $"wt-{scopeId}.localhost";
+    using RSA websiteKey = RSA.Create(2048);
+    using RSA serviceKey = RSA.Create(2048);
+    var browserNames = new SubjectAlternativeNameBuilder();
+    browserNames.AddDnsName(host);
+    var serviceNames = new SubjectAlternativeNameBuilder();
+    serviceNames.AddIpAddress(IPAddress.Loopback);
+    using X509Certificate2 website = CreateLeaf(authority, websiteKey, host, browserNames, now, scoped: true);
+    using X509Certificate2 service = CreateLeaf(authority, serviceKey, "127.0.0.1", serviceNames, now, scoped: true);
+    var websiteWithKey = website.CopyWithPrivateKey(websiteKey);
+    try
+    {
+      return (websiteWithKey, service.CopyWithPrivateKey(serviceKey));
+    }
+    catch
+    {
+      websiteWithKey.Dispose();
+      throw;
+    }
+  }
+
+  private static X509Certificate2 CreateLeaf(X509Certificate2 authority, RSA key, string host,
+    SubjectAlternativeNameBuilder names, DateTimeOffset now, bool scoped)
+  {
+    var request = new CertificateRequest($"CN={host}", key, HashAlgorithmName.SHA256, RSASignaturePadding.Pkcs1);
+    request.CertificateExtensions.Add(names.Build());
+    request.CertificateExtensions.Add(new X509BasicConstraintsExtension(false, false, 0, true));
+    request.CertificateExtensions.Add(
+      new X509KeyUsageExtension(X509KeyUsageFlags.DigitalSignature | X509KeyUsageFlags.KeyEncipherment, true));
+    request.CertificateExtensions.Add(
+      new X509EnhancedKeyUsageExtension([new Oid("1.3.6.1.5.5.7.3.1", "Server Authentication")], false));
+    DateTimeOffset authorityStart = new(authority.NotBefore);
+    DateTimeOffset notBefore = now.AddMinutes(-5) > authorityStart ? now.AddMinutes(-5) : authorityStart;
+    DateTimeOffset authorityExpiry = new(authority.NotAfter);
+    DateTimeOffset maxExpiration = scoped ? now.AddDays(7) : notBefore.AddMonths(CertificateLifetimeMonths);
+    DateTimeOffset notAfter = maxExpiration < authorityExpiry ? maxExpiration : authorityExpiry;
+    byte[] serialNumber = RandomNumberGenerator.GetBytes(16);
+    serialNumber[0] &= 0x7F;
+    return request.Create(authority, notBefore, notAfter, serialNumber);
   }
 
   private static X509Certificate2 LoadCertificate(string certificatePath)

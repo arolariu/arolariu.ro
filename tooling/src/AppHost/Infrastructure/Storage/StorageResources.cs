@@ -27,7 +27,11 @@ internal static class StorageResources
           .WithQueuePort(queuePort)
           .WithImageSHA256(Constants.AzuriteEmulatorImageSha256)
           .WithDataVolume(scope?.Volumes["azurite"] ?? Constants.AzuriteDataVolumeV3_35_0);
-        if (scope is not null) emulator.WithTablePort(scope.Port("azuriteTable"));
+        if (scope is not null)
+        {
+          emulator.WithTablePort(scope.Port("azuriteTable"));
+          scope.LabelContainer(emulator);
+        }
       })
       // Keep public ports fixed while DCP manages the container-side forwarding.
       .WithEndpoint("blob", endpoint => endpoint.IsProxied = true)

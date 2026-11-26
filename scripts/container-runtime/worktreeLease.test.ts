@@ -7,6 +7,7 @@ import {describe, expect, it} from "vitest";
 
 import {leaseFixture} from "../platform/__fixtures__/worktreeLease.testing.ts";
 import {listenWorktreePort, worktreeIO} from "../platform/WorktreeHost.ts";
+import {stopWorktreeLaunch} from "./worktreeAspire.ts";
 import {claimWorktreeLaunch, readWorktreeLaunch, WorktreePlatform} from "./worktreeLease.ts";
 import {openWorktreeRegistryRoute} from "./worktreePlatform.ts";
 
@@ -89,6 +90,45 @@ describe("worktree lease", () => {
       await expect(listenWorktreePort(occupied.port)).rejects.toMatchObject({code: "EADDRINUSE"});
     } finally {
       await occupied.close();
+      await fixture.dispose();
+    }
+  });
+
+  it("does not allocate a port held by an IPv6-only loopback listener", async () => {
+    const fixture = await leaseFixture();
+    const occupied = await listenWorktreePort(0, "::1");
+    try {
+      let attempts = 0;
+      const platform = {...fixture.platform, candidatePort: () => (attempts++ === 0 ? occupied.port : 0)};
+      const lease = await Effect.runPromise(claimWorktreeLaunch(fixture.checkout).pipe(Effect.provideService(WorktreePlatform, platform)));
+
+      expect(Object.values(lease.ports)).not.toContain(occupied.port);
+      await expect(listenWorktreePort(occupied.port, "::1")).rejects.toMatchObject({code: "EADDRINUSE"});
+    } finally {
+      await occupied.close();
+      await fixture.dispose();
+    }
+  });
+
+  it("preserves the persisted blob origin across a scoped stop and a new lease", async () => {
+    const fixture = await leaseFixture();
+    try {
+      const run = <A, E>(program: Effect.Effect<A, E, WorktreePlatform>) =>
+        Effect.runPromise(program.pipe(Effect.provideService(WorktreePlatform, fixture.platform)));
+      const first = await run(claimWorktreeLaunch(fixture.checkout));
+      expect(await run(stopWorktreeLaunch(first))).toMatchObject({status: "stopped"});
+      const occupied = await listenWorktreePort(first.ports.azuriteBlob, "::1");
+      try {
+        await expect(run(claimWorktreeLaunch(fixture.checkout))).rejects.toThrow();
+      } finally {
+        await occupied.close();
+      }
+      const second = await run(claimWorktreeLaunch(fixture.checkout));
+
+      expect(second.runId).not.toBe(first.runId);
+      expect(second.ports.azuriteBlob).toBe(first.ports.azuriteBlob);
+      expect(second.volumes).toEqual(first.volumes);
+    } finally {
       await fixture.dispose();
     }
   });

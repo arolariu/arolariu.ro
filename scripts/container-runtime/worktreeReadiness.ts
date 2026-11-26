@@ -305,7 +305,7 @@ export function validateWorktreeHandoff(
         websiteUrl: target.origins.website,
         dashboardUrl: target.origins.dashboard,
         smoke: [...smokeNames],
-        stopCommand: `node scripts/cli.ts dev worktree stop --engine podman --expected-run ${run.runId}`,
+        stopCommand: `node scripts/cli.ts dev worktree stop --engine ${run.engine} --expected-run ${run.runId}`,
       } as const;
     }).pipe(
       Effect.catchCause(() => Effect.succeed(blocked(stage))),

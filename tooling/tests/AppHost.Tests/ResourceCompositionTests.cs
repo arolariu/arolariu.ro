@@ -33,12 +33,30 @@ public sealed class ResourceCompositionTests
     var one = CreateScopedGraph(first);
     var two = CreateScopedGraph(second);
     Assert.AreNotEqual(first.WebsiteOrigin, second.WebsiteOrigin);
+    Assert.AreNotEqual(one.Configuration["AppHost:OtlpApiKey"], two.Configuration["AppHost:OtlpApiKey"]);
     Assert.IsFalse(LeaseHostPorts(one).Intersect(LeaseHostPorts(two)).Any());
     Assert.IsFalse(Volumes(one).Intersect(Volumes(two)).Any());
     CollectionAssert.AreEquivalent(first.Ports.Values.ToArray(), LeaseHostPorts(one).ToArray());
     CollectionAssert.AreEquivalent(second.Ports.Values.ToArray(), LeaseHostPorts(two).ToArray());
     CollectionAssert.AreEquivalent(first.Volumes.Values.ToArray(), Volumes(one).ToArray());
     CollectionAssert.AreEquivalent(second.Volumes.Values.ToArray(), Volumes(two).ToArray());
+  }
+
+  [TestMethod]
+  public async Task Compose_Scoped_LabelsEveryContainerWithItsRun()
+  {
+    var fixture = ScopeFixture.Create('a', 24000);
+    var graph = CreateScopedGraph(fixture);
+    foreach (string name in new[] { "mssql", "cosmos", "storage", "redis" })
+    {
+      var resource = graph.Resources.Single(resource => resource.Name == name);
+      var args = new List<object>();
+      var context = new ContainerRuntimeArgsCallbackContext(args, TestContext.CancellationToken);
+      foreach (var annotation in resource.Annotations.OfType<ContainerRuntimeArgsCallbackAnnotation>())
+        await annotation.Callback(context);
+      CollectionAssert.Contains(args, $"ro.arolariu.worktree.scope={fixture.ScopeId}");
+      CollectionAssert.Contains(args, $"ro.arolariu.worktree.run={fixture.RunId}");
+    }
   }
 
   [TestMethod]
@@ -111,12 +129,17 @@ public sealed class ResourceCompositionTests
     Assert.AreEqual("https://127.0.0.1:24006", website["API_URL"]);
     Assert.AreEqual("http://127.0.0.1:24015/devstoreaccount1", website["STORAGE_BLOB_ENDPOINT"]);
     Assert.AreEqual("http://127.0.0.1:24007", api["EXP_PROXY_URL"]);
+    Assert.AreEqual("http://127.0.0.1:24016/devstoreaccount1", api["AzureOptions__StorageQueueEndpoint"]);
     Assert.AreEqual("http://127.0.0.1:24011", api["LOCAL_DEVELOPMENT_IDENTITY_URL"]);
     Assert.AreEqual(website["API_URL"], identity["LOCAL_SWAGGER_ORIGIN"]);
     Assert.AreEqual(fixture.Runtime.ExpConfigPath, exp["EXP_LOCAL_CONFIG_PATH"]);
     Assert.AreEqual("https://127.0.0.1:24003", exp["OTEL_EXPORTER_OTLP_ENDPOINT"]);
     Assert.AreEqual("https://127.0.0.1:24002", api["OTEL_EXPORTER_OTLP_ENDPOINT"]);
     Assert.AreEqual(exp["OTEL_EXPORTER_OTLP_ENDPOINT"], website["OTEL_EXPORTER_OTLP_ENDPOINT"]);
+    string expectedHeaders = $"x-otlp-api-key={graph.Configuration["AppHost:OtlpApiKey"]}";
+    Assert.AreEqual(expectedHeaders, api["OTEL_EXPORTER_OTLP_HEADERS"]);
+    Assert.AreEqual(expectedHeaders, exp["OTEL_EXPORTER_OTLP_TRACES_HEADERS"]);
+    Assert.AreEqual(expectedHeaders, website["OTEL_EXPORTER_OTLP_HEADERS"]);
     Assert.AreEqual(string.Empty, website["APPLICATIONINSIGHTS_CONNECTION_STRING"]);
     Assert.AreEqual("https://127.0.0.1:24003/v1/traces", exp["OTEL_EXPORTER_OTLP_TRACES_ENDPOINT"]);
     Assert.AreEqual("https://127.0.0.1:24000;http://127.0.0.1:24001", graph.Configuration["urls"]);
@@ -131,6 +154,8 @@ public sealed class ResourceCompositionTests
     Assert.IsFalse(arguments.OfType<string>().Any(arg => arg.Contains("inspect", StringComparison.Ordinal)));
     Assert.IsTrue(new Uri((string)website["API_URL"]).IsLoopback);
     Assert.IsFalse(new Uri((string)website["SITE_URL"]).IsLoopback);
+    Assert.IsTrue(Find("website").Annotations.OfType<HealthCheckAnnotation>()
+      .Any(annotation => annotation.Key == "scoped-website-https"));
 
     var urls = new List<ResourceUrlAnnotation> { new() { Url = "https://127.0.0.1:24005" } };
     var urlContext = new ResourceUrlsCallbackContext(graph.ExecutionContext, Find("website"), urls, TestContext.CancellationToken);
@@ -329,7 +354,7 @@ public sealed class ResourceCompositionTests
   public void Load_UnverifiedEngineStorageOrRuntime_RejectsScope()
   {
     var fixture = ScopeFixture.Create('a', 24000);
-    Assert.ThrowsExactly<InvalidOperationException>(() => fixture.Load(change: evidence => evidence with { Engine = "rancher" }));
+    Assert.ThrowsExactly<InvalidOperationException>(() => fixture.Load(change: evidence => evidence with { Engine = "docker" }));
     Assert.ThrowsExactly<InvalidOperationException>(() => fixture.Load(change: evidence => evidence with { OwnedVolumes = null }));
     Assert.ThrowsExactly<InvalidOperationException>(() => fixture.Load(change: evidence => evidence with { Runtime = null }));
     Assert.ThrowsExactly<InvalidOperationException>(() => fixture.Load(change: evidence => evidence with
@@ -350,6 +375,15 @@ public sealed class ResourceCompositionTests
     {
       LeasePorts = ScopeFixture.Create('a', 25000).Ports,
     }));
+  }
+
+  [TestMethod]
+  public void Load_VerifiedRancherStage_UsesTheSameScopedPorts()
+  {
+    var fixture = ScopeFixture.Create('a', 24000);
+    var rancher = fixture.Load(engine: "rancher");
+    Assert.AreEqual(fixture.Ports["exp"], rancher.Port("exp"));
+    Assert.ThrowsExactly<InvalidOperationException>(() => fixture.Load(change: evidence => evidence with { Engine = "rancher" }));
   }
 
   [TestMethod]
@@ -406,7 +440,7 @@ public sealed class ResourceCompositionTests
 
   private sealed record ScopeFixture(string Root, string ScopeId, string RunId, string Registry,
     Dictionary<string, int> Ports, Dictionary<string, string> Volumes, string WebsiteOrigin,
-    WorktreeRuntimeInputs Runtime, int Version = 3)
+    WorktreeRuntimeInputs Runtime, int Version = WorktreeLaunchScope.LaunchVersion)
   {
     internal string Path => System.IO.Path.Combine(Registry, ScopeId, RunId, "descriptor.json");
 
@@ -436,7 +470,8 @@ public sealed class ResourceCompositionTests
           System.IO.Path.Combine(runtime, "node.exe"), _ => true, () => "fixture-Sql-password", () => "fixture-Redis-password"));
     }
 
-    internal WorktreeLaunchScope Load(string? expectedRoot = null, Func<VerifiedWorktreeStage, VerifiedWorktreeStage>? change = null)
+    internal WorktreeLaunchScope Load(string? expectedRoot = null, Func<VerifiedWorktreeStage, VerifiedWorktreeStage>? change = null,
+      string engine = "podman")
     {
       const string branch = "feature/scoped";
       string head = new('a', 40);
@@ -448,13 +483,14 @@ public sealed class ResourceCompositionTests
         runId = RunId,
         branch,
         head,
+        engine,
         mode = "aspire",
         loopbackHost = "127.0.0.1",
         ports = Ports,
         volumes = Volumes,
         websiteOrigin = WebsiteOrigin,
       });
-      var stage = new VerifiedWorktreeStage(descriptor, 3, Registry, Root, ScopeId, RunId, branch, head, "podman", new('e', 64),
+      var stage = new VerifiedWorktreeStage(descriptor, WorktreeLaunchScope.LaunchVersion, Registry, Root, ScopeId, RunId, branch, head, engine, new('e', 64),
         Ports, Volumes, Runtime);
       return WorktreeLaunchScope.Load(Path, expectedRoot ?? Root, (_, _) => change?.Invoke(stage) ?? stage);
     }

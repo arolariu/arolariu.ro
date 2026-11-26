@@ -84,7 +84,8 @@ internal static class SeedData
 
   internal static MaterializedSeedScenario Materialize(
     SeedScenarioManifest manifest,
-    DateOnly utcAnchorDate)
+    DateOnly utcAnchorDate,
+    Uri? blobContainer = null)
   {
     SeedManifestValidator.Validate(manifest);
 
@@ -117,7 +118,8 @@ internal static class SeedData
         merchantDefinition,
         personas,
         manifest.Version,
-        utcAnchorDate);
+        utcAnchorDate,
+        blobContainer);
       invoices.Add(invoice);
     }
 
@@ -169,7 +171,8 @@ internal static class SeedData
     SeedMerchantDefinition merchant,
     Dictionary<string, SeedPersonaDefinition> personas,
     string version,
-    DateOnly utcAnchorDate)
+    DateOnly utcAnchorDate,
+    Uri? blobContainer)
   {
     DateTimeOffset transactionDate = ResolveDate(utcAnchorDate, definition.DaysAgo, definition.TransactionTimeUtc);
     Currency currency = CreateCurrency(definition.CurrencyCode);
@@ -212,10 +215,10 @@ internal static class SeedData
 
     if (definition.BlobKey is not null)
     {
+      string container = blobContainer?.AbsoluteUri.TrimEnd('/') ?? "http://localhost:10000/devstoreaccount1/invoices";
       invoice.Scans.Add(new InvoiceScan(
         ScanType.PNG,
-        new Uri(
-          $"http://localhost:10000/devstoreaccount1/invoices/seed/{definition.BlobKey}.png"),
+        new Uri($"{container}/seed/{definition.BlobKey}.png"),
         new Dictionary<string, object>
         {
           ["seed.key"] = definition.BlobKey,

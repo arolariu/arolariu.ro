@@ -32,12 +32,15 @@ internal static class InfrastructureResources
   {
     var sql = builder.AddLocalSql(sqlPassword, scope);
     var cosmos = builder.AddAzureCosmosDB("cosmos")
-      .RunAsEmulator(emulator => emulator
-        .WithGatewayPort(scope?.Port("cosmos") ?? Constants.CosmosGatewayPort)
-        .WithDataExplorer(scope?.Port("cosmosDataExplorer"))
-        .WithImageSHA256(Constants.CosmosEmulatorImageSha256)
-        .WithDataVolume(scope?.Volumes["cosmos"] ?? Constants.CosmosDataVolumeEn20261008)
-        .WithEnvironment("AZURE_COSMOS_EMULATOR_ENABLE_DATA_PLANE_HTTP", "true"))
+      .RunAsEmulator(emulator =>
+      {
+        emulator.WithGatewayPort(scope?.Port("cosmos") ?? Constants.CosmosGatewayPort)
+          .WithDataExplorer(scope?.Port("cosmosDataExplorer"))
+          .WithImageSHA256(Constants.CosmosEmulatorImageSha256)
+          .WithDataVolume(scope?.Volumes["cosmos"] ?? Constants.CosmosDataVolumeEn20261008)
+          .WithEnvironment("AZURE_COSMOS_EMULATOR_ENABLE_DATA_PLANE_HTTP", "true");
+        scope?.LabelContainer(emulator);
+      })
       .WithEndpoint("emulator", endpoint => endpoint.IsProxied = true)
       .WithIconName("DatabaseMultiple");
     if (scope is not null)
@@ -58,12 +61,13 @@ internal static class InfrastructureResources
       ? builder.AddParameter("redis-password", secret: true)
       : builder.AddParameter("redis-password", redisSecret ?? throw new InvalidOperationException("Scoped Redis parameter is required."),
         secret: true);
-    builder.AddRedis("redis", port: scope?.Port("redis") ?? Constants.RedisPort, password: redisPassword)
+    var redis = builder.AddRedis("redis", port: scope?.Port("redis") ?? Constants.RedisPort, password: redisPassword)
       .WithImageSHA256(Constants.RedisImageSha256)
       .WithDataVolume(scope?.Volumes["redis"] ?? Constants.RedisDataVolumeV8_6_3)
       // Local Redis does not terminate TLS.
       .WithoutHttpsCertificate()
       .WithIconName("Memory");
+    scope?.LabelContainer(redis);
     return new(sql, cosmos, database, invoices, merchants, storage.Storage, storage.Blobs, storage.Queues, storage.Tables);
   }
 }

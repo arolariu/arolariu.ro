@@ -23,7 +23,7 @@ const supervisor = {pid: 100, started: "638500000000000000", image: "offline-sup
 type HealthArgs = Parameters<WorktreeReadinessSource["observe"]>;
 type SmokeArgs = Parameters<WorktreeReadinessSource["smoke"]>;
 
-async function readinessFixture() {
+async function readinessFixture(engineKind: "podman" | "rancher" = "podman") {
   const fixture = await leaseFixture();
   let checkout = fixture.checkout;
   let engine = "a".repeat(64);
@@ -35,6 +35,7 @@ async function readinessFixture() {
       effect.pipe(
         Effect.provideService(WorktreePlatform, {
           ...fixture.platform,
+          engineKind,
           checkout: Effect.sync(() => checkout),
           engine: Effect.sync(() => engine),
           processIdentity: () => Effect.sync(() => live),
@@ -196,35 +197,38 @@ describe("offline worktree handoff", () => {
     }
   });
 
-  it("returns verified URLs and a run-guarded stop command only after readiness and both named smokes pass", async () => {
-    const fixture = await readinessFixture();
-    try {
-      const {source, lease, stage} = fixture;
-      const result = await fixture.validate();
+  it.each(["podman", "rancher"] as const)(
+    "returns verified URLs and an engine-specific stop command after both smokes (%s)",
+    async (engineKind) => {
+      const fixture = await readinessFixture(engineKind);
+      try {
+        const {source, lease, stage} = fixture;
+        const result = await fixture.validate();
 
-      expect(source.observe).toHaveBeenCalledTimes(2);
-      expect(source.smoke.mock.calls.map(([name]) => name)).toEqual(["website-auth-route", "seeded-identity-api-metadata"]);
-      const healthAcquisitions = source.observe.mock.calls.map(([, acquisition]) => acquisition);
-      const smokeAcquisitions = source.smoke.mock.calls.map(([, , acquisition]) => acquisition);
-      expect(healthAcquisitions.map(({phase}) => phase)).toEqual(["initial-health", "final-health"]);
-      expect(smokeAcquisitions.map(({phase}) => phase)).toEqual(["website-auth-route", "seeded-identity-api-metadata"]);
-      expect(new Set([...healthAcquisitions, ...smokeAcquisitions]).size).toBe(4);
-      expect(source.observe.mock.invocationCallOrder[0]).toBeLessThan(source.smoke.mock.invocationCallOrder[0] ?? 0);
-      expect(source.smoke.mock.invocationCallOrder[1]).toBeLessThan(source.observe.mock.invocationCallOrder[1] ?? 0);
-      expect(result).toEqual({
-        status: "ready",
-        runId: lease.runId,
-        websiteUrl: fixture.website,
-        dashboardUrl: fixture.dashboard,
-        smoke: ["website-auth-route", "seeded-identity-api-metadata"],
-        stopCommand: `node scripts/cli.ts dev worktree stop --engine podman --expected-run ${lease.runId}`,
-      });
-      expect(await fixture.run(readWorktreeJson(join(stage.directory, "stop.json")))).toBeUndefined();
-      expect(fixture.remove).not.toHaveBeenCalled();
-    } finally {
-      await fixture.dispose();
-    }
-  });
+        expect(source.observe).toHaveBeenCalledTimes(2);
+        expect(source.smoke.mock.calls.map(([name]) => name)).toEqual(["website-auth-route", "seeded-identity-api-metadata"]);
+        const healthAcquisitions = source.observe.mock.calls.map(([, acquisition]) => acquisition);
+        const smokeAcquisitions = source.smoke.mock.calls.map(([, , acquisition]) => acquisition);
+        expect(healthAcquisitions.map(({phase}) => phase)).toEqual(["initial-health", "final-health"]);
+        expect(smokeAcquisitions.map(({phase}) => phase)).toEqual(["website-auth-route", "seeded-identity-api-metadata"]);
+        expect(new Set([...healthAcquisitions, ...smokeAcquisitions]).size).toBe(4);
+        expect(source.observe.mock.invocationCallOrder[0]).toBeLessThan(source.smoke.mock.invocationCallOrder[0] ?? 0);
+        expect(source.smoke.mock.invocationCallOrder[1]).toBeLessThan(source.observe.mock.invocationCallOrder[1] ?? 0);
+        expect(result).toEqual({
+          status: "ready",
+          runId: lease.runId,
+          websiteUrl: fixture.website,
+          dashboardUrl: fixture.dashboard,
+          smoke: ["website-auth-route", "seeded-identity-api-metadata"],
+          stopCommand: `node scripts/cli.ts dev worktree stop --engine ${engineKind} --expected-run ${lease.runId}`,
+        });
+        expect(await fixture.run(readWorktreeJson(join(stage.directory, "stop.json")))).toBeUndefined();
+        expect(fixture.remove).not.toHaveBeenCalled();
+      } finally {
+        await fixture.dispose();
+      }
+    },
+  );
 
   it.each([
     "sibling run",

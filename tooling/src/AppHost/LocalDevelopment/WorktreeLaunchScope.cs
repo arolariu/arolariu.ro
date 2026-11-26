@@ -2,6 +2,7 @@ namespace AppHost.LocalDevelopment;
 
 using System.Collections.ObjectModel;
 using System.Globalization;
+using System.Security.Cryptography;
 using System.Text.Json;
 using Aspire.Hosting;
 using Aspire.Hosting.ApplicationModel;
@@ -22,7 +23,7 @@ internal sealed record WorktreeRuntimeInputs(
 /// <summary>
 /// Receipt from an internal supervisor boundary, not a receipt that can be loaded from an arbitrary file.
 /// The verifier must attest the canonical, protected registry route, current pending lease, checkout
-/// revision, build provenance, pinned Podman engine, and exact descriptor bytes read from that run. It must positively verify storage
+/// revision, build provenance, pinned local engine, and exact descriptor bytes read from that run. It must positively verify storage
 /// ownership on that engine, not merely repeat its proposed names. Runtime evidence must attest
 /// existing prepared dependencies, validated scope-owned exp input (including the derived endpoints),
 /// matching private keys, exact browser SAN and trusted IPv4 service certificate paths. It must
@@ -50,10 +51,10 @@ internal sealed class WorktreeLaunchScope
   internal const string DescriptorEnvironmentVariable = "AROLARIU_WORKTREE_DESCRIPTOR";
   internal const string LaunchBlocked = "Scoped AppHost execution requires a verified native launch adapter.";
   internal const string LoopbackHost = "127.0.0.1";
-  private const int LaunchVersion = 3;
+  internal const int LaunchVersion = 4;
 
   private static readonly string[] DescriptorKeys =
-    ["version", "root", "scopeId", "runId", "branch", "head", "mode", "loopbackHost", "ports", "volumes", "websiteOrigin"];
+    ["version", "root", "scopeId", "runId", "branch", "head", "engine", "mode", "loopbackHost", "ports", "volumes", "websiteOrigin"];
 
   private static readonly string[] PortNames =
   [
@@ -93,7 +94,7 @@ internal sealed class WorktreeLaunchScope
   {
     ArgumentNullException.ThrowIfNull(verify);
     VerifiedWorktreeStage stage = verify(descriptorPath, expectedWorktreeRoot) ?? throw new InvalidOperationException(LaunchBlocked);
-    Ensure(stage.LeaseVersion == LaunchVersion && stage.Engine == "podman" && IsLowerHex(stage.EnginePin, 64)
+    Ensure(stage.LeaseVersion == LaunchVersion && stage.Engine is ("podman" or "rancher") && IsLowerHex(stage.EnginePin, 64)
       && IsLowerHex(stage.ScopeId, 32) && IsLowerHex(stage.RunId, 32)
       && stage.Branch.Length is > 0 and <= 1024 && !stage.Branch.Any(char.IsControl)
       && (IsLowerHex(stage.Head, 40) || IsLowerHex(stage.Head, 64)));
@@ -111,6 +112,7 @@ internal sealed class WorktreeLaunchScope
       Ensure(descriptor.GetProperty("version").GetInt32() == LaunchVersion
         && SameCanonicalPath(descriptor.GetProperty("root").GetString(), stage.Root)
         && descriptor.GetProperty("mode").GetString() == "aspire"
+        && descriptor.GetProperty("engine").GetString() == stage.Engine
         && descriptor.GetProperty("loopbackHost").GetString() == LoopbackHost
         && descriptor.GetProperty("scopeId").GetString() == stage.ScopeId
         && descriptor.GetProperty("runId").GetString() == stage.RunId
@@ -162,6 +164,10 @@ internal sealed class WorktreeLaunchScope
   internal string BlobUrl => $"{Url("azuriteBlob", "http")}/devstoreaccount1";
   internal string QueueUrl => $"{Url("azuriteQueue", "http")}/devstoreaccount1";
 
+  internal void LabelContainer<T>(IResourceBuilder<T> resource) where T : ContainerResource
+    => resource.WithContainerRuntimeArgs("--label", $"ro.arolariu.worktree.scope={ScopeId}",
+      "--label", $"ro.arolariu.worktree.run={RunId}");
+
   internal void ConfigureHost(IDistributedApplicationBuilder builder, string layoutRoot)
   {
     Ensure(SameCanonicalPath(layoutRoot, Root));
@@ -175,6 +181,7 @@ internal sealed class WorktreeLaunchScope
     builder.Configuration["ASPIRE_RESOURCE_SERVICE_ENDPOINT_URL"] = Url("resourceService", "https");
     builder.Configuration["DOTNET_DASHBOARD_OPEN_BROWSER"] = "false";
     builder.Configuration["ASPIRE_ALLOW_UNSECURED_TRANSPORT"] = "false";
+    builder.Configuration["AppHost:OtlpApiKey"] = Convert.ToHexString(RandomNumberGenerator.GetBytes(32));
     builder.Configuration["Kestrel:Certificates:Default:Path"] = Runtime.ServiceCertificatePath;
     builder.Configuration["Kestrel:Certificates:Default:KeyPath"] = Runtime.ServiceKeyPath;
   }
@@ -193,13 +200,16 @@ internal sealed class WorktreeLaunchScope
       environment["OTEL_EXPORTER_OTLP_INSECURE"] = "false";
       environment["OTEL_EXPORTER_OTLP_ENDPOINT"] = endpoint;
       environment["OTEL_EXPORTER_OTLP_PROTOCOL"] = protocol;
-      environment["OTEL_EXPORTER_OTLP_HEADERS"] = "";
+      string key = resource.ApplicationBuilder.Configuration["AppHost:OtlpApiKey"]
+        ?? throw new InvalidOperationException("The scoped telemetry key is missing.");
+      string headers = $"x-otlp-api-key={key}";
+      environment["OTEL_EXPORTER_OTLP_HEADERS"] = headers;
       foreach (string signal in TelemetrySignals)
       {
         // Per-signal overrides have priority over the generic exporter configuration.
         environment[$"OTEL_EXPORTER_OTLP_{signal}_ENDPOINT"] = grpc ? endpoint : $"{endpoint}/v1/{signal.ToLowerInvariant()}";
         environment[$"OTEL_EXPORTER_OTLP_{signal}_PROTOCOL"] = protocol;
-        environment[$"OTEL_EXPORTER_OTLP_{signal}_HEADERS"] = "";
+        environment[$"OTEL_EXPORTER_OTLP_{signal}_HEADERS"] = headers;
         environment[$"OTEL_EXPORTER_OTLP_{signal}_INSECURE"] = "false";
       }
     });

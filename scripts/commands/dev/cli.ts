@@ -97,12 +97,12 @@ export function makeDevCommand(options: DevCommandOptions = {}): CliSubcommand {
   ).pipe(Command.withDescription("Inspects local Aspire worktree prerequisites without preparing or launching anything."));
   const lifecycle = (action: "status" | "stop") => {
     const flags = {
-      engine: Flag.Literals("engine", ["podman"]),
+      engine: Flag.Literals("engine", ["podman", "rancher"]),
       ...(action === "stop"
         ? {expectedRun: Flag.String("expected-run").pipe(Flag.optional, Flag.withDescription("Refuse to stop a different run."))}
         : {}),
     };
-    return Command.make(action, flags, ({expectedRun}) =>
+    return Command.make(action, flags, ({engine, expectedRun}) =>
       Effect.gen(function* () {
         const result = yield* Effect.gen(function* () {
           if (options.worktreePlatform === undefined) {
@@ -112,6 +112,9 @@ export function makeDevCommand(options: DevCommandOptions = {}): CliSubcommand {
           if (runId !== undefined && !isWorktreeRunId(runId))
             return {status: "blocked", reason: "The expected run ID is invalid."} as const;
           const platform = yield* options.worktreePlatform;
+          if ((platform.engineKind ?? "podman") !== engine) {
+            return {status: "blocked", reason: "The selected engine does not match the trusted runtime adapter."} as const;
+          }
           const checkout = yield* platform.checkout;
           if (checkout === undefined)
             return {status: "blocked", reason: "Run from the current canonical Windows linked worktree."} as const;

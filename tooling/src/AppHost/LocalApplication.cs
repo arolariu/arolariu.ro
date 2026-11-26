@@ -74,7 +74,8 @@ internal static class LocalApplication
 
     LocalInfrastructure infrastructure = builder.AddInfrastructure(sqlPassword, scope, redisPassword);
     var exp = builder.AddScopedExp(layout, scope);
-    var bootstrap = builder.AddBootstrap("SeedData");
+    var bootstrap = builder.AddBootstrap("SeedData")
+      .WithEnvironment("AROLARIU_USE_BOUND_BLOB_ORIGIN", "1");
     var identity = builder.AddIdentity(layout, scope);
     var api = builder.AddScopedApi(scope);
     var website = builder.AddScopedWebsite(layout, scope);
