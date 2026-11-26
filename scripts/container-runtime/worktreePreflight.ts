@@ -25,6 +25,7 @@ import {Environment, type EnvironmentSnapshot} from "../platform/Environment.ts"
 import {ReadOnlyFiles} from "../platform/Files.ts";
 import {Process} from "../platform/Process.ts";
 import type {ContainerEngine} from "./types.ts";
+import {nativeWorktreeRegistryName} from "./worktreePlatform.ts";
 
 /** Input for scoped prerequisite inspection. */
 export interface WorktreePreflightInput {
@@ -500,6 +501,57 @@ function localUnixSocket(directory: string | undefined, path: string): string | 
   return `unix://${posix.join(directory, path)}`;
 }
 
+function hasProtectedPosixAncestors(path: string, uid: number): Effect.Effect<boolean, never, ReadOnlyFiles> {
+  return Effect.gen(function* () {
+    const files = yield* ReadOnlyFiles;
+    for (let dir = path; ; dir = posix.dirname(dir)) {
+      const info = yield* files.stat(dir);
+      const owner = Option.getOrUndefined(info.uid);
+      if (info.type !== "Directory" || (owner !== 0 && owner !== uid) || (info.mode & 0o022) !== 0) return false;
+      if (dir === posix.dirname(dir)) return true;
+    }
+  }).pipe(Effect.orElseSucceed(() => false));
+}
+
+function inspectPosixRegistry(env: EnvironmentSnapshot): Effect.Effect<WorktreeCapability, never, ReadOnlyFiles> {
+  return Effect.gen(function* () {
+    const blocked = capability(
+      "native-registry",
+      false,
+      "",
+      "Machine bootstrap: the POSIX home or existing worktree registry is redirected, shared, or not owned by the current non-root user.",
+    );
+    const home = env.variables["HOME"];
+    const uid = env.effectiveUserId;
+    if (!pathProfile(env.platform).isLocal(home) || uid === undefined || uid < 1 || home === "/" || (yield* canonicalPath(home)) !== home) {
+      return blocked;
+    }
+    const files = yield* ReadOnlyFiles;
+    const safe = yield* Effect.gen(function* () {
+      if (!(yield* hasProtectedPosixAncestors(home, uid)) || Option.getOrUndefined((yield* files.stat(home)).uid) !== uid) return false;
+      // Listing the private parent distinguishes a missing registry from a dangling symlink.
+      const names = yield* files.readDirectory(home);
+      const listed =
+        env.platform === "darwin"
+          ? names.some((name) => name.toLowerCase() === nativeWorktreeRegistryName)
+          : names.includes(nativeWorktreeRegistryName);
+      if (!listed) return true;
+      const registry = posix.join(home, nativeWorktreeRegistryName);
+      if ((yield* canonicalPath(registry)) !== registry) return false;
+      const info = yield* files.stat(registry);
+      return info.type === "Directory" && Option.getOrUndefined(info.uid) === uid && (info.mode & 0o7777) === 0o700;
+    }).pipe(Effect.orElseSucceed(() => false));
+    return safe
+      ? capability(
+          "native-registry",
+          true,
+          "The home registry route has the required ownership and mode bits. AppHost rechecks it and verifies macOS ACLs before dispatch.",
+          "",
+        )
+      : blocked;
+  });
+}
+
 function linuxPodmanSocketIdentity(
   directory: string,
   socket: string,
@@ -508,13 +560,9 @@ function linuxPodmanSocketIdentity(
   return Effect.gen(function* () {
     if ((yield* canonicalPath(directory)) !== directory || (yield* canonicalPath(socket)) !== socket) return undefined;
     const files = yield* ReadOnlyFiles;
-    for (let path = posix.dirname(socket); ; path = posix.dirname(path)) {
-      const directoryInfo = yield* files.stat(path);
-      const owner = Option.getOrUndefined(directoryInfo.uid);
-      if (directoryInfo.type !== "Directory" || (owner !== 0 && owner !== uid) || (directoryInfo.mode & 0o022) !== 0) return undefined;
-      if (path === directory && (owner !== uid || (directoryInfo.mode & 0o077) !== 0)) return undefined;
-      if (path === posix.dirname(path)) break;
-    }
+    if (!(yield* hasProtectedPosixAncestors(posix.dirname(socket), uid))) return undefined;
+    const runtime = yield* files.stat(directory);
+    if (Option.getOrUndefined(runtime.uid) !== uid || (runtime.mode & 0o077) !== 0) return undefined;
     const info = yield* files.stat(socket);
     const inode = Option.getOrUndefined(info.ino);
     if (info.type !== "Socket" || Option.getOrUndefined(info.uid) !== uid || inode === undefined || inode <= 0n) return undefined;
@@ -2037,6 +2085,7 @@ function inspect(
           ...(nativeTls
             ? [
                 inspectPosixWebsiteTrust(root, env, names),
+                inspectPosixRegistry(env),
                 inspectRestoreAssets(createRepositoryPaths(root), env.platform),
                 inspectNpm(root, env, names),
               ]

@@ -4,6 +4,9 @@ import {dirname, isAbsolute, normalize} from "node:path";
 
 import {worktreeDirectory, worktreeIO} from "../platform/WorktreeHost.ts";
 
+/** Directory name shared by the native AppHost registry command and scoped preflight. */
+export const nativeWorktreeRegistryName = "arolariu-native-aspire-v4";
+
 /** Gates store access on an unredirected canonical route. */
 export function openWorktreeRegistryRoute<R>(
   parent: string,

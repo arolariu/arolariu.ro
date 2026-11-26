@@ -22,11 +22,9 @@ import {
   worktreeOperation,
 } from "./worktreeLease.ts";
 import {worktreeIO} from "../platform/WorktreeHost.ts";
-import {openWorktreeRegistryRoute} from "./worktreePlatform.ts";
+import {nativeWorktreeRegistryName, openWorktreeRegistryRoute} from "./worktreePlatform.ts";
 import {bindWorktreeEngine, inspectWorktreeAspire, observeWorktreeCheckout} from "./worktreePreflight.ts";
 import {prepareWorktreeVolumes} from "./worktreeVolumes.ts";
-
-const registryName = "arolariu-native-aspire-v4";
 
 function appHostArtifact(root: string, paths: typeof posix): string {
   return paths.join(root, "tooling/src/AppHost/bin/Debug/net10.0", paths === win32 ? "AppHost.exe" : "AppHost.dll");
@@ -41,7 +39,7 @@ function currentRegistry(native: ProcessRequest, cwd: string, process: typeof Pr
     const path = result.stdout.trimEnd();
     if (!create && path === "absent") return null;
     const parent = paths.dirname(path);
-    if (path !== paths.join(parent, registryName)) return yield* Effect.fail(new Error("Invalid native registry path"));
+    if (path !== paths.join(parent, nativeWorktreeRegistryName)) return yield* Effect.fail(new Error("Invalid native registry path"));
     return yield* openWorktreeRegistryRoute(parent, () => Effect.succeed(path));
   });
 }

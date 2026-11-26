@@ -460,6 +460,56 @@ describe("worktree Aspire preflight", () => {
       test.expectReadOnly();
     },
   );
+  it.each([
+    ["linux", "absent", true],
+    ["darwin", "private", true],
+    ["linux", "shared", false],
+    ["darwin", "foreign", false],
+    ["linux", "redirected", false],
+    ["linux", "dangling", false],
+    ["darwin", "writable parent", false],
+  ] as const)("inspects a %s home registry before native build (%s)", async (platform, scenario, ready) => {
+    const home = "/home/dev";
+    const registry = `${home}/arolariu-native-aspire-v4`;
+    const test = portableFixture(
+      platform,
+      {},
+      {"podman system connection list --format json": "[]"},
+      {
+        [`${home}/profile.marker`]: "",
+        ...(scenario === "absent" || scenario === "writable parent" ? {} : {[`${registry}/marker`]: ""}),
+      },
+    );
+    const fs = Layer.effect(
+      ReadOnlyFiles,
+      Effect.map(ReadOnlyFiles, (files) => ({
+        ...files,
+        realPath: (path) =>
+          path !== registry
+            ? files.realPath(path)
+            : scenario === "redirected"
+              ? Effect.succeed("/other/registry")
+              : scenario === "dangling"
+                ? files.realPath("/nonexistent/registry")
+                : files.realPath(path),
+        stat: (path) =>
+          Effect.map(files.stat(path), (info) => {
+            if (path === registry)
+              return {...info, mode: scenario === "shared" ? 0o750 : 0o700, uid: Option.some(scenario === "foreign" ? 1001 : 1000)};
+            if (path === home) return {...info, mode: 0o750, uid: Option.some(1000)};
+            if (path === "/home" || path === "/")
+              return {...info, mode: scenario === "writable parent" && path === "/home" ? 0o775 : 0o755, uid: Option.some(0)};
+            return info;
+          }),
+      })),
+    );
+
+    const result = await Effect.runPromise(inspectWorktreeAspire({engine: "podman"}).pipe(Effect.provide(fs), Effect.provide(test.layer)));
+    expect(result.capabilities).toContainEqual(expect.objectContaining({id: "native-registry", status: ready ? "pass" : "blocked"}));
+    expect(test.processCalls().map(({request}) => request.command)).not.toContain("dotnet");
+    expect(JSON.stringify(result.capabilities)).not.toContain(registry);
+  });
+
   it.each(["linux", "darwin"] as const)("verifies an attached %s checkout without Windows probes", async (platform) => {
     const test = portableFixture(platform, {}, {[guestDockerInfo]: "test-engine-1\n", [localDockerInfo]: rancherInfo});
 
