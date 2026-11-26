@@ -342,7 +342,7 @@ function portableFixture(
   platform: "linux" | "darwin",
   variables: Readonly<Record<string, string>>,
   engineResponses: Readonly<Record<string, string | null>>,
-  files: Readonly<Record<string, string>> = {},
+  files: Readonly<Record<string, string | Uint8Array>> = {},
 ) {
   const cwd = "/home/dev/git/worktrees/task";
   const common = "/home/dev/git/monorepo/.git";
@@ -637,6 +637,66 @@ describe("worktree Aspire preflight", () => {
     ).toEqual(verify ? [command] : []);
     expect(JSON.stringify(result)).not.toContain(canary);
     expect(JSON.stringify(test.processCalls())).not.toContain(key);
+  });
+
+  it.each([
+    ["linux", "x64", true, true],
+    ["darwin", "x64", true, true],
+    ["linux", "x64", false, false],
+    ["darwin", "x64", false, false],
+    ["linux", "arm64", true, false],
+  ] as const)("checks checkout-local %s SWC (host %s, matching binary %s)", async (platform, architecture, matching, verified) => {
+    const suffix = platform === "linux" ? "linux-x64-gnu" : "darwin-x64";
+    const name = `@next/swc-${suffix}`;
+    const filename = `next-swc.${suffix}.node`;
+    const packageDirectory = `node_modules/${name}`;
+    const bytes = new Uint8Array(256);
+    const header = new DataView(bytes.buffer);
+    if (platform === "linux") {
+      header.setUint32(0, 0x7f454c46);
+      bytes.set([2, 1, 1], 4);
+      header.setUint16(16, 3, true);
+      header.setUint16(18, matching ? 62 : 183, true);
+      header.setUint32(20, 1, true);
+      header.setBigUint64(32, 64n, true);
+      header.setUint16(52, 64, true);
+      header.setUint16(54, 56, true);
+      header.setUint16(56, 1, true);
+    } else {
+      header.setUint32(0, 0xfeedfacf, true);
+      header.setUint32(4, matching ? 0x01000007 : 0x0100000c, true);
+      header.setUint32(12, 8, true);
+      header.setUint32(16, 1, true);
+      header.setUint32(20, 32, true);
+    }
+    const version = "16.4.6";
+    const test = portableFixture(
+      platform,
+      {},
+      {"podman system connection list --format json": "[]"},
+      {
+        "package-lock.json": JSON.stringify({
+          lockfileVersion: 3,
+          packages: {
+            "": {name: "@arolariu/monorepo"},
+            "node_modules/next": {version},
+            [packageDirectory]: {version, optional: true},
+          },
+        }),
+        "node_modules/next/package.json": JSON.stringify({version, optionalDependencies: {[name]: version}}),
+        [`${packageDirectory}/package.json`]: JSON.stringify({name, version, main: filename}),
+        [`${packageDirectory}/${filename}`]: bytes,
+      },
+    );
+    const result = await Effect.runPromise(
+      Effect.gen(function* () {
+        const environment = yield* Environment;
+        return yield* inspectWorktreeAspire({engine: "podman"}).pipe(Effect.provideService(Environment, {...environment, architecture}));
+      }).pipe(Effect.provide(test.layer)),
+    );
+    expect(result.status).toBe("blocked");
+    expect(result.capabilities).toContainEqual(expect.objectContaining({id: "npm-dependencies", status: verified ? "pass" : "blocked"}));
+    expect(test.processCalls().map(({request}) => request.command)).not.toContain("node");
   });
 
   it.each([

@@ -957,19 +957,56 @@ function inspectPosixWebsiteTrust(
   });
 }
 
+function inspectPosixSwc(
+  file: string,
+  platform: "linux" | "darwin",
+  equal: (left: string, right: string) => boolean,
+): Effect.Effect<boolean, never, ReadOnlyFiles> {
+  return Effect.gen(function* () {
+    if (!(yield* ownedFile(file, equal))) return false;
+    const files = yield* ReadOnlyFiles;
+    const data = yield* files.readPrefix(file);
+    const size = BigInt((yield* files.stat(file)).size);
+    const header = new DataView(data.buffer, data.byteOffset, data.byteLength);
+    if (platform === "linux") {
+      if (data.length < 64 || header.getUint32(0) !== 0x7f454c46 || data[4] !== 2 || data[5] !== 1 || data[6] !== 1) return false;
+      const offset = header.getBigUint64(32, true);
+      const count = header.getUint16(56, true);
+      return (
+        header.getUint16(16, true) === 3
+        && header.getUint16(18, true) === 62
+        && header.getUint32(20, true) === 1
+        && header.getUint16(52, true) === 64
+        && header.getUint16(54, true) === 56
+        && offset >= 64n
+        && count > 0
+        && offset + BigInt(count * 56) <= size
+      );
+    }
+    if (data.length < 32 || header.getUint32(0, true) !== 0xfeedfacf || header.getUint32(4, true) !== 0x01000007) return false;
+    const type = header.getUint32(12, true);
+    const count = header.getUint32(16, true);
+    const commands = header.getUint32(20, true);
+    return (type === 6 || type === 8) && count > 0 && commands >= count * 8 && BigInt(32 + commands) < size;
+  }).pipe(Effect.orElseSucceed(() => false));
+}
+
 function inspectSwc(
   root: string,
-  architecture: string,
+  env: EnvironmentSnapshot,
   version: string,
   packages: Readonly<Record<string, unknown>>,
 ): Effect.Effect<boolean, never, ReadOnlyFiles | Process> {
   return Effect.gen(function* () {
-    if (machineType(architecture) === undefined) return false;
-    const suffix = `win32-${architecture}-msvc`;
+    const {platform, architecture} = env;
+    if (platform !== "win32" && platform !== "linux" && platform !== "darwin") return false;
+    if (platform === "win32" ? machineType(architecture) === undefined : architecture !== "x64") return false;
+    const {paths, equal} = pathProfile(platform);
+    const suffix = platform === "win32" ? `win32-${architecture}-msvc` : platform === "linux" ? "linux-x64-gnu" : "darwin-x64";
     const name = `@next/swc-${suffix}`;
     const filename = `next-swc.${suffix}.node`;
-    const next = win32.join(root, "node_modules/next");
-    const manifest = record(parseJson(yield* readManifest(win32.join(next, "package.json"))));
+    const next = paths.join(root, "node_modules/next");
+    const manifest = record(parseJson(yield* readManifest(paths.join(next, "package.json"), equal)));
     if (record(manifest?.["optionalDependencies"])?.[name] !== version) return false;
     // Next resolves a nested package before its hoisted sibling, then looks in its own local fallback cache.
     for (const [prefix, locked] of [
@@ -978,14 +1015,15 @@ function inspectSwc(
       ["node_modules/next/next-swc-fallback", false],
     ] as const) {
       const location = `${prefix}/${name}`;
-      const directory = win32.join(root, location);
-      const candidate = record(parseJson(yield* readManifest(win32.join(directory, "package.json"))));
+      const directory = paths.join(root, location);
+      const binding = paths.join(directory, filename);
+      const candidate = record(parseJson(yield* readManifest(paths.join(directory, "package.json"), equal)));
       if (
         candidate?.["name"] === name
         && candidate["version"] === version
         && candidate["main"] === filename
         && (!locked || record(packages[location])?.["version"] === version)
-        && (yield* inspectPayload(root, win32.join(directory, filename), architecture, "swc"))
+        && (yield* platform === "win32" ? inspectPayload(root, binding, architecture, "swc") : inspectPosixSwc(binding, platform, equal))
       )
         return true;
       if (locked && (yield* inspectPath(directory)).kind !== "missing") return false;
@@ -996,7 +1034,7 @@ function inspectSwc(
 
 function inspectNpm(
   root: string,
-  architecture: string,
+  env: EnvironmentSnapshot,
   names: ReadonlySet<string>,
 ): Effect.Effect<WorktreeCapability, never, ReadOnlyFiles | Process> {
   return Effect.gen(function* () {
@@ -1008,9 +1046,10 @@ function inspectNpm(
     );
     if (["node_path", "next_test_native_dir", "next_test_native_ignore_local_install", "next_swc_path"].some((key) => names.has(key)))
       return blocked;
-    const lock = record(parseJson(yield* readManifest(win32.join(root, "package-lock.json"))));
+    const {paths, equal} = pathProfile(env.platform);
+    const lock = record(parseJson(yield* readManifest(paths.join(root, "package-lock.json"), equal)));
     const packages = record(lock?.["packages"]);
-    const manifest = record(parseJson(yield* readManifest(win32.join(root, "package.json"))));
+    const manifest = record(parseJson(yield* readManifest(paths.join(root, "package.json"), equal)));
     const lockedRoot = record(packages?.[""]);
     const lockedNext = record(packages?.["node_modules/next"]);
     if (
@@ -1028,7 +1067,7 @@ function inspectNpm(
       const locked = record(lockedRoot[kind]) ?? {};
       if (current.length !== Object.keys(locked).length || current.some(([name, value]) => locked[name] !== value)) return blocked;
     }
-    if (!(yield* inspectSwc(root, architecture, lockedNext["version"], packages))) {
+    if (!(yield* inspectSwc(root, env, lockedNext["version"], packages))) {
       return capability(
         "npm-dependencies",
         false,
@@ -1045,15 +1084,15 @@ function inspectNpm(
           const entry = record(value);
           if (entry?.["optional"] === true) return true;
           if (!entry || !LOCK_PATH.test(path)) return false;
-          const manifestPath = win32.join(root, path, "package.json");
+          const manifestPath = paths.join(root, path, "package.json");
           if (entry["link"] === true) {
             const target = entry["resolved"];
             if (typeof target !== "string" || !LOCK_PATH.test(target) || !record(packages[target])) return false;
-            const expected = win32.join(root, target, "package.json");
+            const expected = paths.join(root, target, "package.json");
             const actual = yield* canonicalPath(manifestPath);
-            return actual !== undefined && samePath(actual, expected) && (yield* ownedFile(expected));
+            return actual !== undefined && equal(actual, expected) && (yield* ownedFile(expected, equal));
           }
-          const manifest = record(parseJson(yield* readManifest(manifestPath)));
+          const manifest = record(parseJson(yield* readManifest(manifestPath, equal)));
           return typeof entry["version"] === "string" && manifest?.["version"] === entry["version"];
         }),
       {concurrency: 16},
@@ -1916,7 +1955,11 @@ function inspect(
           expConfig,
           python,
           ...(nativeTls
-            ? [inspectPosixWebsiteTrust(root, env, names), inspectRestoreAssets(createRepositoryPaths(root), env.platform)]
+            ? [
+                inspectPosixWebsiteTrust(root, env, names),
+                inspectRestoreAssets(createRepositoryPaths(root), env.platform),
+                inspectNpm(root, env, names),
+              ]
             : []),
         ],
         {concurrency: "unbounded"},
@@ -1945,7 +1988,7 @@ function inspect(
         engine,
         hasPowerShell ? inspectWebsiteTrust(env, root, names) : Effect.succeed(blockedByPowerShell("website-tls")),
         inspectDotnetTls(root, hasPowerShell),
-        hasPowerShell ? inspectNpm(root, env.architecture, names) : Effect.succeed(blockedByPowerShell("npm-dependencies")),
+        hasPowerShell ? inspectNpm(root, env, names) : Effect.succeed(blockedByPowerShell("npm-dependencies")),
         artifacts,
         python,
         expConfig,
