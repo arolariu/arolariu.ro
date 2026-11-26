@@ -37,16 +37,16 @@ includes a URL, stop command, raw error, or log path on failure.
 
 This is the acceptance checklist for a **separately authorized runtime wave**, not a procedure to start a stack from this revision:
 
-1. **Preparation and lifetime.** Establish canonical checkout and exact v2 stage/lease on the pinned engine. Supply a production verifier
-   for the protected runtime inputs, dependency artifacts, certificates and owned volumes; verify PID, creation time, image, process
-   tree/container inventory, actual localhost binds and port-race rejection. Prove the run survives launcher exit and is observable in a
-   fresh controller turn (separate from any synthetic fixture). Verify scoped endpoints/configuration, provider and Clerk prerequisites,
-   pinned Cosmos readiness and data plane, and scoped authenticated telemetry without external exporter overrides. Do not change trust,
-   install dependencies, copy credentials, or adopt existing volumes implicitly. Require fresh v2 restore evidence: the scoped profile
-   rejects `Directory.Build.rsp` in the solution/project ancestry, `MSBuild.rsp` in the uniquely observed local SDK, and SDK search-path
-   overrides. The approved receipt refresh disables automatic response files with `-noAutoResponse`; any future scoped MSBuild invocation
-   must do the same and reject explicit `@` response files. If a launcher command cannot enforce this, do not let it evaluate MSBuild
-   implicitly. Ordinary Setup is unchanged.
+1. **Preparation and lifetime.** Establish canonical checkout, exact v3 stage/lease and verified build revision on the pinned engine. Supply
+   a production verifier for the protected runtime inputs, dependency artifacts, certificates and owned volumes; verify PID, creation time,
+   image, process tree/container inventory, actual localhost binds and port-race rejection. Prove the run survives launcher exit and is
+   observable in a fresh controller turn (separate from any synthetic fixture). Verify scoped endpoints/configuration, provider and Clerk
+   prerequisites, pinned Cosmos readiness and data plane, and scoped authenticated telemetry without external exporter overrides. Do not
+   change trust, install dependencies, copy credentials, or adopt existing volumes implicitly. Require fresh v2 restore evidence: the scoped
+   profile rejects `Directory.Build.rsp` in the solution/project ancestry, `MSBuild.rsp` in the uniquely observed local SDK, and SDK
+   search-path overrides. The approved receipt refresh disables automatic response files with `-noAutoResponse`; any future scoped MSBuild
+   invocation must do the same and reject explicit `@` response files. If a launcher command cannot enforce this, do not let it evaluate
+   MSBuild implicitly. Ordinary Setup is unchanged.
 2. **Exact endpoints.** Require run-bound AppHost notifications: `local-bootstrap` exited zero and exp, local Identity, API and website are
    healthy. Match real connections to independently attested owned listeners, exact leased ports on `127.0.0.1`, and the expected routes
    without redirects. Require strict TLS for the scoped website DNS name and service IP SANs on API/dashboard, with no bypass or

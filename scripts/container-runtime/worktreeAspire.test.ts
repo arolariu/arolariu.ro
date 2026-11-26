@@ -23,6 +23,7 @@ import {
   readWorktreeJson,
   readWorktreeLaunch,
   type WorktreeLaunchPlatform,
+  worktreeLaunchVersion,
   WorktreePlatform,
   type WorktreeLease,
 } from "./worktreeLease.ts";
@@ -56,11 +57,11 @@ describe("worktree Aspire ownership", () => {
       expect.soft(await run(stopWorktreeLaunch(lease))).toMatchObject({status: "blocked"});
       expect.soft(await run(readWorktreeLaunch(fixture.checkout))).toMatchObject({phase: "pending", runId: lease.runId});
       // A container-only partial is not authority even in the current schema.
-      const legacy = JSON.stringify({...lease, version: 2, phase: "partial", resourceOwnership: [container]});
+      const partial = JSON.stringify({...lease, version: worktreeLaunchVersion, phase: "partial", resourceOwnership: [container]});
       const path = join(fixture.directory, lease.scopeId, "lease.json");
-      await writeFile(path, legacy);
+      await writeFile(path, partial);
       expect(await run(stopWorktreeLaunch(lease))).toMatchObject({status: "blocked"});
-      expect(await readFile(path, "utf8")).toBe(legacy);
+      expect(await readFile(path, "utf8")).toBe(partial);
       expect(removals).toBe(0);
     } finally {
       await fixture.dispose();
@@ -97,7 +98,7 @@ describe("worktree Aspire ownership", () => {
     }
   });
 
-  it("reserves and stages 20 host ports, including Cosmos readiness, in lease and descriptor v2", async () => {
+  it("stages the claimed revision and all host ports, including Cosmos readiness, in lease and descriptor", async () => {
     const fixture = await leaseFixture();
     try {
       await Effect.runPromise(
@@ -105,12 +106,19 @@ describe("worktree Aspire ownership", () => {
           const lease = yield* claimWorktreeLaunch(fixture.checkout);
           const staged = yield* beginWorktreeLaunch(lease);
           const descriptor = yield* readWorktreeJson(staged.descriptor);
-          expect(descriptor).toMatchObject({version: 2, ports: lease.ports});
+          const claimed = {
+            version: worktreeLaunchVersion,
+            ports: lease.ports,
+            head: fixture.checkout.head,
+            branch: fixture.checkout.branch,
+          };
+          expect(descriptor).toMatchObject(claimed);
           expect(descriptor).toMatchObject({
             ports: {cosmosDataExplorer: expect.any(Number), cosmosReadiness: expect.any(Number), azuriteTable: expect.any(Number)},
           });
+
           const saved = yield* readWorktreeJson(join(fixture.directory, lease.scopeId, "lease.json"));
-          expect(saved).toMatchObject({version: 2, ports: lease.ports});
+          expect(saved).toMatchObject(claimed);
           expect(new Set(Object.values(lease.ports)).size).toBe(20);
         }).pipe(Effect.provideService(WorktreePlatform, fixture.platform)),
       );
@@ -119,9 +127,27 @@ describe("worktree Aspire ownership", () => {
     }
   });
 
+  it("refuses to stage a superseded checkout revision but can release that exact reservation", async () => {
+    const fixture = await leaseFixture();
+    const run = <A, E>(effect: Effect.Effect<A, E, WorktreePlatform>, platform = fixture.platform) =>
+      Effect.runPromise(effect.pipe(Effect.provideService(WorktreePlatform, platform)));
+    try {
+      const lease = await run(claimWorktreeLaunch(fixture.checkout));
+      const checkout = {...fixture.checkout, head: "2".repeat(40)};
+      const platform = {...fixture.platform, checkout: Effect.succeed(checkout)};
+
+      await expect(run(beginWorktreeLaunch(lease), platform)).rejects.toThrow("Could not stage this run");
+      expect(await run(readWorktreeLaunch(checkout), platform)).toMatchObject({phase: "reserved", head: fixture.checkout.head});
+      expect(await run(stopWorktreeLaunch(lease), platform)).toMatchObject({status: "stopped", runId: lease.runId});
+    } finally {
+      await fixture.dispose();
+    }
+  });
+
   it.each([
-    "v1 lease",
-    "v1 descriptor",
+    "v2 lease",
+    "v2 descriptor",
+    "mismatched descriptor revision",
     "missing descriptor",
     "missing lease port",
     "missing descriptor port",
@@ -142,8 +168,10 @@ describe("worktree Aspire ownership", () => {
       const ports: Record<string, number> = {...lease.ports};
       const savedLease = JSON.parse(saved) as Record<string, unknown>;
       const savedDescriptor = JSON.parse(descriptor) as Record<string, unknown>;
-      if (invalid === "v1 lease") await writeFile(path, JSON.stringify({...savedLease, version: 1}));
-      if (invalid === "v1 descriptor") await writeFile(stage.descriptor, descriptor.replace(/"version":\d+/u, '"version":1'));
+      if (invalid === "v2 lease") await writeFile(path, JSON.stringify({...savedLease, version: 2}));
+      if (invalid === "v2 descriptor") await writeFile(stage.descriptor, JSON.stringify({...savedDescriptor, version: 2}));
+      if (invalid === "mismatched descriptor revision")
+        await writeFile(stage.descriptor, JSON.stringify({...savedDescriptor, head: "2".repeat(40)}));
       if (invalid === "missing descriptor") await unlink(stage.descriptor);
       if (invalid === "reserved lease with a stage") await writeFile(path, JSON.stringify({...savedLease, phase: "reserved"}));
       if (invalid.startsWith("missing") && invalid.endsWith("port")) delete ports["cosmosReadiness"];
@@ -211,7 +239,7 @@ describe("worktree Aspire ownership", () => {
       const leasePath = join(fixture.directory, lease.scopeId, "lease.json");
       const path = record === "lease" ? leasePath : stage.descriptor;
       const saved = await readFile(path, "utf8");
-      const value = key === "version" ? 2 : lease.ports.cosmosReadiness;
+      const value = key === "version" ? worktreeLaunchVersion : lease.ports.cosmosReadiness;
       const member = `"${key}":${value}`;
       const malformed = saved.replace(member, `"${alias}" \t:\n ${value},${member}`);
       expect(malformed).not.toBe(saved);

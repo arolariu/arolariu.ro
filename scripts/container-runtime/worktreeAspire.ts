@@ -99,19 +99,27 @@ function runDirectory(registry: string, lease: WorktreeLease): string {
 
 /** Stages only new files under the owned scope, and fences the lease before any spawn. */
 export function beginWorktreeLaunch(lease: WorktreeLease): Effect.Effect<WorktreeStage, WorktreeLaunchError, WorktreePlatform> {
-  return withCurrent(lease, "Could not stage this run in its protected scope.", (current, registry) =>
-    worktreeIO(async () => {
-      if (current.phase !== "reserved") throw new Error("Run already attempted");
-      const directory = runDirectory(registry, current);
-      const build = join(directory, "build");
-      const runtime = join(directory, "runtime");
-      const descriptor = join(directory, "descriptor.json");
-      await makeRegistryDirectory(directory); // Exclusive; do not adopt a pre-existing run directory.
-      await makeRegistryDirectory(build);
-      await makeRegistryDirectory(runtime);
-      await publishWorktreeJson(descriptor, worktreeDescriptorFor(current));
-      await writeWorktreeLease(registry, {...current, phase: "pending"});
-      return {directory, descriptor, build, runtime};
+  return withCurrent(
+    lease,
+    "Could not stage this run in its protected scope.",
+    Effect.fnUntraced(function* (current, registry, platform) {
+      const checkout = yield* platform.checkout;
+      if (checkout?.branch !== current.branch || checkout.head !== current.head) {
+        return yield* Effect.fail(new Error("Run revision changed before staging"));
+      }
+      return yield* worktreeIO(async () => {
+        if (current.phase !== "reserved") throw new Error("Run already attempted");
+        const directory = runDirectory(registry, current);
+        const build = join(directory, "build");
+        const runtime = join(directory, "runtime");
+        const descriptor = join(directory, "descriptor.json");
+        await makeRegistryDirectory(directory); // Exclusive; do not adopt a pre-existing run directory.
+        await makeRegistryDirectory(build);
+        await makeRegistryDirectory(runtime);
+        await publishWorktreeJson(descriptor, worktreeDescriptorFor(current));
+        await writeWorktreeLease(registry, {...current, phase: "pending"});
+        return {directory, descriptor, build, runtime};
+      });
     }),
   );
 }
@@ -159,6 +167,10 @@ export function recordWorktreeOwnership(
     lease,
     "Could not prove ownership of this run.",
     Effect.fnUntraced(function* (current, registry, platform) {
+      const checkout = yield* platform.checkout;
+      if (checkout?.branch !== current.branch || checkout.head !== current.head) {
+        return yield* Effect.fail(new Error("Run revision changed before ownership observation"));
+      }
       const directory = runDirectory(registry, current);
       if (current.phase !== "pending" || !(yield* worktreeIO(() => worktreeDirectory(directory)))) {
         return yield* Effect.fail(new Error("Run not pending"));
@@ -384,6 +396,8 @@ function sameOwnedAspire(other: WorktreeLease | null, expected: OwnedWorktreeAsp
     && other.engineId === expected.engineId
     && sameWorktreePath(other.root, expected.root)
     && sameWorktreePath(other.commonGitDir, expected.commonGitDir)
+    && other.branch === expected.branch
+    && other.head === expected.head
     && sameWorktreePorts(expected.ports, other.ports)
     && sameWorktreeProcess(expected.processIdentity, other.processIdentity)
     && (other.resourceOwnership?.length ?? 0) === journal.length
@@ -411,6 +425,8 @@ export function observeOwnedWorktreeAspire(
         if (
           !isOwnedAspire(current)
           || current.runId !== runId
+          || current.branch !== checkout.branch
+          || current.head !== checkout.head
           || current.engineId !== engineId
           || (baseline && !sameOwnedAspire(current, baseline))
         )

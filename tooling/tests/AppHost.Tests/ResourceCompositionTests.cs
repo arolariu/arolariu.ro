@@ -344,8 +344,8 @@ public sealed class ResourceCompositionTests
     {
       RegistryDirectory = Path.Combine(fixture.Root, "other-registry"),
     }));
-    Assert.ThrowsExactly<InvalidOperationException>(() => (fixture with { Version = 1 }).Load());
-    Assert.ThrowsExactly<InvalidOperationException>(() => fixture.Load(change: evidence => evidence with { LeaseVersion = 1 }));
+    Assert.ThrowsExactly<InvalidOperationException>(() => (fixture with { Version = 2 }).Load());
+    Assert.ThrowsExactly<InvalidOperationException>(() => fixture.Load(change: evidence => evidence with { LeaseVersion = 2 }));
     Assert.ThrowsExactly<InvalidOperationException>(() => fixture.Load(change: evidence => evidence with
     {
       LeasePorts = ScopeFixture.Create('a', 25000).Ports,
@@ -353,10 +353,18 @@ public sealed class ResourceCompositionTests
   }
 
   [TestMethod]
+  public void Load_RevisionDiffersFromVerifiedStage_RejectsScope()
+  {
+    var fixture = ScopeFixture.Create('a', 24000);
+    Assert.ThrowsExactly<InvalidOperationException>(() => fixture.Load(change: evidence => evidence with { Branch = "feature/other" }));
+    Assert.ThrowsExactly<InvalidOperationException>(() => fixture.Load(change: evidence => evidence with { Head = new('b', 40) }));
+  }
+
+  [TestMethod]
   [DataRow("cosmosDataExplorer")]
   [DataRow("cosmosReadiness")]
   [DataRow("azuriteTable")]
-  public void Load_MissingV2Port_RejectsScope(string name)
+  public void Load_MissingPort_RejectsScope(string name)
   {
     var incomplete = ScopeFixture.Create('a', 24000);
     incomplete.Ports.Remove(name);
@@ -364,7 +372,7 @@ public sealed class ResourceCompositionTests
   }
 
   [TestMethod]
-  public void Load_CollidingV2Ports_RejectsScope()
+  public void Load_CollidingPorts_RejectsScope()
   {
     var overlapping = ScopeFixture.Create('a', 24000);
     overlapping.Ports["cosmosReadiness"] = overlapping.Ports["cosmos"];
@@ -398,7 +406,7 @@ public sealed class ResourceCompositionTests
 
   private sealed record ScopeFixture(string Root, string ScopeId, string RunId, string Registry,
     Dictionary<string, int> Ports, Dictionary<string, string> Volumes, string WebsiteOrigin,
-    WorktreeRuntimeInputs Runtime, int Version = 2)
+    WorktreeRuntimeInputs Runtime, int Version = 3)
   {
     internal string Path => System.IO.Path.Combine(Registry, ScopeId, RunId, "descriptor.json");
 
@@ -430,19 +438,23 @@ public sealed class ResourceCompositionTests
 
     internal WorktreeLaunchScope Load(string? expectedRoot = null, Func<VerifiedWorktreeStage, VerifiedWorktreeStage>? change = null)
     {
+      const string branch = "feature/scoped";
+      string head = new('a', 40);
       byte[] descriptor = JsonSerializer.SerializeToUtf8Bytes(new
       {
         version = Version,
         root = Root,
         scopeId = ScopeId,
         runId = RunId,
+        branch,
+        head,
         mode = "aspire",
         loopbackHost = "127.0.0.1",
         ports = Ports,
         volumes = Volumes,
         websiteOrigin = WebsiteOrigin,
       });
-      var stage = new VerifiedWorktreeStage(descriptor, 2, Registry, Root, ScopeId, RunId, "podman", new('e', 64),
+      var stage = new VerifiedWorktreeStage(descriptor, 3, Registry, Root, ScopeId, RunId, branch, head, "podman", new('e', 64),
         Ports, Volumes, Runtime);
       return WorktreeLaunchScope.Load(Path, expectedRoot ?? Root, (_, _) => change?.Invoke(stage) ?? stage);
     }

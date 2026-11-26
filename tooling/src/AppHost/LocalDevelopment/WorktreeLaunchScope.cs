@@ -21,8 +21,8 @@ internal sealed record WorktreeRuntimeInputs(
 
 /// <summary>
 /// Receipt from an internal supervisor boundary, not a receipt that can be loaded from an arbitrary file.
-/// The verifier must attest the canonical, protected registry route, current pending v2 lease on the pinned
-/// Podman engine, and exact descriptor bytes read from that run. It must positively verify storage
+/// The verifier must attest the canonical, protected registry route, current pending lease, checkout
+/// revision, build provenance, pinned Podman engine, and exact descriptor bytes read from that run. It must positively verify storage
 /// ownership on that engine, not merely repeat its proposed names. Runtime evidence must attest
 /// existing prepared dependencies, validated scope-owned exp input (including the derived endpoints),
 /// matching private keys, exact browser SAN and trusted IPv4 service certificate paths. It must
@@ -36,22 +36,24 @@ internal sealed record VerifiedWorktreeStage(
   string Root,
   string ScopeId,
   string RunId,
+  string Branch,
+  string Head,
   string Engine,
   string EnginePin,
   IReadOnlyDictionary<string, int> LeasePorts,
   IReadOnlyDictionary<string, string>? OwnedVolumes,
   WorktreeRuntimeInputs? Runtime);
 
-/// <summary>A validated descriptor-v2 graph input. Not permission to start processes or mount volumes.</summary>
+/// <summary>A validated scoped graph input. Not permission to start processes or mount volumes.</summary>
 internal sealed class WorktreeLaunchScope
 {
   internal const string DescriptorEnvironmentVariable = "AROLARIU_WORKTREE_DESCRIPTOR";
   internal const string LaunchBlocked = "Scoped AppHost execution requires a verified native launch adapter.";
   internal const string LoopbackHost = "127.0.0.1";
-  private const int LaunchVersion = 2;
+  private const int LaunchVersion = 3;
 
   private static readonly string[] DescriptorKeys =
-    ["version", "root", "scopeId", "runId", "mode", "loopbackHost", "ports", "volumes", "websiteOrigin"];
+    ["version", "root", "scopeId", "runId", "branch", "head", "mode", "loopbackHost", "ports", "volumes", "websiteOrigin"];
 
   private static readonly string[] PortNames =
   [
@@ -92,7 +94,9 @@ internal sealed class WorktreeLaunchScope
     ArgumentNullException.ThrowIfNull(verify);
     VerifiedWorktreeStage stage = verify(descriptorPath, expectedWorktreeRoot) ?? throw new InvalidOperationException(LaunchBlocked);
     Ensure(stage.LeaseVersion == LaunchVersion && stage.Engine == "podman" && IsLowerHex(stage.EnginePin, 64)
-      && IsLowerHex(stage.ScopeId, 32) && IsLowerHex(stage.RunId, 32));
+      && IsLowerHex(stage.ScopeId, 32) && IsLowerHex(stage.RunId, 32)
+      && stage.Branch.Length is > 0 and <= 1024 && !stage.Branch.Any(char.IsControl)
+      && (IsLowerHex(stage.Head, 40) || IsLowerHex(stage.Head, 64)));
     Ensure(SameCanonicalPath(expectedWorktreeRoot, stage.Root) && IsCanonicalPath(stage.RegistryDirectory));
     string runDirectory = Path.Combine(stage.RegistryDirectory, stage.ScopeId, stage.RunId);
     Ensure(SameCanonicalPath(descriptorPath, Path.Combine(runDirectory, "descriptor.json")));
@@ -109,7 +113,9 @@ internal sealed class WorktreeLaunchScope
         && descriptor.GetProperty("mode").GetString() == "aspire"
         && descriptor.GetProperty("loopbackHost").GetString() == LoopbackHost
         && descriptor.GetProperty("scopeId").GetString() == stage.ScopeId
-        && descriptor.GetProperty("runId").GetString() == stage.RunId);
+        && descriptor.GetProperty("runId").GetString() == stage.RunId
+        && descriptor.GetProperty("branch").GetString() == stage.Branch
+        && descriptor.GetProperty("head").GetString() == stage.Head);
 
       JsonElement portValues = descriptor.GetProperty("ports");
       Ensure(HasKeys(portValues, PortNames) && stage.LeasePorts.Count == PortNames.Length);

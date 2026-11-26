@@ -175,6 +175,27 @@ function expectBlocked(result: unknown, stage: string): void {
 }
 
 describe("offline worktree handoff", () => {
+  it.each([
+    ["branch", "feature/other-revision"],
+    ["head", "2".repeat(40)],
+  ] as const)("does not hand off an existing run as the newly selected checkout %s", async (field, value) => {
+    const fixture = await readinessFixture();
+    try {
+      const current = {...fixture.checkout, [field]: value};
+      const result = await fixture.run(
+        validateWorktreeHandoff(current, fixture.lease.runId, fixture.source).pipe(
+          Effect.updateService(WorktreePlatform, (platform) => ({...platform, checkout: Effect.succeed(current)})),
+        ),
+      );
+
+      expectBlocked(result, "ownership");
+      expect(fixture.source.observe).not.toHaveBeenCalled();
+      expect(fixture.source.smoke).not.toHaveBeenCalled();
+    } finally {
+      await fixture.dispose();
+    }
+  });
+
   it("returns verified URLs and a run-guarded stop command only after readiness and both named smokes pass", async () => {
     const fixture = await readinessFixture();
     try {

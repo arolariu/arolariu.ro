@@ -26,7 +26,7 @@ import {
 import type {WorktreeCheckout} from "./worktreePreflight.ts";
 
 /** Both persisted authority records use this schema, within the existing protected registry route. */
-export const worktreeLaunchVersion = 2;
+export const worktreeLaunchVersion = 3;
 
 /** Named host-side ports; these are reservations, not an observation of service health. */
 export const worktreePortNames = [
@@ -77,6 +77,8 @@ export interface WorktreeLease {
   readonly runId: string;
   readonly root: string;
   readonly commonGitDir: string;
+  readonly branch: string;
+  readonly head: string;
   readonly engineId: string;
   readonly phase: "reserved" | "pending" | "partial" | "owned";
   readonly mode: "aspire" | "fixture";
@@ -202,13 +204,20 @@ export function isWorktreeResourceOwnership(value: unknown): value is NonNullabl
 
 function decodeLease(value: unknown, scope: string): WorktreeLease {
   if (!worktreeRecord(value)) throw new Error("Invalid lease");
-  const {scopeId, runId, root, commonGitDir, engineId, phase, mode, ports, volumes, processIdentity, resourceOwnership} = value;
+  const {scopeId, runId, root, commonGitDir, branch, head, engineId, phase, mode, ports, volumes, processIdentity, resourceOwnership} =
+    value;
   if (
     value["version"] !== worktreeLaunchVersion
     || scopeId !== scope
     || typeof root !== "string"
     || typeof commonGitDir !== "string"
     || scopeFor({root, commonGitDir}) !== scope
+    || typeof branch !== "string"
+    || branch.length === 0
+    || branch.length > 1024
+    || /\p{Cc}/u.test(branch)
+    || typeof head !== "string"
+    || !/^(?:[a-f0-9]{40}|[a-f0-9]{64})$/u.test(head)
     || typeof runId !== "string"
     || !isWorktreeRunId(runId)
     || typeof engineId !== "string"
@@ -231,6 +240,8 @@ function decodeLease(value: unknown, scope: string): WorktreeLease {
     runId,
     root,
     commonGitDir,
+    branch,
+    head,
     engineId,
     phase,
     mode,
@@ -243,12 +254,14 @@ function decodeLease(value: unknown, scope: string): WorktreeLease {
 
 /** Projects a descriptor from the current lease, never a caller-supplied set of names or ports. */
 export function worktreeDescriptorFor(lease: WorktreeLease) {
-  const {root, scopeId, runId, ports, volumes, mode} = lease;
+  const {root, scopeId, runId, branch, head, ports, volumes, mode} = lease;
   return {
     version: worktreeLaunchVersion,
     root,
     scopeId,
     runId,
+    branch,
+    head,
     mode,
     ports,
     volumes,
@@ -482,6 +495,8 @@ export function claimWorktreeLease(
                 runId: randomBytes(16).toString("hex"),
                 root: checkout.root,
                 commonGitDir: checkout.commonGitDir,
+                branch: checkout.branch,
+                head: checkout.head,
                 engineId,
                 phase: "reserved",
                 mode,
