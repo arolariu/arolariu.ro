@@ -30,10 +30,14 @@ internal static class ExpResources
     RepositoryLayout layout, WorktreeLaunchScope scope)
   {
     var exp = builder.AddExecutable("exp", scope.Runtime.PythonExecutable, layout.ExpDirectory,
-        "-m", "uvicorn", "main:app", "--host", WorktreeLaunchScope.LoopbackHost, "--port",
-        scope.Port("exp").ToString(System.Globalization.CultureInfo.InvariantCulture), "--reload")
+        "-I", "-m", "uvicorn", "main:app", "--app-dir", layout.ExpDirectory,
+        "--host", WorktreeLaunchScope.LoopbackHost, "--port",
+        scope.Port("exp").ToString(System.Globalization.CultureInfo.InvariantCulture), "--reload", "--reload-dir", layout.ExpDirectory)
       .WithEnvironment("INFRA", "local")
       .WithEnvironment("EXP_LOCAL_CONFIG_PATH", scope.Runtime.ExpConfigPath)
+      .WithEnvironment("PYTHONHOME", "")
+      .WithEnvironment("PYTHONPATH", "")
+      .WithEnvironment("PYTHONUSERBASE", "")
       .WithIconName("KeyMultiple");
     return scope.WithTelemetry(scope.WithNativeEndpoint(exp, "exp", "http").WithHttpHealthCheck("/api/ready"));
   }

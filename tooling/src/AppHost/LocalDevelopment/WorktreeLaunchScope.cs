@@ -101,7 +101,7 @@ internal sealed class WorktreeLaunchScope
     Ensure(SameCanonicalPath(expectedWorktreeRoot, stage.Root) && IsCanonicalPath(stage.RegistryDirectory));
     string runDirectory = Path.Combine(stage.RegistryDirectory, stage.ScopeId, stage.RunId);
     Ensure(SameCanonicalPath(descriptorPath, Path.Combine(runDirectory, "descriptor.json")));
-    VerifyRuntimePaths(stage.Runtime, Path.Combine(runDirectory, "runtime"));
+    VerifyRuntimePaths(stage.Runtime, Path.Combine(runDirectory, "runtime"), stage.Root);
     Ensure(stage.Descriptor.Length is > 0 and <= 64 * 1024);
 
     try
@@ -223,15 +223,16 @@ internal sealed class WorktreeLaunchScope
       .WithEndpoint("http", endpoint => endpoint.TargetHost = LoopbackHost);
   }
 
-  private static void VerifyRuntimePaths(WorktreeRuntimeInputs? runtime, string directory)
+  private static void VerifyRuntimePaths(WorktreeRuntimeInputs? runtime, string directory, string root)
   {
+    string python = OperatingSystem.IsWindows() ? Path.Combine("Scripts", "python.exe") : Path.Combine("bin", "python");
     if (runtime is null
       || !SameCanonicalPath(runtime.ExpConfigPath, Path.Combine(directory, "exp.json"))
       || !SameCanonicalPath(runtime.WebsiteCertificatePath, Path.Combine(directory, "website.pem"))
       || !SameCanonicalPath(runtime.WebsiteKeyPath, Path.Combine(directory, "website-key.pem"))
       || !SameCanonicalPath(runtime.ServiceCertificatePath, Path.Combine(directory, "service.pem"))
       || !SameCanonicalPath(runtime.ServiceKeyPath, Path.Combine(directory, "service-key.pem"))
-      || !SameCanonicalPath(runtime.PythonExecutable, Path.Combine(directory, "python", "Scripts", "python.exe"))
+      || !SameCanonicalPath(runtime.PythonExecutable, Path.Combine(root, "sites", "exp.arolariu.ro", ".venv", python))
       || !IsCanonicalPath(runtime.NodeExecutable))
     {
       throw InvalidScope();

@@ -1,6 +1,8 @@
 namespace AppHost.Tests;
 
 using System.Reflection;
+using System.Security.Cryptography;
+using System.Security.Cryptography.X509Certificates;
 using System.Text.Json;
 using System.Xml.Linq;
 using Aspire.Hosting;
@@ -133,6 +135,8 @@ public sealed class ResourceCompositionTests
     Assert.AreEqual("http://127.0.0.1:24011", api["LOCAL_DEVELOPMENT_IDENTITY_URL"]);
     Assert.AreEqual(website["API_URL"], identity["LOCAL_SWAGGER_ORIGIN"]);
     Assert.AreEqual(fixture.Runtime.ExpConfigPath, exp["EXP_LOCAL_CONFIG_PATH"]);
+    CollectionAssert.Contains(await ResolveArgumentsAsync(Find("exp")), "-I");
+    Assert.AreEqual(string.Empty, exp["PYTHONPATH"]);
     Assert.AreEqual("https://127.0.0.1:24003", exp["OTEL_EXPORTER_OTLP_ENDPOINT"]);
     Assert.AreEqual("https://127.0.0.1:24002", api["OTEL_EXPORTER_OTLP_ENDPOINT"]);
     Assert.AreEqual(exp["OTEL_EXPORTER_OTLP_ENDPOINT"], website["OTEL_EXPORTER_OTLP_ENDPOINT"]);
@@ -387,6 +391,53 @@ public sealed class ResourceCompositionTests
   }
 
   [TestMethod]
+  public void PrepareScopedRuntime_TwoStages_KeepPrivateConfigAndCertificatesSeparate()
+  {
+    DirectoryInfo fixtureDirectory = Directory.CreateTempSubdirectory("arolariu-runtime-test-");
+    try
+    {
+      var now = DateTimeOffset.UtcNow;
+      using RSA key = RSA.Create(2048);
+      var request = new CertificateRequest("CN=Test CA", key, HashAlgorithmName.SHA256, RSASignaturePadding.Pkcs1);
+      request.CertificateExtensions.Add(new X509BasicConstraintsExtension(true, false, 0, true));
+      request.CertificateExtensions.Add(new X509KeyUsageExtension(X509KeyUsageFlags.KeyCertSign, true));
+      using var authority = request.CreateSelfSigned(now.AddDays(-1), now.AddDays(10));
+      string source = System.IO.Path.Combine(fixtureDirectory.FullName, "exp-source.json");
+      const string original = """{"Endpoints:Database:SQL":"foreign","Endpoints:Storage:Blob":"foreign","Auth:JWT:Issuer":"fixture"}""";
+      File.WriteAllText(source, original);
+
+      foreach (var (id, firstPort, engine) in new[] { ('a', 24000, "rancher"), ('b', 24100, "podman") })
+      {
+        var fixture = ScopeFixture.Create(id, firstPort, fixtureDirectory.FullName);
+        var scope = fixture.Load(engine: engine);
+        var layout = RepositoryLayout.Resolve(HostDirectory()) with { SourceConfigPath = source };
+        Directory.CreateDirectory(System.IO.Path.GetDirectoryName(scope.Runtime.ExpConfigPath)!);
+        WorktreeRuntimePreparation.Write(scope, layout, authority, now, _ => true);
+        var endpoints = ExpResources.CreateScopedEndpointOverrides(scope.Runtime.ReadSqlPassword(), scope);
+        Assert.IsTrue(WorktreeRuntimePreparation.VerifyExpConfig(scope.Runtime.ExpConfigPath, endpoints));
+        using var exp = JsonDocument.Parse(File.ReadAllText(scope.Runtime.ExpConfigPath));
+        Assert.AreEqual("fixture", exp.RootElement.GetProperty("Auth:JWT:Issuer").GetString());
+        Assert.AreEqual(scope.QueueUrl, exp.RootElement.GetProperty("Endpoints:Storage:Queue").GetString());
+        using var certificate = X509Certificate2.CreateFromPemFile(scope.Runtime.WebsiteCertificatePath!, scope.Runtime.WebsiteKeyPath);
+        Assert.AreEqual(new Uri(scope.WebsiteOrigin).Host, certificate.GetNameInfo(X509NameType.DnsName, false));
+        Assert.ThrowsExactly<InvalidOperationException>(() => WorktreeRuntimePreparation.Write(scope, layout, authority, now, _ => true));
+        Assert.IsTrue(WorktreeRuntimePreparation.VerifyExpConfig(scope.Runtime.ExpConfigPath, endpoints));
+      }
+      Assert.AreEqual(original, File.ReadAllText(source));
+      File.WriteAllText(source, """{"Endpoints:Storage:Blob":"foreign","endpoints:storage:blob":"alternate"}""");
+      var invalid = ScopeFixture.Create('d', 24200, fixtureDirectory.FullName).Load();
+      Directory.CreateDirectory(System.IO.Path.GetDirectoryName(invalid.Runtime.ExpConfigPath)!);
+      Assert.ThrowsExactly<InvalidOperationException>(() => WorktreeRuntimePreparation.Write(
+        invalid, RepositoryLayout.Resolve(HostDirectory()) with { SourceConfigPath = source }, authority, now, _ => true));
+      Assert.IsEmpty(Directory.GetFiles(System.IO.Path.GetDirectoryName(invalid.Runtime.ExpConfigPath)!));
+    }
+    finally
+    {
+      fixtureDirectory.Delete(recursive: true);
+    }
+  }
+
+  [TestMethod]
   public void Load_RevisionDiffersFromVerifiedStage_RejectsScope()
   {
     var fixture = ScopeFixture.Create('a', 24000);
@@ -444,13 +495,14 @@ public sealed class ResourceCompositionTests
   {
     internal string Path => System.IO.Path.Combine(Registry, ScopeId, RunId, "descriptor.json");
 
-    internal static ScopeFixture Create(char id, int firstPort)
+    internal static ScopeFixture Create(char id, int firstPort, string? registryPath = null)
     {
       string root = RepositoryLayout.Resolve(HostDirectory()).RootDirectory;
-      string registry = System.IO.Path.Combine(root, "synthetic-registry-not-created");
+      string registry = registryPath ?? System.IO.Path.Combine(root, "synthetic-registry-not-created");
       string scope = new(id, 32);
       string run = new('c', 32);
       string runtime = System.IO.Path.Combine(registry, scope, run, "runtime");
+      string python = OperatingSystem.IsWindows() ? System.IO.Path.Combine("Scripts", "python.exe") : System.IO.Path.Combine("bin", "python");
       string[] keys = ["dashboardHttps", "dashboardHttp", "dashboardOtlpGrpc", "dashboardOtlpHttp", "resourceService",
         "website", "api", "exp", "cv", "docs", "status", "localIdentity", "sql", "cosmos", "cosmosDataExplorer",
         "azuriteBlob", "azuriteQueue", "azuriteTable", "redis", "cosmosReadiness"];
@@ -466,7 +518,7 @@ public sealed class ResourceCompositionTests
         $"https://wt-{scope}.localhost:{firstPort + 5}",
         new(System.IO.Path.Combine(runtime, "exp.json"), System.IO.Path.Combine(runtime, "website.pem"),
           System.IO.Path.Combine(runtime, "website-key.pem"), System.IO.Path.Combine(runtime, "service.pem"),
-          System.IO.Path.Combine(runtime, "service-key.pem"), System.IO.Path.Combine(runtime, "python", "Scripts", "python.exe"),
+          System.IO.Path.Combine(runtime, "service-key.pem"), System.IO.Path.Combine(root, "sites", "exp.arolariu.ro", ".venv", python),
           System.IO.Path.Combine(runtime, "node.exe"), _ => true, () => "fixture-Sql-password", () => "fixture-Redis-password"));
     }
 

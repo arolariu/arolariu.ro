@@ -130,23 +130,7 @@ internal static class ExpConfigGenerator
 
   private static void WritePrivateTemporaryFile(string temporaryPath, string targetPath, string content)
   {
-    FileStream stream;
-    if (OperatingSystem.IsWindows())
-    {
-      stream = CreatePrivateWindowsFile(temporaryPath);
-    }
-    else
-    {
-      stream = new FileStream(temporaryPath, new FileStreamOptions
-      {
-        Mode = FileMode.CreateNew,
-        Access = FileAccess.Write,
-        Share = FileShare.None,
-        UnixCreateMode = UnixFileMode.UserRead | UnixFileMode.UserWrite,
-      });
-    }
-    using (stream)
-    using (var writer = new StreamWriter(stream, new UTF8Encoding(encoderShouldEmitUTF8Identifier: false)))
+    using (var writer = new StreamWriter(CreatePrivateFile(temporaryPath), new UTF8Encoding(encoderShouldEmitUTF8Identifier: false)))
     {
       writer.Write(content);
     }
@@ -154,6 +138,18 @@ internal static class ExpConfigGenerator
     {
       File.SetUnixFileMode(temporaryPath, File.GetUnixFileMode(targetPath));
     }
+  }
+
+  internal static FileStream CreatePrivateFile(string path)
+  {
+    if (OperatingSystem.IsWindows()) return CreatePrivateWindowsFile(path);
+    return new FileStream(path, new FileStreamOptions
+    {
+      Mode = FileMode.CreateNew,
+      Access = FileAccess.Write,
+      Share = FileShare.None,
+      UnixCreateMode = UnixFileMode.UserRead | UnixFileMode.UserWrite,
+    });
   }
 
   [SupportedOSPlatform("windows")]
