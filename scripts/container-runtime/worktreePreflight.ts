@@ -530,11 +530,13 @@ function environmentKeys(
   env: EnvironmentSnapshot,
   keys: readonly string[],
   normalize: (key: string) => string,
+  ignoreCase = true,
 ): ReadonlyMap<string, boolean> | undefined {
   const facts = new Map<string, boolean>();
-  const canonical = new Map(keys.map((key) => [key.toLowerCase(), key]));
+  const keyOf = (name: string): string => (ignoreCase ? name.toLowerCase() : name);
+  const canonical = new Map(keys.map((key) => [keyOf(key), key]));
   for (const name of Object.keys(env.variables)) {
-    const key = canonical.get(normalize(name).toLowerCase());
+    const key = canonical.get(keyOf(normalize(name)));
     if (key === undefined) continue;
     if (facts.has(key)) return undefined;
     facts.set(key, (env.variables[name]?.trim().length ?? 0) > 0);
@@ -545,13 +547,14 @@ function environmentKeys(
 function projectConfigFile<T>(
   path: string,
   project: (source: string) => T | undefined,
+  equal = samePath,
 ): Effect.Effect<T | null | undefined, never, ReadOnlyFiles> {
   return Effect.gen(function* () {
     const metadata = yield* inspectPath(path);
     if (metadata.kind === "missing") return null;
     if (metadata.kind !== "file") return undefined;
     const actual = yield* canonicalPath(path);
-    if (actual === undefined || !samePath(actual, path)) return undefined;
+    if (actual === undefined || !equal(actual, path)) return undefined;
     const files = yield* ReadOnlyFiles;
     const data = yield* files.readBytesBounded(actual, MAX_MANIFEST_BYTES);
     return yield* Effect.try(() => project(new TextDecoder("utf-8", {fatal: true}).decode(data)));
@@ -567,11 +570,12 @@ function inspectAppHostConfig(root: string, env: EnvironmentSnapshot): Effect.Ef
       "",
       `Worktree preparation: could not determine the effective AppHost Development parameter keys. ${remediation}`,
     );
-    const hostDir = win32.join(root, "tooling/src/AppHost");
-    const project = yield* readManifest(win32.join(root, appHost));
+    const {paths, equal, isLocal} = pathProfile(env.platform);
+    const hostDir = paths.join(root, "tooling/src/AppHost");
+    const project = yield* readManifest(paths.join(root, appHost), equal);
     const ids = [...project.matchAll(/<UserSecretsId>([a-z0-9][a-z0-9.-]*)<\/UserSecretsId>/giu)];
     const id = ids.length === 1 ? ids[0]?.[1] : undefined;
-    const launch = record(parseJson(yield* readManifest(win32.join(hostDir, "Properties/launchSettings.json"))));
+    const launch = record(parseJson(yield* readManifest(paths.join(hostDir, "Properties/launchSettings.json"), equal)));
     const profiles = record(launch?.["profiles"]);
     const first = record(Object.values(profiles ?? {})[0]);
     const variables = record(first?.["environmentVariables"]);
@@ -589,12 +593,14 @@ function inspectAppHostConfig(root: string, env: EnvironmentSnapshot): Effect.Ef
     )
       return blocked;
     const appData = env.variables["APPDATA"];
-    if (id === undefined || !localDrivePath(appData)) return blocked;
+    const secretsRoot = appData ?? (env.platform === "win32" ? undefined : env.variables["HOME"]);
+    if (id === undefined || !isLocal(secretsRoot)) return blocked;
+    const secretsDirectory = appData === undefined ? ".microsoft/usersecrets" : "Microsoft/UserSecrets";
     const environment = environmentKeys(env, parameters, (name) => name.replaceAll("__", ":"));
     const sources = yield* Effect.all([
-      projectConfigFile(win32.join(appData, "Microsoft/UserSecrets", id, "secrets.json"), projectAppHostParameterKeys),
-      projectConfigFile(win32.join(hostDir, "appsettings.Development.json"), projectAppHostParameterKeys),
-      projectConfigFile(win32.join(hostDir, "appsettings.json"), projectAppHostParameterKeys),
+      projectConfigFile(paths.join(secretsRoot, secretsDirectory, id, "secrets.json"), projectAppHostParameterKeys, equal),
+      projectConfigFile(paths.join(hostDir, "appsettings.Development.json"), projectAppHostParameterKeys, equal),
+      projectConfigFile(paths.join(hostDir, "appsettings.json"), projectAppHostParameterKeys, equal),
     ]);
     if (!environment || sources.some((source) => source === undefined)) return blocked;
     return keyEvidence("apphost-config", parameters, [environment, ...sources.filter((source) => source != null)], remediation);
@@ -621,7 +627,7 @@ function projectWebsiteKeys(source: string): ReadonlyMap<string, boolean> | unde
   return expandable.size === 0 ? facts : undefined;
 }
 
-function inspectWebsiteConfig(paths: RepositoryPaths, env: EnvironmentSnapshot): Effect.Effect<WorktreeCapability, never, ReadOnlyFiles> {
+function inspectWebsiteConfig(root: string, env: EnvironmentSnapshot): Effect.Effect<WorktreeCapability, never, ReadOnlyFiles> {
   return Effect.gen(function* () {
     const remediation = "See Setup action react.environment.write; no credential values were returned.";
     const blocked = capability(
@@ -630,21 +636,26 @@ function inspectWebsiteConfig(paths: RepositoryPaths, env: EnvironmentSnapshot):
       "",
       `Worktree preparation: the effective Next development environment could not be projected. ${remediation}`,
     );
-    const nodeEnv = Object.keys(env.variables).find((key) => key.toLowerCase() === "node_env");
+    const windows = env.platform === "win32";
+    const nodeEnv = Object.keys(env.variables).find((key) => (windows ? key.toUpperCase() : key) === "NODE_ENV");
     if (nodeEnv !== undefined && env.variables[nodeEnv] !== "development") return blocked;
-    const environment = environmentKeys(env, integrationKeys, (name) => name);
+    const environment = environmentKeys(env, integrationKeys, (name) => name, windows);
+    const {paths, equal} = pathProfile(env.platform);
+    const website = paths.join(root, "sites/arolariu.ro");
     const sources = yield* Effect.forEach([".env.development.local", ".env.local", ".env.development", ".env"], (file) =>
-      projectConfigFile(win32.join(paths.websiteRoot, file), projectWebsiteKeys),
+      projectConfigFile(paths.join(website, file), projectWebsiteKeys, equal),
     );
     if (!environment || sources.some((source) => source === undefined)) return blocked;
     return keyEvidence("website-config", integrationKeys, [environment, ...sources.filter((source) => source != null)], remediation);
   });
 }
 
-function inspectExpConfig(paths: RepositoryPaths): Effect.Effect<WorktreeCapability, never, ReadOnlyFiles> {
+function inspectExpConfig(root: string, platform: NodeJS.Platform): Effect.Effect<WorktreeCapability, never, ReadOnlyFiles> {
   return Effect.gen(function* () {
-    const required = yield* projectConfigFile(win32.join(paths.expRoot, "config.template.json"), projectExpTypes);
-    const local = yield* projectConfigFile(win32.join(paths.expRoot, "config.docker.json"), projectExpTypes);
+    const {paths, equal} = pathProfile(platform);
+    const exp = paths.join(root, "sites/exp.arolariu.ro");
+    const required = yield* projectConfigFile(paths.join(exp, "config.template.json"), projectExpTypes, equal);
+    const local = yield* projectConfigFile(paths.join(exp, "config.docker.json"), projectExpTypes, equal);
     // The checked-in template uses scalar strings; null endpoints are skipped by ExpConfigGenerator.
     const compatible =
       !!required?.size
@@ -841,11 +852,12 @@ function inspectNpm(
   });
 }
 
-function inspectWebsiteArtifacts(root: string): Effect.Effect<WorktreeCapability, never, ReadOnlyFiles> {
+function inspectWebsiteArtifacts(root: string, platform: NodeJS.Platform): Effect.Effect<WorktreeCapability, never, ReadOnlyFiles> {
+  const {paths, equal} = pathProfile(platform);
   return Effect.map(
     Effect.all([
-      ownedFile(win32.join(root, "sites/arolariu.ro/licenses.json")),
-      ownedFile(win32.join(root, "scripts/__generated__/gql/README.placeholder.txt")),
+      ownedFile(paths.join(root, "sites/arolariu.ro/licenses.json"), equal),
+      ownedFile(paths.join(root, "scripts/__generated__/gql/README.placeholder.txt"), equal),
     ]),
     (observed) =>
       capability(
@@ -1521,18 +1533,21 @@ function inspect(
     const {root} = checkout;
     const checkoutCapability = capability("checkout", true, "Canonical, attached linked-worktree identity was observed.", "");
     const engine = input.engine === "podman" ? inspectPodman(root, names, env) : inspectRancher(root, names, env);
+    const config = [inspectAppHostConfig(root, env), inspectWebsiteConfig(root, env)] as const;
+    const artifacts = inspectWebsiteArtifacts(root, env.platform);
+    const expConfig = inspectExpConfig(root, env.platform);
     if (env.platform !== "win32" || env.architecture !== "x64") {
       return {
         status: "blocked",
         checkout,
         capabilities: [
           checkoutCapability,
-          yield* engine,
+          ...(yield* Effect.all([...config, engine, artifacts, expConfig], {concurrency: "unbounded"})),
           capability(
             "host-preparation",
             false,
             "",
-            "Full scoped prerequisites are implemented only for Windows x64; checkout and engine evidence does not qualify this host.",
+            "Full scoped prerequisites are implemented only for Windows x64; partial preparation evidence does not qualify this host.",
           ),
         ],
       };
@@ -1546,16 +1561,16 @@ function inspect(
         hasPowerShell ? inspectWebsiteTrust(env, root, names) : Effect.succeed(blockedByPowerShell("website-tls")),
         inspectDotnetTls(root),
         hasPowerShell ? inspectNpm(root, env.architecture, names) : Effect.succeed(blockedByPowerShell("npm-dependencies")),
-        inspectWebsiteArtifacts(root),
+        artifacts,
         inspectPython(paths),
-        inspectExpConfig(paths),
+        expConfig,
       ],
       {concurrency: "unbounded"},
     );
     const capabilities = [
       checkoutCapability,
       powershell,
-      ...(yield* Effect.all([inspectAppHostConfig(root, env), inspectWebsiteConfig(paths, env)], {concurrency: "unbounded"})),
+      ...(yield* Effect.all(config, {concurrency: "unbounded"})),
       ...checks,
       ...(yield* inspectBundle(paths, env, names, hasPowerShell)),
     ];

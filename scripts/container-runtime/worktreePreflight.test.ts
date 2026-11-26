@@ -364,15 +364,63 @@ describe("worktree Aspire preflight", () => {
     expect(test.processCalls()).toHaveLength(0);
     const result = await test.inspect("rancher");
     expect(result).toMatchObject({status: "blocked", checkout: test.checkout});
-    expect(result.capabilities).toEqual([
-      expect.objectContaining({id: "checkout", status: "pass"}),
-      expect.objectContaining({id: "rancher-backend", status: "pass"}),
-      expect.objectContaining({id: "host-preparation", status: "blocked"}),
-    ]);
+    expect(result.capabilities).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({id: "checkout", status: "pass"}),
+        expect.objectContaining({id: "rancher-backend", status: "pass"}),
+        expect.objectContaining({id: "host-preparation", status: "blocked"}),
+      ]),
+    );
     expect(test.processCalls().map(({request}) => request.command)).toEqual(["git", "git", "git", "git", "rdctl", "docker"]);
     expect(test.processCalls().at(-1)?.options.env?.["DOCKER_HOST"]).toBe("unix:///home/dev/.rd/docker.sock");
     expect(JSON.stringify(result)).not.toContain(canary);
   });
+
+  it.each(["linux", "darwin"] as const)(
+    "checks portable preparation in the %s checkout without exposing configuration",
+    async (platform) => {
+      const app = "sites/arolariu.ro";
+      const test = portableFixture(
+        platform,
+        {clerk_secret_key: "lowercase-is-not-a-posix-next-setting"},
+        platform === "darwin" ? {"podman system connection list --format json": "[]"} : {},
+        {
+          [`${app}/.env`]: siteEnv,
+          [`${app}/.env.development.local`]: "CLERK_SECRET_KEY=\n",
+          [`${app}/licenses.json`]: "{}",
+          "scripts/__generated__/gql/README.placeholder.txt": "generated",
+          [`${exp}/config.template.json`]: '{"Site:Url":""}',
+          [`${exp}/config.docker.json`]: `{"Site:Url":"${canary}"}`,
+          [appHostName]: appHostProject,
+          "tooling/src/AppHost/Properties/launchSettings.json":
+            '{"profiles":{"AppHost":{"commandName":"Project","environmentVariables":{"ASPNETCORE_ENVIRONMENT":"Development","DOTNET_ENVIRONMENT":"Development"}}}}',
+          "/home/dev/.microsoft/usersecrets/test-apphost/secrets.json": `{"Parameters":{"sql-password":"${canary}","redis-password":"${canary}"}}`,
+        },
+      );
+      const before = test.files();
+
+      const result = await test.inspect("podman");
+
+      expect(result.status).toBe("blocked");
+      expect(result.capabilities).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({id: "apphost-config", status: "pass"}),
+          expect.objectContaining({id: "website-config", status: "blocked", detail: expect.stringContaining("CLERK_SECRET_KEY")}),
+          expect.objectContaining({id: "website-artifacts", status: "pass"}),
+          expect.objectContaining({id: "exp-config", status: "pass"}),
+          expect.objectContaining({id: "host-preparation", status: "blocked"}),
+        ]),
+      );
+      expect(JSON.stringify(result)).not.toContain(canary);
+      expect(
+        test
+          .processCalls()
+          .slice(4)
+          .map(({request}) => commandLine(request)),
+      ).toEqual(platform === "darwin" ? ["podman system connection list --format json"] : []);
+      expect(test.files()).toEqual(before);
+    },
+  );
 
   it.each([false, true])("uses only the rootless Linux Podman socket (inherited override: %s)", async (override) => {
     const socketInfo = "podman --remote info --format json";
