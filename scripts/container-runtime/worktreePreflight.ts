@@ -1167,10 +1167,16 @@ const ASSET_GROUPS = [
 const ARTIFACT_PATH = /^(?:[a-z0-9_][a-z0-9_.+@-]*\/)*[a-z0-9_][a-z0-9_.+@-]*$/iu;
 const NUGET_DIGEST = /^[a-z0-9+/]{86}==$/iu;
 
-function inspectRestoreProject(root: string, project: string, checked: Map<string, boolean>): Effect.Effect<boolean, never, ReadOnlyFiles> {
+function inspectRestoreProject(
+  root: string,
+  project: string,
+  checked: Map<string, boolean>,
+  platform: NodeJS.Platform,
+): Effect.Effect<boolean, never, ReadOnlyFiles> {
   return Effect.gen(function* () {
-    const directory = win32.dirname(project);
-    const assets = record(parseJson(yield* readManifest(win32.join(directory, "obj/project.assets.json"))));
+    const {paths, equal, isLocal} = pathProfile(platform);
+    const directory = paths.dirname(project);
+    const assets = record(parseJson(yield* readManifest(paths.join(directory, "obj/project.assets.json"), equal)));
     const restore = record(record(assets?.["project"])?.["restore"]);
     const declaredProject = restore?.["projectPath"];
     const targets = record(assets?.["targets"]);
@@ -1180,15 +1186,15 @@ function inspectRestoreProject(root: string, project: string, checked: Map<strin
     if (
       (assets?.["version"] !== 3 && assets?.["version"] !== 4)
       || typeof declaredProject !== "string"
-      || !samePath(declaredProject, project)
-      || !(yield* ownedFile(project))
+      || !equal(declaredProject, project)
+      || !(yield* ownedFile(project, equal))
       || !targets
       || Object.keys(targets).length === 0
       || !libraries
       || !groups
       || Object.keys(groups).length === 0
       || folders.length === 0
-      || !folders.every(localDrivePath)
+      || !folders.every(isLocal)
     )
       return false;
 
@@ -1203,9 +1209,15 @@ function inspectRestoreProject(root: string, project: string, checked: Map<strin
         if (library["type"] === "project") {
           const path = library["msbuildProject"];
           if (typeof path !== "string") return false;
-          const linked = win32.resolve(directory, path);
-          const relative = win32.relative(root, linked);
-          if (relative === ".." || relative.startsWith("..\\") || win32.isAbsolute(relative) || !(yield* ownedFile(linked))) return false;
+          const linked = paths.resolve(directory, path.replaceAll("\\", "/"));
+          const relative = paths.relative(root, linked);
+          if (
+            relative === ".."
+            || relative.startsWith(`..${paths.sep}`)
+            || paths.isAbsolute(relative)
+            || !(yield* ownedFile(linked, equal))
+          )
+            return false;
           continue;
         }
         if (library["type"] !== "package") return false;
@@ -1223,7 +1235,7 @@ function inspectRestoreProject(root: string, project: string, checked: Map<strin
       }
     }
 
-    if (samePath(project, win32.join(root, appHost)) && referenced.size === 0) return false;
+    if (equal(project, paths.join(root, appHost)) && referenced.size === 0) return false;
     for (const [name, value] of Object.entries(libraries)) {
       const library = record(value);
       if (library?.["type"] === "project") continue;
@@ -1247,18 +1259,22 @@ function inspectRestoreProject(root: string, project: string, checked: Map<strin
       if (verified === undefined) {
         verified = false;
         for (const folder of folders) {
-          const packageDir = win32.join(folder, path);
+          const packageDir = paths.join(folder, path);
           const observation = yield* inspectPath(packageDir).pipe(Effect.orElseSucceed(() => undefined));
           if (observation?.kind === "missing") continue;
           if (observation?.kind !== "directory") break;
-          const contentHash = yield* projectConfigFile(win32.join(packageDir, ".nupkg.metadata"), (text) => {
-            const value = record(parseJson(text))?.["contentHash"];
-            return typeof value === "string" ? value : undefined;
-          });
-          const packageHash = (yield* readManifest(win32.join(packageDir, `${path.replace("/", ".")}.nupkg.sha512`))).trim();
+          const contentHash = yield* projectConfigFile(
+            paths.join(packageDir, ".nupkg.metadata"),
+            (text) => {
+              const value = record(parseJson(text))?.["contentHash"];
+              return typeof value === "string" ? value : undefined;
+            },
+            equal,
+          );
+          const packageHash = (yield* readManifest(paths.join(packageDir, `${path.replace("/", ".")}.nupkg.sha512`), equal)).trim();
           // NuGet uses the first match; do not borrow missing payloads from other folders.
-          const hasManifest = yield* ownedFile(win32.join(packageDir, `${id}.nuspec`));
-          const files = yield* Effect.forEach(artifacts, (file) => ownedFile(win32.join(packageDir, file)), {concurrency: 16});
+          const hasManifest = yield* ownedFile(paths.join(packageDir, `${id}.nuspec`), equal);
+          const files = yield* Effect.forEach(artifacts, (file) => ownedFile(paths.join(packageDir, file), equal), {concurrency: 16});
           // The assets graph records the extracted package's content hash, not the archive digest.
           verified = contentHash === hash && NUGET_DIGEST.test(packageHash) && hasManifest && files.every(Boolean);
           break;
@@ -1744,6 +1760,32 @@ function inspectDotnetSdk(root: string, framework: string | undefined): Effect.E
   });
 }
 
+function inspectRestoreAssets(
+  paths: RepositoryPaths,
+  platform: NodeJS.Platform,
+): Effect.Effect<WorktreeCapability, never, ReadOnlyFiles | Process | Environment> {
+  return Effect.gen(function* () {
+    const {paths: pathApi, equal} = pathProfile(platform);
+    const checked = new Map<string, boolean>();
+    const receiptBefore = yield* currentWorktreeRestoreEvidence(paths);
+    let appHostObserved = false;
+    const solution = yield* inspectSolution(paths, (project) => {
+      if (equal(project, pathApi.join(paths.root, appHost))) appHostObserved = true;
+      return inspectRestoreProject(paths.root, project, checked, platform);
+    });
+    const assets = appHostObserved && solution.issues.length === 0 && solution.restoreIssues.length === 0;
+    const fresh = assets && receiptBefore !== undefined && (yield* currentWorktreeRestoreEvidence(paths)) === receiptBefore;
+    return capability(
+      "nuget-assets",
+      fresh,
+      "Setup's checkout-bound restore receipt matches the current inputs and graph; the referenced local NuGet package files were observed.",
+      assets
+        ? `Worktree preparation: local NuGet artifacts were observed, but the checkout-bound restore freshness evidence is absent, stale, or unavailable. ${worktreeRestoreRemediation}`
+        : `Worktree preparation: solution restore artifacts could not be verified. ${worktreeRestoreRemediation}`,
+    );
+  });
+}
+
 function inspectBundle(
   paths: RepositoryPaths,
   env: EnvironmentSnapshot,
@@ -1764,15 +1806,7 @@ function inspectBundle(
       ?.attributes.get("Version");
     const framework = yield* toolingFramework(paths.root, env.platform);
     const sdk = yield* inspectDotnetSdk(paths.root, framework?.version);
-    const checked = new Map<string, boolean>();
-    const receiptBefore = yield* currentWorktreeRestoreEvidence(paths);
-    let appHostObserved = false;
-    const solution = yield* inspectSolution(paths, (project) => {
-      if (samePath(project, win32.join(paths.root, appHost))) appHostObserved = true;
-      return inspectRestoreProject(paths.root, project, checked);
-    });
-    const assets = appHostObserved && solution.issues.length === 0 && solution.restoreIssues.length === 0;
-    const fresh = assets && receiptBefore !== undefined && (yield* currentWorktreeRestoreEvidence(paths)) === receiptBefore;
+    const assets = yield* inspectRestoreAssets(paths, env.platform);
     const bundle = !!(
       hasPowerShell
       && project
@@ -1783,14 +1817,7 @@ function inspectBundle(
     );
     return [
       sdk,
-      capability(
-        "nuget-assets",
-        fresh,
-        "Setup's checkout-bound restore receipt matches the current inputs and graph; the referenced local NuGet package files were observed.",
-        assets
-          ? `Worktree preparation: local NuGet artifacts were observed, but the checkout-bound restore freshness evidence is absent, stale, or unavailable. ${worktreeRestoreRemediation}`
-          : `Worktree preparation: solution restore artifacts could not be verified. ${worktreeRestoreRemediation}`,
-      ),
+      assets,
       hasPowerShell
         ? capability(
             "aspire-bundle",
@@ -1882,7 +1909,16 @@ function inspect(
         return [sdk, tls];
       });
       const checks = yield* Effect.all(
-        [...config, engine, artifacts, expConfig, python, ...(nativeTls ? [inspectPosixWebsiteTrust(root, env, names)] : [])],
+        [
+          ...config,
+          engine,
+          artifacts,
+          expConfig,
+          python,
+          ...(nativeTls
+            ? [inspectPosixWebsiteTrust(root, env, names), inspectRestoreAssets(createRepositoryPaths(root), env.platform)]
+            : []),
+        ],
         {concurrency: "unbounded"},
       );
       return {

@@ -14,7 +14,11 @@ import {createDotnetSetupPhase} from "../commands/setup/phases/dotnet.ts";
 import {recordingInspection} from "../commands/setup/phase-testing.ts";
 import {recordWorktreeRestoreEvidence} from "../commands/setup/worktreeRestoreEvidence.ts";
 import {inspectionProbeRunner, probes} from "../inspection/probes.ts";
-import {currentWorktreeRestoreEvidence} from "../inspection/worktreeRestore.ts";
+import {
+  currentWorktreeRestoreEvidence,
+  renderWorktreeRestoreEvidence,
+  snapshotWorktreeRestoreInputs,
+} from "../inspection/worktreeRestore.ts";
 import {Environment} from "../platform/Environment.ts";
 import {ReadOnlyFiles} from "../platform/Files.ts";
 import {makeTestLayer, scriptedOutcomes} from "../platform/testing.ts";
@@ -931,6 +935,49 @@ describe("worktree Aspire preflight", () => {
       }).pipe(Effect.provide(test.layer)),
     );
     test.expectNoTransport();
+  });
+
+  it.each(["linux", "darwin"] as const)("binds a %s receipt to canonical SDK, NuGet settings, and checkout graph", async (platform) => {
+    const root = "/home/dev/git/worktrees/task";
+    const paths = {...createRepositoryPaths(root), root, solution: `${root}/arolariu.slnx`};
+    const primary = "/home/dev/.nuget/NuGet/NuGet.Config";
+    const userConfig = "/home/dev/.nuget/NuGet/config/local.config";
+    const graph = JSON.stringify({project: {restore: {configFilePaths: [primary, userConfig]}}});
+    const test = portableFixture(
+      platform,
+      {},
+      {"dotnet --version": "10.0.404\n", "dotnet --list-sdks": "10.0.404 [/sdk]\n"},
+      {
+        "arolariu.slnx": `<Solution><Project Path="${appHostName}" /></Solution>`,
+        [appHostName]: appHostProject,
+        [graphPath]: graph,
+        "tooling/src/AppHost/obj/AppHost.csproj.nuget.g.props": "<Project />",
+        "tooling/src/AppHost/obj/AppHost.csproj.nuget.g.targets": "<Project />",
+        [primary]: "<configuration />",
+        [userConfig]: "<configuration />",
+        "/sdk/10.0.404/sdk.marker": "SDK directory fixture",
+      },
+    );
+
+    await Effect.runPromise(
+      Effect.gen(function* () {
+        const fs = yield* FileSystem.FileSystem;
+        const input = yield* snapshotWorktreeRestoreInputs(paths);
+        expect(input?.projects).toEqual([`${root}/${appHostName}`]);
+        if (!input) return;
+        const receipt = yield* renderWorktreeRestoreEvidence(input);
+        expect(receipt).toBeDefined();
+        if (!receipt) return;
+        yield* fs.writeFileString(receiptPath, receipt);
+        expect(yield* currentWorktreeRestoreEvidence(paths)).toMatch(/^[a-f0-9]{64}$/u);
+        yield* fs.writeFileString(userConfig, "<configuration><packageSources /></configuration>");
+        expect(yield* currentWorktreeRestoreEvidence(paths)).toBeUndefined();
+        yield* fs.writeFileString(userConfig, "<configuration />");
+        expect(yield* currentWorktreeRestoreEvidence(paths)).toBeDefined();
+        yield* fs.writeFileString(`${root}/nuget.config`, "<configuration />");
+        expect(yield* currentWorktreeRestoreEvidence(paths)).toBeUndefined();
+      }).pipe(Effect.provide(test.layer)),
+    );
   });
 
   it.runIf(process.platform === "win32")("rejects the older receipt version without response-file policy", async () => {

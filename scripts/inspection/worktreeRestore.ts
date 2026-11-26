@@ -3,7 +3,7 @@
  * @module scripts/inspection/worktreeRestore
  */
 import {createHash} from "node:crypto";
-import {win32} from "node:path";
+import {posix, win32} from "node:path";
 
 import {Effect} from "effect";
 
@@ -43,12 +43,17 @@ const sdkSolutionHooks = new Map([
     "microsoft.net.sdk.solution.targets",
     {
       sha256: "6d4514faf1f8a6a34732c369635d0ccb50f9fa3a5131a48733c48f794ceff62c",
+      posixSha256: "81c479455fd55869940842c0ff4db9e6b6924b9d14dab5e5f84d27eceffd3537",
       target: "Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.Sdk.Common.targets",
     },
   ],
   [
     "microsoft.nuget.importafter.targets",
-    {sha256: "7467b24ffc850450c2c9d7fc741228479342e6abd359bc39cc6adbba12754279", target: "NuGet.targets"},
+    {
+      sha256: "7467b24ffc850450c2c9d7fc741228479342e6abd359bc39cc6adbba12754279",
+      posixSha256: "7094a61a6521a8a96579c3ff6547a684fb7dca82acd28bcf5933c179bb3d17cb",
+      target: "NuGet.targets",
+    },
   ],
 ]);
 const inputs = [
@@ -98,32 +103,51 @@ export interface RestoreInputs {
   readonly root: string;
   readonly digest: string;
   readonly projects: readonly string[];
+  readonly platform: NodeJS.Platform;
 }
 
-function samePath(left: string, right: string): boolean {
-  return win32.normalize(left).toLowerCase() === win32.normalize(right).toLowerCase();
+/** Path comparison and spelling for the host that will consume the restore graph. */
+export function restorePathsFor(platform: NodeJS.Platform): {
+  readonly path: typeof posix;
+  readonly key: (value: string) => string;
+  readonly isLocal: (value: string) => boolean;
+} {
+  const windows = platform === "win32";
+  return {
+    path: windows ? win32 : posix,
+    key: windows ? (value) => win32.normalize(value).toLowerCase() : posix.normalize,
+    isLocal: windows ? (value) => localPath.test(value) : (value) => /^\/(?!\/)[^\\\u0000-\u001f\u007f]*$/u.test(value),
+  };
 }
+
+type RestorePathProfile = ReturnType<typeof restorePathsFor>;
 
 function digest(value: string | Uint8Array): string {
   return createHash("sha256").update(value).digest("hex");
 }
 
-function ownedBytes(path: string, limit = MAX_INPUT): Effect.Effect<Uint8Array | undefined, never, ReadOnlyFiles> {
+function ownedBytes(
+  profile: RestorePathProfile,
+  path: string,
+  limit = MAX_INPUT,
+): Effect.Effect<Uint8Array | undefined, never, ReadOnlyFiles> {
   return Effect.gen(function* () {
     const files = yield* ReadOnlyFiles;
-    if (!samePath(yield* files.realPath(path), path) || (yield* inspectPath(path)).kind !== "file") return undefined;
+    if (profile.key(yield* files.realPath(path)) !== profile.key(path) || (yield* inspectPath(path)).kind !== "file") return undefined;
     return yield* files.readBytesBounded(path, limit);
   }).pipe(Effect.orElseSucceed(() => undefined));
 }
 
 function observeRestoreSdk(
   root: string,
+  profile: RestorePathProfile,
 ): Effect.Effect<
   readonly [path: string, solutionHooks: readonly [name: string, digest: string][]] | undefined,
   never,
   ReadOnlyFiles | Process
 > {
   return Effect.gen(function* () {
+    const {path, key, isLocal} = profile;
     const options = {cwd: root, env: dotnetEnv};
     const selected = yield* inspectionProbeRunner.run(probes.dotnet.version(), options);
     const version = selected.kind === "succeeded" ? selected.stdout.trim() : "";
@@ -135,58 +159,59 @@ function observeRestoreSdk(
       .map((line) => /^(\S+)\s+\[([^\]\r\n]+)\]$/u.exec(line.trim()))
       .filter((match) => match?.[1] === version);
     const base = matches[0]?.[2];
-    if (matches.length !== 1 || base === undefined || !localPath.test(base)) return undefined;
-    const sdk = win32.join(base, version);
+    if (matches.length !== 1 || base === undefined || !isLocal(base)) return undefined;
+    const sdk = path.join(base, version);
     const files = yield* ReadOnlyFiles;
     const canonicalSdk = yield* files.realPath(sdk);
     if (
-      !samePath(canonicalSdk, sdk)
+      key(canonicalSdk) !== key(sdk)
       || (yield* inspectPath(sdk)).kind !== "directory"
-      || (yield* inspectPath(win32.join(sdk, "MSBuild.rsp"))).kind !== "missing"
+      || (yield* inspectPath(path.join(sdk, "MSBuild.rsp"))).kind !== "missing"
     )
       return undefined;
     // Current's solution metaproject imports every entry in these SDK wildcard directories.
     // Bind only the shipped hook names from the canonical SDK; additional hooks are unsupported.
     const hooks: [string, string][] = [];
     for (const phase of ["ImportBefore", "ImportAfter"]) {
-      const directory = win32.join(sdk, "Current", "SolutionFile", phase);
+      const directory = path.join(sdk, "Current", "SolutionFile", phase);
       const observed = yield* inspectPath(directory);
       if (observed.kind === "missing") continue;
-      if (observed.kind !== "directory" || !samePath(yield* files.realPath(directory), directory)) return undefined;
+      if (observed.kind !== "directory" || key(yield* files.realPath(directory)) !== key(directory)) return undefined;
       const names = yield* files.readDirectory(directory);
       if (names.length > (phase === "ImportAfter" ? sdkSolutionHooks.size : 0)) return undefined;
       const seen = new Set<string>();
       for (const name of names) {
-        const key = name.toLowerCase();
-        const stock = sdkSolutionHooks.get(key);
-        if (!stock || seen.has(key)) return undefined;
-        const bytes = yield* ownedBytes(win32.join(directory, name));
-        if (!bytes?.length || digest(bytes) !== stock.sha256) return undefined;
-        const target = yield* ownedBytes(win32.join(sdk, stock.target));
+        const hook = name.toLowerCase();
+        const stock = sdkSolutionHooks.get(hook);
+        if (!stock || seen.has(hook)) return undefined;
+        const expected = path === win32 ? stock.sha256 : stock.posixSha256;
+        const bytes = yield* ownedBytes(profile, path.join(directory, name));
+        if (!bytes?.length || digest(bytes) !== expected) return undefined;
+        const target = yield* ownedBytes(profile, path.join(sdk, stock.target));
         if (!target?.length) return undefined;
-        hooks.push([key, stock.sha256], [stock.target, digest(target)]);
-        seen.add(key);
+        hooks.push([hook, expected], [stock.target, digest(target)]);
+        seen.add(hook);
       }
     }
-    return [canonicalSdk.toLowerCase(), hooks.sort(([left], [right]) => left.localeCompare(right))] as const;
+    return [key(canonicalSdk), hooks.sort(([left], [right]) => left.localeCompare(right))] as const;
   }).pipe(Effect.orElseSucceed(() => undefined));
 }
 
-function hasNoSolutionImports(solution: string): Effect.Effect<boolean, never, ReadOnlyFiles> {
+function hasNoSolutionImports(solution: string, path: typeof posix): Effect.Effect<boolean, never, ReadOnlyFiles> {
   return Effect.gen(function* () {
-    const {dir, base, name, ext} = win32.parse(solution);
+    const {dir, base, name, ext} = path.parse(solution);
     // Current SDKs use legacy .sln sidecars even for .slnx. Fence both names beside
     // the selected solution, but only Directory.Solution.* is searched in ancestors.
     for (const filename of ext.toLowerCase() === ".slnx" ? [base, `${name}.sln`] : [base]) {
       for (const phase of ["before", "after"]) {
-        if ((yield* inspectPath(win32.join(dir, `${phase}.${filename}.targets`))).kind !== "missing") return false;
+        if ((yield* inspectPath(path.join(dir, `${phase}.${filename}.targets`))).kind !== "missing") return false;
       }
     }
-    for (let directory = dir; ; directory = win32.dirname(directory)) {
+    for (let directory = dir; ; directory = path.dirname(directory)) {
       for (const name of solutionBuildFiles) {
-        if ((yield* inspectPath(win32.join(directory, name))).kind !== "missing") return false;
+        if ((yield* inspectPath(path.join(directory, name))).kind !== "missing") return false;
       }
-      if (directory === win32.dirname(directory)) return true;
+      if (directory === path.dirname(directory)) return true;
     }
   }).pipe(Effect.orElseSucceed(() => false));
 }
@@ -206,7 +231,8 @@ function supportsBuildExpressions(value: string): boolean {
   );
 }
 
-function supportedInput(path: string, content: string, listed: ReadonlySet<string>): boolean {
+function supportedInput(input: string, content: string, listed: ReadonlySet<string>, profile: RestorePathProfile): boolean {
+  const {path, key} = profile;
   const elements = readBuildProjectXml(content);
   if (!elements) return false;
   let importSeen = false;
@@ -218,7 +244,7 @@ function supportedInput(path: string, content: string, listed: ReadonlySet<strin
         importSeen
         || name !== "Import"
         || !selfClosing
-        || !path.endsWith("sites\\api.arolariu.ro\\tests\\Directory.Build.props")
+        || !input.endsWith(path.join("sites", "api.arolariu.ro", "tests", "Directory.Build.props"))
         || attributes.size !== 1
         || attributes.get("Project")?.replaceAll(/\s+/gu, " ") !== knownImport
       )
@@ -233,7 +259,7 @@ function supportedInput(path: string, content: string, listed: ReadonlySet<strin
         relative === undefined
         || !/^[a-z0-9_.\\/ -]+$/iu.test(relative)
         || win32.isAbsolute(relative)
-        || !listed.has(win32.resolve(win32.dirname(path), relative).toLowerCase())
+        || !listed.has(key(path.resolve(path.dirname(input), relative.replaceAll("\\", "/"))))
       )
         return false;
     }
@@ -241,16 +267,17 @@ function supportedInput(path: string, content: string, listed: ReadonlySet<strin
   return true;
 }
 
-function configPaths(value: unknown): string[] | undefined {
+function configPaths(value: unknown, profile: RestorePathProfile): string[] | undefined {
   if (!Array.isArray(value) || value.length > MAX_NUGET_CONFIG_FILES) return undefined;
+  const {path: pathApi, key, isLocal} = profile;
   const paths: string[] = [];
   const seen = new Set<string>();
   for (const path of value) {
-    if (typeof path !== "string" || !localPath.test(path) || win32.extname(path).toLowerCase() !== ".config") return undefined;
-    const normalized = win32.normalize(path);
-    if (normalized !== path.replaceAll("/", "\\") || seen.has(normalized.toLowerCase())) return undefined;
+    if (typeof path !== "string" || !isLocal(path) || pathApi.extname(path).toLowerCase() !== ".config") return undefined;
+    const normalized = pathApi.normalize(path);
+    if (normalized !== (pathApi === win32 ? path.replaceAll("/", "\\") : path) || seen.has(key(normalized))) return undefined;
     paths.push(normalized);
-    seen.add(normalized.toLowerCase());
+    seen.add(key(normalized));
   }
   return paths;
 }
@@ -261,47 +288,54 @@ function configRoot(env: EnvironmentSnapshot, key: string): string | undefined {
   return paths.length === 1 && path && localPath.test(path) ? win32.normalize(path) : undefined;
 }
 
-function configInputs(env: EnvironmentSnapshot, projects: readonly string[]): Effect.Effect<string | undefined, never, ReadOnlyFiles> {
+function configInputs(
+  env: EnvironmentSnapshot,
+  projects: readonly string[],
+  profile: RestorePathProfile,
+): Effect.Effect<string | undefined, never, ReadOnlyFiles> {
   return Effect.gen(function* () {
-    const roaming = configRoot(env, "appdata");
-    const programFiles = configRoot(env, "programfiles(x86)");
-    if (!roaming || !programFiles) return undefined; // Do not infer redirected or fallback roots.
+    const {path, key, isLocal} = profile;
+    const windows = env.platform === "win32";
+    const home = env.variables["HOME"];
+    const roaming = windows ? configRoot(env, "appdata") : home && isLocal(home) ? posix.join(home, ".nuget") : undefined;
+    const programFiles = windows ? configRoot(env, "programfiles(x86)") : "/etc/opt";
+    if (!roaming || !programFiles) return undefined;
+    if (!windows && (yield* inspectPath(path.join(programFiles, "NuGet", "NuGetDefaults.Config"))).kind !== "missing") return undefined;
     const files = yield* ReadOnlyFiles;
-    const primary = win32.join(roaming, "NuGet", "NuGet.Config");
+    const primary = path.join(roaming, "NuGet", "NuGet.Config");
     const candidates = [primary];
-    // Only fence the known Windows layout. NuGet's restore graph is the authority for
-    // which settings were used; do not ask NuGet to load settings (it can create defaults).
-    for (const dir of [win32.join(win32.dirname(primary), "config"), win32.join(programFiles, "NuGet", "Config")]) {
+    // NuGet's restore graph identifies the effective settings; loading settings can create defaults.
+    for (const dir of [path.join(path.dirname(primary), "config"), path.join(programFiles, "NuGet", "Config")]) {
       const observation = yield* inspectPath(dir);
       if (observation.kind === "missing") continue;
-      if (observation.kind !== "directory" || !samePath(yield* files.realPath(dir), dir)) return undefined;
+      if (observation.kind !== "directory" || key(yield* files.realPath(dir)) !== key(dir)) return undefined;
       for (const name of yield* files.readDirectory(dir)) {
-        if (win32.extname(name).toLowerCase() !== ".config") continue;
-        candidates.push(win32.join(dir, name));
+        if (path.extname(name).toLowerCase() !== ".config") continue;
+        candidates.push(path.join(dir, name));
         if (candidates.length > MAX_NUGET_CONFIG_FILES) return undefined;
       }
     }
-    const expected = new Set(candidates.map((path) => path.toLowerCase()));
+    const expected = new Set(candidates.map(key));
     if (expected.size !== candidates.length) return undefined;
     let effective: readonly string[] | undefined;
     for (const project of projects) {
-      const bytes = yield* ownedBytes(win32.join(win32.dirname(project), "obj", "project.assets.json"));
+      const bytes = yield* ownedBytes(profile, path.join(path.dirname(project), "obj", "project.assets.json"));
       if (!bytes) return undefined;
       const assets: {project?: {restore?: {configFilePaths?: unknown}}} | null = yield* Effect.try(() =>
         JSON.parse(new TextDecoder().decode(bytes)),
       );
-      const recorded = configPaths(assets?.project?.restore?.configFilePaths);
-      if (!recorded || recorded.length !== expected.size || recorded.some((path) => !expected.has(path.toLowerCase()))) return undefined;
-      if (effective?.some((path, index) => path.toLowerCase() !== recorded[index]?.toLowerCase())) return undefined;
+      const recorded = configPaths(assets?.project?.restore?.configFilePaths, profile);
+      if (!recorded || recorded.length !== expected.size || recorded.some((entry) => !expected.has(key(entry)))) return undefined;
+      if (effective?.some((entry, index) => key(entry) !== key(recorded[index] ?? ""))) return undefined;
       effective ??= recorded;
     }
     if (!effective) return undefined;
     const entries: [string, string][] = [];
-    for (const path of effective) {
-      const bytes = yield* ownedBytes(path);
+    for (const entry of effective) {
+      const bytes = yield* ownedBytes(profile, entry);
       if (!bytes || !supportsLiteralNuGetConfig(bytes)) return undefined;
       // Only the byte digest contributes to evidence; no settings are expanded or persisted.
-      entries.push([path.toLowerCase(), digest(bytes)]);
+      entries.push([key(entry), digest(bytes)]);
     }
     return digest(JSON.stringify(entries));
   }).pipe(Effect.orElseSucceed(() => undefined));
@@ -319,9 +353,14 @@ export function snapshotWorktreeRestoreInputs(
   return Effect.gen(function* () {
     const env = yield* Environment;
     const files = yield* ReadOnlyFiles;
+    const profile = restorePathsFor(env.platform);
+    const {path, key, isLocal} = profile;
+    const windows = env.platform === "win32";
+    const pathAllowed = windows ? (value: string) => drivePath.test(value) : isLocal;
     if (
-      env.platform !== "win32"
-      || !drivePath.test(paths.root)
+      (!windows && env.platform !== "linux" && env.platform !== "darwin")
+      || (!windows && Object.keys(env.variables).some((name) => name.toLowerCase() === "nuget_common_application_data"))
+      || !pathAllowed(paths.root)
       || Object.keys(env.variables).some(
         (key) =>
           !optionalLocalHooks.has(key.toLowerCase())
@@ -333,51 +372,52 @@ export function snapshotWorktreeRestoreInputs(
     )
       return undefined;
     const root = yield* files.realPath(paths.root);
-    if (!samePath(root, paths.root)) return undefined;
-    if (!(yield* hasNoSolutionImports(paths.solution))) return undefined;
+    if (key(root) !== key(paths.root)) return undefined;
+    if (!(yield* hasNoSolutionImports(paths.solution, path))) return undefined;
     const absentHooks = new Map<string, string>();
-    for (const [key, path] of Object.entries(env.variables)) {
-      const name = key.toLowerCase();
+    for (const [variable, file] of Object.entries(env.variables)) {
+      const name = variable.toLowerCase();
       if (!optionalLocalHooks.has(name)) continue;
-      if (absentHooks.has(name) || !path || !drivePath.test(path) || (yield* inspectPath(path)).kind !== "missing") return undefined;
+      if (absentHooks.has(name) || !file || !pathAllowed(file) || (yield* inspectPath(file)).kind !== "missing") return undefined;
       // Stock MSBuild checks Exists before importing these particular hooks. Never read an external hook.
-      absentHooks.set(name, digest(win32.normalize(path)));
+      absentHooks.set(name, digest(path.normalize(file)));
     }
-    const solution = yield* ownedBytes(paths.solution);
+    const solution = yield* ownedBytes(profile, paths.solution);
     if (!solution) return undefined;
     const projects = solutionProjectPaths(new TextDecoder().decode(solution));
     if (!projects?.some((name) => name.replaceAll("\\", "/") === "tooling/src/AppHost/AppHost.csproj")) return undefined;
-    const projectPaths = projects.map((path) => win32.join(root, path)).sort();
-    const listed = new Set(projectPaths.map((path) => path.toLowerCase()));
+    const projectPaths = projects.map((file) => path.join(root, file.replaceAll("\\", "/"))).sort();
+    const listed = new Set(projectPaths.map(key));
     const packageRoots = Object.keys(env.variables).filter((key) => key.toLowerCase() === "nuget_packages");
-    const key = packageRoots[0];
-    const packageRoot = key === undefined ? "" : env.variables[key];
-    if (packageRoots.length > 1 || packageRoot === undefined || (packageRoot !== "" && !drivePath.test(packageRoot))) return undefined;
+    const packageVariable = packageRoots[0];
+    const packageRoot = packageVariable === undefined ? "" : env.variables[packageVariable];
+    if (packageRoots.length > 1 || packageRoot === undefined || (packageRoot !== "" && !pathAllowed(packageRoot))) return undefined;
     const entries = new Map<string, string>([["arolariu.slnx", digest(solution)]]);
     const directories = new Set<string>();
     for (const project of projectPaths) {
       if (!/\.(?:csproj|fsproj|vbproj|esproj)$/iu.test(project)) return undefined;
-      const bytes = yield* ownedBytes(project);
-      if (!bytes || !supportedInput(project, new TextDecoder().decode(bytes), listed)) return undefined;
-      entries.set(win32.relative(root, project), digest(bytes));
-      for (let dir = win32.dirname(project); !directories.has(dir); dir = win32.dirname(dir)) {
+      const bytes = yield* ownedBytes(profile, project);
+      if (!bytes || !supportedInput(project, new TextDecoder().decode(bytes), listed, profile)) return undefined;
+      entries.set(path.relative(root, project), digest(bytes));
+      for (let dir = path.dirname(project); !directories.has(dir); dir = path.dirname(dir)) {
         directories.add(dir);
-        if (samePath(dir, root)) break;
+        if (key(dir) === key(root)) break;
       }
     }
     for (const directory of directories) {
-      if ((yield* inspectPath(win32.join(directory, directoryResponseFile))).kind !== "missing") return undefined;
-      for (const name of inputs) {
-        const path = win32.join(directory, name);
-        const present = yield* inspectPath(path);
+      if ((yield* inspectPath(path.join(directory, directoryResponseFile))).kind !== "missing") return undefined;
+      for (const name of windows ? inputs : [...inputs, "nuget.config", "NuGet.config"]) {
+        const file = path.join(directory, name);
+        const present = yield* inspectPath(file);
         if (present.kind === "missing") continue;
         // Custom repository config is outside this profile. Supported user and machine
         // settings are bound separately using NuGet's effective file list.
-        if (name === "NuGet.Config") return undefined;
-        const bytes = yield* ownedBytes(path);
+        if (name.toLowerCase() === "nuget.config") return undefined;
+        const bytes = yield* ownedBytes(profile, file);
         if (
           !bytes
-          || ((name.endsWith(".props") || name.endsWith(".targets")) && !supportedInput(path, new TextDecoder().decode(bytes), listed))
+          || ((name.endsWith(".props") || name.endsWith(".targets"))
+            && !supportedInput(file, new TextDecoder().decode(bytes), listed, profile))
         )
           return undefined;
         if (name === "global.json") {
@@ -394,25 +434,27 @@ export function snapshotWorktreeRestoreInputs(
           )
             return undefined;
         }
-        entries.set(win32.relative(root, path), digest(bytes));
+        entries.set(path.relative(root, file), digest(bytes));
       }
     }
-    for (let dir = win32.dirname(root); dir !== root; dir = win32.dirname(dir)) {
-      for (const name of [...parentInputs, directoryResponseFile]) {
-        if ((yield* inspectPath(win32.join(dir, name))).kind !== "missing") return undefined;
+    for (let dir = path.dirname(root); dir !== root; dir = path.dirname(dir)) {
+      for (const name of [...parentInputs, directoryResponseFile, ...(windows ? [] : ["nuget.config", "NuGet.config"])]) {
+        if ((yield* inspectPath(path.join(dir, name))).kind !== "missing") return undefined;
       }
-      if (dir === win32.dirname(dir)) break;
+      if (dir === path.dirname(dir)) break;
     }
     const managed = projectPaths.filter((project) => /\.(?:csproj|fsproj|vbproj)$/iu.test(project));
-    const configs = yield* configInputs(env, managed);
+    const configs = yield* configInputs(env, managed, profile);
     if (configs === undefined) return undefined;
-    const sdk = yield* observeRestoreSdk(root);
+    const sdk = yield* observeRestoreSdk(root, profile);
     if (sdk === undefined) return undefined;
     return {
       root,
+      platform: env.platform,
       projects: managed,
       digest: digest(
         JSON.stringify([
+          ...(windows ? [] : [env.platform]),
           env.architecture,
           sdk,
           packageRoot,
@@ -427,14 +469,16 @@ export function snapshotWorktreeRestoreInputs(
 
 function graphDigest(input: RestoreInputs): Effect.Effect<string | undefined, never, ReadOnlyFiles> {
   return Effect.gen(function* () {
+    const profile = restorePathsFor(input.platform);
+    const {path} = profile;
     const entries: [string, string][] = [];
     for (const project of input.projects) {
-      const base = win32.basename(project);
+      const base = path.basename(project);
       for (const name of ["project.assets.json", `${base}.nuget.g.props`, `${base}.nuget.g.targets`]) {
-        const path = win32.join(win32.dirname(project), "obj", name);
-        const bytes = yield* ownedBytes(path);
+        const file = path.join(path.dirname(project), "obj", name);
+        const bytes = yield* ownedBytes(profile, file);
         if (!bytes?.length) return undefined;
-        entries.push([win32.relative(input.root, path), digest(bytes)]);
+        entries.push([path.relative(input.root, file), digest(bytes)]);
       }
     }
     return digest(JSON.stringify(entries));
@@ -463,18 +507,21 @@ export function currentWorktreeRestoreEvidence(
   paths: RepositoryPaths,
 ): Effect.Effect<string | undefined, never, ReadOnlyFiles | Environment | Process> {
   return Effect.gen(function* () {
-    const directory = win32.join(paths.root, worktreeRestorePaths.directory);
-    const path = win32.join(directory, worktreeRestorePaths.receipt);
-    const lock = win32.join(directory, worktreeRestorePaths.lock);
+    const env = yield* Environment;
+    const profile = restorePathsFor(env.platform);
+    const {path} = profile;
+    const directory = path.join(paths.root, worktreeRestorePaths.directory);
+    const receipt = path.join(directory, worktreeRestorePaths.receipt);
+    const lock = path.join(directory, worktreeRestorePaths.lock);
     if ((yield* inspectPath(lock)).kind !== "missing") return undefined;
-    const evidence = yield* ownedBytes(path, 4096);
+    const evidence = yield* ownedBytes(profile, receipt, 4096);
     if (!evidence) return undefined;
     const inputsBefore = yield* snapshotWorktreeRestoreInputs(paths);
     if (!inputsBefore) return undefined;
     const expected = yield* renderWorktreeRestoreEvidence(inputsBefore);
     if (expected === undefined || new TextDecoder().decode(evidence) !== expected) return undefined;
     const inputsAfter = yield* snapshotWorktreeRestoreInputs(paths);
-    const finalEvidence = yield* ownedBytes(path, 4096);
+    const finalEvidence = yield* ownedBytes(profile, receipt, 4096);
     return inputsAfter?.digest === inputsBefore.digest
       && inputsAfter.root === inputsBefore.root
       && (yield* renderWorktreeRestoreEvidence(inputsAfter)) === expected

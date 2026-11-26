@@ -2,14 +2,17 @@
  * @fileoverview Atomic restore receipt publication inside the existing Setup action.
  * @module scripts/commands/setup/worktreeRestoreEvidence
  */
-import {win32} from "node:path";
-
 import {Effect, Exit, FileSystem, type Path, type PlatformError} from "effect";
 
 import type {RepositoryPaths} from "../../common/repository-paths.ts";
 import {inspectSolution} from "../../inspection/dotnet.ts";
 import {inspectPath} from "../../inspection/files.ts";
-import {renderWorktreeRestoreEvidence, snapshotWorktreeRestoreInputs, worktreeRestorePaths} from "../../inspection/worktreeRestore.ts";
+import {
+  renderWorktreeRestoreEvidence,
+  restorePathsFor,
+  snapshotWorktreeRestoreInputs,
+  worktreeRestorePaths,
+} from "../../inspection/worktreeRestore.ts";
 import type {Environment} from "../../platform/Environment.ts";
 import {ReadOnlyFiles, writeTextAtomic} from "../../platform/Files.ts";
 import type {Process} from "../../platform/Process.ts";
@@ -38,16 +41,16 @@ export function recordWorktreeRestoreEvidence<A, E, R>(
       if (!before) return false;
       const files = yield* ReadOnlyFiles;
       const fs = yield* FileSystem.FileSystem;
-      const directory = win32.join(before.root, worktreeRestorePaths.directory);
-      const owns = (path: string) =>
-        Effect.map(files.realPath(path), (observed) => win32.normalize(observed).toLowerCase() === path.toLowerCase());
+      const {path: pathApi, key} = restorePathsFor(before.platform);
+      const directory = pathApi.join(before.root, worktreeRestorePaths.directory);
+      const owns = (path: string) => Effect.map(files.realPath(path), (observed) => key(observed) === key(path));
       // Never follow a redirected obj or write outside the checkout.
-      if (!(yield* owns(win32.dirname(directory)))) return false;
+      if (!(yield* owns(pathApi.dirname(directory)))) return false;
       if ((yield* inspectPath(directory)).kind === "missing") yield* fs.makeDirectory(directory);
       if (!(yield* owns(directory))) return false;
-      const lock = win32.join(directory, worktreeRestorePaths.lock);
+      const lock = pathApi.join(directory, worktreeRestorePaths.lock);
       yield* fs.writeFileString(lock, "", {flag: "wx"});
-      const path = win32.join(directory, worktreeRestorePaths.receipt);
+      const path = pathApi.join(directory, worktreeRestorePaths.receipt);
       const outcome = yield* Effect.exit(
         interruptible(
           Effect.gen(function* () {
