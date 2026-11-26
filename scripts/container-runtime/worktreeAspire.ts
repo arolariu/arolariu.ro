@@ -154,6 +154,25 @@ export function beginWorktreeLaunch(
   );
 }
 
+/** Retires a foreground attempt after its owned child has exited and its engine has no run containers. */
+export function retireExitedWorktreeLaunch(
+  lease: WorktreeLease,
+  proveNoContainers: () => Promise<boolean>,
+): Effect.Effect<void, WorktreeLaunchError, WorktreePlatform> {
+  return withCurrent(lease, "Could not verify scoped foreground cleanup.", (current, registry) =>
+    worktreeIO(async () => {
+      if (current.phase !== "pending" || !(await proveNoContainers())) throw new Error("Scoped cleanup could not be proven");
+      const runtime = join(runDirectory(registry, current), "runtime");
+      if (!(await worktreeDirectory(runtime))) throw new Error("Missing runtime directory");
+      for (const name of ["exp.json", "website.pem", "website-key.pem", "service.pem", "service-key.pem"]) {
+        const path = join(runtime, name);
+        if (await registryEntryExists(path)) await unlinkRegistryEntry(path);
+      }
+      await unlinkRegistryEntry(join(registry, current.scopeId, "lease.json"));
+    }),
+  );
+}
+
 /** Tests that the observed process bound the exact allocation, not just one responding port. */
 export function sameWorktreePorts(expected: WorktreePorts, actual: unknown): actual is WorktreePorts {
   return isWorktreePorts(actual) && worktreePortNames.every((name) => expected[name] === actual[name]);

@@ -25,7 +25,8 @@ internal static class AppHostStartup
     ArgumentNullException.ThrowIfNull(runLegacy);
     if (descriptorMarker is not null || args.Any(argument =>
       argument.Equals("--worktree-descriptor", StringComparison.OrdinalIgnoreCase)
-      || argument.StartsWith("--worktree-descriptor=", StringComparison.OrdinalIgnoreCase)))
+      || argument.StartsWith("--worktree-descriptor=", StringComparison.OrdinalIgnoreCase)
+      || argument.StartsWith(WorktreeLaunchScope.RunArgument, StringComparison.OrdinalIgnoreCase)))
     {
       // Markers never carry launch authority; there is no production verifier or dispatcher.
       throw new InvalidOperationException(WorktreeLaunchScope.LaunchBlocked);

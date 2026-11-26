@@ -9,14 +9,14 @@ These full stacks have host-wide ports or named resources. Run only one at a tim
 
 ### Scoped Aspire gates
 
-Scoped Aspire is **not launchable**. It is separate from the one-human-slot legacy modes below. Run preflight from the intended canonical
-linked checkout and select either `podman` or `rancher` explicitly:
+Scoped Aspire has a **foreground Windows x64 launch path**. It is separate from the one-human-slot legacy modes below. Run preflight from
+the intended canonical linked checkout and select either `podman` or `rancher` explicitly:
 
 | Command                                                                                       | What it proves (or does)                                                                                                             |
 | --------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------ |
 | `node scripts/cli.ts dev worktree preflight --engine <podman\|rancher> --json`                | Read-only checkout, engine, configuration and artifact inspection. Windows x64 also checks trust, dependencies and restore evidence. |
 | `node scripts/cli.ts dev worktree status --engine <podman\|rancher> --json`                   | Returns `blocked` (exit 1) because a trusted native registry/process adapter is unavailable. It does not inspect the host.           |
-| `node scripts/cli.ts dev worktree stop --engine <podman\|rancher> --expected-run <id> --json` | Returns the same `blocked` result without touching the registry, engine, or a process. A run ID never grants authority.              |
+| `node scripts/cli.ts dev worktree stop --engine <podman\|rancher> --expected-run <id> --json` | Requests cooperative shutdown for the matching foreground run on the verified engine. It does not certify process exit.              |
 
 Podman preflight checks a registered, running local machine on Windows and macOS, or an existing rootless API socket at
 `$XDG_RUNTIME_DIR/podman/podman.sock` on Linux. Rancher requires a running Moby guest and checks that its daemon ID matches the local
@@ -25,10 +25,11 @@ the runtimes. Outside Windows x64 it also reports AppHost parameter presence, we
 but stays `blocked`: full host preparation is not implemented there. The current SQL Server image requires a supported x86-64 execution
 environment; preflight does not qualify ARM emulation.
 
-The scoped CLI has no `start` action and the native AppHost startup fence is unconditional. Native status and stop remain blocked until a
-trusted adapter can verify the protected registry and process identity with bounded cleanup through the owned child handle. Ownership,
-guarded stop, and handoff are tested only with injected fixture evidence. Do not try a descriptor flag, guessed URL or PID, an engine-wide
-stop, or a reset to bypass a block. Legacy Aspire and Selfhost keep their existing commands and data; the scoped model provides no reset.
+After preflight passes, run `node scripts/cli.ts dev worktree start --engine rancher` (or `--engine podman`) from the same checkout. Keep
+that foreground command open. To request cooperative shutdown, use `dev worktree stop --engine <engine> --expected-run <id>` with the run ID
+printed by the launcher. The request does not itself prove shutdown; wait for the foreground owner to finish. Native `status` and detached
+handoff are not available. Do not use a guessed descriptor, URL or PID, an engine-wide stop, or a reset to bypass a block. The scoped model
+has no reset and preserves its own volumes.
 
 On Windows, if a newer global Aspire CLI is already installed, prepare the pinned CLI in a separate cache rather than replacing the global
 installation. In a PowerShell session, use the AppHost SDK version from `tooling/src/AppHost/AppHost.csproj`:

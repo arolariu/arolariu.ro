@@ -4,7 +4,16 @@ using AppHost.LocalDevelopment;
 using AppHost.Repository;
 
 string? descriptor = Environment.GetEnvironmentVariable(WorktreeLaunchScope.DescriptorEnvironmentVariable);
-if (!AppHostStartup.TryHandleRegistry(args, descriptor, Console.Out))
+if (descriptor is not null && args is [WorktreeLaunchScope.RunArgument])
+{
+  try { await WorktreeForegroundRun.RunAsync(descriptor).ConfigureAwait(false); }
+  catch (Exception error) when (error is not OutOfMemoryException)
+  {
+    Console.Error.WriteLine($"worktree-failure:{error.GetType().Name}");
+    Environment.ExitCode = 1;
+  }
+}
+else if (!AppHostStartup.TryHandleRegistry(args, descriptor, Console.Out))
   AppHostStartup.Run(args, descriptor, RunLegacy);
 
 static void RunLegacy(string[] args)

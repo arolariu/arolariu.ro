@@ -49,6 +49,8 @@ internal static class AuxiliarySiteResources
       var app = builder.AddExecutable(name, scope.Runtime.NodeExecutable, directory, args)
         .WithEnvironment("NODE_OPTIONS", "")
         .WithIconName(icon);
+      if (name == "docs")
+        app.WithEnvironment("AROLARIU_DOCS_SITE_ONLY", "1");
       scope.WithNativeEndpoint(app, name, "http").WithHttpHealthCheck("/");
     }
   }

@@ -47,7 +47,7 @@ internal static class ExpResources
     new Dictionary<string, string>(StringComparer.Ordinal)
     {
       ["Endpoints:Database:NoSQL"] =
-        $"AccountEndpoint={scope.Url("cosmos", "http")}/;AccountKey={Constants.CosmosEmulatorWellKnownKey};",
+        $"AccountEndpoint=https://localhost:{scope.Port("cosmos")}/;AccountKey={Constants.CosmosEmulatorWellKnownKey};",
       ["Endpoints:Database:SQL"] =
         SqlResources.CreateConnectionString(sqlPassword, LocalDataContract.SqlDatabaseName, port: scope.Port("sql")),
       ["Endpoints:Storage:Blob"] = scope.BlobUrl,

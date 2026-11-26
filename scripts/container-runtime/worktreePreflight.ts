@@ -1416,10 +1416,8 @@ function pinnedBundleRoot(layout: string, pin: string): Effect.Effect<string | u
       const metadata = yield* inspectPath(candidate);
       if (metadata.kind === "missing") continue;
       if (metadata.kind !== "directory") return undefined;
-      if (samePath(candidate, root)) {
-        const parts = yield* Effect.forEach(["dcp", "managed", "dashboard"], (name) => inspectPath(win32.join(root, name)));
-        if (parts.every((part) => part.kind === "missing")) continue;
-      }
+      const parts = yield* Effect.forEach(["dcp", "managed", "dashboard"], (name) => inspectPath(win32.join(candidate, name)));
+      if (samePath(candidate, root) && parts.slice(0, 2).every((part) => part.kind === "missing")) continue;
       const canonical = yield* canonicalPath(candidate);
       if (canonical === undefined) return undefined;
       if (samePath(candidate, canonical)) return canonical;

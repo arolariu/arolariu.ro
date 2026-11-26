@@ -235,6 +235,8 @@ internal static class WebsiteCertificateRenewal
     using RSA serviceKey = RSA.Create(2048);
     var browserNames = new SubjectAlternativeNameBuilder();
     browserNames.AddDnsName(host);
+    // Next's HTTPS router proxies internally to localhost even when publicly addressed by the worktree name.
+    browserNames.AddDnsName("localhost");
     var serviceNames = new SubjectAlternativeNameBuilder();
     serviceNames.AddIpAddress(IPAddress.Loopback);
     using X509Certificate2 website = CreateLeaf(authority, websiteKey, host, browserNames, now, scoped: true);
@@ -284,7 +286,7 @@ internal static class WebsiteCertificateRenewal
     }
   }
 
-  private static X509Certificate2? LoadAuthority(string authorityDirectory)
+  internal static X509Certificate2? LoadAuthority(string authorityDirectory)
   {
     string certificatePath = Path.Combine(authorityDirectory, AuthorityCertificateFileName);
     string keyPath = Path.Combine(authorityDirectory, AuthorityKeyFileName);

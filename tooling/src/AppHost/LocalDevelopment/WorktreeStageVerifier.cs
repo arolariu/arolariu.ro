@@ -3,6 +3,11 @@ namespace AppHost.LocalDevelopment;
 using System.Text;
 using System.Text.Json;
 
+/// <summary>Fresh launch inputs supplied over the controller's private standard-input pipe.</summary>
+internal sealed record WorktreeLaunchRequest(
+  string ScopeId, string Root, string CommonGitDirectory, string Branch, string Head, string Engine, string EnginePin,
+  string NodeExecutable, Dictionary<string, string> Volumes);
+
 /// <summary>Matches a native launch descriptor against the exact pending checkout and lease.</summary>
 internal static class WorktreeStageVerifier
 {

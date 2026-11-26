@@ -110,11 +110,10 @@ describe("dev command", () => {
   ] as const)("blocks default scoped %s without inspecting the host (%j)", async (action, prefix) => {
     const harness = makeTestLayer({environment: {platform: "win32", cwd: "C:\\synthetic\\worktree"}});
     const resolvedPaths: string[] = [];
-    const guard = action === "stop" ? ["--expected-run", "1".repeat(32)] : [];
     const exit = await Effect.runPromiseExit(
       Effect.gen(function* () {
         const files = yield* ReadOnlyFiles;
-        yield* runCli([...prefix, action, "--engine", "podman", ...guard, "--json"]).pipe(
+        yield* runCli([...prefix, action, "--engine", "podman", "--json"]).pipe(
           Effect.provideService(ReadOnlyFiles, {
             ...files,
             realPath: (path) => {
@@ -137,7 +136,7 @@ describe("dev command", () => {
   });
 
   it.each([
-    ["start", "--engine", "podman"],
+    ["start", "--engine", "docker"],
     ["stop", "--engine", "podman", "--pid", "1234"],
     ["stop", "--engine", "podman", "--expected-root", "C:/another-worktree"],
     ["status", "--engine", "docker"],
@@ -147,10 +146,15 @@ describe("dev command", () => {
     expect(result.calls).toEqual([]);
   });
 
-  it("does not expose scoped start through the npm dev alias", async () => {
-    const result = await run(["dev", "aspire", "worktree", "start", "--engine", "podman"]);
-    expect(result.code).toBe(2);
-    expect(result.calls).toEqual([]);
+  it("blocks scoped start on unsupported hosts without spawning AppHost", async () => {
+    const harness = makeTestLayer({environment: {platform: "linux"}});
+    const exit = await Effect.runPromiseExit(
+      runCli(["dev", "aspire", "worktree", "start", "--engine", "podman"], makeRootCommand([makeDevCommand()])).pipe(
+        Effect.provide(harness.layer),
+      ),
+    );
+    expect(exitCodeFor(exit, undefined)).toBe(1);
+    expect(harness.processCalls()).toEqual([]);
   });
 
   it.each([
@@ -191,7 +195,7 @@ describe("dev command", () => {
   });
 
   it.each([
-    ["--verbose", "worktree", "start", "--engine", "podman"],
+    ["--verbose", "worktree", "start", "--engine", "docker"],
     ["--json", "worktree", "--unknown", "status", "--engine", "podman"],
     ["--json=maybe", "worktree", "status", "--engine", "podman"],
     ["--log-level", "worktree", "status", "--engine", "podman"],
@@ -218,7 +222,10 @@ describe("dev command", () => {
       expect(stdout).toHaveLength(1);
       expect(JSON.parse(stdout[0]?.text ?? "")).toEqual({
         status: "blocked",
-        reason: "The trusted Windows registry/process adapter is unavailable.",
+        reason:
+          runId.length === 32
+            ? "The requested foreground run is not current on the verified engine."
+            : "The trusted Windows registry/process adapter is unavailable.",
       });
       expect(stdout[0]?.text).not.toMatch(/fake-token|stopCommand|https?:/);
       expect(harness.processCalls()).toEqual([]);

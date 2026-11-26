@@ -34,8 +34,9 @@ internal static class WebsiteResources
     this IDistributedApplicationBuilder builder, RepositoryLayout layout, WorktreeLaunchScope scope)
   {
     var website = builder.AddExecutable("website", scope.Runtime.NodeExecutable, layout.WebsiteDirectory,
+        "--dns-result-order=ipv4first",
         Path.Combine(layout.RootDirectory, "node_modules", "next", "dist", "bin", "next"),
-        "dev", "--hostname", WorktreeLaunchScope.LoopbackHost,
+        "dev", "--hostname", "localhost",
         "--port", scope.Port("website").ToString(CultureInfo.InvariantCulture),
         "--experimental-https", "--experimental-https-cert", scope.Runtime.WebsiteCertificatePath!,
         "--experimental-https-key", scope.Runtime.WebsiteKeyPath)

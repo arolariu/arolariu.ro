@@ -23,6 +23,7 @@ import type {ContainerEngineInput, SelfhostAction, SelfhostInput} from "../../co
 import {inspectWorktreeLaunch, stopWorktreeLaunch} from "../../container-runtime/worktreeAspire.ts";
 import {isWorktreeRunId, readWorktreeLaunch, type WorktreeLaunchPlatform, WorktreePlatform} from "../../container-runtime/worktreeLease.ts";
 import {inspectWorktreeAspire} from "../../container-runtime/worktreePreflight.ts";
+import {requestNativeWorktreeStop, startNativeWorktree} from "../../container-runtime/worktreeStart.ts";
 import {ReportedFailure} from "../../platform/exit.ts";
 import {Presenter, toJsonValue} from "../../platform/Output.ts";
 import {renderContainerCompletion, reportChildExit} from "../containers/output.ts";
@@ -106,6 +107,10 @@ export function makeDevCommand(options: DevCommandOptions = {}): CliSubcommand {
       Effect.gen(function* () {
         const result = yield* Effect.gen(function* () {
           if (options.worktreePlatform === undefined) {
+            const requested = expectedRun === undefined ? undefined : Option.getOrUndefined(expectedRun);
+            if (action === "stop" && requested !== undefined && isWorktreeRunId(requested)) {
+              return yield* Effect.map(requestNativeWorktreeStop(engine, requested), () => ({status: "stop-requested"}) as const);
+            }
             return {status: "blocked", reason: "The trusted Windows registry/process adapter is unavailable."} as const;
           }
           const runId = expectedRun === undefined ? undefined : Option.getOrUndefined(expectedRun);
@@ -148,7 +153,20 @@ export function makeDevCommand(options: DevCommandOptions = {}): CliSubcommand {
       ),
     );
   };
-  const worktree = Command.make("worktree").pipe(Command.withSubcommands([preflight, lifecycle("status"), lifecycle("stop")]));
+  const start = Command.make("start", {engine: Flag.Literals("engine", ["podman", "rancher"])}, ({engine}) =>
+    startNativeWorktree(engine).pipe(
+      Effect.catchTag("WorktreeLaunchError", ({message}) =>
+        Effect.gen(function* () {
+          const presenter = yield* Presenter;
+          yield* Effect.orDie(presenter.json(toJsonValue({status: "blocked", reason: message})));
+          yield* presenter.line("stderr", message);
+          return yield* new ReportedFailure({exitCode: 1, message});
+        }),
+      ),
+      withCommandOutput("worktree-start"),
+    ),
+  ).pipe(Command.withDescription("Runs the current prepared Windows worktree stack in the foreground."));
+  const worktree = Command.make("worktree").pipe(Command.withSubcommands([preflight, start, lifecycle("status"), lifecycle("stop")]));
   return Command.make("dev").pipe(
     Command.withDescription("Local development environments."),
     // npm prepends `dev aspire`; reuse the same subtree and let effect/cli parse both routes.

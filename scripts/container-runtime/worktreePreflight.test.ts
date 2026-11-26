@@ -1126,6 +1126,7 @@ describe("worktree Aspire preflight", () => {
 
   it.runIf(process.platform === "win32").each([
     ["default home", {}, `${aspireHome}/bundle`],
+    ["default home with dashboard state", {}, `${aspireHome}/bundle`],
     ["versioned home", {}, `${aspireHome}/versions/13.6.5_0123456789abcdef`],
     ["explicit Aspire home", {ASPIRE_HOME: "C:/approved-aspire"}, "C:/approved-aspire/bundle"],
     ["explicit resolver layout", {AspireCliBundlePath: "C:/approved-layout"}, "C:/approved-layout"],
@@ -1133,7 +1134,11 @@ describe("worktree Aspire preflight", () => {
     const test = fixture(
       {NUGET_PACKAGES: cache, ...variables},
       {...payloadFixtures, "pwsh:profile": profile},
-      {...pinnedCliFiles, ...resolverBundle(directory)},
+      {
+        ...pinnedCliFiles,
+        ...resolverBundle(directory),
+        ...(_label === "default home with dashboard state" ? {[`${aspireHome}/dashboard/state.json`]: "{}"} : {}),
+      },
     );
     expect((await test.inspect()).capabilities).toContainEqual(expect.objectContaining({id: "aspire-bundle", status: "pass"}));
     test.expectReadOnly();

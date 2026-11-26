@@ -49,6 +49,7 @@ internal sealed record VerifiedWorktreeStage(
 internal sealed class WorktreeLaunchScope
 {
   internal const string DescriptorEnvironmentVariable = "AROLARIU_WORKTREE_DESCRIPTOR";
+  internal const string RunArgument = "--run-verified-worktree";
   internal const string LaunchBlocked = "Scoped AppHost execution requires a verified native launch adapter.";
   internal const string LoopbackHost = "127.0.0.1";
   internal const int LaunchVersion = 4;
@@ -84,6 +85,9 @@ internal sealed class WorktreeLaunchScope
   internal IReadOnlyDictionary<string, string> Volumes { get; }
   internal string WebsiteOrigin { get; }
   internal WorktreeRuntimeInputs Runtime { get; }
+  private bool DispatchAuthorized { get; set; }
+
+  internal void AuthorizeDispatch() => DispatchAuthorized = true;
 
   /// <summary>Direct startup has no verifier. Never open a caller-supplied file or fall back to the legacy graph.</summary>
   internal static WorktreeLaunchScope Load(string descriptorPath, string expectedWorktreeRoot) =>
@@ -173,9 +177,10 @@ internal sealed class WorktreeLaunchScope
     Ensure(SameCanonicalPath(layoutRoot, Root));
     // This is a model, not an executable launch path. Even a fixture or an internal caller
     // holding a valid scope cannot accidentally dispatch it through builder.Build().Run().
-    builder.Eventing.Subscribe<BeforeStartEvent>(static (_, _) =>
-      Task.FromException(new InvalidOperationException(LaunchBlocked)));
+    builder.Eventing.Subscribe<BeforeStartEvent>((_, _) => DispatchAuthorized
+      ? Task.CompletedTask : Task.FromException(new InvalidOperationException(LaunchBlocked)));
     builder.Configuration["urls"] = $"{Url("dashboardHttps", "https")};{Url("dashboardHttp", "http")}";
+    builder.Configuration["ASPNETCORE_URLS"] = builder.Configuration["urls"];
     builder.Configuration["ASPIRE_DASHBOARD_OTLP_ENDPOINT_URL"] = Url("dashboardOtlpGrpc", "https");
     builder.Configuration["ASPIRE_DASHBOARD_OTLP_HTTP_ENDPOINT_URL"] = Url("dashboardOtlpHttp", "https");
     builder.Configuration["ASPIRE_RESOURCE_SERVICE_ENDPOINT_URL"] = Url("resourceService", "https");

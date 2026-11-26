@@ -47,7 +47,7 @@ public sealed class WebsiteCertificateRenewalTests
     {
       var websiteNames = website.Extensions.OfType<X509SubjectAlternativeNameExtension>().Single();
       var serviceNames = service.Extensions.OfType<X509SubjectAlternativeNameExtension>().Single();
-      CollectionAssert.AreEqual(new[] { $"wt-{scope}.localhost" }, websiteNames.EnumerateDnsNames().ToArray());
+      CollectionAssert.AreEqual(new[] { $"wt-{scope}.localhost", "localhost" }, websiteNames.EnumerateDnsNames().ToArray());
       Assert.IsFalse(websiteNames.EnumerateIPAddresses().Any());
       CollectionAssert.AreEqual(new[] { IPAddress.Loopback }, serviceNames.EnumerateIPAddresses().ToArray());
       Assert.IsFalse(serviceNames.EnumerateDnsNames().Any());

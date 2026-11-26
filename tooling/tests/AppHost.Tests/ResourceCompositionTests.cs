@@ -155,7 +155,8 @@ public sealed class ResourceCompositionTests
     var arguments = await ResolveArgumentsAsync(Find("website"));
     CollectionAssert.Contains(arguments, "--experimental-https-cert");
     CollectionAssert.Contains(arguments, fixture.Runtime.WebsiteCertificatePath);
-    CollectionAssert.Contains(arguments, "127.0.0.1");
+    CollectionAssert.Contains(arguments, "localhost");
+    CollectionAssert.Contains(arguments, "--dns-result-order=ipv4first");
     Assert.IsFalse(arguments.OfType<string>().Any(arg => arg.Contains("inspect", StringComparison.Ordinal)));
     Assert.IsTrue(new Uri((string)website["API_URL"]).IsLoopback);
     Assert.IsFalse(new Uri((string)website["SITE_URL"]).IsLoopback);
