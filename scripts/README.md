@@ -50,10 +50,9 @@ group run without a subcommand (`arolariu`, `arolariu docs`, `arolariu dev`) pri
 
 `npm run dev -- worktree …` also accepts these scoped actions. Global flags can be interleaved, for example
 `npm run dev -- --json worktree --log-level warn preflight --engine podman`. Use `npm run dev -- worktree --help` for the group or
-`npm run dev -- worktree stop --help` for an action. Read-only preflight reports checkout, engine, configuration, and generated-file
-evidence on Windows, Linux, and macOS but can report `prepared` only on Windows x64. Scoped `start` keeps the Windows stack in the
-foreground. `stop` requires the printed run ID and the matching engine; it requests shutdown but does not certify that the owner exited.
-Native `status` and detached browser handoff are not available. See the
+`npm run dev -- worktree stop --help` for an action. Preflight is read-only. Scoped `start` keeps the stack in the foreground on prepared
+Windows, Linux, and macOS x64 hosts. `stop` requires the printed run ID and the matching engine; it requests shutdown but does not certify
+that the owner exited. Native `status` and detached browser handoff are not available. See the
 [scoped gates and acceptance checklist](../infra/Local/readme.md#scoped-aspire-gates).
 
 ### Global flags

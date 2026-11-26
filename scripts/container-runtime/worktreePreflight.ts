@@ -2053,18 +2053,21 @@ function inspect(
         ],
         {concurrency: "unbounded"},
       );
+      const capabilities = [checkoutCapability, ...checks, ...(yield* managed)];
+      const supported = nativeTls && env.architecture === "x64" && (env.effectiveUserId ?? 0) > 0;
+      if (supported && capabilities.every(({status}) => status === "pass")) return {status: "prepared", checkout, capabilities};
       return {
         status: "blocked",
         checkout,
         capabilities: [
-          checkoutCapability,
-          ...checks,
-          ...(yield* managed),
+          ...capabilities,
           capability(
             "host-preparation",
             false,
             "",
-            "Full scoped prerequisites are implemented only for Windows x64; partial preparation evidence does not qualify this host.",
+            supported
+              ? "Partial preparation evidence does not qualify this host."
+              : "Native scoped launch requires an x64 host and a non-root user on Linux or macOS.",
           ),
         ],
       };

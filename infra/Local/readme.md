@@ -9,26 +9,23 @@ These full stacks have host-wide ports or named resources. Run only one at a tim
 
 ### Scoped Aspire gates
 
-Scoped Aspire has a **foreground Windows x64 launch path**. It is separate from the one-human-slot legacy modes below. Run preflight from
-the intended canonical linked checkout and select either `podman` or `rancher` explicitly:
+Scoped Aspire has a **foreground x64 launch path** on Windows, Linux, and macOS. Concurrent full-stack acceptance has been verified on
+Windows; the Linux and macOS paths still need native full-stack acceptance. Run preflight from the intended canonical linked checkout and
+select either `podman` or `rancher` explicitly:
 
-| Command                                                                                       | What it proves (or does)                                                                                                             |
-| --------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------ |
-| `node scripts/cli.ts dev worktree preflight --engine <podman\|rancher> --json`                | Read-only checkout, engine, configuration and artifact inspection. Windows x64 also checks trust, dependencies and restore evidence. |
-| `node scripts/cli.ts dev worktree status --engine <podman\|rancher> --json`                   | Returns `blocked` (exit 1) because a trusted native registry/process adapter is unavailable. It does not inspect the host.           |
-| `node scripts/cli.ts dev worktree stop --engine <podman\|rancher> --expected-run <id> --json` | Requests cooperative shutdown for the matching foreground run on the verified engine. It does not certify process exit.              |
+| Command                                                                                       | What it proves (or does)                                                                                                   |
+| --------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------- |
+| `node scripts/cli.ts dev worktree preflight --engine <podman\|rancher> --json`                | Read-only checkout, engine, configuration, trust, dependencies, pinned bundle, and restore evidence.                       |
+| `node scripts/cli.ts dev worktree status --engine <podman\|rancher> --json`                   | Returns `blocked` (exit 1) because a trusted native registry/process adapter is unavailable. It does not inspect the host. |
+| `node scripts/cli.ts dev worktree stop --engine <podman\|rancher> --expected-run <id> --json` | Requests cooperative shutdown for the matching foreground run on the verified engine. It does not certify process exit.    |
 
 Podman preflight checks a registered, running local machine on Windows and macOS, or an existing rootless API socket at
 `$XDG_RUNTIME_DIR/podman/podman.sock` on Linux. The Linux runtime directory must be private to the current user; the socket must be owned by
 that user, unredirected, and unchanged during the probe. Rancher requires a running Moby guest and checks that its daemon ID matches the
 local Windows Docker pipe or `$HOME/.rd/docker.sock` on Linux and macOS. Remote connection overrides are not supported. Preflight does not
-start the runtimes. Outside Windows x64 it also reports AppHost parameter presence, website and EXP configuration, website generation
-markers, EXP virtual-environment package metadata, the tooling's required stable .NET SDK, checkout-bound NuGet restore evidence, and
-existing local TLS trust. On Linux and macOS x64, it also checks the checkout's npm tree and verifies the pinned Aspire bundle without
-loading its native programs. Linux checks the mkcert public CA with OpenSSL; macOS evaluates it in the local keychain without fetching
-certificates. Preflight never imports a CA or creates a .NET certificate. It stays `blocked` outside Windows x64: full host preparation is
-not implemented there. The current SQL Server image requires a supported x86-64 execution environment; preflight does not qualify ARM
-emulation.
+start the runtimes. Linux checks the mkcert public CA with OpenSSL; macOS evaluates it in the local keychain without fetching certificates.
+Preflight never imports a CA or creates a .NET certificate. Linux and macOS require a non-root user and a private, canonical registry route.
+The current SQL Server image requires a supported x86-64 execution environment; preflight does not qualify ARM emulation.
 
 After preflight passes, run `node scripts/cli.ts dev worktree start --engine rancher` (or `--engine podman`) from the same checkout. Keep
 that foreground command open. To request cooperative shutdown, use `dev worktree stop --engine <engine> --expected-run <id>` with the run ID

@@ -165,7 +165,7 @@ export function makeDevCommand(options: DevCommandOptions = {}): CliSubcommand {
       ),
       withCommandOutput("worktree-start"),
     ),
-  ).pipe(Command.withDescription("Runs the current prepared Windows worktree stack in the foreground."));
+  ).pipe(Command.withDescription("Runs the current prepared x64 worktree stack in the foreground."));
   const worktree = Command.make("worktree").pipe(Command.withSubcommands([preflight, start, lifecycle("status"), lifecycle("stop")]));
   return Command.make("dev").pipe(
     Command.withDescription("Local development environments."),

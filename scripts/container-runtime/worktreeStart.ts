@@ -1,6 +1,6 @@
 /** @fileoverview Starts the selected checkout's verified native Aspire graph. */
 import {Effect, Result} from "effect";
-import {win32} from "node:path";
+import {posix, win32} from "node:path";
 
 import {Environment} from "../platform/Environment.ts";
 import {ReadOnlyFiles} from "../platform/Files.ts";
@@ -28,7 +28,11 @@ import {prepareWorktreeVolumes} from "./worktreeVolumes.ts";
 
 const registryName = "arolariu-native-aspire-v4";
 
-function currentRegistry(native: string, cwd: string, process: typeof Process.Service, create: boolean) {
+function appHostExecutable(root: string, paths: typeof posix): string {
+  return paths.join(root, "tooling/src/AppHost/bin/Debug/net10.0", paths === win32 ? "AppHost.exe" : "AppHost");
+}
+
+function currentRegistry(native: string, cwd: string, process: typeof Process.Service, create: boolean, paths: typeof posix) {
   return Effect.gen(function* () {
     const result = yield* process.run(
       {command: native, args: ["--worktree-registry", create ? "create" : "read"]},
@@ -36,10 +40,25 @@ function currentRegistry(native: string, cwd: string, process: typeof Process.Se
     );
     const path = result.stdout.trimEnd();
     if (!create && path === "absent") return null;
-    const parent = win32.dirname(path);
-    if (path !== win32.join(parent, registryName)) return yield* Effect.fail(new Error("Invalid native registry path"));
+    const parent = paths.dirname(path);
+    if (path !== paths.join(parent, registryName)) return yield* Effect.fail(new Error("Invalid native registry path"));
     return yield* openWorktreeRegistryRoute(parent, () => Effect.succeed(path));
   });
+}
+
+function ownedAppHost(root: string, paths: typeof posix): Effect.Effect<string | undefined, never, ReadOnlyFiles> {
+  return Effect.gen(function* () {
+    const files = yield* ReadOnlyFiles;
+    const expected = appHostExecutable(root, paths);
+    const native = yield* files.realPath(expected);
+    const stat = yield* files.stat(native);
+    return stat.type === "File"
+      && (paths === win32
+        ? win32.normalize(native).toLowerCase() === expected.toLowerCase()
+        : native === expected && (stat.mode & 0o111) !== 0)
+      ? native
+      : undefined;
+  }).pipe(Effect.orElseSucceed(() => undefined));
 }
 
 /** Requests cooperative shutdown of the exact foreground run; never signals a PID. */
@@ -50,16 +69,16 @@ export function requestNativeWorktreeStop(
   return Effect.gen(function* () {
     const fail = () => new WorktreeLaunchError({message: "The requested foreground run is not current on the verified engine."});
     if (!isWorktreeRunId(runId)) return yield* fail();
+    const env = yield* Environment;
+    const paths = env.platform === "win32" ? win32 : posix;
     const checkout = yield* observeWorktreeCheckout();
     if (!checkout) return yield* fail();
     const binding = yield* bindWorktreeEngine(checkout, engine);
     if (!binding) return yield* fail();
     const process = yield* Process;
-    const files = yield* ReadOnlyFiles;
-    const executable = win32.join(checkout.root, "tooling/src/AppHost/bin/Debug/net10.0/AppHost.exe");
-    const native = yield* files.realPath(executable).pipe(Effect.orElseSucceed(() => ""));
-    if (win32.normalize(native).toLowerCase() !== executable.toLowerCase()) return yield* fail();
-    const registry = (create: boolean) => currentRegistry(native, checkout.root, process, create);
+    const native = yield* ownedAppHost(checkout.root, paths);
+    if (!native) return yield* fail();
+    const registry = (create: boolean) => currentRegistry(native, checkout.root, process, create, paths);
     return yield* Effect.gen(function* () {
       const lease = yield* readWorktreeLaunch(checkout);
       if (
@@ -73,7 +92,7 @@ export function requestNativeWorktreeStop(
         return yield* fail();
       const root = yield* worktreeOperation("The native registry could not be checked.", registry(false));
       if (!root) return yield* fail();
-      const request = win32.join(root, lease.scopeId, lease.runId, "foreground-stop.json");
+      const request = paths.join(root, lease.scopeId, lease.runId, "foreground-stop.json");
       yield* worktreeOperation(
         "Could not publish the scoped stop request.",
         worktreeIO(() => publishWorktreeJson(request, runId)),
@@ -91,13 +110,14 @@ export function requestNativeWorktreeStop(
   });
 }
 
-/** Runs an isolated Windows worktree stack in the foreground using its own registered launch resources. */
+/** Runs an isolated worktree stack in the foreground using its own registered launch resources. */
 export function startNativeWorktree(engine: ContainerEngine): Effect.Effect<void, WorktreeLaunchError, PlatformServices> {
   return Effect.gen(function* () {
     const fail = (message: string) => new WorktreeLaunchError({message});
     const env = yield* Environment;
-    if (env.platform !== "win32" || env.architecture !== "x64")
-      return yield* fail("Native scoped launch requires a prepared Windows x64 host.");
+    if (!["win32", "linux", "darwin"].includes(env.platform) || env.architecture !== "x64")
+      return yield* fail("Native scoped launch requires a prepared Windows, Linux or macOS x64 host.");
+    const paths = env.platform === "win32" ? win32 : posix;
     const preflight = yield* inspectWorktreeAspire({engine});
     if (preflight.status !== "prepared") {
       const blocked = preflight.capabilities.filter((check) => check.status === "blocked").map((check) => check.id);
@@ -110,7 +130,7 @@ export function startNativeWorktree(engine: ContainerEngine): Effect.Effect<void
     if (!binding) return yield* fail("No verified local engine transport is available.");
     const process = yield* Process;
     const files = yield* ReadOnlyFiles;
-    const project = win32.join(checkout.root, "tooling/src/AppHost/AppHost.csproj");
+    const project = paths.join(checkout.root, "tooling/src/AppHost/AppHost.csproj");
     const build = yield* Effect.result(
       process.run(
         {command: "dotnet", args: ["build", project, "--no-restore", "-noAutoResponse", "--nologo", "-v:q"]},
@@ -119,19 +139,17 @@ export function startNativeWorktree(engine: ContainerEngine): Effect.Effect<void
     );
     if (Result.isFailure(build)) return yield* fail("The checkout AppHost build failed.");
 
-    const appHost = win32.join(checkout.root, "tooling/src/AppHost/bin/Debug/net10.0/AppHost.exe");
-    const native = yield* files.realPath(appHost).pipe(Effect.orElseSucceed(() => ""));
-    if (win32.normalize(native).toLowerCase() !== appHost.toLowerCase())
-      return yield* fail("The AppHost executable is not checkout-owned.");
+    const native = yield* ownedAppHost(checkout.root, paths);
+    if (!native) return yield* fail("The AppHost executable is not checkout-owned.");
     const presenter = yield* Presenter;
     const docs = yield* Effect.result(
       process.run(
-        {command: env.executablePath, args: [win32.join(checkout.root, "scripts/cli.ts"), "docs", "prepare-site", "--json"]},
+        {command: env.executablePath, args: [paths.join(checkout.root, "scripts/cli.ts"), "docs", "prepare-site", "--json"]},
         {cwd: checkout.root, echo: false, output: "capture"},
       ),
     );
     if (Result.isFailure(docs)) return yield* fail("The scoped documentation site could not be prepared.");
-    const registry = (create: boolean) => currentRegistry(native, checkout.root, process, create);
+    const registry = (create: boolean) => currentRegistry(native, checkout.root, process, create, paths);
     const verifyCheckout = observeWorktreeCheckout().pipe(
       Effect.provideService(Environment, env),
       Effect.provideService(Process, process),
@@ -195,7 +213,7 @@ export function startNativeWorktree(engine: ContainerEngine): Effect.Effect<void
             return Effect.void;
           },
           Effect.gen(function* () {
-            while ((yield* readWorktreeJson(win32.join(stage.directory, "foreground-stop.json"))) !== lease.runId)
+            while ((yield* readWorktreeJson(paths.join(stage.directory, "foreground-stop.json"))) !== lease.runId)
               yield* Effect.sleep("250 millis");
           }),
         ),

@@ -128,12 +128,12 @@ build, typecheck, dev server, or Playwright run per worktree at a time: they can
 serialize .NET builds and tests that share referenced projects within one worktree. Use a separate worktree when those checks must run
 concurrently.
 
-### Scoped Aspire: offline checks only
+### Scoped Aspire foreground runs
 
 The [scoped runbook](infra/Local/readme.md#scoped-aspire-gates) lists the read-only preflight for explicit Podman or Rancher selection.
-Checkout, engine, configuration, and generated-file inspection run on Windows, Linux, and macOS; full prerequisite inspection is limited to
-Windows x64. `prepared` does not authorize handing off a URL. Scoped `start` on prepared Windows x64 runs the stack in the foreground;
-`stop` requests cooperative shutdown for the exact active run. Native status and detached browser handoff are not available.
+Scoped `start` on prepared Windows, Linux, and macOS x64 hosts runs the stack in the foreground; `stop` requests cooperative shutdown for
+the exact active run. `prepared` does not establish service readiness. Concurrent full-stack acceptance has passed on Windows; native
+Linux/macOS acceptance, status, and detached browser handoff are not available.
 
 Do not use `E2E_WORKTREE_PORT` as a substitute for scoped Aspire acceptance: it still owns a **website-only** preview. The ordinary auth
 route and existing local persona activation are unchanged. Until the runbook's separately authorized two-worktree acceptance passes, use the

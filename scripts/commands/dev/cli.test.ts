@@ -153,13 +153,26 @@ describe("dev command", () => {
   });
 
   it("blocks scoped start on unsupported hosts without spawning AppHost", async () => {
-    const harness = makeTestLayer({environment: {platform: "linux"}});
+    const harness = makeTestLayer({environment: {platform: "linux", architecture: "arm64"}});
     const exit = await Effect.runPromiseExit(
       runCli(["dev", "aspire", "worktree", "start", "--engine", "podman"], makeRootCommand([makeDevCommand()])).pipe(
         Effect.provide(harness.layer),
       ),
     );
     expect(exitCodeFor(exit, undefined)).toBe(1);
+    expect(harness.processCalls()).toEqual([]);
+  });
+
+  it("uses preflight to block an unprepared Linux x64 launch before building or spawning AppHost", async () => {
+    const harness = makeTestLayer({environment: {...unverifiedWorktreeEnvironment, architecture: "x64", effectiveUserId: 1000}});
+    const exit = await Effect.runPromiseExit(
+      runCli(["dev", "worktree", "start", "--engine", "podman", "--json"], makeRootCommand([makeDevCommand()])).pipe(
+        Effect.provide(harness.layer),
+      ),
+    );
+    expect(exitCodeFor(exit, undefined)).toBe(1);
+    const stdout = harness.output().find(({stream}) => stream === "stdout");
+    expect(JSON.parse(stdout?.text ?? "")).toEqual({status: "blocked", reason: "Scoped preflight is blocked: checkout."});
     expect(harness.processCalls()).toEqual([]);
   });
 

@@ -20,13 +20,13 @@ internal static class WorktreeForegroundRun
 
   internal static async Task RunAsync(string descriptorPath)
   {
-    if (!OperatingSystem.IsWindows() || !Console.IsInputRedirected)
+    if (!(OperatingSystem.IsWindows() || OperatingSystem.IsLinux() || OperatingSystem.IsMacOS()) || !Console.IsInputRedirected)
       throw new InvalidOperationException(WorktreeLaunchScope.LaunchBlocked);
 
     using var startup = new CancellationTokenSource(TimeSpan.FromMinutes(5));
     WorktreeLaunchRequest request = await ReadRequestAsync(Console.In, startup.Token).ConfigureAwait(false);
     Console.WriteLine("worktree-phase:request");
-    string registry = WorktreeRegistry.OpenWindows(create: false)
+    string registry = await WorktreeRegistry.OpenAsync(create: false).ConfigureAwait(false)
       ?? throw new InvalidOperationException(WorktreeLaunchScope.LaunchBlocked);
     string? project = typeof(WorktreeForegroundRun).Assembly.GetCustomAttributes<AssemblyMetadataAttribute>()
       .SingleOrDefault(attribute => attribute.Key == "apphostprojectpath")?.Value;
@@ -37,14 +37,17 @@ internal static class WorktreeForegroundRun
     string projectDirectory = Directory.Exists(project) ? project : Path.GetDirectoryName(project)
       ?? throw new InvalidOperationException("The scoped build does not identify its checkout.");
     RepositoryLayout layout = RepositoryLayout.Resolve(projectDirectory);
-    if (!string.Equals(layout.RootDirectory, request.Root, StringComparison.OrdinalIgnoreCase))
+    var pathComparison = OperatingSystem.IsWindows() ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal;
+    if (!string.Equals(layout.RootDirectory, request.Root, pathComparison))
       throw new InvalidOperationException("The scoped AppHost build belongs to a different checkout.");
     Console.WriteLine("worktree-phase:build-verified");
 
     string runtimeDirectory = Path.Combine(Path.GetDirectoryName(descriptorPath)
       ?? throw new InvalidOperationException("Missing scoped stage."), "runtime");
     string exp = Path.Combine(runtimeDirectory, "exp.json");
-    string python = Path.Combine(layout.ExpDirectory, ".venv", "Scripts", "python.exe");
+    string python = OperatingSystem.IsWindows()
+      ? Path.Combine(layout.ExpDirectory, ".venv", "Scripts", "python.exe")
+      : Path.Combine(layout.ExpDirectory, ".venv", "bin", "python");
     if (!File.Exists(python) || !Path.IsPathFullyQualified(request.NodeExecutable) || !File.Exists(request.NodeExecutable))
       throw new InvalidOperationException("The prepared checkout interpreters are unavailable.");
 
