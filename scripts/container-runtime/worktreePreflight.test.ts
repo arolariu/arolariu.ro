@@ -921,6 +921,20 @@ describe("worktree Aspire preflight", () => {
     test.expectReadOnly();
   });
 
+  it.runIf(process.platform === "win32")("accepts a Git-registered branch with legal punctuation and the verified HEAD", async () => {
+    const ref = "refs/heads/chore/worktree+review@2";
+    const test = fixture(
+      {},
+      {
+        "git symbolic-ref --quiet HEAD": `${ref}\n`,
+        "git worktree list --porcelain -z": registeredWorktree.replace("refs/heads/chore/task", ref),
+      },
+    );
+    const checkout = await Effect.runPromise(observeWorktreeCheckout().pipe(Effect.provide(test.layer)));
+    expect(checkout).toMatchObject({branch: "chore/worktree+review@2", head});
+    test.expectReadOnly();
+  });
+
   it.each([
     ["port", {...localMachineContext, URI: localMachineContext.URI.replace("52000", "52001")}],
     ["guest socket", {...localMachineContext, URI: localMachineContext.URI.replace("1000", "1001")}],

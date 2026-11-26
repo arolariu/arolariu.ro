@@ -214,9 +214,13 @@ function observeCheckout(
     const branch = yield* run(probes.workspace.gitBranch(), gitOptions);
     const head = yield* run(probes.workspace.gitHead(), gitOptions);
     if (branch.kind !== "succeeded" || head.kind !== "succeeded") return undefined;
-    const branchName = /^refs\/heads\/([\p{L}\p{N}._/-]+)$/u.exec(branch.stdout.trimEnd())?.[1];
+    const ref = branch.stdout.replace(/\r?\n$/u, "");
+    const branchPrefix = "refs/heads/";
+    const branchName = ref.startsWith(branchPrefix) ? ref.slice(branchPrefix.length) : "";
     const hash = head.stdout.trimEnd();
-    if (branchName === undefined || !/^(?:[a-f0-9]{40}|[a-f0-9]{64})$/u.test(hash)) return undefined;
+    if (!branchName || /[\p{C}\p{Zl}\p{Zp} \ufffd]/u.test(branchName) || !/^(?:[a-f0-9]{40}|[a-f0-9]{64})$/u.test(hash)) return undefined;
+    const registeredHeads = registration?.filter((entry) => entry.startsWith("HEAD "));
+    const registeredBranches = registration?.filter((entry) => entry.startsWith("branch "));
     const listing = yield* run(probes.workspace.gitWorktreeList(), gitOptions);
     if (listing.kind !== "succeeded" || !listing.stdout.endsWith("\0\0")) return undefined;
     const registrations = listing.stdout.split("\0\0").map((entry) => entry.split("\0"));
@@ -225,8 +229,10 @@ function observeCheckout(
     if (
       matches.length !== 1
       || !registration
-      || registration.filter((entry) => entry.startsWith("HEAD ")).join() !== `HEAD ${hash}`
-      || registration.filter((entry) => entry.startsWith("branch ")).join() !== `branch refs/heads/${branchName}`
+      || registeredHeads?.length !== 1
+      || registeredHeads[0] !== `HEAD ${hash}`
+      || registeredBranches?.length !== 1
+      || registeredBranches[0] !== `branch ${ref}`
       || registration.some((entry) => /^(?:bare|detached|prunable)(?: |$)/u.test(entry))
     )
       return undefined;
