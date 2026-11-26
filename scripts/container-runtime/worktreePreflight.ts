@@ -425,6 +425,47 @@ export function observeWorktreeEngine(
   });
 }
 
+/** Verified local transport for internal runtime dispatch only. Never include this object in preflight output. */
+export interface WorktreeEngineBinding {
+  readonly engine: ContainerEngine;
+  readonly fingerprint: string;
+  readonly environment: Readonly<Record<string, string>>;
+}
+
+/** Pins a responsive Windows backend and the exact environment DCP and its container commands must inherit. */
+export function bindWorktreeEngine(
+  checkout: WorktreeCheckout,
+  engine: ContainerEngine,
+): Effect.Effect<WorktreeEngineBinding | undefined, never, Environment | Process | ReadOnlyFiles> {
+  return Effect.gen(function* () {
+    const env = yield* Environment;
+    if (env.platform !== "win32" || env.architecture !== "x64") return undefined;
+    const names = new Set(Object.keys(env.variables).map((name) => name.toLowerCase()));
+    if (engine === "rancher") {
+      const observed = yield* observeRancherBackend(checkout.root, names, env);
+      if ("reason" in observed) return undefined;
+      return {
+        engine,
+        fingerprint: observed.fingerprint,
+        environment: {DOCKER_HOST: observed.endpoint, ASPIRE_CONTAINER_RUNTIME: "docker", DOTNET_ASPIRE_CONTAINER_RUNTIME: "docker"},
+      };
+    }
+
+    const registered = yield* observePodmanRegistration(checkout.root, names, env.platform);
+    if (typeof registered !== "object") return undefined;
+    const routing = {CONTAINER_HOST: registered.uri, CONTAINER_SSHKEY: registered.identity};
+    const response = yield* run(probes.infrastructure.runtimeInfo("podman"), {cwd: checkout.root, env: routing});
+    if (response.kind !== "succeeded" || !isLinuxPodman(parseJson(response.stdout))) return undefined;
+    const current = yield* observePodmanRegistration(checkout.root, names, env.platform);
+    if (typeof current !== "object" || current.fingerprint !== registered.fingerprint) return undefined;
+    return {
+      engine,
+      fingerprint: registered.fingerprint,
+      environment: {...routing, ASPIRE_CONTAINER_RUNTIME: "podman", DOTNET_ASPIRE_CONTAINER_RUNTIME: "podman"},
+    };
+  });
+}
+
 function isEngineVersion(version: unknown): boolean {
   return typeof version === "string" && /^\d+\.\d+\.\d+(?:[-+][\w.-]+)?$/u.test(version);
 }
@@ -487,7 +528,7 @@ function observeRancherBackend(
   root: string,
   names: ReadonlySet<string>,
   env: EnvironmentSnapshot,
-): Effect.Effect<{readonly fingerprint: string} | {readonly reason: string}, never, Process> {
+): Effect.Effect<{readonly fingerprint: string; readonly endpoint: string} | {readonly reason: string}, never, Process> {
   return Effect.gen(function* () {
     const blocked = (reason: string) => ({reason});
     if (
@@ -513,6 +554,7 @@ function observeRancherBackend(
       return blocked("The local Docker endpoint was unavailable or did not match the running Rancher Desktop Moby daemon.");
     }
     return {
+      endpoint,
       fingerprint: createHash("sha256")
         .update(JSON.stringify(["rancher", endpoint, guestId]))
         .digest("hex"),

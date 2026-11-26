@@ -14,7 +14,7 @@ import {currentWorktreeRestoreEvidence} from "../inspection/worktreeRestore.ts";
 import {Environment} from "../platform/Environment.ts";
 import {ReadOnlyFiles} from "../platform/Files.ts";
 import {makeTestLayer, scriptedOutcomes} from "../platform/testing.ts";
-import {inspectWorktreeAspire, observeWorktreeCheckout, observeWorktreeEngine} from "./worktreePreflight.ts";
+import {bindWorktreeEngine, inspectWorktreeAspire, observeWorktreeCheckout, observeWorktreeEngine} from "./worktreePreflight.ts";
 
 const root = "C:/worktrees/task";
 const commonGitDir = "C:/repo/.git";
@@ -537,6 +537,41 @@ describe("worktree Aspire preflight", () => {
     expect(await observe("daemon-one", "daemon-one")).toBe(first);
     expect(await observe("daemon-two", "daemon-two")).not.toBe(first);
     expect(await observe("daemon-one", "daemon-two")).toBeUndefined();
+  });
+
+  it.each(["rancher", "podman"] as const)("pins the exact responsive %s transport for native dispatch", async (engine) => {
+    const test = fixture(
+      {},
+      {
+        [guestDockerInfo]: "test-engine-1\n",
+        [localDockerInfo]: rancherInfo,
+        "podman info --format json": trustedBackend,
+      },
+    );
+    const checkout = {root, commonGitDir, head, branch: "chore/task"};
+    const binding = await Effect.runPromise(bindWorktreeEngine(checkout, engine).pipe(Effect.provide(test.layer)));
+    const pin = await Effect.runPromise(observeWorktreeEngine(checkout, engine).pipe(Effect.provide(test.layer)));
+    const runtime = engine === "rancher" ? "docker" : "podman";
+    expect(binding).toEqual({
+      engine,
+      fingerprint: pin,
+      environment: {
+        ASPIRE_CONTAINER_RUNTIME: runtime,
+        DOTNET_ASPIRE_CONTAINER_RUNTIME: runtime,
+        ...(engine === "rancher"
+          ? {DOCKER_HOST: "npipe:////./pipe/docker_engine"}
+          : {CONTAINER_HOST: localMachineContext.URI, CONTAINER_SSHKEY: localMachineContext.Identity}),
+      },
+    });
+    expect(pin).toMatch(/^[a-f0-9]{64}$/u);
+    test.expectReadOnly();
+  });
+
+  it("does not bind a Podman machine when its registered backend is unresponsive", async () => {
+    const test = fixture();
+    const checkout = {root, commonGitDir, head, branch: "chore/task"};
+    expect(await Effect.runPromise(bindWorktreeEngine(checkout, "podman").pipe(Effect.provide(test.layer)))).toBeUndefined();
+    test.expectReadOnly();
   });
 
   it.each([
