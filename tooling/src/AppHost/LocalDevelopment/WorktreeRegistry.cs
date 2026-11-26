@@ -2,6 +2,7 @@ namespace AppHost.LocalDevelopment;
 
 using System.Diagnostics;
 using System.Globalization;
+using System.Runtime.InteropServices;
 using System.Runtime.Versioning;
 using System.Security.AccessControl;
 using System.Security.Principal;
@@ -15,7 +16,8 @@ internal static class WorktreeRegistry
   internal static Task<string?> OpenAsync(bool create)
   {
     if (OperatingSystem.IsWindows()) return Task.FromResult(OpenWindows(create));
-    if (OperatingSystem.IsLinux()) return OpenLinuxAsync(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), create);
+    if (OperatingSystem.IsLinux() || OperatingSystem.IsMacOS())
+      return OpenPosixAsync(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), create);
     throw new InvalidOperationException("The native registry command is unavailable.");
   }
 
@@ -68,25 +70,27 @@ internal static class WorktreeRegistry
   }
 
   [SupportedOSPlatform("linux")]
-  internal static async Task<string?> OpenLinuxAsync(string parent, bool create)
+  [SupportedOSPlatform("macos")]
+  internal static async Task<string?> OpenPosixAsync(string parent, bool create)
   {
     if (!Path.IsPathFullyQualified(parent) || parent != Path.GetFullPath(parent) || Path.GetPathRoot(parent) == parent
       || parent.Any(char.IsControl))
-      throw new InvalidOperationException("A canonical Linux user registry route is required.");
+      throw new InvalidOperationException("A canonical POSIX user registry route is required.");
 
     using var deadline = new CancellationTokenSource(TimeSpan.FromSeconds(10));
     CancellationToken token = deadline.Token;
-    int user = await ReadLinuxOwnerAsync("/usr/bin/id", ["-u"], token).ConfigureAwait(false);
-    if (user == 0) throw new InvalidOperationException("The Linux worktree registry requires a non-root user.");
+    int user = await ReadPosixOwnerAsync("/usr/bin/id", ["-u"], token).ConfigureAwait(false);
+    if (user == 0) throw new InvalidOperationException("The POSIX worktree registry requires a non-root user.");
 
     const UnixFileMode writableByOtherUsers = UnixFileMode.GroupWrite | UnixFileMode.OtherWrite;
     for (var ancestor = new DirectoryInfo(parent); ancestor is not null; ancestor = ancestor.Parent)
     {
       RequireDirectory(ancestor);
-      int owner = await ReadLinuxOwnerAsync("/usr/bin/stat", ["--format=%u", "--", ancestor.FullName], token).ConfigureAwait(false);
+      int owner = await ReadDirectoryOwnerAsync(ancestor.FullName, token).ConfigureAwait(false);
       if ((owner != user && (ancestor.FullName == parent || owner != 0))
         || (File.GetUnixFileMode(ancestor.FullName) & writableByOtherUsers) != 0)
-        throw new InvalidOperationException("The Linux registry route has an untrusted owner or writer.");
+        throw new InvalidOperationException("The POSIX registry route has an untrusted owner or writer.");
+      if (OperatingSystem.IsMacOS()) RequireNoMacOsAcl(ancestor.FullName);
     }
 
     const UnixFileMode privateMode = UnixFileMode.UserRead | UnixFileMode.UserWrite | UnixFileMode.UserExecute;
@@ -101,13 +105,48 @@ internal static class WorktreeRegistry
     }
 
     RequireDirectory(directory);
-    int registryOwner = await ReadLinuxOwnerAsync("/usr/bin/stat", ["--format=%u", "--", directory.FullName], token).ConfigureAwait(false);
+    int registryOwner = await ReadDirectoryOwnerAsync(directory.FullName, token).ConfigureAwait(false);
     if (registryOwner != user || File.GetUnixFileMode(directory.FullName) != privateMode)
       throw new InvalidOperationException("The native registry permissions are not private.");
+    if (OperatingSystem.IsMacOS()) RequireNoMacOsAcl(directory.FullName);
     return directory.FullName;
   }
 
-  private static async Task<int> ReadLinuxOwnerAsync(string executable, string[] arguments, CancellationToken token)
+  [SupportedOSPlatform("macos")]
+  private static void RequireNoMacOsAcl(string path)
+  {
+    // Darwin ACL grants are not constrained by the Unix group and other mode bits.
+    const int extendedAcl = 0x100;
+    const int absent = 2; // filesec_get_property reports ENOENT for an absent Darwin ACL.
+    IntPtr nativePath = Marshal.StringToCoTaskMemUTF8(path);
+    IntPtr acl;
+    int error;
+    try
+    {
+      acl = GetMacOsAcl(nativePath, extendedAcl);
+      error = Marshal.GetLastPInvokeError();
+    }
+    finally
+    {
+      Marshal.FreeCoTaskMem(nativePath);
+    }
+    if (acl == IntPtr.Zero && error == absent) return;
+    if (acl != IntPtr.Zero) _ = FreeMacOsAcl(acl);
+    throw new InvalidOperationException("The macOS registry route has an extended or unreadable ACL.");
+  }
+
+  [DllImport("/usr/lib/libSystem.B.dylib", EntryPoint = "acl_get_link_np", SetLastError = true)]
+  [SupportedOSPlatform("macos")]
+  private static extern IntPtr GetMacOsAcl(IntPtr path, int type);
+
+  [DllImport("/usr/lib/libSystem.B.dylib", EntryPoint = "acl_free")]
+  [SupportedOSPlatform("macos")]
+  private static extern int FreeMacOsAcl(IntPtr acl);
+
+  private static Task<int> ReadDirectoryOwnerAsync(string path, CancellationToken token) =>
+    ReadPosixOwnerAsync("/usr/bin/stat", OperatingSystem.IsMacOS() ? ["-f", "%u", "--", path] : ["--format=%u", "--", path], token);
+
+  private static async Task<int> ReadPosixOwnerAsync(string executable, string[] arguments, CancellationToken token)
   {
     var start = new ProcessStartInfo(executable)
     {
@@ -117,12 +156,12 @@ internal static class WorktreeRegistry
       WorkingDirectory = "/",
     };
     foreach (string argument in arguments) start.ArgumentList.Add(argument);
-    using Process child = Process.Start(start) ?? throw new InvalidOperationException("The Linux ownership probe is unavailable.");
+    using Process child = Process.Start(start) ?? throw new InvalidOperationException("The POSIX ownership probe is unavailable.");
     string value = await child.StandardOutput.ReadToEndAsync(token).ConfigureAwait(false);
     await child.WaitForExitAsync(token).ConfigureAwait(false);
     if (child.ExitCode != 0
       || !int.TryParse(value.TrimEnd('\n'), NumberStyles.None, CultureInfo.InvariantCulture, out int owner))
-      throw new InvalidOperationException("Linux registry ownership could not be verified.");
+      throw new InvalidOperationException("POSIX registry ownership could not be verified.");
     return owner;
   }
 

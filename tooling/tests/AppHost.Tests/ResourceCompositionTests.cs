@@ -505,11 +505,12 @@ public sealed class ResourceCompositionTests
 
   [TestMethod]
   [SupportedOSPlatform("linux")]
-  public async Task OpenWorktreeRegistry_Linux_RequiresPrivateDirectoryAndProtectedAncestors()
+  [SupportedOSPlatform("macos")]
+  public async Task OpenWorktreeRegistry_Posix_RequiresPrivateDirectoryAndProtectedAncestors()
   {
-    if (!OperatingSystem.IsLinux())
+    if (!OperatingSystem.IsLinux() && !OperatingSystem.IsMacOS())
     {
-      Assert.Inconclusive("POSIX registry permissions require Linux.");
+      Assert.Inconclusive("POSIX registry permissions require Linux or macOS.");
       return;
     }
 
@@ -520,19 +521,32 @@ public sealed class ResourceCompositionTests
     string root = System.IO.Path.Combine(parent, WorktreeRegistry.DirectoryName);
     try
     {
-      Assert.IsNull(await WorktreeRegistry.OpenLinuxAsync(parent, create: false));
-      Directory.CreateDirectory(root, privateMode | UnixFileMode.GroupRead);
-      await Assert.ThrowsExactlyAsync<InvalidOperationException>(() => WorktreeRegistry.OpenLinuxAsync(parent, create: true));
+      Assert.IsNull(await WorktreeRegistry.OpenPosixAsync(parent, create: false));
+      Directory.CreateDirectory(root, privateMode);
+      File.SetUnixFileMode(root, privateMode | UnixFileMode.GroupRead);
+      await Assert.ThrowsExactlyAsync<InvalidOperationException>(() => WorktreeRegistry.OpenPosixAsync(parent, create: true));
       Directory.Delete(root);
       Directory.CreateSymbolicLink(root, parent);
-      await Assert.ThrowsExactlyAsync<InvalidOperationException>(() => WorktreeRegistry.OpenLinuxAsync(parent, create: false));
+      await Assert.ThrowsExactlyAsync<InvalidOperationException>(() => WorktreeRegistry.OpenPosixAsync(parent, create: false));
       Directory.Delete(root);
 
-      Assert.AreEqual(root, await WorktreeRegistry.OpenLinuxAsync(parent, create: true));
+      Assert.AreEqual(root, await WorktreeRegistry.OpenPosixAsync(parent, create: true));
       Assert.AreEqual(privateMode, File.GetUnixFileMode(root));
-      Assert.AreEqual(root, await WorktreeRegistry.OpenLinuxAsync(parent, create: false));
+      Assert.AreEqual(root, await WorktreeRegistry.OpenPosixAsync(parent, create: false));
+      if (OperatingSystem.IsMacOS())
+      {
+        var chmod = new System.Diagnostics.ProcessStartInfo("/bin/chmod") { UseShellExecute = false };
+        foreach (string argument in new[] { "+a", "everyone allow list", root }) chmod.ArgumentList.Add(argument);
+        using System.Diagnostics.Process child = System.Diagnostics.Process.Start(chmod)
+          ?? throw new InvalidOperationException("The macOS chmod probe is unavailable.");
+        using var deadline = new CancellationTokenSource(TimeSpan.FromSeconds(10));
+        await child.WaitForExitAsync(deadline.Token);
+        Assert.AreEqual(0, child.ExitCode);
+        Assert.AreEqual(privateMode, File.GetUnixFileMode(root));
+        await Assert.ThrowsExactlyAsync<InvalidOperationException>(() => WorktreeRegistry.OpenPosixAsync(parent, create: false));
+      }
       File.SetUnixFileMode(parent, privateMode | UnixFileMode.GroupWrite);
-      await Assert.ThrowsExactlyAsync<InvalidOperationException>(() => WorktreeRegistry.OpenLinuxAsync(parent, create: false));
+      await Assert.ThrowsExactlyAsync<InvalidOperationException>(() => WorktreeRegistry.OpenPosixAsync(parent, create: false));
     }
     finally
     {
