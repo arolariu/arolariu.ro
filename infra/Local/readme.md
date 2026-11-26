@@ -24,7 +24,8 @@ that user, unredirected, and unchanged during the probe. Rancher requires a runn
 local Windows Docker pipe or `$HOME/.rd/docker.sock` on Linux and macOS. Remote connection overrides are not supported. Preflight does not
 start the runtimes. Outside Windows x64 it also reports AppHost parameter presence, website and EXP configuration, website generation
 markers, EXP virtual-environment package metadata, the tooling's required stable .NET SDK, checkout-bound NuGet restore evidence, and
-existing local TLS trust. Linux checks the mkcert public CA with OpenSSL; macOS evaluates it in the local keychain without fetching
+existing local TLS trust. On Linux and macOS x64, it also checks the checkout's npm tree and verifies the pinned Aspire bundle without
+loading its native programs. Linux checks the mkcert public CA with OpenSSL; macOS evaluates it in the local keychain without fetching
 certificates. Preflight never imports a CA or creates a .NET certificate. It stays `blocked` outside Windows x64: full host preparation is
 not implemented there. The current SQL Server image requires a supported x86-64 execution environment; preflight does not qualify ARM
 emulation.

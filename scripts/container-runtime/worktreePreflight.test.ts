@@ -639,6 +639,59 @@ describe("worktree Aspire preflight", () => {
     expect(JSON.stringify(test.processCalls())).not.toContain(key);
   });
 
+  it.each(["linux", "darwin"] as const)("rejects an unverified binary in the %s pinned DNX tool cache", async (platform) => {
+    const rid = platform === "linux" ? "linux-x64" : "osx-x64";
+    const runtime = `aspire.cli.${rid}`;
+    const cache = "/home/dev/cache";
+    const tool = `${cache}/${runtime}/13.6.5/tools/net10.0/${rid}`;
+    const bundle = "/home/dev/aspire/versions/13.6.5";
+    const test = portableFixture(
+      platform,
+      {NUGET_PACKAGES: cache, ASPIRE_HOME: "/home/dev/aspire"},
+      {
+        "podman system connection list --format json": "[]",
+        "dotnet --list-sdks": "10.0.404 [/sdk]\n",
+        "dotnet dev-certs https --check --trust": "",
+      },
+      {
+        [appHostName]: appHostProject,
+        "tooling/Directory.Build.props": "<Project><PropertyGroup><TargetFramework>net10.0</TargetFramework></PropertyGroup></Project>",
+        "tooling/Directory.Packages.props":
+          '<Project><ItemGroup><PackageVersion Include="Aspire.Hosting.AppHost" Version="13.6.5" /></ItemGroup></Project>',
+        [`${cache}/aspire.cli/13.6.5/Aspire.Cli.nuspec`]:
+          "<package><metadata><id>aspire.cli</id><version>13.6.5</version></metadata></package>",
+        [`${cache}/aspire.cli/13.6.5/.nupkg.metadata`]: "{}",
+        [`${cache}/aspire.cli/13.6.5/tools/any/any/DotnetToolSettings.xml`]: `<DotNetCliTool Version="2"><Commands><Command Name="aspire" /></Commands><RuntimeIdentifierPackages><RuntimeIdentifierPackage RuntimeIdentifier="${rid}" Id="${runtime}" /></RuntimeIdentifierPackages></DotNetCliTool>`,
+        [`${cache}/${runtime}/13.6.5/Aspire.Cli.${rid}.nuspec`]: `<package><metadata><id>${runtime}</id><version>13.6.5</version></metadata></package>`,
+        [`${cache}/${runtime}/13.6.5/.nupkg.metadata`]: "{}",
+        [`${cache}/aspire.apphost.sdk/13.6.5/Sdk/Sdk.props`]: "<Project />",
+        [`${cache}/aspire.apphost.sdk/13.6.5/Sdk/Sdk.targets`]: "<Project />",
+        [`${tool}/DotnetToolSettings.xml`]:
+          '<DotNetCliTool Version="2"><Commands><Command Name="aspire" EntryPoint="aspire" Runner="executable" /></Commands></DotNetCliTool>',
+        [`${tool}/aspire`]: "unverified native payload",
+        [`${bundle}/dcp/dcptun_c`]: "bundle control",
+      },
+    );
+    const read: string[] = [];
+    const nativeFile = `${tool}/aspire`;
+    const fs = Layer.effect(
+      ReadOnlyFiles,
+      Effect.map(ReadOnlyFiles, (files) => ({
+        ...files,
+        stat: (path) => Effect.map(files.stat(path), (stat) => (path === nativeFile ? {...stat, mode: 0o755} : stat)),
+        readBytesBounded: (path, maximum) =>
+          Effect.suspend(() => {
+            read.push(path);
+            return files.readBytesBounded(path, maximum);
+          }),
+      })),
+    );
+    const result = await Effect.runPromise(inspectWorktreeAspire({engine: "podman"}).pipe(Effect.provide(fs), Effect.provide(test.layer)));
+    expect(result.capabilities).toContainEqual(expect.objectContaining({id: "aspire-bundle", status: "blocked"}));
+    expect(read).toContain(nativeFile);
+    expect(test.processCalls().some(({request}) => request.command === nativeFile)).toBe(false);
+  });
+
   it.each([
     ["linux", "x64", true, true],
     ["darwin", "x64", true, true],
