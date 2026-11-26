@@ -6,7 +6,9 @@
 
 /* eslint-disable no-magic-numbers, no-console -- Configuration uses explicit numeric values */
 
-import {resolve} from "node:path";
+import {execFileSync} from "node:child_process";
+import {realpathSync} from "node:fs";
+import {relative, resolve} from "node:path";
 
 import {parseWorktreePreview} from "../../scripts/worktreePreview";
 
@@ -117,6 +119,75 @@ export function getWorktreePreview(): ReturnType<typeof parseWorktreePreview> {
     productionBuild: isProdBuild(),
     baseURL: process.env[ENV_KEYS.BASE_URL],
   });
+}
+
+function isExplicitRemoteTarget(): boolean {
+  const override = process.env[ENV_KEYS.BASE_URL];
+  if (!override) {
+    const environment = getEnvironment();
+    return environment === "staging" || environment === "production";
+  }
+
+  const url = URL.parse(override);
+  if (!url || (url.protocol !== "https:" && url.protocol !== "http:")) return false;
+  // URL parsing canonicalizes numeric loopback aliases such as 127.1 and [::ffff:127.0.0.1].
+  const host = url.hostname.replace(/\.$/u, "");
+  return (
+    host !== "localhost"
+    && !host.endsWith(".localhost")
+    && !/^127\.\d+\.\d+\.\d+$/u.test(host)
+    && host !== "0.0.0.0"
+    && host !== "[::]"
+    && host !== "[::1]"
+    && !/^\[::ffff:7f[\da-f]{2}:/u.test(host)
+    && host !== "[::ffff:0:0]"
+  );
+}
+
+/**
+ * Selects whether unscoped Playwright may start or reuse the legacy server.
+ *
+ * @param websiteRoot - Directory containing the actual website configuration, not the invoking cwd.
+ * @returns `false` for an explicitly selected remote target; `true` for a verified primary checkout.
+ */
+export function useLegacyWebServer(websiteRoot: string): boolean {
+  if (isExplicitRemoteTarget()) return false;
+
+  const env = {...process.env};
+  // npm/Nx and Git hooks may inherit Git's checkout-routing environment.
+  delete env["GIT_DIR"];
+  delete env["GIT_COMMON_DIR"];
+  delete env["GIT_WORK_TREE"];
+  delete env["GIT_IMPLICIT_WORK_TREE"];
+  delete env["GIT_CEILING_DIRECTORIES"];
+  let linked: boolean;
+  try {
+    const root = realpathSync(resolve(websiteRoot, "../.."));
+    const [topLevel, gitDir, commonDir] = execFileSync(
+      "git",
+      ["rev-parse", "--path-format=absolute", "--show-toplevel", "--git-dir", "--git-common-dir"],
+      {cwd: root, env, encoding: "utf8", timeout: 5000, windowsHide: true, stdio: ["ignore", "pipe", "pipe"]},
+    )
+      .trimEnd()
+      .split(/\r?\n/u);
+    if (!topLevel || !gitDir || !commonDir || relative(root, realpathSync(topLevel)) !== "") {
+      throw new Error("Git did not identify the website's checkout.");
+    }
+    linked = relative(realpathSync(gitDir), realpathSync(commonDir)) !== "";
+  } catch (error) {
+    throw new Error(
+      "Cannot verify the website's Git checkout for the legacy Playwright server; use E2E_WORKTREE_PORT for a scoped preview.",
+      {
+        cause: error,
+      },
+    );
+  }
+  if (linked) {
+    throw new Error(
+      "Local Playwright in a linked Git worktree requires E2E_WORKTREE_PORT; it cannot start or reuse the legacy server on port 3000.",
+    );
+  }
+  return true;
 }
 
 /** Keeps opt-in test artifacts in the configured website instead of the invoking checkout. */

@@ -1,6 +1,7 @@
 import type {PlaywrightTestConfig} from "@playwright/test";
-import {statSync} from "node:fs";
-import {join} from "node:path";
+import {randomUUID} from "node:crypto";
+import {realpathSync, statSync} from "node:fs";
+import {isAbsolute, join, relative, resolve, sep} from "node:path";
 
 interface WorktreePreviewInput {
   readonly port: string | undefined;
@@ -21,6 +22,7 @@ const MAX_PORT = 65_535;
 const PREVIEW_TIMEOUT_MS = 60_000;
 const CERTIFICATE_KEY = "certificates/localhost-key.pem";
 const CERTIFICATE = "certificates/localhost.pem";
+const NEXT_ENTRIES = ["./node_modules/next/dist/bin/next", "../../node_modules/next/dist/bin/next"] as const;
 
 /** Reads an opt-in port for a local preview that must be started by this test run. */
 export function parseWorktreePreview(input: Readonly<WorktreePreviewInput>): WorktreePreview | undefined {
@@ -56,15 +58,32 @@ export function createWorktreeWebServer(
     }
   }
 
+  const checkout = resolve(realpathSync(websiteRoot), "../..");
+  const nextEntry = NEXT_ENTRIES.find((entry) => {
+    const file = join(websiteRoot, entry);
+    if (!statSync(file, {throwIfNoEntry: false})?.isFile()) return false;
+    const fromCheckout = relative(checkout, realpathSync(file));
+    return !isAbsolute(fromCheckout) && fromCheckout !== ".." && !fromCheckout.startsWith(`..${sep}`);
+  });
+  if (!nextEntry) {
+    throw new Error("E2E_WORKTREE_PORT requires Next.js installed in this checkout; no ancestor npm or PATH fallback is used.");
+  }
+
+  const run = randomUUID();
   return {
     cwd: websiteRoot,
-    env: {SITE_URL: preview.baseURL},
+    env: {
+      SITE_URL: preview.baseURL,
+      AROLARIU_PLAYWRIGHT_PREVIEW_RUN: run,
+      // Next's internal dev-directory override must not retarget this checkout's launch.
+      NEXT_PRIVATE_DEV_DIR: "",
+    },
     command:
-      `npm exec --no -- next dev --hostname ${preview.hostname} --port ${preview.port} --experimental-https`
+      `node --import ./scripts/worktreePreviewReady.ts ${nextEntry} dev --hostname ${preview.hostname} --port ${preview.port} --experimental-https`
       + ` --experimental-https-key ${CERTIFICATE_KEY} --experimental-https-cert ${CERTIFICATE}`,
     reuseExistingServer: false,
-    // Polling the URL can report a competing process as ready before this child reports EADDRINUSE.
-    wait: {stdout: /\bReady in\b/u},
+    // Neither the bind banner nor an external response proves the owned worker initialized.
+    wait: {stdout: new RegExp(`Worktree preview application ready: ${run}\\b`, "u")},
     timeout: PREVIEW_TIMEOUT_MS,
     stderr: "pipe",
   };

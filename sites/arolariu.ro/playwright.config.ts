@@ -40,7 +40,7 @@ import {
   TIMEOUTS,
   WEB_SERVER_CONFIG,
 } from "./tests/config";
-import {getTestRunDirectory, getWorktreePreview} from "./tests/config/environment";
+import {getTestRunDirectory, getWorktreePreview, useLegacyWebServer} from "./tests/config/environment";
 
 /** Storage state file path for sharing auth state across tests */
 const STORAGE_STATE_PATH = path.resolve(getTestRunDirectory(), "tests", "e2e-storage-state.json");
@@ -49,6 +49,19 @@ const STORAGE_STATE_PATH = path.resolve(getTestRunDirectory(), "tests", "e2e-sto
 const envConfig = getEnvironmentConfig();
 const customWorkers = getWorkerConfig();
 const worktreePreview = getWorktreePreview();
+const legacyWebServer =
+  !worktreePreview && useLegacyWebServer(import.meta.dirname)
+    ? ({
+        command: WEB_SERVER_CONFIG.command,
+        url: WEB_SERVER_CONFIG.url,
+        timeout: WEB_SERVER_CONFIG.timeout,
+        ignoreHTTPSErrors: WEB_SERVER_CONFIG.ignoreHTTPSErrors,
+        reuseExistingServer: envConfig.reuseExistingServer,
+        stdout: isCI() ? "pipe" : "ignore",
+        // Suppress harmless ECONNRESET errors when the browser closes pending requests.
+        stderr: "ignore",
+      } as const)
+    : undefined;
 
 export default defineConfig({
   // ==================== Global Setup/Teardown ====================
@@ -81,7 +94,7 @@ export default defineConfig({
 
     // Security
     bypassCSP: true,
-    ignoreHTTPSErrors: true,
+    ignoreHTTPSErrors: !worktreePreview,
 
     // Auth state (includes EULA cookie)
     storageState: STORAGE_STATE_PATH,
@@ -97,18 +110,5 @@ export default defineConfig({
   },
 
   // ==================== Web Server ====================
-  webServer: worktreePreview
-    ? createWorktreeWebServer(worktreePreview, import.meta.dirname)
-    : {
-        command: WEB_SERVER_CONFIG.command,
-        url: WEB_SERVER_CONFIG.url,
-        timeout: WEB_SERVER_CONFIG.timeout,
-        ignoreHTTPSErrors: WEB_SERVER_CONFIG.ignoreHTTPSErrors,
-        reuseExistingServer: envConfig.reuseExistingServer,
-        stdout: isCI() ? "pipe" : "ignore",
-        // Ignore stderr to suppress harmless ECONNRESET errors during test cleanup.
-        // These occur when the browser closes connections with pending requests.
-        // Real server errors will still cause tests to fail.
-        stderr: "ignore",
-      },
+  webServer: worktreePreview ? createWorktreeWebServer(worktreePreview, import.meta.dirname) : legacyWebServer,
 });

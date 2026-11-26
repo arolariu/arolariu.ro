@@ -1,6 +1,6 @@
 // @vitest-environment node
 
-import {mkdirSync, mkdtempSync, rmdirSync, unlinkSync, writeFileSync} from "node:fs";
+import {mkdirSync, mkdtempSync, rmSync, writeFileSync} from "node:fs";
 import {tmpdir} from "node:os";
 import {join} from "node:path";
 import {afterEach, describe, expect, it, vi} from "vitest";
@@ -60,25 +60,30 @@ describe("website worktree preview", () => {
 
   it("waits for its own Next process instead of accepting a response from the port", () => {
     const root = mkdtempSync(join(tmpdir(), "website preview "));
-    const directory = join(root, "certificates");
-    const key = join(directory, "localhost-key.pem");
-    const cert = join(directory, "localhost.pem");
-    mkdirSync(directory);
-    writeFileSync(key, "fixture");
-    writeFileSync(cert, "fixture");
     try {
-      const config = createWorktreeWebServer({hostname: "127.0.0.1", port: 3101, baseURL: "https://127.0.0.1:3101"}, root);
+      const website = join(root, "sites", "arolariu.ro");
+      const certificates = join(website, "certificates");
+      mkdirSync(certificates, {recursive: true});
+      writeFileSync(join(certificates, "localhost-key.pem"), "fixture");
+      writeFileSync(join(certificates, "localhost.pem"), "fixture");
+      const preview = {hostname: "127.0.0.1", port: 3101, baseURL: "https://127.0.0.1:3101"} as const;
+      expect(() => createWorktreeWebServer(preview, website)).toThrow(/requires Next\.js installed in this checkout/u);
 
-      expect(config).toMatchObject({cwd: root, reuseExistingServer: false, wait: {stdout: expect.any(RegExp)}});
+      const hoistedBin = join(root, "node_modules", "next", "dist", "bin");
+      mkdirSync(hoistedBin, {recursive: true});
+      writeFileSync(join(hoistedBin, "next"), "fixture");
+      const config = createWorktreeWebServer(preview, website);
+
+      expect(config).toMatchObject({cwd: website, reuseExistingServer: false, wait: {stdout: expect.any(RegExp)}});
       expect(config).not.toHaveProperty("url");
       expect(config).not.toHaveProperty("port");
-      expect(config).toHaveProperty("command", expect.stringContaining("--hostname 127.0.0.1 --port 3101"));
+      expect(config).toHaveProperty(
+        "command",
+        expect.stringContaining("../../node_modules/next/dist/bin/next dev --hostname 127.0.0.1 --port 3101"),
+      );
       expect(config).toHaveProperty("env.SITE_URL", "https://127.0.0.1:3101");
     } finally {
-      unlinkSync(key);
-      unlinkSync(cert);
-      rmdirSync(directory);
-      rmdirSync(root);
+      rmSync(root, {recursive: true, force: true});
     }
   });
 });

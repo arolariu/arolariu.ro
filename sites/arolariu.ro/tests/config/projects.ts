@@ -8,7 +8,7 @@
 
 import {devices, type PlaywrightTestProject} from "@playwright/test";
 
-import {getBaseURL, getEnvironment, isCI} from "./environment";
+import {getBaseURL, getEnvironment, getWorktreePreview, isCI} from "./environment";
 
 /** Simple debug check for config logging */
 const isDebug = process.env["PLAYWRIGHT_DEBUG"] === "true" || process.env["DEBUG"] === "true";
@@ -136,7 +136,7 @@ export function createProject(name: string, preset: DevicePresetName, options?: 
       ...(devicePreset.launchOptions ? {launchOptions: devicePreset.launchOptions} : {}),
       ...(devicePreset.contextOptions ?? {}),
       baseURL,
-      ignoreHTTPSErrors: true,
+      ignoreHTTPSErrors: !getWorktreePreview(),
       ...options?.use,
     },
     timeout: options?.timeout ?? 90_000,
@@ -261,7 +261,7 @@ export function createSetupProject(name: string, setupFile: string): PlaywrightT
     use: {
       ...devices["Desktop Chrome"],
       baseURL: getBaseURL(),
-      ignoreHTTPSErrors: true,
+      ignoreHTTPSErrors: !getWorktreePreview(),
     },
   };
 }

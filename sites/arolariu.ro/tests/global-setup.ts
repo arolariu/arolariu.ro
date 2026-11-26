@@ -6,7 +6,7 @@
  * @module playwright-global-setup
  */
 
-import {chromium, type FullConfig} from "@playwright/test";
+import {chromium} from "@playwright/test";
 import * as fs from "node:fs";
 import * as path from "node:path";
 
@@ -23,15 +23,16 @@ export const STORAGE_STATE_PATH = path.join(getTestRunDirectory(), "tests", "e2e
  * runs over HTTP (cookie must be non-secure to apply), dev runs over HTTPS
  * via `next dev --experimental-https` (cookie can stay secure).
  */
-export default async function globalSetup(_config: FullConfig): Promise<void> {
+export default async function globalSetup(): Promise<void> {
+  const preview = getWorktreePreview();
   const browser = await chromium.launch();
-  const context = await browser.newContext({ignoreHTTPSErrors: true});
+  const context = await browser.newContext({ignoreHTTPSErrors: !preview});
 
   await context.addCookies([
     {
       name: "eula-accepted",
       value: "true",
-      domain: getWorktreePreview()?.hostname ?? "localhost",
+      domain: preview?.hostname ?? "localhost",
       path: "/",
       httpOnly: false,
       secure: !isProdBuild(),
