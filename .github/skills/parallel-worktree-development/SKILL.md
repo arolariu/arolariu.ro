@@ -54,9 +54,11 @@ report: status, checkout root, branch, changed paths, exact command results, blo
 Use the Backend Expert for API-owned files and select the owning MSTest project for the controller. Check equality and ancestor/descendant
 overlap (case-insensitive on a normal Windows checkout). On overlap, keep one writer; sequence the other task or make it read-only. Children
 run checks concurrently only when their inputs are stable and their mutable outputs are disjoint. The controller runs builds, type
-generation, restore, Playwright, and other shared-output checks one at a time after the relevant edits settle, and owns staging and commits.
-Two MSTest projects can build into the same referenced projects' `bin` and `obj`; separate source ownership does not make those checks
-independent. Use another lane when checks must build concurrently.
+generation, restore, and other shared-output checks one at a time after the relevant edits settle, and owns staging and commits. For local
+website E2E, use the [owned preview procedure](../../../DEVELOPMENT.md#run-a-website-preview-on-its-own-port), not the default server. If
+framework output recommends installing an upgrade, changing trust, or killing a different process, report the blocker instead. Two MSTest
+projects can build into the same referenced projects' `bin` and `obj`; separate source ownership does not make those checks independent. Use
+another lane when checks must build concurrently.
 
 Pass the recorded base explicitly to `nx affected`. Do not dispatch the same tasks through both Fleet and a serial implementer/reviewer
 workflow. A child does not change into a sibling worktree.

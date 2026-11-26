@@ -55,7 +55,7 @@ See **[AGENTS.md → Local Development Modes](AGENTS.md#local-development-modes)
 
 Use one linked worktree per independent workstream. For Copilot CLI sessions, follow the
 [parallel worktree skill](.github/skills/parallel-worktree-development/SKILL.md). A worktree separates source files and build outputs, not
-ports, databases, credentials, or container lifecycle. Keep normal permission checks in place.
+ports, browser cookie jars, databases, credentials, or container lifecycle. Keep normal permission checks in place.
 
 From each worktree root, verify its identity with `git rev-parse --show-toplevel`, `git branch --show-current`, and `git rev-parse HEAD`.
 With root npm dependencies installed, `npm run doctor -- --quick --json` also reports the `workspace.git` checkout kind, worktree root, and
@@ -79,8 +79,13 @@ files between worktrees.
 
 ### Run a website preview on its own port
 
-Assign each worktree an unused loopback port. Prepare its approved local/test website configuration, and issue an ignored certificate pair
-for that checkout using an existing, already-trusted local mkcert CA. From `sites\arolariu.ro`, with `mkcert` on `PATH`:
+Record a distinct unused loopback port in each worktree's handoff. The preview owns only the website listener; its configured API and EXP
+can still read or write shared data. Name the approved backends in the handoff. Use the shared full-stack slot only with its owner's
+approval; don't run write tests against it on the assumption that the preview isolated its data.
+
+The developer must verify that the local mkcert CA and its signing material already exist and that the CA is trusted before issuing a
+checkout-local certificate. Do not run `mkcert` to discover whether a CA exists: it can generate one. From `sites\arolariu.ro`, after that
+check, the developer can issue the ignored leaf pair:
 
 ```powershell
 New-Item -ItemType Directory -Force certificates
@@ -88,7 +93,10 @@ mkcert -key-file certificates\localhost-key.pem -cert-file certificates\localhos
 ```
 
 If there is no trusted CA or the test configuration is missing, stop and complete developer onboarding separately. Do not run
-`mkcert -install` or copy private keys into a worker. For a manual preview run this from the root:
+`mkcert -install` or copy private keys into a worker. A passing Playwright preview does not prove browser or backend certificate trust.
+Check that Next is installed in this checkout before starting a manual preview. Use the exact `SITE_URL` origin in the browser, and use a
+separate browser profile per manual preview: cookies on `127.0.0.1` are shared across ports. Do not use the default `dev:website` script as
+an isolated preview. For a manual preview run this from the root:
 
 ```powershell
 $previousSiteUrl = $env:SITE_URL
@@ -100,7 +108,10 @@ try {
 }
 ```
 
-For Playwright, stop any manual preview in the **same checkout** first. With the repo's Chromium browser already installed, run:
+For local Playwright from a linked worktree, use the owned preview path below, including when a parent script such as `test:website` invokes
+E2E. Do not use the default local Playwright path, which can reuse the integration owner's server. Stop any manual preview in the **same
+checkout** first. Set `PLAYWRIGHT_WORKERS` to a host-appropriate limit when worktrees run concurrently. With the repo's Chromium browser
+already installed, run:
 
 ```powershell
 $env:E2E_WORKTREE_PORT = '3102'

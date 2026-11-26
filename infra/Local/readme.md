@@ -24,6 +24,10 @@ Ownership, guarded stop, and handoff are tested only with injected fixture evide
 engine-wide stop, or a reset to bypass a block. Legacy Aspire and Selfhost keep their existing commands and data; the scoped model provides
 no reset.
 
+To preview the receipt-refresh work, run `npm run setup -- --refresh-worktree-restore-evidence --dry-run` first. The refresh flag selects a
+forced restore **inside full Setup**; it is not a restore-only command. Review the entire plan, including independent actions such as
+checkout preparation or browser installation, and obtain approval for the applicable actions before running without `--dry-run`.
+
 The [internal handoff test](../../scripts/container-runtime/worktreeReadiness.test.ts) uses a disposable registry and injected evidence. No
 current command calls this gate with native evidence. The offline result is `blocked` with a fixed stage and reason for missing evidence,
 unverified ownership, incomplete resource/endpoint or launcher-exit evidence, failed smoke, failed revalidation, or timeout. It never
