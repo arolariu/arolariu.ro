@@ -30,6 +30,20 @@ trusted adapter can verify the protected registry and process identity with boun
 guarded stop, and handoff are tested only with injected fixture evidence. Do not try a descriptor flag, guessed URL or PID, an engine-wide
 stop, or a reset to bypass a block. Legacy Aspire and Selfhost keep their existing commands and data; the scoped model provides no reset.
 
+On Windows, if a newer global Aspire CLI is already installed, prepare the pinned CLI in a separate cache rather than replacing the global
+installation. In a PowerShell session, use the AppHost SDK version from `tooling/src/AppHost/AppHost.csproj`:
+
+```powershell
+$env:ASPIRE_HOME = Join-Path $env:LOCALAPPDATA 'arolariu-worktree\aspire\13.6.5'
+Remove-Item Env:ASPIRECLIPATH -ErrorAction SilentlyContinue
+dnx Aspire.Cli@13.6.5 -- setup --install-path $env:ASPIRE_HOME --non-interactive --nologo
+node scripts/cli.ts dev worktree preflight --engine rancher --json
+```
+
+On an approved Windows trust change, `dotnet dev-certs https --trust` can display an interactive Windows confirmation for the localhost
+development certificate. If the SDK cannot enumerate the root store, scoped preflight checks the SDK-listed localhost certificates against
+the Windows trust engine and verifies that each private key is usable. Neither check replaces an HTTPS request to the running service.
+
 To preview the receipt-refresh work, run `npm run setup -- --refresh-worktree-restore-evidence --dry-run` first. The refresh flag selects a
 forced restore **inside full Setup**; it is not a restore-only command. Review the entire plan, including independent actions such as
 checkout preparation or browser installation, and obtain approval for the applicable actions before running without `--dry-run`.

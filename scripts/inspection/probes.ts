@@ -544,6 +544,44 @@ function windowsPowerShellVersion(): InspectionProbe {
   });
 }
 
+/** Verifies the SDK's exact localhost certificate candidates using the Windows trust engine. */
+function windowsDotnetTrust(): InspectionProbe {
+  return registerProbe("infrastructure.windows.dotnet-trust", {
+    command: "pwsh",
+    args: [
+      "-NoLogo",
+      "-NoProfile",
+      "-NonInteractive",
+      "-Command",
+      [
+        "$ErrorActionPreference = 'Stop'",
+        "$thumbprints = $env:AROLARIU_PREFLIGHT_CERT_THUMBPRINTS -split ','",
+        "if ($thumbprints.Count -lt 1 -or $thumbprints.Count -gt 16 -or @($thumbprints | Where-Object { $_ -cnotmatch '^[0-9A-F]{40}$' }).Count) { exit 1 }",
+        "$store = [Security.Cryptography.X509Certificates.X509Store]::new('My','CurrentUser')",
+        "try {",
+        "  $store.Open('ReadOnly')",
+        "  foreach ($thumbprint in $thumbprints) {",
+        "    $matches = $store.Certificates.Find('FindByThumbprint', $thumbprint, $false)",
+        "    if ($matches.Count -ne 1) { exit 1 }",
+        "    $cert = $matches[0]",
+        "    if ($cert.Subject -cne 'CN=localhost' -or $cert.Issuer -cne $cert.Subject -or -not $cert.HasPrivateKey -or -not ($cert.Extensions.Oid.Value -contains '1.3.6.1.4.1.311.84.1.1')) { exit 1 }",
+        "    $chain = [Security.Cryptography.X509Certificates.X509Chain]::new(); $key = $null",
+        "    try {",
+        "      $chain.ChainPolicy.DisableCertificateDownloads = $true",
+        "      $chain.ChainPolicy.RevocationMode = 'NoCheck'",
+        "      $null = $chain.ChainPolicy.ApplicationPolicy.Add([Security.Cryptography.Oid]::new('1.3.6.1.5.5.7.3.1'))",
+        "      if (-not $chain.Build($cert) -or $chain.ChainElements.Count -ne 1) { exit 1 }",
+        "      $key = [Security.Cryptography.X509Certificates.RSACertificateExtensions]::GetRSAPrivateKey($cert)",
+        "      if ($null -eq $key) { exit 1 }",
+        "      $null = $key.SignData([byte[]](1,2,3),[Security.Cryptography.HashAlgorithmName]::SHA256,[Security.Cryptography.RSASignaturePadding]::Pkcs1)",
+        "    } finally { if ($null -ne $key) { $key.Dispose() }; $chain.Dispose() }",
+        "  }; 'verified'; exit 0",
+        "} catch { exit 1 } finally { $store.Dispose() }",
+      ].join("\n"),
+    ],
+  });
+}
+
 /** Checks the existing public mkcert root in the Windows trust store without certificate downloads. */
 function windowsMkcertTrust(): InspectionProbe {
   return registerProbe("infrastructure.mkcert.windows-trust", {
@@ -772,6 +810,11 @@ function dotnetCertificate(mode: DotnetCertificateMode = "presence"): Inspection
   const validatedMode = validateDotnetCertificateMode(mode);
   const args = validatedMode === "trust" ? ["dev-certs", "https", "--check", "--trust"] : ["dev-certs", "https", "--check"];
   return registerProbe(`dotnet.certificate:${validatedMode}`, {command: "dotnet", args});
+}
+
+/** Lists the stock SDK's candidate certificates in machine-readable form without changing trust. */
+function dotnetCertificateInventory(): InspectionProbe {
+  return registerProbe("dotnet.certificate-inventory", {command: "dotnet", args: ["dev-certs", "https", "--check-trust-machine-readable"]});
 }
 
 /**
@@ -1012,6 +1055,7 @@ export const probes = {
     localTools: dotnetLocalTools,
     userSecrets: dotnetUserSecrets,
     certificate: dotnetCertificate,
+    certificateInventory: dotnetCertificateInventory,
   },
   python: {
     version: pythonVersion,
@@ -1038,6 +1082,7 @@ export const probes = {
     mkcertVersion: infrastructureMkcertVersion,
     mkcertCaRoot: infrastructureMkcertCaRoot,
     windowsPowerShellVersion,
+    windowsDotnetTrust,
     windowsMkcertTrust,
     windowsUserProfile,
     windowsPayload,

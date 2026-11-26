@@ -10,7 +10,13 @@ import {Effect} from "effect";
 
 import {describeGitCheckout} from "../commands/doctor/modules/workspace.ts";
 import {createRepositoryPaths, type RepositoryPaths} from "../common/repository-paths.ts";
-import {inspectSolution, projectAppHostParameterKeys, readBuildProjectXml, type BuildXmlElement} from "../inspection/dotnet.ts";
+import {
+  inspectSolution,
+  projectAppHostParameterKeys,
+  readBuildProjectXml,
+  readDotnetToolSettingsXml,
+  type BuildXmlElement,
+} from "../inspection/dotnet.ts";
 import {inspectPath} from "../inspection/files.ts";
 import {inspectionProbeRunner, probes} from "../inspection/probes.ts";
 import {matchesLocalPythonPin, parseConfigurationObject} from "../inspection/python.ts";
@@ -729,15 +735,52 @@ function inspectWebsiteTrust(
   });
 }
 
-function inspectDotnetTls(root: string): Effect.Effect<WorktreeCapability, never, Process> {
-  return Effect.map(run(probes.dotnet.certificate("trust"), {cwd: root, env: dotnetEnvironment}), (trust) =>
-    capability(
+function inspectDotnetTls(root: string, hasPowerShell: boolean): Effect.Effect<WorktreeCapability, never, Process> {
+  return Effect.gen(function* () {
+    const trust = yield* run(probes.dotnet.certificate("trust"), {cwd: root, env: dotnetEnvironment});
+    const untrusted = trust.kind === "exited" && trust.exitCode === 7;
+    const result = capability(
       "dotnet-tls",
       trust.kind === "succeeded",
       "The .NET check-only probe accepted stock development certificate trust; API and dashboard HTTPS were not exercised.",
-      `Machine bootstrap: ${trust.kind === "exited" && trust.exitCode === 7 ? "the stock .NET development certificate is untrusted (exit 7)" : "stock .NET development certificate trust was not established"}. See Setup actions dotnet.certificate.create and dotnet.certificate.trust (separate approval).`,
-    ),
-  );
+      `Machine bootstrap: ${untrusted ? "the stock .NET development certificate is untrusted or its trust could not be enumerated (exit 7)" : "stock .NET development certificate trust was not established"}. See Setup actions dotnet.certificate.create and dotnet.certificate.trust (separate approval).`,
+    );
+    if (!untrusted || !hasPowerShell) return result;
+    const inventory = yield* run(probes.dotnet.certificateInventory(), {cwd: root, env: dotnetEnvironment});
+    const list = inventory.kind === "succeeded" ? parseJson(inventory.stdout) : undefined;
+    if (!Array.isArray(list) || list.length === 0 || list.length > 16) return result;
+    const thumbprints = new Set<string>();
+    for (const candidate of list) {
+      const item = record(candidate);
+      const thumbprint = item?.["Thumbprint"];
+      const names = item?.["X509SubjectAlternativeNameExtension"];
+      if (
+        typeof thumbprint !== "string"
+        || !/^[0-9A-F]{40}$/u.test(thumbprint)
+        || thumbprints.has(thumbprint)
+        || item?.["Subject"] !== "CN=localhost"
+        || item["IsHttpsDevelopmentCertificate"] !== true
+        || item["IsExportable"] !== true
+        || !Array.isArray(names)
+        || !names.includes("localhost")
+      )
+        return result;
+      thumbprints.add(thumbprint);
+    }
+    // The SDK can fail while enumerating unrelated root entries. Check every candidate against Windows trust instead.
+    const native = yield* run(probes.infrastructure.windowsDotnetTrust(), {
+      cwd: root,
+      env: {AROLARIU_PREFLIGHT_CERT_THUMBPRINTS: [...thumbprints].join(",")},
+    });
+    return native.kind === "succeeded" && native.stdout.trim() === "verified"
+      ? capability(
+          "dotnet-tls",
+          true,
+          "Windows validated every SDK-listed localhost development certificate and its usable private key; API and dashboard HTTPS were not exercised.",
+          "",
+        )
+      : result;
+  });
 }
 
 function inspectSwc(
@@ -1159,8 +1202,104 @@ function inspectToolPayload(
   });
 }
 
+function inspectPinnedTool(root: string, cache: string, pin: string, framework: string, architecture: string) {
+  return Effect.gen(function* () {
+    const rid = `win-${architecture}`;
+    const packageDir = win32.join(cache, "aspire.cli", pin);
+    const packageMatches = (directory: string, id: string) =>
+      Effect.gen(function* () {
+        const meta = yield* readManifest(win32.join(directory, `${id}.nuspec`));
+        return (
+          /<id>\s*([^<]+?)\s*<\/id>/iu.exec(meta)?.[1]?.toLowerCase() === id
+          && /<version>\s*([^<]+?)\s*<\/version>/u.exec(meta)?.[1] === pin
+          && (yield* ownedFile(win32.join(directory, ".nupkg.metadata")))
+        );
+      });
+    if (!(yield* packageMatches(packageDir, "aspire.cli"))) return false;
+
+    const registration = win32.join(packageDir, "tools/any/any/DotnetToolSettings.xml");
+    const registrationKind = (yield* inspectPath(registration)).kind;
+    if (registrationKind !== "missing") {
+      if (registrationKind !== "file") return false;
+      const settings = readDotnetToolSettingsXml(yield* readManifest(registration));
+      const [document] = settings ?? [];
+      const group = (name: string) => settings?.filter((node) => node.name === name && node.parent === document) ?? [];
+      const commands = group("Commands");
+      const packages = group("RuntimeIdentifierPackages");
+      const command = settings?.filter((node) => node.name === "Command" && node.parent === commands[0]) ?? [];
+      const mappings =
+        settings?.filter(
+          (node) =>
+            node.name === "RuntimeIdentifierPackage" && node.parent === packages[0] && node.attributes.get("RuntimeIdentifier") === rid,
+        ) ?? [];
+      const runtimeId = `aspire.cli.${rid}`;
+      if (
+        document?.attributes.size !== 1
+        || document.attributes.get("Version") !== "2"
+        || commands.length !== 1
+        || packages.length !== 1
+        || command.length !== 1
+        || command[0]?.attributes.size !== 1
+        || command[0].attributes.get("Name") !== "aspire"
+        || mappings.length !== 1
+        || mappings[0]?.attributes.size !== 2
+        || mappings[0].attributes.get("Id")?.toLowerCase() !== runtimeId
+      )
+        return false;
+
+      const runtimeDir = win32.join(cache, runtimeId, pin);
+      if (!(yield* packageMatches(runtimeDir, runtimeId))) return false;
+      const tool = win32.join(runtimeDir, "tools", framework, rid);
+      const payloadSettings = readDotnetToolSettingsXml(yield* readManifest(win32.join(tool, "DotnetToolSettings.xml")));
+      const payload = payloadSettings?.find((node) => node.name === "Command");
+      if (
+        payloadSettings?.length !== 3
+        || payloadSettings[0]?.attributes.get("Version") !== "2"
+        || payload?.parent?.name !== "Commands"
+        || payload.attributes.size !== 3
+        || payload.attributes.get("Name") !== "aspire"
+        || payload.attributes.get("Runner") !== "executable"
+        || payload.attributes.get("EntryPoint") !== "aspire.exe"
+      )
+        return false;
+      return yield* inspectPayload(root, win32.join(tool, "aspire.exe"), architecture, "cli-native", pin);
+    }
+
+    const roots = [win32.join(packageDir, "tools", framework, rid), win32.join(packageDir, "tools", framework, "any")];
+    const tools = yield* Effect.forEach(roots, (path) => inspectPath(path));
+    const candidates = roots.filter((_, index) => tools[index]?.kind === "directory");
+    const [tool] = candidates;
+    return candidates.length === 1 && tool !== undefined && (yield* inspectToolPayload(root, tool, architecture, framework, pin));
+  });
+}
+
 const bundleBuildOverride =
   /^(?:Import(?:Group)?|Choose|Target|UsingTask|AspireCliBundlePath|AspireCliPath|DcpDir|DcpCliPath|DcpExtensionsDir|AspireDashboardDir|AspireDashboardPath|AspireHostingSDKVersion)\b/iu;
+
+function inspectDcp(
+  root: string,
+  directory: string,
+  architecture: string,
+  pin: string,
+): Effect.Effect<boolean, never, ReadOnlyFiles | Process> {
+  return Effect.gen(function* () {
+    const dcp = win32.join(directory, "dcp/dcp.exe");
+    if (yield* inspectPayload(root, dcp, architecture, "dcp")) return true;
+    // The official 13.6.5 x64 payload has no DCP version resource.
+    if (pin !== "13.6.5" || architecture !== "x64") return false;
+    const files = yield* ReadOnlyFiles;
+    for (const [name, digest] of [
+      ["dcp.exe", "16674dbfe3a67a80df110fc6ecd54e8ef1d512d0b538188d8e16808e422a3fb2"],
+      ["dcptun_c", "3cd1fc90288a23cadaa966b24932230cfd05faf7a8eb976bb027652076ec52eb"],
+    ] as const) {
+      const path = win32.join(directory, "dcp", name);
+      if (!(yield* ownedFile(path))) return false;
+      const bytes = yield* files.readBytesBounded(path, 100 * 1024 * 1024);
+      if (createHash("sha256").update(bytes).digest("hex") !== digest) return false;
+    }
+    return true;
+  }).pipe(Effect.orElseSucceed(() => false));
+}
 
 function isBundleBuildOverride(name: string): boolean {
   return bundleBuildOverride.test(name) || isUnmodeledBuildFileSelector(name);
@@ -1357,31 +1496,17 @@ function inspectPinnedBundle(
     const directory = yield* pinnedBundleRoot(layout, pin);
     if (!directory) return false;
 
-    const cliDir = win32.join(cache, "aspire.cli", pin);
     const sdkDir = win32.join(cache, "aspire.apphost.sdk", pin, "Sdk");
-    const meta = yield* readManifest(win32.join(cliDir, "aspire.cli.nuspec"));
     if (
-      !/<id>\s*aspire\.cli\s*<\/id>/iu.test(meta)
-      || /<version>\s*([^<]+?)\s*<\/version>/u.exec(meta)?.[1] !== pin
-      || !(yield* ownedFile(win32.join(cliDir, ".nupkg.metadata")))
-      || !(yield* ownedFile(win32.join(sdkDir, "Sdk.targets")))
+      !(yield* ownedFile(win32.join(sdkDir, "Sdk.targets")))
       || !(yield* ownedFile(win32.join(sdkDir, "Sdk.props")))
-    )
-      return false;
-    const toolRoots = [win32.join(cliDir, "tools", framework, `win-${env.architecture}`), win32.join(cliDir, "tools", framework, "any")];
-    const tools = yield* Effect.forEach(toolRoots, (path) => inspectPath(path));
-    const candidates = toolRoots.filter((_, index) => tools[index]?.kind === "directory");
-    const [tool] = candidates;
-    if (
-      candidates.length !== 1
-      || tool === undefined
-      || !(yield* inspectToolPayload(root, tool, env.architecture, framework, pin))
+      || !(yield* inspectPinnedTool(root, cache, pin, framework, env.architecture))
       || !(yield* ownedFile(win32.join(directory, "dcp/dcptun_c")))
     )
       return false;
     const observations = yield* Effect.all(
       [
-        inspectPayload(root, win32.join(directory, "dcp/dcp.exe"), env.architecture, "dcp"),
+        inspectDcp(root, directory, env.architecture, pin),
         inspectPayload(root, win32.join(directory, "managed/aspire-managed.exe"), env.architecture, "managed", pin),
         inspectPayload(root, win32.join(directory, "dashboard/Aspire.Dashboard.exe"), env.architecture, "dashboard", pin),
       ],
@@ -1559,7 +1684,7 @@ function inspect(
       [
         engine,
         hasPowerShell ? inspectWebsiteTrust(env, root, names) : Effect.succeed(blockedByPowerShell("website-tls")),
-        inspectDotnetTls(root),
+        inspectDotnetTls(root, hasPowerShell),
         hasPowerShell ? inspectNpm(root, env.architecture, names) : Effect.succeed(blockedByPowerShell("npm-dependencies")),
         artifacts,
         inspectPython(paths),

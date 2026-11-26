@@ -719,12 +719,21 @@ export interface BuildXmlElement {
  * @returns Active elements in source order, or unavailable for malformed or unsupported XML.
  */
 export function readBuildProjectXml(source: string): readonly BuildXmlElement[] | undefined {
+  return readLiteralXml(source, "Project");
+}
+
+/** Reads active DNX settings elements without treating comments as registrations. */
+export function readDotnetToolSettingsXml(source: string): readonly BuildXmlElement[] | undefined {
+  return readLiteralXml(source, "DotNetCliTool");
+}
+
+function readLiteralXml(source: string, root: "Project" | "DotNetCliTool"): readonly BuildXmlElement[] | undefined {
   if (source.includes("\ufffd")) return undefined;
   type ActiveElement = Omit<BuildXmlElement, "text" | "hasChildren"> & {text: string; hasChildren: boolean};
   const active: ActiveElement[] = [];
   const elements: BuildXmlElement[] = [];
   const valid = scanXml(source, {
-    root: "Project",
+    root,
     utf8Only: true,
     allowCdata: false,
     allowProcessingInstructions: false,
@@ -735,7 +744,8 @@ export function readBuildProjectXml(source: string): readonly BuildXmlElement[] 
         || [...attributes].some(
           ([key, value]) =>
             key.includes(":")
-            || (key === "xmlns" && (parent !== undefined || value !== "http://schemas.microsoft.com/developer/msbuild/2003")),
+            || (key === "xmlns"
+              && (root !== "Project" || parent !== undefined || value !== "http://schemas.microsoft.com/developer/msbuild/2003")),
         )
       )
         return false;

@@ -185,6 +185,7 @@ function processKey(request: Readonly<ProcessRequest>, env: Readonly<Record<stri
   if (request.command !== "pwsh") return commandLine(request);
   const role = env?.["AROLARIU_PREFLIGHT_PAYLOAD_ROLE"];
   if (role !== undefined) return `pwsh:${role}`;
+  if (env?.["AROLARIU_PREFLIGHT_CERT_THUMBPRINTS"] !== undefined) return "pwsh:dotnet-trust";
   if (request.args.at(-1) === "$PSVersionTable.PSVersion.ToString()") return "pwsh:version";
   if (request.args.at(-1)?.includes("GetFolderPath")) return "pwsh:profile";
   return "pwsh";
@@ -209,6 +210,7 @@ function fixture(
     "dotnet --list-sdks": "10.0.404 [C:/sdk]\n",
     "dotnet --list-runtimes": "Microsoft.NETCore.App 10.0.7 [C:/dotnet/shared]\n",
     "dotnet --version": "10.0.404\n",
+    "dotnet dev-certs https --check-trust-machine-readable": "[]",
     [`dotnet workload restore ${createRepositoryPaths(root).solution}`]: "",
     "dotnet tool restore": "",
     "where.exe pwsh.exe": "C:/Program Files/PowerShell/7/pwsh.exe\n",
@@ -357,6 +359,37 @@ function portableFixture(
 }
 
 describe("worktree Aspire preflight", () => {
+  it.each(["verified", "untrusted", "invalid inventory"] as const)(
+    "requires native Windows trust for SDK-listed localhost certificates if the SDK trust check fails (%s)",
+    async (scenario) => {
+      const thumbprint = "A".repeat(40);
+      const test = fixture(
+        {},
+        {
+          "dotnet dev-certs https --check-trust-machine-readable": JSON.stringify([
+            {
+              Thumbprint: thumbprint,
+              Subject: "CN=localhost",
+              IsHttpsDevelopmentCertificate: scenario !== "invalid inventory",
+              IsExportable: true,
+              X509SubjectAlternativeNameExtension: ["localhost"],
+            },
+          ]),
+          "pwsh:dotnet-trust": scenario === "verified" ? "verified" : "untrusted",
+        },
+      );
+
+      const result = await test.inspect();
+
+      expect(result.capabilities).toContainEqual(
+        expect.objectContaining({id: "dotnet-tls", status: scenario === "verified" ? "pass" : "blocked"}),
+      );
+      const probe = test.processCalls().find(({options}) => options.env?.["AROLARIU_PREFLIGHT_CERT_THUMBPRINTS"] !== undefined);
+      expect(probe?.options.env?.["AROLARIU_PREFLIGHT_CERT_THUMBPRINTS"]).toBe(scenario === "invalid inventory" ? undefined : thumbprint);
+      expect(JSON.stringify(result)).not.toContain(thumbprint);
+      test.expectReadOnly();
+    },
+  );
   it.each(["linux", "darwin"] as const)("verifies an attached %s checkout without Windows probes", async (platform) => {
     const test = portableFixture(platform, {}, {[guestDockerInfo]: "test-engine-1\n", [localDockerInfo]: rancherInfo});
 
@@ -1044,6 +1077,38 @@ describe("worktree Aspire preflight", () => {
     expect((await test.inspect()).capabilities).toContainEqual(expect.objectContaining({id: "aspire-bundle", status: "pass"}));
     test.expectReadOnly();
   });
+
+  it.runIf(process.platform === "win32").each(["valid", "wrong mapping", "wrong version"] as const)(
+    "checks version 2 native DNX registration (%s)",
+    async (scenario) => {
+      const runtimePackage = `${cache}/aspire.cli.win-x64/13.6.5`;
+      const runtimeTool = `${runtimePackage}/tools/net10.0/win-x64`;
+      const test = fixture(
+        {NUGET_PACKAGES: cache},
+        {...payloadFixtures, "pwsh:cli-native": "verified"},
+        {
+          [`${cache}/aspire.apphost.sdk/13.6.5/Sdk/Sdk.targets`]: "<Project />",
+          [`${cache}/aspire.apphost.sdk/13.6.5/Sdk/Sdk.props`]: "<Project />",
+          [`${tool}/aspire.cli.nuspec`]: "<package><metadata><id>Aspire.Cli</id><version>13.6.5</version></metadata></package>",
+          [`${tool}/.nupkg.metadata`]: "{}",
+          [`${tool}/tools/any/any/DotnetToolSettings.xml`]:
+            '<DotNetCliTool Version="2"><Commands><Command Name="aspire" /></Commands><RuntimeIdentifierPackages>'
+            + `<RuntimeIdentifierPackage RuntimeIdentifier="win-x64" Id="${scenario === "wrong mapping" ? "Alternate.Cli" : "Aspire.Cli.win-x64"}" />`
+            + "</RuntimeIdentifierPackages></DotNetCliTool>",
+          [`${runtimePackage}/aspire.cli.win-x64.nuspec`]: `<package><metadata><id>Aspire.Cli.win-x64</id><version>${scenario === "wrong version" ? "13.6.4" : "13.6.5"}</version></metadata></package>`,
+          [`${runtimePackage}/.nupkg.metadata`]: "{}",
+          [`${runtimeTool}/DotnetToolSettings.xml`]:
+            '<DotNetCliTool Version="2"><Commands><Command Name="aspire" EntryPoint="aspire.exe" Runner="executable" /></Commands></DotNetCliTool>',
+          [`${runtimeTool}/aspire.exe`]: portableExecutable(),
+          ...resolverBundle(`${aspireHome}/bundle`),
+        },
+      );
+      expect((await test.inspect()).capabilities).toContainEqual(
+        expect.objectContaining({id: "aspire-bundle", status: scenario === "valid" ? "pass" : "blocked"}),
+      );
+      test.expectReadOnly();
+    },
+  );
 
   it.runIf(process.platform === "win32").each([
     [
