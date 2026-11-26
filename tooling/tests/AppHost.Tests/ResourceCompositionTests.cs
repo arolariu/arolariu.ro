@@ -1,6 +1,7 @@
 namespace AppHost.Tests;
 
 using System.Reflection;
+using System.Runtime.Versioning;
 using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
 using System.Text.Json;
@@ -388,6 +389,71 @@ public sealed class ResourceCompositionTests
     var rancher = fixture.Load(engine: "rancher");
     Assert.AreEqual(fixture.Ports["exp"], rancher.Port("exp"));
     Assert.ThrowsExactly<InvalidOperationException>(() => fixture.Load(change: evidence => evidence with { Engine = "rancher" }));
+  }
+
+  [TestMethod]
+  [DataRow("--worktree-registry", "create", "extra")]
+  [DataRow("--worktree-registry=create", "", "")]
+  [DataRow("--WORKTREE-REGISTRY", "read", "")]
+  public void Startup_MalformedRegistryRequest_RefusesBeforeLegacy(string flag, string mode, string extra)
+  {
+    string[] args = new[] { flag, mode, extra }.Where(arg => arg.Length > 0).ToArray();
+    using var output = new StringWriter();
+    Assert.ThrowsExactly<InvalidOperationException>(() => AppHostStartup.TryHandleRegistry(args, null, output));
+    Assert.IsEmpty(output.ToString());
+  }
+
+  [TestMethod]
+  public void ReadStageRecord_RejectsNoncanonicalPathAndDuplicatePropertyBeforeAcceptingAuthority()
+  {
+    var root = Directory.CreateTempSubdirectory("arolariu-record-test-");
+    try
+    {
+      string scope = new('a', 32);
+      string run = new('b', 32);
+      string stage = Directory.CreateDirectory(System.IO.Path.Combine(root.FullName, scope, run)).FullName;
+      string descriptor = System.IO.Path.Combine(stage, "descriptor.json");
+      File.WriteAllText(descriptor, """{"ports":{"exp":25001,"exp":25002}}""");
+      Assert.ThrowsExactly<InvalidOperationException>(() => WorktreeRegistry.ReadStageRecord(root.FullName, descriptor));
+      Assert.ThrowsExactly<InvalidOperationException>(() => WorktreeRegistry.ReadStageRecord(
+        root.FullName, System.IO.Path.Combine(stage, "..", run, "descriptor.json")));
+
+      File.WriteAllText(descriptor, """{"ports":{"exp":25001}}""");
+      using JsonDocument observed = WorktreeRegistry.ReadStageRecord(root.FullName, descriptor);
+      Assert.AreEqual(25001, observed.RootElement.GetProperty("ports").GetProperty("exp").GetInt32());
+    }
+    finally
+    {
+      root.Delete(recursive: true);
+    }
+  }
+
+  [TestMethod]
+  [SupportedOSPlatform("windows")]
+  public void OpenWorktreeRegistry_Windows_RefusesAnInsecureExistingDirectory()
+  {
+    if (!OperatingSystem.IsWindows())
+    {
+      Assert.Inconclusive("Windows ACL behavior requires Windows.");
+      return;
+    }
+
+    var parent = Directory.CreateTempSubdirectory("arolariu-registry-test-");
+    try
+    {
+      Assert.IsNull(WorktreeRegistry.OpenWindows(parent.FullName, create: false));
+      string root = System.IO.Path.Combine(parent.FullName, WorktreeRegistry.DirectoryName);
+      Directory.CreateDirectory(root);
+      Assert.ThrowsExactly<InvalidOperationException>(() => WorktreeRegistry.OpenWindows(parent.FullName, create: true));
+      Directory.Delete(root);
+
+      Assert.AreEqual(root, WorktreeRegistry.OpenWindows(parent.FullName, create: true));
+      Assert.AreEqual(root, WorktreeRegistry.OpenWindows(parent.FullName, create: false));
+    }
+    finally
+    {
+      parent.Delete(recursive: true);
+    }
   }
 
   [TestMethod]

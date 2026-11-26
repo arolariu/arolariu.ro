@@ -3,7 +3,9 @@ using AppHost.Applications.Exp;
 using AppHost.LocalDevelopment;
 using AppHost.Repository;
 
-AppHostStartup.Run(args, Environment.GetEnvironmentVariable(WorktreeLaunchScope.DescriptorEnvironmentVariable), RunLegacy);
+string? descriptor = Environment.GetEnvironmentVariable(WorktreeLaunchScope.DescriptorEnvironmentVariable);
+if (!AppHostStartup.TryHandleRegistry(args, descriptor, Console.Out))
+  AppHostStartup.Run(args, descriptor, RunLegacy);
 
 static void RunLegacy(string[] args)
 {
