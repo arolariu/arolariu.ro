@@ -90,7 +90,7 @@ internal static class WorktreeRegistry
       if ((owner != user && (ancestor.FullName == parent || owner != 0))
         || (File.GetUnixFileMode(ancestor.FullName) & writableByOtherUsers) != 0)
         throw new InvalidOperationException("The POSIX registry route has an untrusted owner or writer.");
-      if (OperatingSystem.IsMacOS()) RequireNoMacOsAcl(ancestor.FullName);
+      if (OperatingSystem.IsMacOS()) RequireNoMacOsAclGrants(ancestor.FullName);
     }
 
     const UnixFileMode privateMode = UnixFileMode.UserRead | UnixFileMode.UserWrite | UnixFileMode.UserExecute;
@@ -108,12 +108,12 @@ internal static class WorktreeRegistry
     int registryOwner = await ReadDirectoryOwnerAsync(directory.FullName, token).ConfigureAwait(false);
     if (registryOwner != user || File.GetUnixFileMode(directory.FullName) != privateMode)
       throw new InvalidOperationException("The native registry permissions are not private.");
-    if (OperatingSystem.IsMacOS()) RequireNoMacOsAcl(directory.FullName);
+    if (OperatingSystem.IsMacOS()) RequireNoMacOsAclGrants(directory.FullName);
     return directory.FullName;
   }
 
   [SupportedOSPlatform("macos")]
-  private static void RequireNoMacOsAcl(string path)
+  private static void RequireNoMacOsAclGrants(string path)
   {
     // Darwin ACL grants are not constrained by the Unix group and other mode bits.
     const int extendedAcl = 0x100;
@@ -130,14 +130,45 @@ internal static class WorktreeRegistry
     {
       Marshal.FreeCoTaskMem(nativePath);
     }
-    if (acl == IntPtr.Zero && error == absent) return;
-    if (acl != IntPtr.Zero) _ = FreeMacOsAcl(acl);
-    throw new InvalidOperationException("The macOS registry route has an extended or unreadable ACL.");
+    if (acl == IntPtr.Zero)
+    {
+      if (error == absent) return;
+      throw new InvalidOperationException("The macOS registry ACL could not be verified.");
+    }
+
+    try
+    {
+      const int noMoreEntries = 22; // Darwin acl_get_entry reports EINVAL past the last entry.
+      const int deny = 2;
+      for (int i = 0; i <= 128; i++)
+      {
+        int entryId = i == 0 ? 0 : -1; // ACL_FIRST_ENTRY then ACL_NEXT_ENTRY.
+        if (GetMacOsAclEntry(acl, entryId, out IntPtr entry) != 0)
+        {
+          if (Marshal.GetLastPInvokeError() == noMoreEntries) return;
+          break;
+        }
+        if (GetMacOsAclTag(entry, out int tag) != 0 || tag != deny) break;
+      }
+      throw new InvalidOperationException("The macOS registry ACL grants access or could not be verified.");
+    }
+    finally
+    {
+      _ = FreeMacOsAcl(acl);
+    }
   }
 
   [DllImport("/usr/lib/libSystem.B.dylib", EntryPoint = "acl_get_link_np", SetLastError = true)]
   [SupportedOSPlatform("macos")]
   private static extern IntPtr GetMacOsAcl(IntPtr path, int type);
+
+  [DllImport("/usr/lib/libSystem.B.dylib", EntryPoint = "acl_get_entry", SetLastError = true)]
+  [SupportedOSPlatform("macos")]
+  private static extern int GetMacOsAclEntry(IntPtr acl, int entryId, out IntPtr entry);
+
+  [DllImport("/usr/lib/libSystem.B.dylib", EntryPoint = "acl_get_tag_type")]
+  [SupportedOSPlatform("macos")]
+  private static extern int GetMacOsAclTag(IntPtr entry, out int tag);
 
   [DllImport("/usr/lib/libSystem.B.dylib", EntryPoint = "acl_free")]
   [SupportedOSPlatform("macos")]

@@ -535,13 +535,9 @@ public sealed class ResourceCompositionTests
       Assert.AreEqual(root, await WorktreeRegistry.OpenPosixAsync(parent, create: false));
       if (OperatingSystem.IsMacOS())
       {
-        var chmod = new System.Diagnostics.ProcessStartInfo("/bin/chmod") { UseShellExecute = false };
-        foreach (string argument in new[] { "+a", "everyone allow list", root }) chmod.ArgumentList.Add(argument);
-        using System.Diagnostics.Process child = System.Diagnostics.Process.Start(chmod)
-          ?? throw new InvalidOperationException("The macOS chmod probe is unavailable.");
-        using var deadline = new CancellationTokenSource(TimeSpan.FromSeconds(10));
-        await child.WaitForExitAsync(deadline.Token);
-        Assert.AreEqual(0, child.ExitCode);
+        await AddMacOsAclAsync(parent, "everyone deny writeextattr");
+        Assert.AreEqual(root, await WorktreeRegistry.OpenPosixAsync(parent, create: false));
+        await AddMacOsAclAsync(root, "everyone allow list");
         Assert.AreEqual(privateMode, File.GetUnixFileMode(root));
         await Assert.ThrowsExactlyAsync<InvalidOperationException>(() => WorktreeRegistry.OpenPosixAsync(parent, create: false));
       }
@@ -552,6 +548,17 @@ public sealed class ResourceCompositionTests
     {
       Directory.Delete(parent, recursive: true);
     }
+  }
+
+  private static async Task AddMacOsAclAsync(string path, string rule)
+  {
+    var chmod = new System.Diagnostics.ProcessStartInfo("/bin/chmod") { UseShellExecute = false };
+    foreach (string argument in new[] { "+a", rule, path }) chmod.ArgumentList.Add(argument);
+    using System.Diagnostics.Process child = System.Diagnostics.Process.Start(chmod)
+      ?? throw new InvalidOperationException("The macOS chmod probe is unavailable.");
+    using var deadline = new CancellationTokenSource(TimeSpan.FromSeconds(10));
+    await child.WaitForExitAsync(deadline.Token);
+    Assert.AreEqual(0, child.ExitCode);
   }
 
   [TestMethod]
