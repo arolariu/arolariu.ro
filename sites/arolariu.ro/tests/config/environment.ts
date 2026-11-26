@@ -155,11 +155,10 @@ export function useLegacyWebServer(websiteRoot: string): boolean {
 
   const env = {...process.env};
   // npm/Nx and Git hooks may inherit Git's checkout-routing environment.
-  delete env["GIT_DIR"];
-  delete env["GIT_COMMON_DIR"];
-  delete env["GIT_WORK_TREE"];
-  delete env["GIT_IMPLICIT_WORK_TREE"];
-  delete env["GIT_CEILING_DIRECTORIES"];
+  const routing = new Set(["GIT_DIR", "GIT_COMMON_DIR", "GIT_WORK_TREE", "GIT_IMPLICIT_WORK_TREE", "GIT_CEILING_DIRECTORIES"]);
+  for (const key of Object.keys(env)) {
+    if (routing.has(key.toUpperCase())) delete env[key];
+  }
   let linked: boolean;
   try {
     const root = realpathSync(resolve(websiteRoot, "../.."));

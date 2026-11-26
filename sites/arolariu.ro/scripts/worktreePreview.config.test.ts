@@ -92,10 +92,13 @@ export default {...config, globalSetup: undefined, globalTeardown: undefined, re
     processTimeout,
   );
 
-  it(
-    "uses the config checkout even when invoked with primary-checkout Git environment",
-    async () => {
-      await expect(list(linked, {GIT_DIR: join(primary, ".git"), GIT_WORK_TREE: primary}, primary)).rejects.toMatchObject({
+  it.each([
+    ["GIT_DIR", "GIT_WORK_TREE"],
+    ["git_dir", "git_work_tree"],
+  ])(
+    "uses the config checkout even with inherited %s and %s",
+    async (gitDir, workTree) => {
+      await expect(list(linked, {[gitDir]: join(primary, ".git"), [workTree]: primary}, primary)).rejects.toMatchObject({
         code: 1,
         stderr: expect.stringContaining("Local Playwright in a linked Git worktree requires E2E_WORKTREE_PORT"),
       });
