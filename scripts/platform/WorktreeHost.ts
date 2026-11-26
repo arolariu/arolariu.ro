@@ -1,7 +1,7 @@
 /** @fileoverview Host I/O primitives for the scoped worktree registry and loopback reservations. */
 import {Effect} from "effect";
 import {randomBytes} from "node:crypto";
-import {link, lstat, mkdir, open, readdir, realpath, rename, unlink, writeFile} from "node:fs/promises";
+import {link, lstat, mkdir, open, readdir, realpath, rename, rmdir, unlink, writeFile} from "node:fs/promises";
 import {createServer} from "node:net";
 import {normalize} from "node:path";
 
@@ -38,6 +38,11 @@ export async function worktreeDirectory(path: string): Promise<boolean> {
 /** Creates an exclusive private directory at an already selected registry path. */
 export function makeRegistryDirectory(path: string): Promise<void> {
   return mkdir(path, {mode: 0o700});
+}
+
+/** Removes an exact directory only if it still has no entries. */
+export function removeEmptyRegistryDirectory(path: string): Promise<void> {
+  return rmdir(path);
 }
 
 /** Lists the immediate entries of a registry directory. */

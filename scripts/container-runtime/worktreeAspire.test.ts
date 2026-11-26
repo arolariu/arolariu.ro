@@ -144,6 +144,39 @@ describe("worktree Aspire ownership", () => {
     }
   });
 
+  it("rolls back files from a failed launch preparation and lets the same reservation retry", async () => {
+    const fixture = await leaseFixture();
+    const run = <A, E>(effect: Effect.Effect<A, E, WorktreePlatform>) =>
+      Effect.runPromise(effect.pipe(Effect.provideService(WorktreePlatform, fixture.platform)));
+    try {
+      const lease = await run(claimWorktreeLaunch(fixture.checkout));
+      await expect(
+        run(
+          beginWorktreeLaunch(lease, async (stage) => {
+            const file = join(stage.runtime, "exp.json");
+            await writeFile(file, "synthetic config", {flag: "wx"});
+            // Fail before publishing a pending lease without leaving the file created by this attempt.
+            await unlink(file);
+            throw new Error("preparation failed");
+          }),
+        ),
+      ).rejects.toThrow("Could not stage");
+      expect(await run(readWorktreeLaunch(fixture.checkout))).toMatchObject({runId: lease.runId, phase: "reserved"});
+
+      const stage = await run(
+        beginWorktreeLaunch(lease, async (directory) => {
+          const file = join(directory.runtime, "exp.json");
+          await writeFile(file, "successful scoped config", {flag: "wx"});
+          return () => unlink(file);
+        }),
+      );
+      expect(await readFile(join(stage.runtime, "exp.json"), "utf8")).toBe("successful scoped config");
+      expect(await run(readWorktreeLaunch(fixture.checkout))).toMatchObject({runId: lease.runId, phase: "pending"});
+    } finally {
+      await fixture.dispose();
+    }
+  });
+
   it("can record and stop a proven staged run if the checkout moves before ownership is observed", async () => {
     const fixture = await leaseFixture();
     let checkout = fixture.checkout;

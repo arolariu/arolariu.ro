@@ -6,7 +6,14 @@
 import {Clock, Effect} from "effect";
 import {join} from "node:path";
 
-import {makeRegistryDirectory, unlinkRegistryEntry, worktreeDirectory, worktreeIO} from "../platform/WorktreeHost.ts";
+import {
+  makeRegistryDirectory,
+  registryEntryExists,
+  removeEmptyRegistryDirectory,
+  unlinkRegistryEntry,
+  worktreeDirectory,
+  worktreeIO,
+} from "../platform/WorktreeHost.ts";
 import {
   isWorktreePorts,
   isWorktreeProcessIdentity,
@@ -63,6 +70,7 @@ export type WorktreeOwnershipProof =
     };
 
 type CurrentOperation<T> = (current: WorktreeLease, registry: string, platform: WorktreeLaunchPlatform) => Effect.Effect<T, unknown>;
+type StagePreparation = (stage: WorktreeStage, lease: WorktreeLease) => Promise<() => Promise<void>>;
 
 function withCurrent<T>(
   lease: WorktreeLease,
@@ -104,7 +112,10 @@ function runDirectory(registry: string, lease: WorktreeLease): string {
 }
 
 /** Stages only new files under the owned scope, and fences the lease before any spawn. */
-export function beginWorktreeLaunch(lease: WorktreeLease): Effect.Effect<WorktreeStage, WorktreeLaunchError, WorktreePlatform> {
+export function beginWorktreeLaunch(
+  lease: WorktreeLease,
+  prepare?: StagePreparation,
+): Effect.Effect<WorktreeStage, WorktreeLaunchError, WorktreePlatform> {
   return withCurrent(
     lease,
     "Could not stage this run in its protected scope.",
@@ -119,12 +130,25 @@ export function beginWorktreeLaunch(lease: WorktreeLease): Effect.Effect<Worktre
         const build = join(directory, "build");
         const runtime = join(directory, "runtime");
         const descriptor = join(directory, "descriptor.json");
-        await makeRegistryDirectory(directory); // Exclusive; do not adopt a pre-existing run directory.
-        await makeRegistryDirectory(build);
-        await makeRegistryDirectory(runtime);
-        await publishWorktreeJson(descriptor, worktreeDescriptorFor(current));
-        await writeWorktreeLease(registry, {...current, phase: "pending"});
-        return {directory, descriptor, build, runtime};
+        const cleanup: (() => Promise<void>)[] = [];
+        try {
+          await makeRegistryDirectory(directory);
+          cleanup.unshift(() => removeEmptyRegistryDirectory(directory));
+          await makeRegistryDirectory(build);
+          cleanup.unshift(() => removeEmptyRegistryDirectory(build));
+          await makeRegistryDirectory(runtime);
+          cleanup.unshift(() => removeEmptyRegistryDirectory(runtime));
+          const stage = {directory, descriptor, build, runtime};
+          if (prepare) cleanup.unshift(await prepare(stage, current));
+          await publishWorktreeJson(descriptor, worktreeDescriptorFor(current));
+          cleanup.unshift(() => unlinkRegistryEntry(descriptor));
+          await writeWorktreeLease(registry, {...current, phase: "pending"});
+          return stage;
+        } catch (error) {
+          if (await registryEntryExists(join(directory, "process.json"))) throw error;
+          for (const rollback of cleanup) await rollback();
+          throw error;
+        }
       });
     }),
   );
