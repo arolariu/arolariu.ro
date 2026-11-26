@@ -22,9 +22,10 @@ Podman preflight checks a registered, running local machine on Windows and macOS
 `$XDG_RUNTIME_DIR/podman/podman.sock` on Linux. The Linux runtime directory must be private to the current user; the socket must be owned by
 that user, unredirected, and unchanged during the probe. Rancher requires a running Moby guest and checks that its daemon ID matches the
 local Windows Docker pipe or `$HOME/.rd/docker.sock` on Linux and macOS. Remote connection overrides are not supported. Preflight does not
-start the runtimes. Outside Windows x64 it also reports AppHost parameter presence, website and EXP configuration, and website generation
-markers, but stays `blocked`: full host preparation is not implemented there. The current SQL Server image requires a supported x86-64
-execution environment; preflight does not qualify ARM emulation.
+start the runtimes. Outside Windows x64 it also reports AppHost parameter presence, website and EXP configuration, website generation
+markers, EXP virtual-environment package metadata, and the tooling's required stable .NET SDK. It stays `blocked`: full host preparation is
+not implemented there. The current SQL Server image requires a supported x86-64 execution environment; preflight does not qualify ARM
+emulation.
 
 After preflight passes, run `node scripts/cli.ts dev worktree start --engine rancher` (or `--engine podman`) from the same checkout. Keep
 that foreground command open. To request cooperative shutdown, use `dev worktree stop --engine <engine> --expected-run <id>` with the run ID

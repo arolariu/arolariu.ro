@@ -1038,7 +1038,7 @@ function inspectWebsiteArtifacts(root: string, platform: NodeJS.Platform): Effec
   );
 }
 
-function inspectPython(paths: RepositoryPaths): Effect.Effect<WorktreeCapability, never, ReadOnlyFiles> {
+function inspectPython(root: string, platform: NodeJS.Platform): Effect.Effect<WorktreeCapability, never, ReadOnlyFiles> {
   return Effect.gen(function* () {
     const blocked = capability(
       "python-dependencies",
@@ -1046,16 +1046,36 @@ function inspectPython(paths: RepositoryPaths): Effect.Effect<WorktreeCapability
       "",
       "Worktree preparation: local exp .venv and requirement versions were not verified. See Setup actions python.venv.create and python.dependencies.install (separate approval).",
     );
-    const venv = win32.join(paths.expRoot, ".venv");
-    const requirements = yield* readManifest(win32.join(paths.expRoot, "requirements.txt"));
-    const venvConfig = yield* readManifest(win32.join(venv, "pyvenv.cfg"));
-    if (!/^include-system-site-packages\s*=\s*false\s*$/imu.test(venvConfig) || !(yield* ownedFile(win32.join(venv, "Scripts/python.exe"))))
-      return blocked;
+    const {paths, equal, isLocal} = pathProfile(platform);
+    const exp = paths.join(root, "sites/exp.arolariu.ro");
+    const venv = paths.join(exp, ".venv");
+    const requirements = yield* readManifest(paths.join(exp, "requirements.txt"), equal);
+    const venvConfig = yield* readManifest(paths.join(venv, "pyvenv.cfg"), equal);
+    const packageSettings = [...venvConfig.matchAll(/^[ \t]*include-system-site-packages[ \t]*=[ \t]*(\S+)[ \t]*\r?$/gimu)];
+    if (packageSettings.length !== 1 || packageSettings[0]?.[1]?.toLowerCase() !== "false") return blocked;
 
+    let packages: string;
     const files = yield* ReadOnlyFiles;
-    const packages = win32.join(venv, "Lib/site-packages");
+    if (platform === "win32") {
+      if (!(yield* ownedFile(paths.join(venv, "Scripts/python.exe"), equal))) return blocked;
+      packages = paths.join(venv, "Lib/site-packages");
+    } else {
+      const versions = [...venvConfig.matchAll(/^[ \t]*version[ \t]*=[ \t]*(3\.\d+)\.\d+[ \t]*\r?$/gmu)];
+      const version = versions[0]?.[1];
+      const bin = paths.join(venv, "bin");
+      // Standard POSIX venvs link the interpreter, not the environment directory.
+      if (versions.length !== 1 || version === undefined || (yield* canonicalPath(venv)) !== venv || (yield* canonicalPath(bin)) !== bin) {
+        return blocked;
+      }
+      const target = yield* canonicalPath(paths.join(bin, "python"));
+      if (!isLocal(target) || !/^python(?:3(?:\.\d+)?)?$/u.test(paths.basename(target))) return blocked;
+      const interpreter = yield* files.stat(target).pipe(Effect.orElseSucceed(() => undefined));
+      if (interpreter?.type !== "File" || interpreter.size <= 0 || (interpreter.mode & 0o111) === 0) return blocked;
+      packages = paths.join(venv, "lib", `python${version}`, "site-packages");
+    }
+
     const actual = yield* canonicalPath(packages);
-    if (actual === undefined || !samePath(actual, packages)) return blocked;
+    if (actual === undefined || !equal(actual, packages)) return blocked;
     const entries = yield* files.readDirectory(packages).pipe(Effect.orElseSucceed((): readonly string[] => []));
     const lines = requirements
       .split(/\r?\n/u)
@@ -1071,7 +1091,7 @@ function inspectPython(paths: RepositoryPaths): Effect.Effect<WorktreeCapability
         const [entry] = candidates;
         if (candidates.length !== 1 || entry === undefined) return false;
         const version = entry.slice(prefix.length, -".dist-info".length);
-        return matchesLocalPythonPin(operator, expected, version) && (yield* ownedFile(win32.join(packages, entry, "METADATA")));
+        return matchesLocalPythonPin(operator, expected, version) && (yield* ownedFile(paths.join(packages, entry, "METADATA"), equal));
       }),
     );
     return lines.length > 0 && match.every(Boolean)
@@ -1640,6 +1660,42 @@ function inspectPinnedBundle(
   }).pipe(Effect.orElseSucceed(() => false));
 }
 
+function toolingFramework(
+  root: string,
+  platform: NodeJS.Platform,
+): Effect.Effect<{readonly version: string; readonly target: string} | undefined, never, ReadOnlyFiles> {
+  return Effect.gen(function* () {
+    const {paths, equal} = pathProfile(platform);
+    const props = readBuildProjectXml(yield* readManifest(paths.join(root, "tooling/Directory.Build.props"), equal));
+    const framework = /^net(\d+\.\d+)$/u.exec(
+      props?.find(
+        ({name, attributes, hasChildren, parent}) =>
+          name === "TargetFramework"
+          && attributes.size === 0
+          && !hasChildren
+          && parent?.name === "PropertyGroup"
+          && parent.parent === props[0],
+      )?.text ?? "",
+    );
+    return framework?.[1] === undefined ? undefined : {version: framework[1], target: framework[0]};
+  });
+}
+
+function inspectDotnetSdk(root: string, framework: string | undefined): Effect.Effect<WorktreeCapability, never, Process> {
+  return Effect.gen(function* () {
+    const listing = framework === undefined ? undefined : yield* run(probes.dotnet.sdkList(), {cwd: root, env: dotnetEnvironment});
+    const found =
+      listing?.kind === "succeeded"
+      && listing.stdout.split(/\r?\n/u).some((line) => line.startsWith(`${framework}.`) && /^\d+\.\d+\.\d+ \[.+\]$/u.test(line));
+    return capability(
+      "dotnet-sdk",
+      found,
+      "A stable SDK for the tooling target framework is listed.",
+      "Machine bootstrap: the required .NET SDK was not observed. See Setup action dotnet.install-sdk.",
+    );
+  });
+}
+
 function inspectBundle(
   paths: RepositoryPaths,
   env: EnvironmentSnapshot,
@@ -1648,7 +1704,6 @@ function inspectBundle(
 ): Effect.Effect<readonly WorktreeCapability[], never, ReadOnlyFiles | Process | Environment> {
   return Effect.gen(function* () {
     const project = readBuildProjectXml(yield* readManifest(win32.join(paths.root, appHost)));
-    const props = readBuildProjectXml(yield* readManifest(win32.join(paths.root, "tooling/Directory.Build.props")));
     const pin = project
       ?.find(
         ({name, parent, attributes, selfClosing}) =>
@@ -1659,23 +1714,8 @@ function inspectBundle(
           && attributes.get("Name") === "Aspire.AppHost.Sdk",
       )
       ?.attributes.get("Version");
-    const framework = /^net(\d+)\.(\d+)$/u.exec(
-      props?.find(
-        ({name, attributes, hasChildren, parent}) =>
-          name === "TargetFramework"
-          && attributes.size === 0
-          && !hasChildren
-          && parent?.name === "PropertyGroup"
-          && parent.parent === props[0],
-      )?.text ?? "",
-    );
-    const sdks = yield* run(probes.dotnet.sdkList(), {cwd: paths.root, env: dotnetEnvironment});
-    const sdk =
-      framework !== null
-      && sdks.kind === "succeeded"
-      && sdks.stdout
-        .split(/\r?\n/u)
-        .some((line) => line.startsWith(`${framework[1]}.${framework[2]}.`) && /^\d+\.\d+\.\d+ \[.+\]$/u.test(line));
+    const framework = yield* toolingFramework(paths.root, env.platform);
+    const sdk = yield* inspectDotnetSdk(paths.root, framework?.version);
     const checked = new Map<string, boolean>();
     const receiptBefore = yield* currentWorktreeRestoreEvidence(paths);
     let appHostObserved = false;
@@ -1689,17 +1729,12 @@ function inspectBundle(
       hasPowerShell
       && project
       && pin
-      && sdk
+      && sdk.status === "pass"
       && framework
-      && (yield* inspectPinnedBundle(paths.root, env, names, project, pin, `net${framework[1]}.${framework[2]}`))
+      && (yield* inspectPinnedBundle(paths.root, env, names, project, pin, framework.target))
     );
     return [
-      capability(
-        "dotnet-sdk",
-        sdk,
-        "A stable SDK for the tooling target framework is listed.",
-        "Machine bootstrap: the required .NET SDK was not observed. See Setup action dotnet.install-sdk.",
-      ),
+      sdk,
       capability(
         "nuget-assets",
         fresh,
@@ -1785,13 +1820,15 @@ function inspect(
     const config = [inspectAppHostConfig(root, env), inspectWebsiteConfig(root, env)] as const;
     const artifacts = inspectWebsiteArtifacts(root, env.platform);
     const expConfig = inspectExpConfig(root, env.platform);
+    const python = inspectPython(root, env.platform);
     if (env.platform !== "win32" || env.architecture !== "x64") {
+      const sdk = toolingFramework(root, env.platform).pipe(Effect.flatMap((framework) => inspectDotnetSdk(root, framework?.version)));
       return {
         status: "blocked",
         checkout,
         capabilities: [
           checkoutCapability,
-          ...(yield* Effect.all([...config, engine, artifacts, expConfig], {concurrency: "unbounded"})),
+          ...(yield* Effect.all([...config, engine, artifacts, expConfig, python, sdk], {concurrency: "unbounded"})),
           capability(
             "host-preparation",
             false,
@@ -1811,7 +1848,7 @@ function inspect(
         inspectDotnetTls(root, hasPowerShell),
         hasPowerShell ? inspectNpm(root, env.architecture, names) : Effect.succeed(blockedByPowerShell("npm-dependencies")),
         artifacts,
-        inspectPython(paths),
+        python,
         expConfig,
       ],
       {concurrency: "unbounded"},

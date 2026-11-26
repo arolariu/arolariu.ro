@@ -527,6 +527,66 @@ describe("worktree Aspire preflight", () => {
   );
 
   it.each([
+    ["linux", "3.12.4", "compatible", true, true],
+    ["darwin", "3.13.1", "compatible", true, true],
+    ["linux", "3.12.4", "preview SDK", true, false],
+    ["linux", "3.12.4", "wrong Python package", false, true],
+    ["linux", "3.12.4", "shared Python packages", false, true],
+    ["darwin", "3.12.4", "redirected environment", false, true],
+  ] as const)("inspects the %s Python and .NET prerequisites (%s, %s)", async (platform, version, scenario, python, dotnet) => {
+    const root = "/home/dev/git/worktrees/task";
+    const interpreter = `${root}/${venv}/bin/python`;
+    const systemPython = `/usr/bin/python${version.split(".").slice(0, 2).join(".")}`;
+    const library = `${venv}/lib/python${version.split(".").slice(0, 2).join(".")}/site-packages`;
+    const requirement = scenario === "wrong Python package" ? "1.3.0" : "1.2.3";
+    const test = portableFixture(
+      platform,
+      {},
+      {
+        "podman system connection list --format json": "[]",
+        "dotnet --list-sdks": scenario === "preview SDK" ? "10.0.100-preview.4 [/sdk]\n" : "10.0.103 [/sdk]\n",
+      },
+      {
+        "tooling/Directory.Build.props": "<Project><PropertyGroup><TargetFramework>net10.0</TargetFramework></PropertyGroup></Project>",
+        [`${exp}/requirements.txt`]: "example-package~=1.2.3\n",
+        [`${venv}/pyvenv.cfg`]: `version = ${version}\ninclude-system-site-packages = ${scenario === "shared Python packages"}\n`,
+        [systemPython]: "base interpreter",
+        [`${venv}/bin/python`]: "launcher",
+        [`${library}/example_package-${requirement}.dist-info/METADATA`]: "local metadata",
+      },
+    );
+    const fs = Layer.effect(
+      ReadOnlyFiles,
+      Effect.map(ReadOnlyFiles, (files) => ({
+        ...files,
+        realPath: (path) => {
+          if (path === interpreter) return Effect.succeed(systemPython);
+          if (path === `${root}/${venv}` && scenario === "redirected environment") return Effect.succeed("/other/venv");
+          return files.realPath(path);
+        },
+        stat: (path) => Effect.map(files.stat(path), (info) => (path === systemPython ? {...info, mode: 0o755} : info)),
+      })),
+    );
+
+    const result = await Effect.runPromise(inspectWorktreeAspire({engine: "podman"}).pipe(Effect.provide(fs), Effect.provide(test.layer)));
+
+    expect(result.status).toBe("blocked");
+    expect(result.capabilities).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({id: "python-dependencies", status: python ? "pass" : "blocked"}),
+        expect.objectContaining({id: "dotnet-sdk", status: dotnet ? "pass" : "blocked"}),
+      ]),
+    );
+    expect(
+      test
+        .processCalls()
+        .filter(({request}) => request.command === "dotnet")
+        .map(({request}) => commandLine(request)),
+    ).toEqual(["dotnet --list-sdks"]);
+    expect(test.processCalls().some(({request}) => request.command.includes("python"))).toBe(false);
+  });
+
+  it.each([
     ["stable", true, true],
     ["changed", false, true],
     ["redirected", false, false],
