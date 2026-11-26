@@ -45,7 +45,8 @@ export function runOwnedWorktreeProcess(
           const exited = Fiber.join(observer);
           const stopped = Deferred.succeed(shutdown, undefined).pipe(
             Effect.andThen(exited.pipe(Effect.interruptible)),
-            Effect.timeout("60 seconds"),
+            // Leave time for exit and pipe drain after AppHost's 90-second cleanup budget.
+            Effect.timeout("105 seconds"),
           );
           const outcome = yield* Effect.exit(restore(Effect.raceFirst(exited, stop.pipe(Effect.as("stop" as const)))));
           if (Exit.hasInterrupts(outcome) || (Exit.isSuccess(outcome) && outcome.value === "stop")) return Number(yield* stopped);

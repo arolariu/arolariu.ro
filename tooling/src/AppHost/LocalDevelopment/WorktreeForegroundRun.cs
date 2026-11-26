@@ -8,6 +8,7 @@ using Aspire.Hosting;
 using Aspire.Hosting.ApplicationModel;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 
 /// <summary>Runs a validated scoped graph until its owning controller closes the standard-input pipe.</summary>
@@ -15,6 +16,7 @@ internal static class WorktreeForegroundRun
 {
   private static readonly string[] RequiredResources =
     ["website", "api", "exp", "local-identities", "cv", "docs", "status", "cosmos", "mssql", "storage", "redis"];
+  private static readonly TimeSpan ShutdownTimeout = TimeSpan.FromSeconds(90);
 
   internal static async Task RunAsync(string descriptorPath)
   {
@@ -73,6 +75,8 @@ internal static class WorktreeForegroundRun
     if (owner.IsCompleted) throw new InvalidOperationException("The scoped launch controller has disconnected.");
     var builder = DistributedApplication.CreateBuilder(new DistributedApplicationOptions { Args = [], ProjectDirectory = projectDirectory });
     builder.Services.AddLogging(logging => logging.ClearProviders());
+    // Keep the generic host from cancelling while DCP waits for scoped container cleanup.
+    builder.Services.Configure<HostOptions>(options => options.ShutdownTimeout = ShutdownTimeout);
     builder.Configuration["DcpPublisher:ContainerRuntime"] = request.Engine == "rancher" ? "docker" : "podman";
     builder.Configuration["DcpPublisher:WaitForResourceCleanup"] = "true";
     builder.Configuration["DcpPublisher:ResourceNameSuffix"] = scope.RunId[..12];
@@ -105,7 +109,7 @@ internal static class WorktreeForegroundRun
       await readiness.CancelAsync().ConfigureAwait(false);
       await report.ConfigureAwait(false);
       await trace.ConfigureAwait(false);
-      using var shutdown = new CancellationTokenSource(TimeSpan.FromSeconds(45));
+      using var shutdown = new CancellationTokenSource(ShutdownTimeout);
       await app.StopAsync(shutdown.Token).ConfigureAwait(false);
     }
   }
