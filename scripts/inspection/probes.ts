@@ -518,11 +518,11 @@ function podmanMachineInspect(name: string): InspectionProbe {
   });
 }
 
-/** Reads the major version of the PowerShell used by the scoped Windows probes. */
+/** Reads the version of the PowerShell used by the scoped Windows probes. */
 function windowsPowerShellVersion(): InspectionProbe {
   return registerProbe("infrastructure.windows.powershell-version", {
     command: "pwsh",
-    args: ["-NoLogo", "-NoProfile", "-NonInteractive", "-Command", "$PSVersionTable.PSVersion.Major"],
+    args: ["-NoLogo", "-NoProfile", "-NonInteractive", "-Command", "$PSVersionTable.PSVersion.ToString()"],
   });
 }
 

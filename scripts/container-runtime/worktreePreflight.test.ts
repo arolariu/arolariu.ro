@@ -182,7 +182,7 @@ function processKey(request: Readonly<ProcessRequest>, env: Readonly<Record<stri
   if (request.command !== "pwsh") return commandLine(request);
   const role = env?.["AROLARIU_PREFLIGHT_PAYLOAD_ROLE"];
   if (role !== undefined) return `pwsh:${role}`;
-  if (request.args.at(-1) === "$PSVersionTable.PSVersion.Major") return "pwsh:version";
+  if (request.args.at(-1) === "$PSVersionTable.PSVersion.ToString()") return "pwsh:version";
   if (request.args.at(-1)?.includes("GetFolderPath")) return "pwsh:profile";
   return "pwsh";
 }
@@ -209,7 +209,7 @@ function fixture(
     [`dotnet workload restore ${createRepositoryPaths(root).solution}`]: "",
     "dotnet tool restore": "",
     "where.exe pwsh.exe": "C:/Program Files/PowerShell/7/pwsh.exe\n",
-    "pwsh:version": "7\n",
+    "pwsh:version": "7.4.0\n",
     "pwsh:profile": profile,
     "pwsh:swc": "unverified",
     ...overrides,
@@ -459,6 +459,7 @@ describe("worktree Aspire preflight", () => {
       "after.arolariu.slnx.targets",
       "C:/sdk/10.0.404/Current/SolutionFile/ImportBefore/Local.targets",
       "C:/sdk/10.0.404/Current/SolutionFile/ImportAfter/Local.targets",
+      "C:/sdk/10.0.404/Current/SolutionFile/ImportAfter/Microsoft.NET.Sdk.Solution.targets",
     ])("rejects an unsupported solution input at %s before restore and on read", async (input) => {
     const sdkHooks = "C:/sdk/10.0.404/Current/SolutionFile/ImportAfter";
     const test = fixture(
@@ -466,8 +467,6 @@ describe("worktree Aspire preflight", () => {
       {},
       {
         ...restoreFiles,
-        [`${sdkHooks}/Microsoft.NET.Sdk.Solution.targets`]: "<Project />",
-        [`${sdkHooks}/Microsoft.NuGet.ImportAfter.targets`]: "<Project />",
         "before.other.sln.targets": "<Project />",
         "C:/worktrees/before.arolariu.sln.targets": "<Project />",
       },
@@ -476,9 +475,10 @@ describe("worktree Aspire preflight", () => {
     await Effect.runPromise(
       Effect.gen(function* () {
         const fs = yield* FileSystem.FileSystem;
+        if (input.startsWith(`${sdkHooks}/`)) yield* fs.makeDirectory(sdkHooks, {recursive: true});
         expect(yield* recordWorktreeRestoreEvidence(paths, Effect.void)).toBe(true);
         expect(yield* currentWorktreeRestoreEvidence(paths)).toMatch(/^[a-f0-9]{64}$/u);
-        if (input.includes("/ImportBefore/")) yield* fs.makeDirectory(input.slice(0, input.lastIndexOf("/")));
+        if (input.includes("/ImportBefore/")) yield* fs.makeDirectory(input.slice(0, input.lastIndexOf("/")), {recursive: true});
         yield* fs.writeFileString(input, "<Project />");
         const before = test.files();
         let ran = false;
@@ -1066,11 +1066,11 @@ describe("worktree Aspire preflight", () => {
     test.expectReadOnly();
   });
 
-  it.runIf(process.platform === "win32")("rejects older PowerShell before running the dependent probes", async () => {
-    const test = fixture({}, {"pwsh:version": "6\n"});
+  it.runIf(process.platform === "win32").each(["6.2.0\n", "7.0.13\n"])("rejects PowerShell %j before dependent probes", async (version) => {
+    const test = fixture({}, {"pwsh:version": version});
     const result = await test.inspect();
     expect(result.capabilities).toContainEqual(
-      expect.objectContaining({id: "powershell", status: "blocked", detail: expect.stringMatching(/PowerShell 7 or later/u)}),
+      expect.objectContaining({id: "powershell", status: "blocked", detail: expect.stringMatching(/PowerShell 7\.1 or later/u)}),
     );
     expect(
       test

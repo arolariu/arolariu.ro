@@ -585,18 +585,19 @@ function inspectPowerShell(root: string): Effect.Effect<WorktreeCapability, neve
       localDrivePath(entry) && win32.basename(entry).toLowerCase() === "pwsh.exe"
         ? yield* run(probes.infrastructure.windowsPowerShellVersion(), {cwd: root})
         : undefined;
-    const major = version?.kind === "succeeded" ? version.stdout.trim() : "";
+    const parsed = version?.kind === "succeeded" ? /^(\d{1,2})\.(\d{1,2})\.\d+(?:\.\d+)?$/u.exec(version.stdout.trim()) : null;
+    const supported = parsed !== null && (Number(parsed[1]) > 7 || (Number(parsed[1]) === 7 && Number(parsed[2]) >= 1));
     return capability(
       "powershell",
-      /^\d{1,2}$/u.test(major) && Number(major) >= 7,
-      "PowerShell 7 or later was verified for read-only Windows probes.",
-      "Machine bootstrap: PowerShell 7 or later is required. Ensure the supported pwsh.exe is first on PATH, then rerun preflight.",
+      supported,
+      "PowerShell 7.1 or later was verified for read-only Windows probes.",
+      "Machine bootstrap: PowerShell 7.1 or later is required. Ensure the supported pwsh.exe is first on PATH, then rerun preflight.",
     );
   });
 }
 
 function blockedByPowerShell(id: string): WorktreeCapability {
-  return capability(id, false, "", "Not checked: PowerShell 7 (pwsh) is required. See the powershell prerequisite.");
+  return capability(id, false, "", "Not checked: PowerShell 7.1 or later is required. See the powershell prerequisite.");
 }
 
 function inspectWebsiteTrust(

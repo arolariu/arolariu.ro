@@ -37,7 +37,20 @@ const MAX_INPUT = 8 * 1024 * 1024;
 const MAX_NUGET_CONFIG_FILES = 64;
 const directoryResponseFile = "Directory.Build.rsp";
 const solutionBuildFiles = ["Directory.Solution.props", "Directory.Solution.targets"];
-const sdkSolutionHooks = new Set(["microsoft.net.sdk.solution.targets", "microsoft.nuget.importafter.targets"]);
+// Ship only known SDK hooks; a file with the same name can otherwise import untracked inputs.
+const sdkSolutionHooks = new Map([
+  [
+    "microsoft.net.sdk.solution.targets",
+    {
+      sha256: "6d4514faf1f8a6a34732c369635d0ccb50f9fa3a5131a48733c48f794ceff62c",
+      target: "Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.Sdk.Common.targets",
+    },
+  ],
+  [
+    "microsoft.nuget.importafter.targets",
+    {sha256: "7467b24ffc850450c2c9d7fc741228479342e6abd359bc39cc6adbba12754279", target: "NuGet.targets"},
+  ],
+]);
 const inputs = [
   "Directory.Build.props",
   "Directory.Build.targets",
@@ -145,10 +158,13 @@ function observeRestoreSdk(
       const seen = new Set<string>();
       for (const name of names) {
         const key = name.toLowerCase();
-        if (!sdkSolutionHooks.has(key) || seen.has(key)) return undefined;
+        const stock = sdkSolutionHooks.get(key);
+        if (!stock || seen.has(key)) return undefined;
         const bytes = yield* ownedBytes(win32.join(directory, name));
-        if (!bytes?.length) return undefined;
-        hooks.push([key, digest(bytes)]);
+        if (!bytes?.length || digest(bytes) !== stock.sha256) return undefined;
+        const target = yield* ownedBytes(win32.join(sdk, stock.target));
+        if (!target?.length) return undefined;
+        hooks.push([key, stock.sha256], [stock.target, digest(target)]);
         seen.add(key);
       }
     }
